@@ -148,8 +148,8 @@ const CharacterCard: React.FC<{
 };
 
 const MunchkinIndexView: React.FC = () => {
-  const [currentCharacter] = useState<Character>(MOCK_CHARACTERS[0]);
   const [characters] = useState<Character[]>(MOCK_CHARACTERS);
+  const currentCharacter = characters[0];
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | undefined>(undefined);
@@ -201,7 +201,7 @@ const MunchkinIndexView: React.FC = () => {
           </View>
 
           {/* Current Character Footer */}
-          <View style={styles.currentCharacterFooter}>
+          <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
             <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
               <Image
                 source={require('@/assets/images/avatar.png')}
