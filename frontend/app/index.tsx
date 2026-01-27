@@ -9,6 +9,21 @@ import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
 import ShopModal from './main/modal-shop';
 
+// Generate a random URL-safe string
+const generateRandomNicknamePostfix = (length: number = 5): string => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+function updateUserProfile(newUserProfile: { nickname: string; avatar: any }) {
+  // TODO: Implement user profile update logic
+  console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET');
+}
+
 export default function Home() {
   const navigation = useNavigation();
   const [shopModalVisible, setShopModalVisible] = useState(false);
@@ -16,7 +31,7 @@ export default function Home() {
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({
-    nickname: 'Nickname',
+    nickname: `Name ${generateRandomNicknamePostfix()}`,
     avatar: require('@/assets/images/avatar.png'),
   });
   return (
@@ -89,6 +104,7 @@ export default function Home() {
             onConfirm={(newUserProfile) => {
               setChangeUserModalVisible(false);
               setUserProfile(newUserProfile);
+              updateUserProfile(newUserProfile);
             }}
             onCancel={() => setChangeUserModalVisible(false)}
           />
@@ -96,8 +112,13 @@ export default function Home() {
             visible={createRoomModalVisible}
             onConfirm={() => {
               setCreateRoomModalVisible(false);
-              const roomName = 123;
-              router.push(`/munchkin/${roomName}`);
+              router.navigate({
+                pathname: '/munchkin',
+                params: {
+                  nickname: userProfile.nickname,
+                  avatar: typeof userProfile.avatar === 'string' ? userProfile.avatar : undefined
+                }
+              });
             }}
             onCancel={() => setCreateRoomModalVisible(false)}
             game="Munchkin"
@@ -105,9 +126,14 @@ export default function Home() {
           <RoomJoinModal
             visible={joinRoomModalVisible}
             onClose={() => setJoinRoomModalVisible(false)}
-            onJoin={() => {
-              const roomName = 123;
-              router.push(`/munchkin/${roomName}`);
+            onJoin={(roomName) => {
+              router.navigate({
+                pathname: `./munchkin/${roomName}`,
+                params: {
+                  nickname: userProfile.nickname,
+                  avatar: typeof userProfile.avatar === 'string' ? userProfile.avatar : undefined
+                }
+              })
             }}
             game="Munchkin"
           />

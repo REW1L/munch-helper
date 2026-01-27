@@ -10,6 +10,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { colorKit } from 'reanimated-color-picker';
 import ChangeCharacterModal from './modal-change-caracter';
 import CreateCharacterModal from './modal-create-character';
 
@@ -32,6 +33,7 @@ const COLORS = {
 interface Character {
   id: string;
   nickname: string;
+  avatar?: string;
   level: number;
   power: number;
   color: string;
@@ -110,7 +112,7 @@ const CharacterCard: React.FC<{
       <View style={styles.characterContent}>
         <View style={{ backgroundColor: character.color, borderRadius: 20 }}>
           <Image
-            source={require('@/assets/images/avatar.png')}
+            source={character.avatar ? { uri: character.avatar } : require('@/assets/images/avatar.png')}
             style={styles.characterAvatar}
           />
         </View>
@@ -129,7 +131,7 @@ const CharacterCard: React.FC<{
         <ScrollView>
           {ATTRIBUTES.map((attr, index) => (
             (character[attr as keyof Character] as string[]).map((value: string) => (
-              <Text key={`attribute-${index}-${value}`} style={styles.attributeText}>
+              <Text key={`attribute-${character.id}-${value}`} style={styles.attributeText}>
                 {value}
               </Text>
             ))
@@ -148,14 +150,33 @@ const CharacterCard: React.FC<{
 };
 
 const MunchkinIndexView: React.FC = () => {
+
   const [characters] = useState<Character[]>(MOCK_CHARACTERS);
-  const currentCharacter = characters[0];
+
+  const { nickname, avatar } = useLocalSearchParams();
+  const currentCharacterId = (nickname as string).toLowerCase().replace(/\s+/g, '-');
+  let currentCharacterIndex = characters.findIndex(c => c.id === currentCharacterId);
+  console.log('Current character index:', currentCharacterIndex);
+  if (currentCharacterIndex === -1) {
+    currentCharacterIndex = characters.push({
+      id: currentCharacterId,
+      nickname: nickname as string,
+      avatar: avatar as string,
+      level: 1,
+      power: 0,
+      color: colorKit.randomRgbColor().hex(),
+      race: ['Human'],
+      gender: ['male'],
+      class: [],
+    } as Character) - 1;
+  }
+  const currentCharacter = characters[currentCharacterIndex];
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | undefined>(undefined);
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider key={`room-${roomNumber}`}>
       <SafeAreaView style={{
         flex: 1,
         backgroundColor: "#121212", // Dark theme background
@@ -204,7 +225,7 @@ const MunchkinIndexView: React.FC = () => {
           <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
             <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
               <Image
-                source={require('@/assets/images/avatar.png')}
+                source={currentCharacter.avatar ? { uri: currentCharacter.avatar } : require('@/assets/images/avatar.png')}
                 style={styles.footerAvatar}
               />
             </View>
@@ -224,7 +245,7 @@ const MunchkinIndexView: React.FC = () => {
               <ScrollView>
                 {ATTRIBUTES.map((attr, index) => (
                   (currentCharacter[attr as keyof Character] as string[]).map((value: string) => (
-                    <Text key={index} style={styles.footerAttributeText}>
+                    <Text key={`footer-attribute-${currentCharacter.id}-${index}-${value}`} style={styles.footerAttributeText}>
                       {value}
                     </Text>
                   ))

@@ -4,7 +4,7 @@ import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 interface ModalRoomJoinProps {
   visible: boolean;
   onClose: () => void;
-  onJoin: () => void;
+  onJoin: (roomName: string) => void;
   game: string;
 }
 
@@ -12,9 +12,10 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
   const [roomName, setRoomName] = useState('');
 
   const handleJoin = () => {
-    if (roomName.trim()) {
-      // TODO: Implement room joining logic
-      console.log('Joining room:', roomName);
+    const roomNm = roomName.trim();
+    if (roomNm) {
+      console.log('Joining room:', roomNm);
+      onJoin(roomNm);
       setRoomName('');
       onClose();
     }
@@ -45,7 +46,7 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
               autoCapitalize="none"
               autoCorrect={false}
             />
-          </View>.
+          </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.button}
