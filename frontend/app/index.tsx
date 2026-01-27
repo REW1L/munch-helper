@@ -1,15 +1,12 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useState } from 'react';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link, router, Stack, useNavigation } from 'expo-router';
-import ShopModal from './main/modal-shop';
+import { router, Stack, useNavigation } from 'expo-router';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
+import ShopModal from './main/modal-shop';
 
 export default function Home() {
   const navigation = useNavigation();
@@ -17,78 +14,86 @@ export default function Home() {
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   return (
-    <View style={styles.container}>
-      {/* Status Bar */}
-      <Stack.Screen options={{ title: 'Games' }} />
+    <SafeAreaProvider>
+      <SafeAreaView style={{
+        flex: 1,
+        backgroundColor: "#121212", // Dark theme background
+      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
+        <View style={styles.container}>
+          {/* Status Bar */}
+          <Stack.Screen options={{ title: 'Games' }} />
 
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* Munchkin Game Card */}
-        <View style={styles.gameCard}>
-          <View style={styles.gameTitle}>
-            <Text style={styles.gameTitleText}>Munchkin</Text>
+          {/* Main Content */}
+          <View style={styles.mainContent}>
+            {/* Munchkin Game Card */}
+            <View style={styles.gameCard}>
+              <View style={styles.gameTitle}>
+                <Text style={styles.gameTitleText}>Munchkin</Text>
+              </View>
+              <View style={styles.gameActions}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
+                  <Text style={styles.actionButtonLabel}>Create</Text>
+                  <Text style={styles.actionButtonCost}>20 coins</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
+                  <Text style={styles.actionButtonLabel}>Join</Text>
+                  <Text style={styles.actionButtonCost}>10 coins</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-          <View style={styles.gameActions}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-              <Text style={styles.actionButtonLabel}>Create</Text>
-              <Text style={styles.actionButtonCost}>20 coins</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-              <Text style={styles.actionButtonLabel}>Join</Text>
-              <Text style={styles.actionButtonCost}>10 coins</Text>
+
+          {/* Rooms History Button */}
+          <View style={styles.roomsHistoryContainer}>
+            {/* TODO: Not implemented yet */}
+            <TouchableOpacity style={[styles.roomsHistoryButton, { opacity: 0 }]}>
+              <Text style={styles.roomsHistoryText}>Rooms history</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
 
-      {/* Rooms History Button */}
-      <View style={styles.roomsHistoryContainer}>
-        <TouchableOpacity style={styles.roomsHistoryButton}>
-          <Text style={styles.roomsHistoryText}>Rooms history</Text>
-        </TouchableOpacity>
-      </View>
+          {/* User Profile Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.profileInfo}>
+              <Image
+                source={require('@/assets/images/avatar.png')}
+                style={styles.profileImage}
+              />
+              <Text style={styles.profileNickname}>Nickname</Text>
+            </View>
+            <View style={styles.profileStats}>
+              <View style={styles.coinDisplay}>
+                <Text style={styles.coinAmount}>100</Text>
+                <Text style={styles.coinLabel}>coins</Text>
+              </View>
+              <TouchableOpacity style={styles.shopButton} onPress={() => setShopModalVisible(true)}>
+                <Text style={styles.shopButtonText}>Shop</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      {/* User Profile Section */}
-      <View style={styles.profileSection}>
-        <View style={styles.profileInfo}>
-          <Image
-            source={require('@/assets/images/avatar.png')}
-            style={styles.profileImage}
+          <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} />
+          <RoomCreateModal
+            visible={createRoomModalVisible}
+            onConfirm={() => {
+              setCreateRoomModalVisible(false);
+              const roomName = 123;
+              router.push(`/munchkin/${roomName}`);
+            }}
+            onCancel={() => setCreateRoomModalVisible(false)}
+            game="Munchkin"
           />
-          <Text style={styles.profileNickname}>Nickname</Text>
-        </View>
-        <View style={styles.profileStats}>
-          <View style={styles.coinDisplay}>
-            <Text style={styles.coinAmount}>100</Text>
-            <Text style={styles.coinLabel}>coins</Text>
-          </View>
-          <TouchableOpacity style={styles.shopButton} onPress={() => setShopModalVisible(true)}>
-            <Text style={styles.shopButtonText}>Shop</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} />
-      <RoomCreateModal
-        visible={createRoomModalVisible}
-        onConfirm={() => {
-          setCreateRoomModalVisible(false);
-          const roomName = 123;
-          router.push(`/munchkin/${roomName}`);
-        }}
-        onCancel={() => setCreateRoomModalVisible(false)}
-        game="Munchkin"
-      />
-      <RoomJoinModal
-        visible={joinRoomModalVisible}
-        onClose={() => setJoinRoomModalVisible(false)}
-        onJoin={() => {
-          const roomName = 123;
-          router.push(`/munchkin/${roomName}`);
-        }}
-        game="Munchkin"
-      />
-    </View >
+          <RoomJoinModal
+            visible={joinRoomModalVisible}
+            onClose={() => setJoinRoomModalVisible(false)}
+            onJoin={() => {
+              const roomName = 123;
+              router.push(`/munchkin/${roomName}`);
+            }}
+            game="Munchkin"
+          />
+        </View >
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
@@ -110,6 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'flex-start',
     alignItems: 'center',
+    height: '100%',
     gap: 10,
   },
   gameCard: {

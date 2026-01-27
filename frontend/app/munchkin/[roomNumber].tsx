@@ -2,12 +2,14 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeCharacterModal from './modal-change-caracter';
 import CreateCharacterModal from './modal-create-character';
 
@@ -84,6 +86,7 @@ const MOCK_CHARACTERS: Character[] = [
 
 function changeCharacter(character: Character) {
   // Placeholder function for changing character
+  /* TODO: Not implemented yet */
   console.log('CHANGING CHARACTER BACK NOT IMPLEMENTED YET');
 }
 
@@ -152,113 +155,121 @@ const MunchkinIndexView: React.FC = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<Character | undefined>(undefined);
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
+    <SafeAreaProvider>
+      <SafeAreaView style={{
+        flex: 1,
+        backgroundColor: "#121212", // Dark theme background
+      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
+        <View style={styles.container}>
+          <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
 
-      {/* Main Content */}
-      <ScrollView style={styles.mainContent} showsVerticalScrollIndicator={false}>
+          {/* Main Content */}
+          <ScrollView style={styles.mainContent} showsVerticalScrollIndicator={false}>
 
-        {/* Characters List */}
-        <View style={styles.charactersList}>
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.id}
-              character={character}
-              onChangePress={(char) => {
-                setSelectedCharacter(char);
+            {/* Characters List */}
+            <View style={styles.charactersList}>
+              {characters.map((character) => (
+                <CharacterCard
+                  key={character.id}
+                  character={character}
+                  onChangePress={(char) => {
+                    setSelectedCharacter(char);
+                    setChangeCharacterModalVisible(true);
+                  }}
+                />
+              ))}
+            </View>
+
+            {/* Create Character Button */}
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => setCreateCharacterModalVisible(true)}
+            >
+              <Text style={styles.createButtonText}>Create a character</Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* Bottom Action Buttons */}
+          <View style={styles.actionButtons}>
+            {/* TODO: Not implemented yet */}
+            <TouchableOpacity style={[styles.battleButton, { opacity: 0 }]}>
+              <Text style={styles.battleButtonText}>Battle</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.logButton, { opacity: 0 }]}>
+              <Text style={styles.logButtonText}>Log</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Current Character Footer */}
+          <View style={styles.currentCharacterFooter}>
+            <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
+              <Image
+                source={require('@/assets/images/avatar.png')}
+                style={styles.footerAvatar}
+              />
+            </View>
+            <View style={styles.footerInfo}>
+              <Text style={styles.footerNickname}>{currentCharacter.nickname}</Text>
+              <View style={styles.footerStats}>
+                <Text style={styles.footerStatText}>
+                  {currentCharacter.level} lvl
+                </Text>
+                <Text style={styles.footerStatText}>
+                  {currentCharacter.power} str
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.footerAttributes}>
+              <ScrollView>
+                {ATTRIBUTES.map((attr, index) => (
+                  (currentCharacter[attr as keyof Character] as string[]).map((value: string) => (
+                    <Text key={index} style={styles.footerAttributeText}>
+                      {value}
+                    </Text>
+                  ))
+                ))}
+              </ScrollView>
+            </View>
+
+            <TouchableOpacity
+              style={styles.footerChangeButton}
+              onPress={() => {
+                setSelectedCharacter(currentCharacter);
                 setChangeCharacterModalVisible(true);
               }}
-            />
-          ))}
-        </View>
-
-        {/* Create Character Button */}
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => setCreateCharacterModalVisible(true)}
-        >
-          <Text style={styles.createButtonText}>Create a character</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Bottom Action Buttons */}
-      <View style={styles.actionButtons}>
-        <View style={[styles.battleButton, { opacity: 0 }]}>
-          <Text style={styles.battleButtonText}>Battle</Text>
-        </View>
-        <View style={[styles.logButton, { opacity: 0 }]}>
-          <Text style={styles.logButtonText}>Log</Text>
-        </View>
-      </View>
-
-      {/* Current Character Footer */}
-      <View style={styles.currentCharacterFooter}>
-        <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
-          <Image
-            source={require('@/assets/images/avatar.png')}
-            style={styles.footerAvatar}
-          />
-        </View>
-        <View style={styles.footerInfo}>
-          <Text style={styles.footerNickname}>{currentCharacter.nickname}</Text>
-          <View style={styles.footerStats}>
-            <Text style={styles.footerStatText}>
-              {currentCharacter.level} lvl
-            </Text>
-            <Text style={styles.footerStatText}>
-              {currentCharacter.power} str
-            </Text>
+            >
+              <Text style={styles.footerChangeButtonText}>Change</Text>
+            </TouchableOpacity>
           </View>
+
+          <CreateCharacterModal
+            visible={createCharacterModalVisible}
+            onConfirm={(character) => {
+              console.log('Character created:', character);
+              setCreateCharacterModalVisible(false);
+            }}
+            onCancel={() => setCreateCharacterModalVisible(false)}
+          />
+
+          {changeCharacterModalVisible &&
+            <ChangeCharacterModal
+              character={selectedCharacter}
+              onConfirm={(character) => {
+                console.log('Character changed:', character);
+                setChangeCharacterModalVisible(false);
+                const index = characters.findIndex(c => c.id === character.id);
+                if (index !== -1) {
+                  characters[index] = character;
+                }
+                changeCharacter(character);
+              }}
+              onCancel={() => setChangeCharacterModalVisible(false)}
+            />
+          }
         </View>
-
-        <View style={styles.footerAttributes}>
-          <ScrollView>
-            {ATTRIBUTES.map((attr, index) => (
-              (currentCharacter[attr as keyof Character] as string[]).map((value: string) => (
-                <Text key={index} style={styles.footerAttributeText}>
-                  {value}
-                </Text>
-              ))
-            ))}
-          </ScrollView>
-        </View>
-
-        <TouchableOpacity
-          style={styles.footerChangeButton}
-          onPress={() => {
-            setSelectedCharacter(currentCharacter);
-            setChangeCharacterModalVisible(true);
-          }}
-        >
-          <Text style={styles.footerChangeButtonText}>Change</Text>
-        </TouchableOpacity>
-      </View>
-
-      <CreateCharacterModal
-        visible={createCharacterModalVisible}
-        onConfirm={(character) => {
-          console.log('Character created:', character);
-          setCreateCharacterModalVisible(false);
-        }}
-        onCancel={() => setCreateCharacterModalVisible(false)}
-      />
-
-      {changeCharacterModalVisible &&
-        <ChangeCharacterModal
-          character={selectedCharacter}
-          onConfirm={(character) => {
-            console.log('Character changed:', character);
-            setChangeCharacterModalVisible(false);
-            const index = characters.findIndex(c => c.id === character.id);
-            if (index !== -1) {
-              characters[index] = character;
-            }
-            changeCharacter(character);
-          }}
-          onCancel={() => setChangeCharacterModalVisible(false)}
-        />
-      }
-    </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

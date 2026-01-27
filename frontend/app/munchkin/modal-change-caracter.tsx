@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -160,8 +161,8 @@ export default function ChangeCharacterModal({
                           newClasses[index] = value;
                           setCharacter({ ...character, class: newClasses });
                         }}
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
+                        style={Platform.OS === "ios" ? styles.picker : undefined}
+                        itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
                       >
                         <Picker.Item label="<Select>" value="<Select>" />
                         {classes.map((cls) => (
@@ -186,8 +187,8 @@ export default function ChangeCharacterModal({
                       onValueChange={(value: string) =>
                         setNewClass(value)
                       }
-                      style={styles.picker}
-                      itemStyle={styles.pickerItem}
+                      style={Platform.OS === "ios" ? styles.picker : undefined}
+                      itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
                       selectedValue={newClass}
                     >
                       <Picker.Item label="<Select>" value="<Select>" />
@@ -224,8 +225,8 @@ export default function ChangeCharacterModal({
                           newRaces[index] = value;
                           setCharacter({ ...character, race: newRaces });
                         }}
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
+                        style={Platform.OS === "ios" ? styles.picker : undefined}
+                        itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
                       >
                         <Picker.Item label="<Select>" value="<Select>" />
                         {races.map((option) => (
@@ -254,8 +255,8 @@ export default function ChangeCharacterModal({
                     <Picker
                       onValueChange={(value: string) => setNewRace(value)}
                       selectedValue={newRace}
-                      style={styles.picker}
-                      itemStyle={styles.pickerItem}
+                      style={Platform.OS === "ios" ? styles.picker : undefined}
+                      itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
                     >
                       <Picker.Item label="<Select>" value="<Select>" />
                       {races.map((option) => (
@@ -324,12 +325,12 @@ export default function ChangeCharacterModal({
             {/* Color Selection */}
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Color:</Text>
-              <View
+              <Pressable
                 style={[
                   styles.colorPicker,
                   { backgroundColor: character.color },
                 ]}
-                onTouchEnd={() => setColorModalVisible(true)}
+                onPress={() => setColorModalVisible(true)}
               />
               <Modal
                 transparent={true}
@@ -651,7 +652,8 @@ const styles = StyleSheet.create({
     borderColor: '#484848',
   },
   colorPickerModal: {
-    width: '90%',
+    maxWidth: '90%',
+    maxHeight: '30%',
     borderRadius: 5,
     borderWidth: 5,
     borderColor: '#484848',
