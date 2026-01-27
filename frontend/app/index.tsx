@@ -4,6 +4,7 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 
 import { router, Stack, useNavigation } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import ChangeUserModal from './main/modal-change-user';
 import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
 import ShopModal from './main/modal-shop';
@@ -13,6 +14,11 @@ export default function Home() {
   const [shopModalVisible, setShopModalVisible] = useState(false);
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
+  const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
+  const [userProfile, setUserProfile] = useState({
+    nickname: 'Nickname',
+    avatar: require('@/assets/images/avatar.png'),
+  });
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{
@@ -55,10 +61,15 @@ export default function Home() {
           <View style={styles.profileSection}>
             <View style={styles.profileInfo}>
               <Image
-                source={require('@/assets/images/avatar.png')}
+                source={userProfile.avatar}
                 style={styles.profileImage}
               />
-              <Text style={styles.profileNickname}>Nickname</Text>
+              <View style={{ justifyContent: 'center', alignItems: 'center', gap: 5, width: '50%' }}>
+                <Text style={styles.profileNickname}>{userProfile.nickname}</Text>
+                <TouchableOpacity style={styles.shopButton} onPress={() => setChangeUserModalVisible(true)}>
+                  <Text style={styles.shopButtonText}>Change</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.profileStats}>
               <View style={styles.coinDisplay}>
@@ -72,6 +83,15 @@ export default function Home() {
           </View>
 
           <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} />
+          <ChangeUserModal
+            user={userProfile}
+            visible={changeUserModalVisible}
+            onConfirm={(newUserProfile) => {
+              setChangeUserModalVisible(false);
+              setUserProfile(newUserProfile);
+            }}
+            onCancel={() => setChangeUserModalVisible(false)}
+          />
           <RoomCreateModal
             visible={createRoomModalVisible}
             onConfirm={() => {
@@ -202,19 +222,19 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   profileSection: {
-    alignSelf: 'stretch',
     height: 85,
+    width: '100%',
     paddingHorizontal: 20,
     paddingVertical: 5,
     backgroundColor: '#544C4C',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 18,
+    gap: 10,
   },
   profileInfo: {
     height: 75,
-    paddingHorizontal: 10,
+    width: '60%',
     paddingVertical: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -222,6 +242,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   profileImage: {
+    position: 'relative',
     width: 75,
     height: 75,
     borderRadius: 75,
@@ -229,6 +250,7 @@ const styles = StyleSheet.create({
   profileNickname: {
     textAlign: 'center',
     color: 'white',
+    // width: '50%',
     fontSize: 16,
     fontFamily: 'Roboto',
     fontWeight: '500',
@@ -269,7 +291,6 @@ const styles = StyleSheet.create({
   shopButton: {
     width: 80,
     height: 40,
-    paddingHorizontal: 19,
     paddingVertical: 10,
     backgroundColor: '#6E6BD4',
     borderRadius: 10,
