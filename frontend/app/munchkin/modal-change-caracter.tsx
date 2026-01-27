@@ -1,28 +1,30 @@
+import { Picker } from '@react-native-picker/picker';
+import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
   Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { Image } from 'expo-image';
+import ColorPicker, { Panel5 } from 'reanimated-color-picker';
 
 interface Character {
+  id: string;
   nickname: string;
   color: string;
-  gender: 'male' | 'female';
-  race: string;
-  class: string;
+  gender: string[];
+  race: string[];
+  class: string[];
   level: number;
   power: number;
 }
 
 interface ChangeCharacterModalProps {
-  visible: boolean;
   character?: Character;
   onConfirm: (character: Character) => void;
   onCancel: () => void;
@@ -31,29 +33,32 @@ interface ChangeCharacterModalProps {
 const avatarImage = require('@/assets/images/avatar.png');
 
 export default function ChangeCharacterModal({
-  visible,
   character: initialCharacter,
   onConfirm,
   onCancel,
 }: ChangeCharacterModalProps) {
   const [character, setCharacter] = useState<Character>(
     initialCharacter || {
+      id: 'temp-id',
       nickname: 'Munchqueen',
       color: '#1010FF',
-      gender: 'male',
-      race: 'Human',
-      class: 'Cleric',
+      gender: ['male'],
+      race: ['Human'],
+      class: ['Cleric'],
       level: 9,
       power: 15,
     }
   );
+  let [newRace, setNewRace] = useState("<Select>");
+  let [newClass, setNewClass] = useState("<Select>");
+  const [colorModalVisible, setColorModalVisible] = useState(false);
 
   const handleSave = () => {
     onConfirm(character);
   };
 
-  const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
-  const classes = ['Cleric', 'Mage', 'Warrior', 'Rogue'];
+  const races = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Orc', 'Gnome'];
+  const classes = ['Cleric', 'Wizard', 'Warrior', 'Thief', 'Ranger', 'Bard'];
 
   const incrementValue = (field: 'level' | 'power') => {
     setCharacter({ ...character, [field]: character[field] + 1 });
@@ -72,7 +77,6 @@ export default function ChangeCharacterModal({
     <Modal
       transparent={true}
       animationType="fade"
-      visible={visible}
       onRequestClose={onCancel}
     >
       <View style={styles.overlay}>
@@ -81,10 +85,21 @@ export default function ChangeCharacterModal({
             style={styles.content}
             contentContainerStyle={styles.contentContainer}
           >
-            <Text style={styles.headerText}>Change Nickname...</Text>
-
             <View style={styles.avatarContainer}>
               <Image source={avatarImage} style={styles.avatar} />
+            </View>
+
+            {/* Name Input */}
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Name:</Text>
+              <TextInput
+                style={styles.input}
+                value={character.nickname}
+                onChangeText={(text) =>
+                  setCharacter({ ...character, nickname: text })
+                }
+                placeholderTextColor="#888686"
+              />
             </View>
 
             {/* Level Selection */}
@@ -134,23 +149,60 @@ export default function ChangeCharacterModal({
             {/* Class Selection */}
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Class:</Text>
-              <View style={styles.inputGroup}>
+              <View style={styles.inputGroupVertical}>
+                {character.class.map((cls, index) => (
+                  <View style={styles.classRow} key={`class-${index}`}>
+                    <View style={styles.classDropdown}>
+                      <Picker
+                        selectedValue={character.class[index]}
+                        onValueChange={(value: string) => {
+                          const newClasses = [...character.class];
+                          newClasses[index] = value;
+                          setCharacter({ ...character, class: newClasses });
+                        }}
+                        style={styles.picker}
+                        itemStyle={styles.pickerItem}
+                      >
+                        <Picker.Item label="<Select>" value="<Select>" />
+                        {classes.map((cls) => (
+                          <Picker.Item key={`class-${index}-${cls}`} label={cls} value={cls} />
+                        ))}
+                      </Picker>
+                    </View>
+                    <TouchableOpacity style={styles.classButton}
+                      onPress={() => {
+                        const newClasses = [...character.class];
+                        newClasses.splice(index, 1);
+                        setCharacter({ ...character, class: newClasses });
+                      }}
+                    >
+                      <Text style={styles.classButtonText}>-</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
                 <View style={styles.classRow}>
                   <View style={styles.classDropdown}>
                     <Picker
-                      selectedValue={character.class || '<Select>'}
                       onValueChange={(value: string) =>
-                        setCharacter({ ...character, class: value })
+                        setNewClass(value)
                       }
                       style={styles.picker}
+                      itemStyle={styles.pickerItem}
+                      selectedValue={newClass}
                     >
                       <Picker.Item label="<Select>" value="<Select>" />
                       {classes.map((cls) => (
-                        <Picker.Item key={cls} label={cls} value={cls} />
+                        <Picker.Item key={`newclass-${cls}`} label={cls} value={cls} />
                       ))}
                     </Picker>
                   </View>
-                  <TouchableOpacity style={styles.classButton}>
+                  <TouchableOpacity style={styles.classButton}
+                    onPress={() => {
+                      if (newClass === "<Select>" || character.class.includes(newClass)) return;
+                      setCharacter({ ...character, class: [...character.class, newClass] });
+                      setNewClass("<Select>");
+                    }}
+                  >
                     <Text style={styles.classButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
@@ -160,23 +212,65 @@ export default function ChangeCharacterModal({
             {/* Race Selection */}
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Race:</Text>
-              <View style={styles.inputGroup}>
+              <View style={styles.inputGroupVertical}>
+                {character.race.map((race, index) => (
+                  <View style={styles.classRow} key={`race-${index}`}>
+                    <View style={styles.classDropdown}>
+                      <Picker
+                        selectedValue={character.race[index]}
+                        onValueChange={(value: string) => {
+                          const newRaces = [...character.race];
+
+                          newRaces[index] = value;
+                          setCharacter({ ...character, race: newRaces });
+                        }}
+                        style={styles.picker}
+                        itemStyle={styles.pickerItem}
+                      >
+                        <Picker.Item label="<Select>" value="<Select>" />
+                        {races.map((option) => (
+                          <Picker.Item key={`race-${index}-${option}`} label={option} value={option} />
+                        ))}
+                      </Picker>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.classButton}
+                      onPress={() => {
+                        let newRaces = [...character.race];
+                        if (newRaces.length <= 1) {
+                          newRaces = ['Human'];
+                        } else {
+                          newRaces.splice(index, 1);
+                        }
+                        setCharacter({ ...character, race: newRaces });
+                      }}
+                    >
+                      <Text style={styles.classButtonText}>-</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
                 <View style={styles.classRow}>
                   <View style={styles.classDropdown}>
                     <Picker
-                      selectedValue={character.race || '<Select>'}
-                      onValueChange={(value: string) =>
-                        setCharacter({ ...character, race: value })
-                      }
+                      onValueChange={(value: string) => setNewRace(value)}
+                      selectedValue={newRace}
                       style={styles.picker}
+                      itemStyle={styles.pickerItem}
                     >
                       <Picker.Item label="<Select>" value="<Select>" />
-                      {races.map((race) => (
-                        <Picker.Item key={race} label={race} value={race} />
+                      {races.map((option) => (
+                        <Picker.Item key={`newrace-${option}`} label={option} value={option} />
                       ))}
                     </Picker>
                   </View>
-                  <TouchableOpacity style={styles.classButton}>
+                  <TouchableOpacity
+                    style={styles.classButton}
+                    onPress={() => {
+                      if (newRace === "<Select>" || character.race.includes(newRace)) return;
+                      setCharacter({ ...character, race: [...character.race, newRace] });
+                      setNewRace("<Select>");
+                    }}
+                  >
                     <Text style={styles.classButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
@@ -190,16 +284,16 @@ export default function ChangeCharacterModal({
                 <TouchableOpacity
                   style={styles.genderRow}
                   onPress={() =>
-                    setCharacter({ ...character, gender: 'male' })
+                    setCharacter({ ...character, gender: ['male'] })
                   }
                 >
                   <View
                     style={[
                       styles.radio,
-                      character.gender === 'male' && styles.radioSelected,
+                      character.gender.includes('male') && styles.radioSelected,
                     ]}
                   >
-                    {character.gender === 'male' && (
+                    {character.gender.includes('male') && (
                       <View style={styles.radioDot} />
                     )}
                   </View>
@@ -209,35 +303,22 @@ export default function ChangeCharacterModal({
                 <TouchableOpacity
                   style={styles.genderRow}
                   onPress={() =>
-                    setCharacter({ ...character, gender: 'female' })
+                    setCharacter({ ...character, gender: ['female'] })
                   }
                 >
                   <View
                     style={[
                       styles.radio,
-                      character.gender === 'female' && styles.radioSelected,
+                      character.gender.includes('female') && styles.radioSelected,
                     ]}
                   >
-                    {character.gender === 'female' && (
+                    {character.gender.includes('female') && (
                       <View style={styles.radioDot} />
                     )}
                   </View>
                   <Text style={styles.genderLabel}>Female</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-
-            {/* Name Input */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Name:</Text>
-              <TextInput
-                style={styles.input}
-                value={character.nickname}
-                onChangeText={(text) =>
-                  setCharacter({ ...character, nickname: text })
-                }
-                placeholderTextColor="#888686"
-              />
             </View>
 
             {/* Color Selection */}
@@ -248,7 +329,29 @@ export default function ChangeCharacterModal({
                   styles.colorPicker,
                   { backgroundColor: character.color },
                 ]}
+                onTouchEnd={() => setColorModalVisible(true)}
               />
+              <Modal
+                transparent={true}
+                animationType="fade"
+                visible={colorModalVisible}
+              >
+                <Pressable style={styles.overlay} onPress={() => setColorModalVisible(false)}>
+                  <ColorPicker
+                    value={character.color}
+                    thumbSize={24}
+                    style={styles.colorPickerModal}
+                    thumbShape='circle'
+                    onCompleteJS={(color) => {
+                      setCharacter({ ...character, color: `${color.hex}` });
+                      setColorModalVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.contentContainer, styles.headerText]}>Select Color</Text>
+                    <Panel5 />
+                  </ColorPicker>
+                </Pressable>
+              </Modal>
             </View>
           </ScrollView>
 
@@ -350,6 +453,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 5,
   },
+  inputGroupVertical: {
+    width: '70%',
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#484848',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
   valueDisplay: {
     backgroundColor: '#DFDFDF',
     borderRadius: 5,
@@ -413,7 +528,11 @@ const styles = StyleSheet.create({
   },
   picker: {
     color: '#000000',
-    fontSize: 14,
+    maxHeight: 40,
+  },
+  pickerItem: {
+    fontSize: 20,
+    maxHeight: 40,
   },
   classButton: {
     backgroundColor: '#DFDFDF',
@@ -529,6 +648,12 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 5,
     borderWidth: 2,
+    borderColor: '#484848',
+  },
+  colorPickerModal: {
+    width: '90%',
+    borderRadius: 5,
+    borderWidth: 5,
     borderColor: '#484848',
   },
   buttonContainer: {

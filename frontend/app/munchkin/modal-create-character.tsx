@@ -1,21 +1,20 @@
+import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
   Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
   ScrollView,
-  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { Image } from 'expo-image';
 
 interface Character {
   name: string;
   color: string;
-  gender: 'male' | 'female';
-  race: string;
+  gender: string[];
+  race: string[];
 }
 
 interface CreateCharacterModalProps {
@@ -34,8 +33,8 @@ export default function CreateCharacterModal({
   const [character, setCharacter] = useState<Character>({
     name: 'Munchqueen',
     color: '#1010FF',
-    gender: 'male',
-    race: 'Human',
+    gender: ['male'],
+    race: ['Human'],
   });
 
   const handleCreate = () => {
@@ -97,16 +96,16 @@ export default function CreateCharacterModal({
                 <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() =>
-                    setCharacter({ ...character, gender: 'male' })
+                    setCharacter({ ...character, gender: ['male'] })
                   }
                 >
                   <View
                     style={[
                       styles.radio,
-                      character.gender === 'male' && styles.radioSelected,
+                      character.gender.includes('male') && styles.radioSelected,
                     ]}
                   >
-                    {character.gender === 'male' && (
+                    {character.gender.includes('male') && (
                       <View style={styles.radioDot} />
                     )}
                   </View>
@@ -116,16 +115,16 @@ export default function CreateCharacterModal({
                 <TouchableOpacity
                   style={styles.optionRow}
                   onPress={() =>
-                    setCharacter({ ...character, gender: 'female' })
+                    setCharacter({ ...character, gender: ['female'] })
                   }
                 >
                   <View
                     style={[
                       styles.radio,
-                      character.gender === 'female' && styles.radioSelected,
+                      character.gender.includes('female') && styles.radioSelected,
                     ]}
                   >
-                    {character.gender === 'female' && (
+                    {character.gender.includes('female') && (
                       <View style={styles.radioDot} />
                     )}
                   </View>
@@ -143,16 +142,16 @@ export default function CreateCharacterModal({
                     key={race}
                     style={styles.optionRow}
                     onPress={() =>
-                      setCharacter({ ...character, race })
+                      setCharacter({ ...character, race: [race] })
                     }
                   >
                     <View
                       style={[
                         styles.radio,
-                        character.race === race && styles.radioSelected,
+                        character.race.includes(race) && styles.radioSelected,
                       ]}
                     >
-                      {character.race === race && (
+                      {character.race.includes(race) && (
                         <View style={styles.radioDot} />
                       )}
                     </View>

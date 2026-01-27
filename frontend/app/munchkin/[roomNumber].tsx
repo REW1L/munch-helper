@@ -1,18 +1,15 @@
+import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
   Image,
+  ScrollView,
   StyleSheet,
-  FlatList,
-  Dimensions,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import CreateCharacterModal from './modal-create-character';
 import ChangeCharacterModal from './modal-change-caracter';
+import CreateCharacterModal from './modal-create-character';
 
 // Color constants from design
 const COLORS = {
@@ -36,13 +33,9 @@ interface Character {
   level: number;
   power: number;
   color: string;
-  race: string;
-  gender: "male" | "female";
-  class: string;
-}
-
-interface AttributeTag {
-  label: string;
+  race: string[];
+  gender: string[];
+  class: string[];
 }
 
 // Mock data
@@ -53,9 +46,9 @@ const MOCK_CHARACTERS: Character[] = [
     level: 10,
     power: 50,
     color: '#FFFB00',
-    race: 'Human',
-    gender: 'male',
-    class: 'Cleric',
+    race: ['Human'],
+    gender: ['male'],
+    class: ['Cleric'],
   },
   {
     id: '2',
@@ -63,9 +56,9 @@ const MOCK_CHARACTERS: Character[] = [
     level: 10,
     power: 50,
     color: '#2600FF',
-    race: 'Elf',
-    gender: 'female',
-    class: 'Thief',
+    race: ['Elf'],
+    gender: ['female'],
+    class: ['Thief'],
   },
   {
     id: '3',
@@ -73,9 +66,9 @@ const MOCK_CHARACTERS: Character[] = [
     level: 10,
     power: 50,
     color: '#FF0004',
-    race: 'Human',
-    gender: 'male',
-    class: 'Cleric',
+    race: ['Human'],
+    gender: ['male', 'female'],
+    class: ['Cleric'],
   },
   {
     id: '4',
@@ -83,25 +76,25 @@ const MOCK_CHARACTERS: Character[] = [
     level: 10,
     power: 50,
     color: '#11FF00',
-    race: 'Elf',
-    gender: 'female',
-    class: 'Thief',
+    race: ['Elf'],
+    gender: ['female'],
+    class: ['Thief'],
   },
 ];
 
-const ATTRIBUTES: AttributeTag[] = [
-  { label: 'Human' },
-  { label: 'Elf' },
-  { label: 'male' },
-  { label: 'female' },
-  { label: 'Cleric' },
-  { label: 'Thief' },
+function changeCharacter(character: Character) {
+  // Placeholder function for changing character
+  console.log('CHANGING CHARACTER BACK NOT IMPLEMENTED YET');
+}
+
+const ATTRIBUTES: string[] = [
+  "race", "gender", "class"
 ];
 
 const CharacterCard: React.FC<{
   character: Character;
   isHighlight?: boolean;
-  onChangePress?: (character: Character) => void;
+  onChangePress: (character: Character) => void;
 }> = ({ character, isHighlight = false, onChangePress }) => {
   return (
     <View
@@ -109,6 +102,7 @@ const CharacterCard: React.FC<{
         styles.characterCard,
         isHighlight && styles.characterCardHighlight,
       ]}
+      key={character.id}
     >
       <View style={styles.characterContent}>
         <View style={{ backgroundColor: character.color, borderRadius: 20 }}>
@@ -131,16 +125,18 @@ const CharacterCard: React.FC<{
       <View style={styles.attributesBox}>
         <ScrollView>
           {ATTRIBUTES.map((attr, index) => (
-            <Text key={index} style={styles.attributeText}>
-              {attr.label}
-            </Text>
+            (character[attr as keyof Character] as string[]).map((value: string) => (
+              <Text key={`attribute-${index}-${value}`} style={styles.attributeText}>
+                {value}
+              </Text>
+            ))
           ))}
         </ScrollView>
       </View>
 
       <TouchableOpacity
         style={styles.changeButton}
-        onPress={() => onChangePress?.(character)}
+        onPress={() => onChangePress(character)}
       >
         <Text style={styles.changeButtonText}>Change</Text>
       </TouchableOpacity>
@@ -153,7 +149,7 @@ const MunchkinIndexView: React.FC = () => {
   const [characters] = useState<Character[]>(MOCK_CHARACTERS);
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | undefined>(undefined);
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   return (
     <View style={styles.container}>
@@ -187,12 +183,12 @@ const MunchkinIndexView: React.FC = () => {
 
       {/* Bottom Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.battleButton}>
+        <View style={[styles.battleButton, { opacity: 0 }]}>
           <Text style={styles.battleButtonText}>Battle</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logButton}>
+        </View>
+        <View style={[styles.logButton, { opacity: 0 }]}>
           <Text style={styles.logButtonText}>Log</Text>
-        </TouchableOpacity>
+        </View>
       </View>
 
       {/* Current Character Footer */}
@@ -218,9 +214,11 @@ const MunchkinIndexView: React.FC = () => {
         <View style={styles.footerAttributes}>
           <ScrollView>
             {ATTRIBUTES.map((attr, index) => (
-              <Text key={index} style={styles.footerAttributeText}>
-                {attr.label}
-              </Text>
+              (currentCharacter[attr as keyof Character] as string[]).map((value: string) => (
+                <Text key={index} style={styles.footerAttributeText}>
+                  {value}
+                </Text>
+              ))
             ))}
           </ScrollView>
         </View>
@@ -245,15 +243,21 @@ const MunchkinIndexView: React.FC = () => {
         onCancel={() => setCreateCharacterModalVisible(false)}
       />
 
-      <ChangeCharacterModal
-        visible={changeCharacterModalVisible}
-        character={selectedCharacter || undefined}
-        onConfirm={(character) => {
-          console.log('Character changed:', character);
-          setChangeCharacterModalVisible(false);
-        }}
-        onCancel={() => setChangeCharacterModalVisible(false)}
-      />
+      {changeCharacterModalVisible &&
+        <ChangeCharacterModal
+          character={selectedCharacter}
+          onConfirm={(character) => {
+            console.log('Character changed:', character);
+            setChangeCharacterModalVisible(false);
+            const index = characters.findIndex(c => c.id === character.id);
+            if (index !== -1) {
+              characters[index] = character;
+            }
+            changeCharacter(character);
+          }}
+          onCancel={() => setChangeCharacterModalVisible(false)}
+        />
+      }
     </View>
   );
 };
