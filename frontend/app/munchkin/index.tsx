@@ -15,8 +15,8 @@ interface Character {
 }
 
 // Generate a random URL-safe string
-const generateRandomUrlSafeString = (length: number = 5): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const generateRandomUrlSafeString = (length: number = 6): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));

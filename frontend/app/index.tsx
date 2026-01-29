@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import VioletButton from '@/components/VioletButton';
+import avatars from '@/constants/avatars';
 import { router, Stack, useNavigation } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
@@ -11,8 +12,8 @@ import RoomJoinModal from './main/modal-room-join';
 import ShopModal from './main/modal-shop';
 
 // Generate a random URL-safe string
-const generateRandomNicknamePostfix = (length: number = 5): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const generateRandomNicknamePostfix = (length: number = 6): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -32,8 +33,8 @@ export default function Home() {
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({
-    nickname: `Name ${generateRandomNicknamePostfix()}`,
-    avatar: require('@/assets/images/avatar.png'),
+    nickname: `Player ${generateRandomNicknamePostfix()}`,
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
   });
   return (
     <SafeAreaProvider>
@@ -77,7 +78,7 @@ export default function Home() {
           <View style={styles.profileSection}>
             <View style={styles.profileInfo}>
               <Image
-                source={userProfile.avatar}
+                source={typeof userProfile.avatar === 'string' ? { uri: userProfile.avatar } : userProfile.avatar}
                 style={styles.profileImage}
               />
               <View style={{ justifyContent: 'center', alignItems: 'center', gap: 5, width: '50%' }}>
@@ -113,7 +114,7 @@ export default function Home() {
                 pathname: '/munchkin',
                 params: {
                   nickname: userProfile.nickname,
-                  avatar: typeof userProfile.avatar === 'string' ? userProfile.avatar : undefined
+                  avatar: JSON.stringify(userProfile.avatar)
                 }
               });
             }}
@@ -128,7 +129,7 @@ export default function Home() {
                 pathname: `./munchkin/${roomName}`,
                 params: {
                   nickname: userProfile.nickname,
-                  avatar: typeof userProfile.avatar === 'string' ? userProfile.avatar : undefined
+                  avatar: JSON.stringify(userProfile.avatar)
                 }
               })
             }}
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   profileSection: {
-    height: 85,
+    height: 100,
     width: '100%',
     paddingHorizontal: 20,
     paddingVertical: 5,

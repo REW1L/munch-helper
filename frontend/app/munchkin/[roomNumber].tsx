@@ -1,4 +1,5 @@
 import VioletButton from '@/components/VioletButton';
+import avatars from '@/constants/avatars';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -23,7 +24,6 @@ const COLORS = {
   CARD_BG: '#A67560',
   ROOM_HEADER: '#74574A',
   DARK_GRAY: '#313131',
-  BUTTON_PRIMARY: '#6E6BD4',
   BUTTON_DANGER: '#922525',
   OVERLAY: 'rgba(0, 0, 0, 0.30)',
   TEXT_WHITE: '#FFFFFF',
@@ -34,7 +34,7 @@ const COLORS = {
 interface Character {
   id: string;
   nickname: string;
-  avatar?: string;
+  avatar?: string | { uri: string };
   level: number;
   power: number;
   color: string;
@@ -54,6 +54,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Human'],
     gender: ['male'],
     class: ['Cleric'],
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
   },
   {
     id: '2',
@@ -64,6 +65,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Elf'],
     gender: ['female'],
     class: ['Thief'],
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
   },
   {
     id: '3',
@@ -74,6 +76,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Human'],
     gender: ['male', 'female'],
     class: ['Cleric'],
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
   },
   {
     id: '4',
@@ -84,6 +87,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Elf'],
     gender: ['female'],
     class: ['Thief'],
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
   },
 ];
 
@@ -113,7 +117,7 @@ const CharacterCard: React.FC<{
       <View style={styles.characterContent}>
         <View style={{ backgroundColor: character.color, borderRadius: 20 }}>
           <Image
-            source={character.avatar ? { uri: character.avatar } : require('@/assets/images/avatar.png')}
+            source={typeof character.avatar === 'string' ? { uri: character.avatar } : character.avatar}
             style={styles.characterAvatar}
           />
         </View>
@@ -160,7 +164,7 @@ const MunchkinIndexView: React.FC = () => {
     currentCharacterIndex = characters.push({
       id: currentCharacterId,
       nickname: nickname as string,
-      avatar: avatar as string,
+      avatar: JSON.parse(avatar as string),
       level: 1,
       power: 0,
       color: colorKit.randomRgbColor().hex(),
@@ -178,8 +182,8 @@ const MunchkinIndexView: React.FC = () => {
     <SafeAreaProvider key={`room-${roomNumber}`}>
       <SafeAreaView style={{
         flex: 1,
-        backgroundColor: "#121212", // Dark theme background
-      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
+        backgroundColor: COLORS.CONTENT_BG, // Dark theme background
+      }} edges={Platform.OS === "ios" ? ["bottom"] : ["top", "bottom", "left", "right"]}>
         <View style={styles.container}>
           <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
 
@@ -224,7 +228,7 @@ const MunchkinIndexView: React.FC = () => {
           <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
             <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
               <Image
-                source={currentCharacter.avatar ? { uri: currentCharacter.avatar } : require('@/assets/images/avatar.png')}
+                source={typeof currentCharacter.avatar === 'string' ? { uri: currentCharacter.avatar } : currentCharacter.avatar}
                 style={styles.footerAvatar}
               />
             </View>
@@ -357,17 +361,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: COLORS.TEXT_BLACK,
   },
-  exitButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: COLORS.DARK_GRAY,
-    borderRadius: 10,
-  },
-  exitButtonText: {
-    fontSize: 24,
-    fontWeight: '400',
-    color: COLORS.TEXT_WHITE,
-  },
   charactersList: {
     gap: 10,
   },
@@ -447,6 +440,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   actionButtons: {
+    height: 0,
     paddingHorizontal: 10,
     paddingVertical: 10,
     backgroundColor: COLORS.CONTENT_BG,

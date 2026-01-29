@@ -1,3 +1,4 @@
+import avatars from '@/constants/avatars';
 import { Picker } from '@react-native-picker/picker';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
@@ -23,6 +24,7 @@ interface Character {
   class: string[];
   level: number;
   power: number;
+  avatar?: string | { uri: string };
 }
 
 interface ChangeCharacterModalProps {
@@ -30,8 +32,6 @@ interface ChangeCharacterModalProps {
   onConfirm: (character: Character) => void;
   onCancel: () => void;
 }
-
-const avatarImage = require('@/assets/images/avatar.png');
 
 export default function ChangeCharacterModal({
   character: initialCharacter,
@@ -48,6 +48,7 @@ export default function ChangeCharacterModal({
       class: ['Cleric'],
       level: 9,
       power: 15,
+      avatar: avatars[Math.floor(Math.random() * avatars.length)],
     }
   );
   let [newRace, setNewRace] = useState("<Select>");
@@ -87,7 +88,7 @@ export default function ChangeCharacterModal({
             contentContainerStyle={styles.contentContainer}
           >
             <View style={styles.avatarContainer}>
-              <Image source={avatarImage} style={styles.avatar} />
+              <Image source={typeof character.avatar === 'string' ? { uri: character.avatar } : character.avatar} style={styles.avatar} />
             </View>
 
             {/* Name Input */}

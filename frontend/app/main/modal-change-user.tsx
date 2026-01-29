@@ -1,3 +1,4 @@
+import avatars from '@/constants/avatars';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
@@ -24,8 +25,6 @@ interface ChangeUserModalProps {
   onCancel: () => void;
 }
 
-const avatarImage = require('@/assets/images/avatar.png');
-
 export default function ChangeUserModal({
   user: initialUser,
   visible = true,
@@ -35,7 +34,7 @@ export default function ChangeUserModal({
   const [user, setUser] = useState<UserProfile>(
     initialUser || {
       nickname: 'Player',
-      avatar: avatarImage,
+      avatar: avatars[Math.floor(Math.random() * avatars.length)],
     }
   );
 
@@ -100,7 +99,7 @@ export default function ChangeUserModal({
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Nickname:</Text>
               <TextInput
-                maxLength={10}
+                maxLength={14}
                 style={styles.input}
                 value={user.nickname}
                 onChangeText={(text) =>

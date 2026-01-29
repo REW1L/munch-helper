@@ -1,3 +1,4 @@
+import avatars from '@/constants/avatars';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
@@ -11,10 +12,13 @@ import {
 } from 'react-native';
 
 interface Character {
+  id: string;
+  avatar?: string;
   name: string;
   color: string;
   gender: string[];
   race: string[];
+  class: string[];
 }
 
 interface CreateCharacterModalProps {
@@ -23,25 +27,24 @@ interface CreateCharacterModalProps {
   onCancel: () => void;
 }
 
-const avatarImage = require('@/assets/images/avatar.png');
-
 export default function CreateCharacterModal({
   visible,
   onConfirm,
   onCancel,
 }: CreateCharacterModalProps) {
   const [character, setCharacter] = useState<Character>({
+    id: Math.random().toString(36).substring(2, 10),
+    avatar: avatars[Math.floor(Math.random() * avatars.length)],
     name: 'Munchqueen',
     color: '#1010FF',
     gender: ['male'],
     race: ['Human'],
+    class: [],
   });
 
   const handleCreate = () => {
     onConfirm(character);
   };
-
-  const races = ['Human', 'Elf', 'Dwarf', 'Halfling'];
 
   return (
     <Modal
@@ -60,7 +63,7 @@ export default function CreateCharacterModal({
 
             <View style={styles.avatarContainer}>
               <Image
-                source={avatarImage}
+                source={character.avatar}
                 style={styles.avatar}
               />
             </View>
@@ -132,34 +135,6 @@ export default function CreateCharacterModal({
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Race Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Race:</Text>
-              <View style={styles.optionContainer}>
-                {races.map((race) => (
-                  <TouchableOpacity
-                    key={race}
-                    style={styles.optionRow}
-                    onPress={() =>
-                      setCharacter({ ...character, race: [race] })
-                    }
-                  >
-                    <View
-                      style={[
-                        styles.radio,
-                        character.race.includes(race) && styles.radioSelected,
-                      ]}
-                    >
-                      {character.race.includes(race) && (
-                        <View style={styles.radioDot} />
-                      )}
-                    </View>
-                    <Text style={styles.optionLabel}>{race}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
           </ScrollView>
 
           {/* Buttons */}
@@ -204,7 +179,7 @@ const styles = StyleSheet.create({
     borderColor: '#313131',
     gap: 10,
     maxHeight: '80%',
-    minHeight: '60%',
+    minHeight: '50%',
     width: '90%',
     maxWidth: 400,
   },
