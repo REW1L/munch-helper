@@ -1,4 +1,5 @@
-import { Modal, View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import VioletButton from '@/components/VioletButton';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShopModalProps {
   visible: boolean;
@@ -34,9 +35,7 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 <Text style={styles.coinAmount}>200 coins</Text>
                 <Text style={styles.coinPrice}>$1.99</Text>
               </View>
-              <TouchableOpacity style={styles.buyButton}>
-                <Text style={styles.buyButtonText}>Buy</Text>
-              </TouchableOpacity>
+              <VioletButton title="Buy" onPress={() => { }} />
             </View>
 
             <View style={styles.coinItem}>
@@ -48,9 +47,7 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 <Text style={styles.coinAmount}>500 coins</Text>
                 <Text style={styles.coinPrice}>$3.99</Text>
               </View>
-              <TouchableOpacity style={styles.buyButton}>
-                <Text style={styles.buyButtonText}>Buy</Text>
-              </TouchableOpacity>
+              <VioletButton title="Buy" onPress={() => { }} />
             </View>
 
             <View style={styles.coinItem}>
@@ -62,9 +59,7 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 <Text style={styles.coinAmount}>1000 coins</Text>
                 <Text style={styles.coinPrice}>$7.99</Text>
               </View>
-              <TouchableOpacity style={styles.buyButton}>
-                <Text style={styles.buyButtonText}>Buy</Text>
-              </TouchableOpacity>
+              <VioletButton title="Buy" onPress={() => { }} />
             </View>
           </ScrollView>
 
@@ -159,22 +154,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.5,
   },
-  buyButton: {
-    width: 60,
-    height: 40,
-    backgroundColor: '#6E6BD4',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buyButtonText: {
-    textAlign: 'center',
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 24,
-    letterSpacing: 0.15,
-  },
+
   quitButton: {
     paddingLeft: 31,
     paddingRight: 31,

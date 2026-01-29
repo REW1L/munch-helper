@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import VioletButton from '@/components/VioletButton';
 import { router, Stack, useNavigation } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
@@ -81,9 +82,7 @@ export default function Home() {
               />
               <View style={{ justifyContent: 'center', alignItems: 'center', gap: 5, width: '50%' }}>
                 <Text style={styles.profileNickname}>{userProfile.nickname}</Text>
-                <TouchableOpacity style={styles.shopButton} onPress={() => setChangeUserModalVisible(true)}>
-                  <Text style={styles.shopButtonText}>Change</Text>
-                </TouchableOpacity>
+                <VioletButton title="Change" onPress={() => setChangeUserModalVisible(true)} />
               </View>
             </View>
             <View style={styles.profileStats}>
@@ -91,9 +90,7 @@ export default function Home() {
                 <Text style={styles.coinAmount}>100</Text>
                 <Text style={styles.coinLabel}>coins</Text>
               </View>
-              <TouchableOpacity style={styles.shopButton} onPress={() => setShopModalVisible(true)}>
-                <Text style={styles.shopButtonText}>Shop</Text>
-              </TouchableOpacity>
+              <VioletButton title="Shop" onPress={() => setShopModalVisible(true)} />
             </View>
           </View>
 
@@ -314,21 +311,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Arial',
     fontWeight: '400',
   },
-  shopButton: {
-    width: 80,
-    height: 40,
-    paddingVertical: 10,
-    backgroundColor: '#6E6BD4',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shopButtonText: {
-    textAlign: 'center',
-    color: 'white',
-    fontSize: 16,
-    fontFamily: 'Roboto',
-    fontWeight: '500',
-    letterSpacing: 0.15,
-  },
+
 });

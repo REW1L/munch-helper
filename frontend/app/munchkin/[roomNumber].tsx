@@ -1,3 +1,4 @@
+import VioletButton from '@/components/VioletButton';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -139,12 +140,10 @@ const CharacterCard: React.FC<{
         </ScrollView>
       </View>
 
-      <TouchableOpacity
-        style={styles.changeButton}
+      <VioletButton
+        title="Change"
         onPress={() => onChangePress(character)}
-      >
-        <Text style={styles.changeButtonText}>Change</Text>
-      </TouchableOpacity>
+      />
     </View>
   );
 };
@@ -202,12 +201,12 @@ const MunchkinIndexView: React.FC = () => {
             </View>
 
             {/* Create Character Button */}
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => setCreateCharacterModalVisible(true)}
-            >
-              <Text style={styles.createButtonText}>Create a character</Text>
-            </TouchableOpacity>
+            <View style={{ padding: 10, alignItems: 'center' }}>
+              <VioletButton
+                title="Create a character"
+                onPress={() => setCreateCharacterModalVisible(true)}
+              />
+            </View>
           </ScrollView>
 
           {/* Bottom Action Buttons */}
@@ -253,15 +252,13 @@ const MunchkinIndexView: React.FC = () => {
               </ScrollView>
             </View>
 
-            <TouchableOpacity
-              style={styles.footerChangeButton}
+            <VioletButton
+              title="Change"
               onPress={() => {
                 setSelectedCharacter(currentCharacter);
                 setChangeCharacterModalVisible(true);
               }}
-            >
-              <Text style={styles.footerChangeButtonText}>Change</Text>
-            </TouchableOpacity>
+            />
           </View>
 
           <CreateCharacterModal
@@ -449,35 +446,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     lineHeight: 16,
   },
-  changeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: COLORS.BUTTON_PRIMARY,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  changeButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.TEXT_WHITE,
-    letterSpacing: 0.15,
-  },
-  createButton: {
-    marginHorizontal: 68,
-    marginVertical: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: COLORS.BUTTON_PRIMARY,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  createButtonText: {
-    fontSize: 24,
-    fontWeight: '400',
-    color: COLORS.TEXT_WHITE,
-  },
   actionButtons: {
     paddingHorizontal: 10,
     paddingVertical: 10,
@@ -563,20 +531,6 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_WHITE,
     letterSpacing: 0.5,
     lineHeight: 16,
-  },
-  footerChangeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: COLORS.BUTTON_PRIMARY,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerChangeButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.TEXT_WHITE,
-    letterSpacing: 0.15,
   },
 });
 
