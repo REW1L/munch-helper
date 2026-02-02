@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     height: 75,
-    width: '60%',
+    maxWidth: '60%',
     paddingVertical: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
   profileNickname: {
     textAlign: 'center',
     color: 'white',
-    // width: '50%',
     fontSize: 16,
     fontFamily: 'Roboto',
     fontWeight: '500',
