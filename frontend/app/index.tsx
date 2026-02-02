@@ -51,7 +51,8 @@ export default function Home() {
             {/* Munchkin Game Card */}
             <View style={styles.gameCard}>
               <View style={styles.gameTitle}>
-                <Text style={styles.gameTitleText}>Munchkin</Text>
+                <Text style={styles.gameTitleText}>Munch ⚔️</Text>
+                <Text style={styles.gameTitleText}>Classic</Text>
               </View>
               <View style={styles.gameActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
@@ -177,6 +178,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     backgroundColor: '#3C3636',
     borderRadius: 5,
+    width: '45%',
     justifyContent: 'center',
     alignItems: 'center',
   },

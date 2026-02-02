@@ -14,6 +14,7 @@ export default function RootLayout() {
       headerStyle: { backgroundColor: '#473F3F' },
       headerTintColor: 'white',
       contentStyle: { backgroundColor: '#3C3636' },
+      headerShadowVisible: false, // Remove header white line
     }} />
   );
 }
