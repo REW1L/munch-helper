@@ -34,7 +34,7 @@ const COLORS = {
 interface Character {
   id: string;
   nickname: string;
-  avatar?: string | { uri: string };
+  avatar: number;
   level: number;
   power: number;
   color: string;
@@ -54,7 +54,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Human'],
     gender: ['male'],
     class: ['Cleric'],
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
   },
   {
     id: '2',
@@ -65,7 +65,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Elf'],
     gender: ['female'],
     class: ['Thief'],
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
   },
   {
     id: '3',
@@ -76,7 +76,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Human'],
     gender: ['male', 'female'],
     class: ['Cleric'],
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
   },
   {
     id: '4',
@@ -87,7 +87,7 @@ const MOCK_CHARACTERS: Character[] = [
     race: ['Elf'],
     gender: ['female'],
     class: ['Thief'],
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
   },
 ];
 
@@ -117,7 +117,7 @@ const CharacterCard: React.FC<{
       <View style={styles.characterContent}>
         <View style={{ backgroundColor: character.color, borderRadius: 20 }}>
           <Image
-            source={typeof character.avatar === 'string' ? { uri: character.avatar } : character.avatar}
+            source={avatars[character.avatar]}
             style={styles.characterAvatar}
           />
         </View>
@@ -159,12 +159,11 @@ const MunchkinIndexView: React.FC = () => {
   const { nickname, avatar } = useLocalSearchParams();
   const currentCharacterId = (nickname as string).toLowerCase().replace(/\s+/g, '-');
   let currentCharacterIndex = characters.findIndex(c => c.id === currentCharacterId);
-  console.log('Current character index:', currentCharacterIndex);
   if (currentCharacterIndex === -1) {
     currentCharacterIndex = characters.push({
       id: currentCharacterId,
       nickname: nickname as string,
-      avatar: JSON.parse(avatar as string),
+      avatar: parseInt(avatar as string, 10),
       level: 1,
       power: 0,
       color: colorKit.randomRgbColor().hex(),
@@ -172,6 +171,11 @@ const MunchkinIndexView: React.FC = () => {
       gender: ['male'],
       class: [],
     } as Character) - 1;
+  } else {
+    characters[currentCharacterIndex] = {
+      ...characters[currentCharacterIndex],
+      avatar: parseInt(avatar as string, 10),
+    };
   }
   const currentCharacter = characters[currentCharacterIndex];
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
@@ -228,7 +232,7 @@ const MunchkinIndexView: React.FC = () => {
           <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
             <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
               <Image
-                source={typeof currentCharacter.avatar === 'string' ? { uri: currentCharacter.avatar } : currentCharacter.avatar}
+                source={avatars[currentCharacter.avatar]}
                 style={styles.footerAvatar}
               />
             </View>

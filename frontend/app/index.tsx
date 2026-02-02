@@ -21,7 +21,7 @@ const generateRandomNicknamePostfix = (length: number = 6): string => {
   return result;
 };
 
-function updateUserProfile(newUserProfile: { nickname: string; avatar: any }) {
+function updateUserProfile(newUserProfile: { nickname: string; avatar: number }) {
   // TODO: Implement user profile update logic
   console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET');
 }
@@ -34,7 +34,7 @@ export default function Home() {
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({
     nickname: `Player ${generateRandomNicknamePostfix()}`,
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
   });
   return (
     <SafeAreaProvider>
@@ -78,7 +78,7 @@ export default function Home() {
           <View style={styles.profileSection}>
             <View style={styles.profileInfo}>
               <Image
-                source={typeof userProfile.avatar === 'string' ? { uri: userProfile.avatar } : userProfile.avatar}
+                source={avatars[userProfile.avatar]}
                 style={styles.profileImage}
               />
               <View style={{ justifyContent: 'center', alignItems: 'center', gap: 5, width: '50%' }}>
@@ -114,7 +114,7 @@ export default function Home() {
                 pathname: '/munchkin',
                 params: {
                   nickname: userProfile.nickname,
-                  avatar: JSON.stringify(userProfile.avatar)
+                  avatar: userProfile.avatar.toString()
                 }
               });
             }}
@@ -129,7 +129,7 @@ export default function Home() {
                 pathname: `./munchkin/${roomName}`,
                 params: {
                   nickname: userProfile.nickname,
-                  avatar: JSON.stringify(userProfile.avatar)
+                  avatar: userProfile.avatar.toString()
                 }
               })
             }}

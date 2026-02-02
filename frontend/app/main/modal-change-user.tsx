@@ -14,7 +14,7 @@ import ChangeAvatarModal from './modal-change-avatar';
 
 interface UserProfile {
   nickname: string;
-  avatar: { uri: string };
+  avatar: number;
 }
 
 interface ChangeUserModalProps {
@@ -33,7 +33,7 @@ export default function ChangeUserModal({
   const [user, setUser] = useState<UserProfile>(
     initialUser || {
       nickname: 'Player',
-      avatar: avatars[Math.floor(Math.random() * avatars.length)],
+      avatar: Math.floor(Math.random() * avatars.length),
     }
   );
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -42,7 +42,7 @@ export default function ChangeUserModal({
     setShowAvatarModal(true);
   };
 
-  const handleAvatarConfirm = (avatar: { uri: string }) => {
+  const handleAvatarConfirm = (avatar: number) => {
     setUser({ ...user, avatar });
     setShowAvatarModal(false);
   };
@@ -70,7 +70,7 @@ export default function ChangeUserModal({
           >
             <View style={styles.avatarContainer}>
               <Image
-                source={user.avatar}
+                source={avatars[user.avatar]}
                 style={styles.avatar}
               />
               <TouchableOpacity

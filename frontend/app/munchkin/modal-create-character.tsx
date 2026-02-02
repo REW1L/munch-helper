@@ -13,7 +13,7 @@ import {
 
 interface Character {
   id: string;
-  avatar?: string;
+  avatar?: number;
   name: string;
   color: string;
   gender: string[];
@@ -34,7 +34,7 @@ export default function CreateCharacterModal({
 }: CreateCharacterModalProps) {
   const [character, setCharacter] = useState<Character>({
     id: Math.random().toString(36).substring(2, 10),
-    avatar: avatars[Math.floor(Math.random() * avatars.length)],
+    avatar: Math.floor(Math.random() * avatars.length),
     name: 'Munchqueen',
     color: '#1010FF',
     gender: ['male'],
@@ -63,7 +63,7 @@ export default function CreateCharacterModal({
 
             <View style={styles.avatarContainer}>
               <Image
-                source={character.avatar}
+                source={avatars[character.avatar ?? 0]}
                 style={styles.avatar}
               />
             </View>

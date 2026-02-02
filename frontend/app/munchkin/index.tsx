@@ -5,7 +5,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 interface Character {
   id: string;
   nickname: string;
-  avatar?: string;
+  avatar?: number;
   level: number;
   power: number;
   color: string;

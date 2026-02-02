@@ -24,7 +24,7 @@ interface Character {
   class: string[];
   level: number;
   power: number;
-  avatar?: string | { uri: string };
+  avatar: number;
 }
 
 interface ChangeCharacterModalProps {
@@ -48,7 +48,7 @@ export default function ChangeCharacterModal({
       class: ['Cleric'],
       level: 9,
       power: 15,
-      avatar: avatars[Math.floor(Math.random() * avatars.length)],
+      avatar: Math.floor(Math.random() * avatars.length),
     }
   );
   let [newRace, setNewRace] = useState("<Select>");
@@ -88,7 +88,7 @@ export default function ChangeCharacterModal({
             contentContainerStyle={styles.contentContainer}
           >
             <View style={styles.avatarContainer}>
-              <Image source={typeof character.avatar === 'string' ? { uri: character.avatar } : character.avatar} style={styles.avatar} />
+              <Image source={avatars[character.avatar]} style={styles.avatar} />
             </View>
 
             {/* Name Input */}

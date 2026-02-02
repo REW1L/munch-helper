@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 
 interface ChangeAvatarModalProps {
-  selectedImage: { uri: string };
+  selectedImage: number;
   visible?: boolean;
-  onConfirm: (avatar: { uri: string }) => void;
+  onConfirm: (avatar: number) => void;
   onCancel: () => void;
 }
 
@@ -23,20 +23,20 @@ export default function ChangeAvatarModal({
   onConfirm,
   onCancel,
 }: ChangeAvatarModalProps) {
-  const [selectedAvatar, setSelectedAvatar] = useState<{ uri: string }>(
+  const [selectedAvatar, setSelectedAvatar] = useState<number>(
     selectedImage
   );
 
-  const handleSelectAvatar = (avatar: { uri: string }) => {
-    setSelectedAvatar(avatar);
+  const handleSelectAvatar = (avatarIndex: number) => {
+    setSelectedAvatar(avatarIndex);
   };
 
   const handleConfirm = () => {
     onConfirm(selectedAvatar);
   };
 
-  const getBorderColor = (avatar: { uri: string }) => {
-    if (avatar === selectedAvatar) {
+  const getBorderColor = (avatarIndex: number) => {
+    if (avatarIndex === selectedAvatar) {
       return '#CEB464'; // Bronze color for clicked/selected
     }
     return '#2A2424'; // Dark background color for default
@@ -59,7 +59,7 @@ export default function ChangeAvatarModal({
               {avatars.map((avatar, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => setSelectedAvatar(avatar)}
+                  onPress={() => setSelectedAvatar(index)}
                   activeOpacity={0.7}
                 >
                   <Image
@@ -67,7 +67,7 @@ export default function ChangeAvatarModal({
                     style={[
                       styles.avatarImage,
                       {
-                        borderColor: getBorderColor(avatar),
+                        borderColor: getBorderColor(index),
                       },
                     ]}
                   />
