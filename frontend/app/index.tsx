@@ -96,7 +96,7 @@ export default function Home() {
           </View>
 
           <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} />
-          <ChangeUserModal
+          {changeUserModalVisible && <ChangeUserModal
             user={userProfile}
             visible={changeUserModalVisible}
             onConfirm={(newUserProfile) => {
@@ -105,7 +105,7 @@ export default function Home() {
               updateUserProfile(newUserProfile);
             }}
             onCancel={() => setChangeUserModalVisible(false)}
-          />
+          />}
           <RoomCreateModal
             visible={createRoomModalVisible}
             onConfirm={() => {

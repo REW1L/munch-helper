@@ -1,9 +1,7 @@
 import avatars from '@/constants/avatars';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -12,10 +10,11 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import ChangeAvatarModal from './modal-change-avatar';
 
 interface UserProfile {
   nickname: string;
-  avatar: string;
+  avatar: { uri: string };
 }
 
 interface ChangeUserModalProps {
@@ -37,32 +36,19 @@ export default function ChangeUserModal({
       avatar: avatars[Math.floor(Math.random() * avatars.length)],
     }
   );
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
-  const handlePickAvatar = async () => {
-    // Request permissions
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const handlePickAvatar = () => {
+    setShowAvatarModal(true);
+  };
 
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please grant media library permissions to change your avatar.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
+  const handleAvatarConfirm = (avatar: { uri: string }) => {
+    setUser({ ...user, avatar });
+    setShowAvatarModal(false);
+  };
 
-    // Launch image picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      // Update user avatar with the selected image URI
-      setUser({ ...user, avatar: result.assets[0].uri });
-    }
+  const handleAvatarCancel = () => {
+    setShowAvatarModal(false);
   };
 
   const handleSave = () => {
@@ -84,7 +70,7 @@ export default function ChangeUserModal({
           >
             <View style={styles.avatarContainer}>
               <Image
-                source={typeof user.avatar === 'string' ? { uri: user.avatar } : user.avatar}
+                source={user.avatar}
                 style={styles.avatar}
               />
               <TouchableOpacity
@@ -131,6 +117,13 @@ export default function ChangeUserModal({
           </View>
         </View>
       </View>
+
+      {showAvatarModal && <ChangeAvatarModal
+        visible={showAvatarModal}
+        selectedImage={user.avatar}
+        onConfirm={handleAvatarConfirm}
+        onCancel={handleAvatarCancel}
+      />}
     </Modal>
   );
 }
