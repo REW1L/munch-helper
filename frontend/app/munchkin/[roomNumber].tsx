@@ -1,7 +1,8 @@
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
+import { userProfileContext } from '@/context/UserContext';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   Image,
   Platform,
@@ -155,15 +156,16 @@ const CharacterCard: React.FC<{
 const MunchkinIndexView: React.FC = () => {
 
   const [characters] = useState<Character[]>(MOCK_CHARACTERS);
+  const { userProfile } = useContext(userProfileContext);
 
-  const { nickname, avatar } = useLocalSearchParams();
+  const { nickname, avatar } = { ...userProfile };
   const currentCharacterId = (nickname as string).toLowerCase().replace(/\s+/g, '-');
   let currentCharacterIndex = characters.findIndex(c => c.id === currentCharacterId);
   if (currentCharacterIndex === -1) {
     currentCharacterIndex = characters.push({
       id: currentCharacterId,
       nickname: nickname as string,
-      avatar: parseInt(avatar as string, 10),
+      avatar: avatar,
       level: 1,
       power: 0,
       color: colorKit.randomRgbColor().hex(),
@@ -174,7 +176,7 @@ const MunchkinIndexView: React.FC = () => {
   } else {
     characters[currentCharacterIndex] = {
       ...characters[currentCharacterIndex],
-      avatar: parseInt(avatar as string, 10),
+      avatar: avatar,
     };
   }
   const currentCharacter = characters[currentCharacterIndex];

@@ -1,4 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { userProfileContext } from '@/context/UserContext';
+import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
@@ -26,17 +27,13 @@ const generateRandomUrlSafeString = (length: number = 6): string => {
 
 const MunchkinIndexView: React.FC = () => {
   const router = useRouter();
-  const { nickname, avatar } = useLocalSearchParams();
+  const { userProfile } = React.useContext(userProfileContext);
 
   useEffect(() => {
 
     // Generate random URL-safe string for the room
     const roomId = generateRandomUrlSafeString();
-
-    // Navigate to the room with the character data
-    router.dismissTo(
-      { pathname: `./munchkin/${roomId}`, params: { nickname: nickname, avatar: avatar } }
-    );
+    router.dismissTo(`/munchkin/${roomId}`);
   }, [router]);
 
   return (

@@ -1,41 +1,24 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
-import { router, Stack, useNavigation } from 'expo-router';
+import { userProfileContext } from '@/context/UserContext';
+import { router, Stack } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
 import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
 import ShopModal from './main/modal-shop';
 
-// Generate a random URL-safe string
-const generateRandomNicknamePostfix = (length: number = 6): string => {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
-
-function updateUserProfile(newUserProfile: { nickname: string; avatar: number }) {
-  // TODO: Implement user profile update logic
-  console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET');
-}
-
 export default function Home() {
-  const navigation = useNavigation();
   const [shopModalVisible, setShopModalVisible] = useState(false);
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
-  const [userProfile, setUserProfile] = useState({
-    nickname: `Player ${generateRandomNicknamePostfix()}`,
-    avatar: Math.floor(Math.random() * avatars.length),
-  });
+  const { userProfile, setUserProfile } = useContext(userProfileContext);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{
@@ -103,7 +86,6 @@ export default function Home() {
             onConfirm={(newUserProfile) => {
               setChangeUserModalVisible(false);
               setUserProfile(newUserProfile);
-              updateUserProfile(newUserProfile);
             }}
             onCancel={() => setChangeUserModalVisible(false)}
           />}

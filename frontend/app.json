@@ -7,13 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "tabletophelper",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.tabletop-helper"
     },
     "android": {
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -26,7 +24,10 @@
         "expo-splash-screen",
         {}
       ],
-      "expo-navigation-bar"
+      "expo-navigation-bar",
+      "expo-font",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
