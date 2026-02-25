@@ -93,13 +93,7 @@ export default function Home() {
             visible={createRoomModalVisible}
             onConfirm={() => {
               setCreateRoomModalVisible(false);
-              router.navigate({
-                pathname: '/munchkin',
-                params: {
-                  nickname: userProfile.nickname,
-                  avatar: userProfile.avatar.toString()
-                }
-              });
+              router.navigate({ pathname: '/munchkin' });
             }}
             onCancel={() => setCreateRoomModalVisible(false)}
             game="Munchkin"
@@ -108,13 +102,7 @@ export default function Home() {
             visible={joinRoomModalVisible}
             onClose={() => setJoinRoomModalVisible(false)}
             onJoin={(roomName) => {
-              router.navigate({
-                pathname: `./munchkin/${roomName}`,
-                params: {
-                  nickname: userProfile.nickname,
-                  avatar: userProfile.avatar.toString()
-                }
-              })
+              router.navigate({ pathname: `./munchkin/${roomName}` })
             }}
             game="Munchkin"
           />

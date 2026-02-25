@@ -16,7 +16,8 @@ const generateRandomNicknamePostfix = (length: number = 6): string => {
   return result;
 };
 
-interface UserProfileInterface {
+export interface UserProfileInterface {
+  id: string;
   nickname: string;
   avatar: number;
 }
@@ -27,15 +28,17 @@ export interface UseUserResult {
 }
 
 function generateDefaultUserProfile(): UserProfileInterface {
+  const randomPostfix = generateRandomNicknamePostfix();
   return {
-    nickname: `Player ${generateRandomNicknamePostfix()}`,
+    id: `user-${Date.now()}-${randomPostfix}`,
+    nickname: `Player ${randomPostfix}`,
     avatar: Math.floor(Math.random() * avatars.length),
   };
 }
 
 async function updateUserProfile(newUserProfile: UserProfileInterface) {
   // Not implemented yet
-  console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET');
+  console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET FOR USER ID:', newUserProfile.id);
 }
 
 export function useUserProfile(): UseUserResult {

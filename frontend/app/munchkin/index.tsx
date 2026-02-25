@@ -1,6 +1,6 @@
 import { userProfileContext } from '@/context/UserContext';
-import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import { useRoomCreate } from '@/hooks/UseRoom';
+import React from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 interface Character {
@@ -25,16 +25,15 @@ const generateRandomUrlSafeString = (length: number = 6): string => {
   return result;
 };
 
+async function createGameRoom() {
+  // Not implemented yet
+  console.log('CREATE GAME ROOM NOT IMPLEMENTED YET');
+  return Promise.resolve(generateRandomUrlSafeString(8));
+}
+
 const MunchkinIndexView: React.FC = () => {
-  const router = useRouter();
   const { userProfile } = React.useContext(userProfileContext);
-
-  useEffect(() => {
-
-    // Generate random URL-safe string for the room
-    const roomId = generateRandomUrlSafeString();
-    router.dismissTo(`/munchkin/${roomId}`);
-  }, [router]);
+  useRoomCreate(userProfile.id);
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4C4545' }}>

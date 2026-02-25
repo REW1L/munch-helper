@@ -158,8 +158,7 @@ const MunchkinIndexView: React.FC = () => {
   const [characters] = useState<Character[]>(MOCK_CHARACTERS);
   const { userProfile } = useContext(userProfileContext);
 
-  const { nickname, avatar } = { ...userProfile };
-  const currentCharacterId = (nickname as string).toLowerCase().replace(/\s+/g, '-');
+  const { id: currentCharacterId, nickname, avatar } = { ...userProfile };
   let currentCharacterIndex = characters.findIndex(c => c.id === currentCharacterId);
   if (currentCharacterIndex === -1) {
     currentCharacterIndex = characters.push({

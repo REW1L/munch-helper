@@ -12,15 +12,12 @@ import {
 } from 'react-native';
 import ChangeAvatarModal from './modal-change-avatar';
 
-interface UserProfile {
-  nickname: string;
-  avatar: number;
-}
+import { UserProfileInterface } from '@/hooks/useUser';
 
 interface ChangeUserModalProps {
-  user?: UserProfile;
+  user: UserProfileInterface;
   visible?: boolean;
-  onConfirm: (user: UserProfile) => void;
+  onConfirm: (user: UserProfileInterface) => void;
   onCancel: () => void;
 }
 
@@ -30,12 +27,7 @@ export default function ChangeUserModal({
   onConfirm,
   onCancel,
 }: ChangeUserModalProps) {
-  const [user, setUser] = useState<UserProfile>(
-    initialUser || {
-      nickname: 'Player',
-      avatar: Math.floor(Math.random() * avatars.length),
-    }
-  );
+  const [user, setUser] = useState<UserProfileInterface>(initialUser);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const handlePickAvatar = () => {
