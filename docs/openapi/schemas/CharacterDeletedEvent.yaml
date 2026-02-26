@@ -1,0 +1,8 @@
+type: object
+required: [event, event_body]
+properties:
+  event:
+    type: string
+    const: character_deleted
+  event_body:
+    $ref: "./CharacterEventBody.yaml"

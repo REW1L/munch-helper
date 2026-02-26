@@ -1,0 +1,39 @@
+openapi: 3.1.0
+info:
+  title: Tabletop Helper Backend API
+  version: 1.0.0
+  license:
+    name: UNLICENSED
+    identifier: UNLICENSED
+  description: |
+    OpenAPI specification for MunchHelper backend services:
+    - User Management
+    - Room Management
+    - Character Management
+    - Room Notifications (documented as WebSocket upgrade + message schemas)
+servers:
+  - url: https://api.tabletop-helper.local
+    description: Placeholder production server
+security: []
+tags:
+  - name: User Management
+    description: Endpoints for creating and updating user profiles.
+  - name: Room Management
+    description: Endpoints for creating rooms and managing room types.
+  - name: Character Management
+    description: Endpoints for creating, updating, and deleting characters.
+  - name: Room Notifications
+    description: Endpoints for managing room notifications via WebSocket.
+paths:
+  /users:
+    $ref: paths/users.yaml
+  /users/{userId}:
+    $ref: paths/users_{userId}.yaml
+  /rooms:
+    $ref: paths/rooms.yaml
+  /rooms/{roomTypeId}/{roomId}:
+    $ref: paths/rooms_{roomTypeId}_{roomId}.yaml
+  /rooms/{roomTypeId}/{roomId}/characters:
+    $ref: paths/rooms_{roomTypeId}_{roomId}_characters.yaml
+  /rooms/{roomTypeId}/{roomId}/characters/{characterId}:
+    $ref: paths/rooms_{roomTypeId}_{roomId}_characters_{characterId}.yaml

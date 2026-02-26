@@ -1,0 +1,27 @@
+patch:
+  tags:
+    - User Management
+  summary: Update user
+  description: >
+    Updates user profile with new parameters and returns the updated user.
+
+    The source documentation does not specify an HTTP method; PATCH is used for
+    partial updates.
+  operationId: updateUser
+  parameters:
+    - $ref: ../parameters/UserId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/UpdateUserRequest.yaml
+  responses:
+    "200":
+      description: User updated
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/User.yaml
+    "404":
+      description: User not found

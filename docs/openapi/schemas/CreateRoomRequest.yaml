@@ -1,0 +1,8 @@
+type: object
+required: [userId, roomTypeId]
+additionalProperties: false
+properties:
+  userId:
+    type: string
+  roomTypeId:
+    type: string

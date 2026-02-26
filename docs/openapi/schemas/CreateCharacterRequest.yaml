@@ -1,0 +1,8 @@
+type: object
+required: [name, avatar]
+additionalProperties: false
+properties:
+  name:
+    type: string
+  avatar:
+    type: string

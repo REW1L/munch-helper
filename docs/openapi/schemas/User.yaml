@@ -1,0 +1,12 @@
+type: object
+required: [id, name, avatarId]
+properties:
+  id:
+    type: string
+    description: Unique id of the user.
+  name:
+    type: string
+    description: Nickname of the user.
+  avatarId:
+    type: string
+    description: Avatar id of the user.

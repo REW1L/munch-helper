@@ -1,0 +1,45 @@
+get:
+  tags:
+    - Room Notifications
+  summary: Connect to room notifications
+  description: |
+    Establishes a WebSocket connection for room updates.
+    This endpoint is represented as an HTTP GET handshake in OpenAPI.
+  operationId: connectRoomNotifications
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+    - name: userId
+      in: query
+      required: true
+      description: User ID joining the room notifications stream.
+      schema:
+        type: string
+  responses:
+    "101":
+      description: Switching Protocols (WebSocket upgrade)
+    "200":
+      description: Connection request accepted
+    "400":
+      description: Bad request
+  x-protocol: websocket
+  x-websocket-events:
+    serverToClient:
+      - $ref: ../schemas/CharacterCreatedEvent.yaml
+      - $ref: ../schemas/CharacterUpdatedEvent.yaml
+      - $ref: ../schemas/CharacterDeletedEvent.yaml
+delete:
+  tags:
+    - Room Notifications
+  summary: Disconnect room notifications
+  description: Closes the WebSocket connection.
+  operationId: disconnectRoomNotifications
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+  responses:
+    "200":
+      description: Disconnected
+    "400":
+      description: Bad request
+  x-protocol: websocket

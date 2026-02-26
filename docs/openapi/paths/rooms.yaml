@@ -1,0 +1,21 @@
+post:
+  tags:
+    - Room Management
+  summary: Create room
+  description: Creates a room for a room type and initializes it with a user.
+  operationId: createRoom
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/CreateRoomRequest.yaml
+  responses:
+    "201":
+      description: Room created
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/CreateRoomResponse.yaml
+    "400":
+      description: Bad request

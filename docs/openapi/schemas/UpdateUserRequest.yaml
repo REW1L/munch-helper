@@ -1,0 +1,11 @@
+type: object
+additionalProperties: false
+properties:
+  name:
+    anyOf:
+      - type: string
+      - type: "null"
+  avatarId:
+    anyOf:
+      - type: string
+      - type: "null"

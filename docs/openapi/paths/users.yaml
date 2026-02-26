@@ -1,0 +1,15 @@
+post:
+  tags:
+    - User Management
+  summary: Create user
+  description: Creates a user with random parameters and returns the created user.
+  operationId: createUser
+  responses:
+    "201":
+      description: User created
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/User.yaml
+    "400":
+      description: Bad request

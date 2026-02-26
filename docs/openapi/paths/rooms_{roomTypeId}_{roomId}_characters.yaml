@@ -1,0 +1,42 @@
+get:
+  tags:
+    - Character Management
+  summary: Get characters
+  description: Returns all characters in a room.
+  operationId: getCharacters
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+  responses:
+    "200":
+      description: Characters list
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/GetCharactersResponse.yaml
+    "400":
+      description: Bad request
+put:
+  tags:
+    - Character Management
+  summary: Create character
+  description: Creates a character in a room.
+  operationId: createCharacter
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/CreateCharacterRequest.yaml
+  responses:
+    "201":
+      description: Character created
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Character.yaml
+    "400":
+      description: Bad request

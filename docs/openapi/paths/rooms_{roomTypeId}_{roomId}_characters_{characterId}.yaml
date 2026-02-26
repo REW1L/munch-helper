@@ -1,0 +1,40 @@
+post:
+  tags:
+    - Character Management
+  summary: Update character
+  description: Updates character parameters in a room.
+  operationId: updateCharacter
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+    - $ref: ../parameters/CharacterId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/UpdateCharacterRequest.yaml
+  responses:
+    "200":
+      description: Character updated
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Character.yaml
+    "404":
+      description: Character not found
+delete:
+  tags:
+    - Character Management
+  summary: Delete character
+  description: Deletes a character in a room.
+  operationId: deleteCharacter
+  parameters:
+    - $ref: ../parameters/RoomTypeId.yaml
+    - $ref: ../parameters/RoomId.yaml
+    - $ref: ../parameters/CharacterId.yaml
+  responses:
+    "200":
+      description: Character deleted
+    "400":
+      description: Bad request

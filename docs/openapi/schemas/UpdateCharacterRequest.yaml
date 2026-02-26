@@ -1,0 +1,23 @@
+type: object
+additionalProperties: false
+properties:
+  name:
+    type: string
+  avatar:
+    type: string
+  level:
+    type: integer
+  power:
+    type: integer
+  class:
+    type: array
+    items:
+      type: string
+  race:
+    type: array
+    items:
+      type: string
+  gender:
+    type: array
+    items:
+      type: string
