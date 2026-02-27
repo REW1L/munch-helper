@@ -1,12 +1,33 @@
 # Character Management
 
-**Description**: Subscribe to a room updates
+Service responsible for managing characters in rooms, including creating, updating, and deleting characters. Each character is associated with a user and a room, and has attributes such as name, avatar, level, power, class, etc.
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>/characters` 
+# Database Schema
+```mermaid
+erDiagram
+    CHARACTER {
+        string Id PK "NOT NULL"
+        string RoomID "NOT NULL"
+        string UserID "NULL"
+        string Name "NOT NULL"
+        int Avatar
+        int Level
+        int Power
+        list Class
+        list Race
+        list Gender
+        datetime CreatedAt "NOT NULL"
+        datetime UpdatedAt "NOT NULL"
+    }
+```
+
+# API Endpoints
+
+**Global initial Path**: `/rooms/<RoomTypeId>/<RoomId>/characters`
 
 **Type**: `HTTP`
 
-# Get Characters
+## Get Characters
 
 **Description**: Get all characters in a room
 
@@ -30,7 +51,20 @@
     - `Race`: Array of current races
     - `Gender`: Array of current genders
 
-# Create a Character
+**Flow**:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Character Management
+    participant Database
+
+    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters
+    Character Management ->>+ Database: Get Characters for RoomID
+    Database -->>- Character Management: Characters
+    Character Management -->>- Client: 200 OK with Characters
+```
+
+## Create a Character
 
 **Description**: Create a character in a room
 
@@ -56,7 +90,23 @@
 - `Race`: Array of default races
 - `Gender`: Array of default genders
 
-# Update a Character
+**Flow**:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Character Management
+    participant Database
+    participant Notifications Message Broker
+
+    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters
+    Character Management ->>+ Database: Create default Character for RoomID and UserID
+    Database -->>- Character Management: OK
+    Character Management ->>+ Notifications Message Broker: Publish Character Created Event
+    Notifications Message Broker -->>- Character Management: OK
+    Character Management -->>- Client: 200 OK with Character created
+```
+
+## Update a Character
 
 **Description**: Update any parameters of a character in a room
 
@@ -86,10 +136,28 @@
 - `Class`: Array of default classes
 - `Race`: Array of default races
 - `Gender`: Array of default genders
+- `CreatedAt`: Character creation timestamp
+- `UpdatedAt`: Character last update timestamp
 
-# Delete a Character
+**Flow**:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Character Management
+    participant Database
+    participant Notifications Message Broker
 
-**Description**: Create a character in a room
+    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters/{characterId}
+    Character Management ->>+ Database: Update Character for RoomID and CharacterID
+    Database -->>- Character Management: OK
+    Character Management ->>+ Notifications Message Broker: Publish Character Updated Event
+    Notifications Message Broker -->>- Character Management: OK
+    Character Management -->>- Client: 200 OK with Character updated
+```
+
+## Delete a Character
+
+**Description**: Delete a character in a room
 
 **Path**: `/rooms/<RoomTypeId>/<RoomId>/characters/<CharacterId>` 
 
@@ -100,3 +168,19 @@
 **Input**: None
 
 **Output**: `200 OK`
+
+**Flow**:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Character Management
+    participant Database
+    participant Notifications Message Broker
+
+    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters/{characterId}
+    Character Management ->>+ Database: Delete Character for RoomID and CharacterID
+    Database -->>- Character Management: OK
+    Character Management ->>+ Notifications Message Broker: Publish Character Deleted Event
+    Notifications Message Broker -->>- Character Management: OK
+    Character Management -->>- Client: 200 OK
+```

@@ -10,22 +10,40 @@
 
 [Character Management](Backend%20Services/Character%20Management.md)
 
+# Interservice Flows
+
+## Create Room Flow
 ```mermaid
 sequenceDiagram
     participant Client
-    participant RoomMgtSrv
-    participant NotifSrv
-    participant CharMgtSrv
+    participant Room Management
+    participant Notification Service
+    participant Character Management
 
-    Client ->>+ RoomMgtSrv: Create Room
-    RoomMgtSrv ->>+ CharMgtSrv: Initialize Room Characters
-    CharMgtSrv -->>- RoomMgtSrv: Characters Initialized
-    RoomMgtSrv -->>- Client: Room Created
+    Client ->>+ Room Management: /rooms/{roomTypeId}/create
+    Room Management -->>- Client: 200 OK with RoomID
 
-    Client ->> NotifSrv: Subscribe to Room Notifications
-    NotifSrv -->> Client: Subscription Confirmed
+    Client ->>+ Character Management: Get Room Characters
+    Character Management -->>- Client: Room Characters
 
-    Client ->>+ CharMgtSrv: Get Room Characters
-    CharMgtSrv -->>- Client: Room Characters
+    Client ->> Notification Service: /rooms/{roomTypeId}/{roomId}/subscribe
+    Notification Service -->> Client: 101 Switching Protocols (WebSocket Established)
+```
 
+## Join Room Flow
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Room Management
+    participant Notification Service
+    participant Character Management
+
+    Client ->>+ Room Management: /rooms/{roomTypeId}/{roomId}/join
+    Room Management -->>- Client: 200 OK
+
+    Client ->>+ Character Management: Get Room Characters
+    Character Management -->>- Client: Room Characters
+
+    Client ->> Notification Service: /rooms/{roomTypeId}/{roomId}/subscribe
+    Notification Service -->> Client: 101 Switching Protocols (WebSocket Established)
 ```

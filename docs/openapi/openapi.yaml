@@ -25,14 +25,20 @@ tags:
   - name: Room Notifications
     description: Endpoints for managing room notifications via WebSocket.
 paths:
+  # User Management
   /users:
     $ref: paths/users.yaml
   /users/{userId}:
     $ref: paths/users_{userId}.yaml
-  /rooms:
-    $ref: paths/rooms.yaml
-  /rooms/{roomTypeId}/{roomId}:
-    $ref: paths/rooms_{roomTypeId}_{roomId}.yaml
+  # Room Management
+  /rooms/{roomTypeId}/create:
+    $ref: paths/rooms_{roomTypeId}_create.yaml
+  /rooms/{roomTypeId}/{roomId}/join:
+    $ref: paths/rooms_{roomTypeId}_{roomId}_join.yaml
+  # Room Notifications
+  /rooms/{roomTypeId}/{roomId}/notifications:
+    $ref: paths/rooms_{roomTypeId}_{roomId}_notifications.yaml
+  # Character Management
   /rooms/{roomTypeId}/{roomId}/characters:
     $ref: paths/rooms_{roomTypeId}_{roomId}_characters.yaml
   /rooms/{roomTypeId}/{roomId}/characters/{characterId}:

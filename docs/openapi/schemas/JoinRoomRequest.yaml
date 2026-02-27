@@ -1,0 +1,6 @@
+type: object
+required: [userId]
+additionalProperties: false
+properties:
+  userId:
+    type: string

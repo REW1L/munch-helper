@@ -1,24 +1,65 @@
 # Room Notifications
 
-**Description**: Subscribe to a room updates
+Room Notifications Service is responsible for sending real-time notifications to clients subscribed to a room.
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>` 
+# Flow
+```mermaid
+sequenceDiagram
+		participant Client
+		participant Room Notifications
+		participant Message Broker
+		participant Character Management
+
+		Client ->> Room Notifications: Connect (WebSocket)
+		Room Notifications ->> Client: 101 Switching Protocols (WebSocket Established)
+
+		Character Management ->> Message Broker: Character Created Event
+		Message Broker -->> Room Notifications: Character Created Event
+		Room Notifications -->> Client: Character Created Event
+
+		Character Management ->> Message Broker: Character Updated Event
+		Message Broker -->> Room Notifications: Character Updated Event
+		Room Notifications -->> Client: Character Updated Event
+
+		Character Management ->> Message Broker: Character Deleted Event
+		Message Broker -->> Room Notifications: Character Deleted Event
+		Room Notifications -->> Client: Character Deleted Event
+
+		Client ->> Room Notifications: Disconnect (WebSocket)
+		Room Notifications ->> Client: 200 OK
+```
+
+# API Endpoints
+
+**Global initial Path**: `/rooms/<RoomTypeId>/<RoomId>` 
 
 **Type**: `WebSocket`
 
-# Connect
+## Connect
 
-**Description**: Joins a Room and Creates a WebSocket connection
+**Description**: Creates a WebSocket connection
 
-**Path**: `/` 
+**Path**: `/rooms/<RoomTypeId>/<RoomId>`
 
 **Method**: WebSocket
 
 **Inputs**: `UserID`
 
+**Outputs**: `101 Switching Protocols` (WebSocket Established)
+
+# Disconnect
+
+**Description**: Close a WebSocket connection
+
+**Path**: `/rooms/<RoomTypeId>/<RoomId>` 
+
+**Method**: WebSocket
+
+**Inputs**: None
+
 **Outputs**: `200 OK`
 
-# Send Message
+# Notifications Events
 
 ## Character Created
 
@@ -26,9 +67,9 @@
 
 ```json
 {
-	"event": "character_created"
+	"event": "character_created",
 	"event_body": {
-		"characterId": string
+		"characterId": "string"
 	}
 }
 ```
@@ -39,32 +80,22 @@
 
 ```json
 {
-	"event": "character_updated"
+	"event": "character_updated",
 	"event_body": {
-		"characterId": string
+		"characterId": "string"
 	}
 }
 ```
 
 ## Character Deleted
 
+**Event structure**:
+
 ```json
 {
-	"event": "character_deleted"
+	"event": "character_deleted",
 	"event_body": {
-		"characterId": string
+		"characterId": "string"
 	}
 }
 ```
-
-# Disconnect
-
-**Description**: Close a WebSocket connection
-
-**Path**: `/` 
-
-**Method**: WebSocket
-
-**Inputs**: None
-
-**Outputs**: `200 OK`

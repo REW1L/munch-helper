@@ -1,7 +1,9 @@
 type: object
-required: [id, name, avatar, level, power, class, race, gender]
+required: [id, userId, name, avatar, level, power, class, race, gender]
 properties:
   id:
+    type: string
+  userId:
     type: string
   name:
     type: string

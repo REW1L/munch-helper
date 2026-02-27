@@ -1,0 +1,21 @@
+post:
+  tags:
+    - Room Management
+  summary: Join room
+  description: Joins a room for a room type and initializes a user in it.
+  operationId: joinRoom
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/JoinRoomRequest.yaml
+  responses:
+    "201":
+      description: Room joined
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/JoinRoomResponse.yaml
+    "400":
+      description: Bad request
