@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Tabletop Helper Backend API
+  title: MunchHelper Backend API
   version: 1.0.0
   license:
     name: UNLICENSED
@@ -12,7 +12,7 @@ info:
     - Character Management
     - Room Notifications (documented as WebSocket upgrade + message schemas)
 servers:
-  - url: https://api.tabletop-helper.local
+  - url: https://api.munch-helper.local
     description: Placeholder production server
 security: []
 tags:
