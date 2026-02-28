@@ -7,7 +7,6 @@ get:
     This endpoint is represented as an HTTP GET handshake in OpenAPI.
   operationId: connectRoomNotifications
   parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
     - $ref: ../parameters/RoomId.yaml
     - name: userId
       in: query
@@ -35,7 +34,6 @@ delete:
   description: Closes the WebSocket connection.
   operationId: disconnectRoomNotifications
   parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
     - $ref: ../parameters/RoomId.yaml
   responses:
     "200":

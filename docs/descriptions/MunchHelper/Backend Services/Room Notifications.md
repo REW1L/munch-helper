@@ -31,7 +31,7 @@ sequenceDiagram
 
 # API Endpoints
 
-**Global initial Path**: `/rooms/<RoomTypeId>/<RoomId>` 
+**Global initial Path**: `/rooms/<RoomId>`
 
 **Type**: `WebSocket`
 
@@ -39,7 +39,7 @@ sequenceDiagram
 
 **Description**: Creates a WebSocket connection
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>`
+**Path**: `/rooms/<RoomId>`
 
 **Method**: WebSocket
 
@@ -51,7 +51,7 @@ sequenceDiagram
 
 **Description**: Close a WebSocket connection
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>` 
+**Path**: `/rooms/<RoomId>`
 
 **Method**: WebSocket
 

@@ -5,8 +5,11 @@ get:
   description: Returns all characters in a room.
   operationId: getCharacters
   parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
-    - $ref: ../parameters/RoomId.yaml
+    - name: roomId
+      in: query
+      required: true
+      schema:
+        type: string
   responses:
     "200":
       description: Characters list
@@ -22,9 +25,6 @@ put:
   summary: Create character
   description: Creates a character in a room.
   operationId: createCharacter
-  parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
-    - $ref: ../parameters/RoomId.yaml
   requestBody:
     required: true
     content:

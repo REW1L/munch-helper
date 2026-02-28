@@ -7,7 +7,6 @@ Room Management Service is responsible for creating and managing rooms in Munch 
 erDiagram
     ROOM {
         string Id PK "NOT NULL"
-        string RoomID "NOT NULL UNIQUE"
         string RoomTypeID FK "NOT NULL"
         datetime CreatedAt "NOT NULL"
     }
@@ -30,7 +29,7 @@ erDiagram
 
 **Description**: Creates a Room of `RoomTypeID`, Initializes it with a User with `UserID` and Returns `RoomID`.
 
-**Path**: `/rooms/{roomTypeId}/create`
+**Path**: `/rooms`
 
 **Method**: `POST`
 
@@ -50,10 +49,10 @@ sequenceDiagram
     participant Database
     participant Character Management
 
-    Client ->>+ Room Management: /rooms/{roomTypeId}/create
+    Client ->>+ Room Management: POST /rooms
     Room Management ->>+ Database: Create Room entry
     Database -->>- Room Management: OK
-    Room Management ->>+ Character Management: /characters/create
+    Room Management ->>+ Character Management: POST /characters
     Character Management -->>- Room Management: 200 OK
     Room Management -->>- Client: 200 OK with RoomID
 ```
@@ -62,7 +61,7 @@ sequenceDiagram
 
 **Description**: Joins a Room of `RoomTypeID` and `RoomID` with a User with `UserID`.
 
-**Path**: `/rooms/{roomTypeId}/{roomId}/join`
+**Path**: `/rooms/associations`
 
 **Method**: `POST`
 
@@ -82,10 +81,10 @@ sequenceDiagram
     participant Database
     participant Character Management
 
-    Client ->>+ Room Management: /rooms/{roomTypeId}/{roomId}/join
+    Client ->>+ Room Management: POST /rooms/associations
     Room Management ->>+ Database: Check Room exists
     Database -->>- Room Management: OK
-    Room Management ->>+ Character Management: /characters/create
+    Room Management ->>+ Character Management: POST /characters
     Character Management -->>- Room Management: 200 OK
     Room Management -->>- Client: 200 OK with RoomID
 ```

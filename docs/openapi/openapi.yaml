@@ -31,15 +31,15 @@ paths:
   /users/{userId}:
     $ref: paths/users_{userId}.yaml
   # Room Management
-  /rooms/{roomTypeId}/create:
-    $ref: paths/rooms_{roomTypeId}_create.yaml
-  /rooms/{roomTypeId}/{roomId}/join:
-    $ref: paths/rooms_{roomTypeId}_{roomId}_join.yaml
+  /rooms:
+    $ref: paths/rooms.yaml
+  /rooms/associations:
+    $ref: paths/rooms_associations.yaml
   # Room Notifications
-  /rooms/{roomTypeId}/{roomId}/notifications:
-    $ref: paths/rooms_{roomTypeId}_{roomId}_notifications.yaml
+  /rooms/{roomId}:
+    $ref: paths/rooms_{roomId}.yaml
   # Character Management
-  /rooms/{roomTypeId}/{roomId}/characters:
-    $ref: paths/rooms_{roomTypeId}_{roomId}_characters.yaml
-  /rooms/{roomTypeId}/{roomId}/characters/{characterId}:
-    $ref: paths/rooms_{roomTypeId}_{roomId}_characters_{characterId}.yaml
+  /characters:
+    $ref: paths/characters.yaml
+  /characters/{characterId}:
+    $ref: paths/characters_{characterId}.yaml

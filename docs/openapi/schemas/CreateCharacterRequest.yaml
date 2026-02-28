@@ -1,7 +1,11 @@
 type: object
-required: [name, avatar]
+required: [name, avatar, roomId]
 additionalProperties: false
 properties:
+  roomId:
+    type: string
+  userId:
+    type: string
   name:
     type: string
   avatar:

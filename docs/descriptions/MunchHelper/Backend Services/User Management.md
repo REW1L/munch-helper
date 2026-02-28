@@ -24,7 +24,7 @@ erDiagram
 
 **Description**: Creates a User with random parameters, and returns a User structure
 
-**Path**: `/` 
+**Path**: `/users` 
 
 **Method**: `POST`
 
@@ -43,18 +43,46 @@ sequenceDiagram
     participant User Management
     participant Database
 
-    Client ->>+ User Management: /users
+    Client ->>+ User Management: POST /users
     User Management ->>+ Database: Create User
     Database -->>- User Management: User Created
     User Management -->>- Client: 200 OK with User
 ```
 
+## Get User
+
+**Description**: Gets a User by UserID, and returns a User structure
+
+**Path**: `/users/<UserId>`
+
+**Method**: `GET`
+
+**Inputs**: None
+
+**Outputs**:
+
+- `ID`: unique id of the user
+- `Name`: nickname of a user
+- `AvatarID`: id of an avatar
+
+**Flow**:
+```mermaid
+sequenceDiagram
+    participant Client
+    participant User Management
+    participant Database
+
+    Client ->>+ User Management: GET /users/{UserId}
+    User Management ->>+ Database: Get User
+    Database -->>- User Management: User Retrieved
+    User Management -->>- Client: 200 OK with User
+```
 
 ## Update User
 
 **Description**: Updates User profile with new parameters, and returns a User structure
 
-**Path**: `/<UserId>`
+**Path**: `/users/<UserId>`
 
 **Method**: `POST`
 
@@ -77,7 +105,7 @@ sequenceDiagram
     participant User Management
     participant Database
 
-    Client ->>+ User Management: /users/{UserId}
+    Client ->>+ User Management: POST /users/{UserId}
     User Management ->>+ Database: Update User
     Database -->>- User Management: User Updated
     User Management -->>- Client: 200 OK with User

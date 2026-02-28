@@ -13,9 +13,9 @@ erDiagram
         int Avatar
         int Level
         int Power
-        list Class
-        list Race
-        list Gender
+        string Class
+        string Race
+        string Gender
         datetime CreatedAt "NOT NULL"
         datetime UpdatedAt "NOT NULL"
     }
@@ -23,7 +23,7 @@ erDiagram
 
 # API Endpoints
 
-**Global initial Path**: `/rooms/<RoomTypeId>/<RoomId>/characters`
+**Global initial Path**: `/characters`
 
 **Type**: `HTTP`
 
@@ -31,7 +31,7 @@ erDiagram
 
 **Description**: Get all characters in a room
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>/characters` 
+**Path**: `/characters?roomId=<RoomId>`
 
 **Type**: `HTTP`
 
@@ -47,9 +47,9 @@ erDiagram
     - `Avatar`: Character Avatar
     - `Level`: Current level
     - `Power`: Current Power
-    - `Class`: Array of current classes
-    - `Race`: Array of current races
-    - `Gender`: Array of current genders
+    - `Class`: String representation of an Array of current classes
+    - `Race`: String representation of an Array of current races
+    - `Gender`: String representation of an Array of current genders
 
 **Flow**:
 ```mermaid
@@ -58,7 +58,7 @@ sequenceDiagram
     participant Character Management
     participant Database
 
-    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters
+    Client ->>+ Character Management: GET /characters?roomId={roomId}
     Character Management ->>+ Database: Get Characters for RoomID
     Database -->>- Character Management: Characters
     Character Management -->>- Client: 200 OK with Characters
@@ -68,14 +68,16 @@ sequenceDiagram
 
 **Description**: Create a character in a room
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>/characters` 
+**Path**: `/characters` 
 
 **Type**: `HTTP`
 
-**Method**: `PUT` 
+**Method**: `PUT`
 
 **Input**:
 
+- `RoomID`: Room ID to create a character in
+- `UserID`: User ID to associate the character with
 - `Name`: Name for the new character
 - `Avatar`: Avatar for the new character
 
@@ -86,9 +88,9 @@ sequenceDiagram
 - `Avatar`: Character Avatar
 - `Level`: Default level
 - `Power`: Default Power
-- `Class`: Array of default classes
-- `Race`: Array of default races
-- `Gender`: Array of default genders
+- `Class`: String representation of an Array of default classes
+- `Race`: String representation of an Array of default races
+- `Gender`: String representation of an Array of default genders
 
 **Flow**:
 ```mermaid
@@ -98,7 +100,7 @@ sequenceDiagram
     participant Database
     participant Notifications Message Broker
 
-    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters
+    Client ->>+ Character Management: PUT /characters
     Character Management ->>+ Database: Create default Character for RoomID and UserID
     Database -->>- Character Management: OK
     Character Management ->>+ Notifications Message Broker: Publish Character Created Event
@@ -110,7 +112,7 @@ sequenceDiagram
 
 **Description**: Update any parameters of a character in a room
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>/characters/<CharacterId>` 
+**Path**: `/characters/<CharacterId>` 
 
 **Type**: `HTTP`
 
@@ -122,9 +124,9 @@ sequenceDiagram
 - `Avatar`: (Optional) Character Avatar
 - `Level`: (Optional) New Level
 - `Power`: (Optional) Default Power
-- `Class`: (Optional) Array of default classes
-- `Race`: (Optional) Array of default races
-- `Gender`: (Optional) Array of default genders
+- `Class`: (Optional) String representation of an Array of default classes
+- `Race`: (Optional) String representation of an Array of default races
+- `Gender`: (Optional) String representation of an Array of default genders
 
 **Output**:
 
@@ -133,9 +135,9 @@ sequenceDiagram
 - `Avatar`: Character Avatar
 - `Level`: New Level
 - `Power`: Default Power
-- `Class`: Array of default classes
-- `Race`: Array of default races
-- `Gender`: Array of default genders
+- `Class`: String representation of an Array of default classes
+- `Race`: String representation of an Array of default races
+- `Gender`: String representation of an Array of default genders
 - `CreatedAt`: Character creation timestamp
 - `UpdatedAt`: Character last update timestamp
 
@@ -147,8 +149,8 @@ sequenceDiagram
     participant Database
     participant Notifications Message Broker
 
-    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters/{characterId}
-    Character Management ->>+ Database: Update Character for RoomID and CharacterID
+    Client ->>+ Character Management: POST /characters/{characterId}
+    Character Management ->>+ Database: Update Character
     Database -->>- Character Management: OK
     Character Management ->>+ Notifications Message Broker: Publish Character Updated Event
     Notifications Message Broker -->>- Character Management: OK
@@ -159,7 +161,7 @@ sequenceDiagram
 
 **Description**: Delete a character in a room
 
-**Path**: `/rooms/<RoomTypeId>/<RoomId>/characters/<CharacterId>` 
+**Path**: `/characters/<CharacterId>` 
 
 **Type**: `HTTP`
 
@@ -177,8 +179,8 @@ sequenceDiagram
     participant Database
     participant Notifications Message Broker
 
-    Client ->>+ Character Management: /rooms/{roomTypeId}/{roomId}/characters/{characterId}
-    Character Management ->>+ Database: Delete Character for RoomID and CharacterID
+    Client ->>+ Character Management: DELETE /characters/{characterId}
+    Character Management ->>+ Database: Delete Character
     Database -->>- Character Management: OK
     Character Management ->>+ Notifications Message Broker: Publish Character Deleted Event
     Notifications Message Broker -->>- Character Management: OK

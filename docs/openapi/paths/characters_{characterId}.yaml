@@ -5,8 +5,6 @@ post:
   description: Updates character parameters in a room.
   operationId: updateCharacter
   parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
-    - $ref: ../parameters/RoomId.yaml
     - $ref: ../parameters/CharacterId.yaml
   requestBody:
     required: true
@@ -30,8 +28,6 @@ delete:
   description: Deletes a character in a room.
   operationId: deleteCharacter
   parameters:
-    - $ref: ../parameters/RoomTypeId.yaml
-    - $ref: ../parameters/RoomId.yaml
     - $ref: ../parameters/CharacterId.yaml
   responses:
     "200":
