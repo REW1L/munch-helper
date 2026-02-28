@@ -10,6 +10,13 @@
 
 [Character Management](Backend%20Services/Character%20Management.md)
 
+# Tools and Technologies
+- **Database**: DynamoDB (remote), MongoDB (local)
+- **API Gateway**: AWS API Gateway HTTP API (remote), Nginx (local)
+- **Backend Framework**: Express.js + AWS Lambda
+- **WebSocket**: AWS Lambda with AWS API Gateway WebSocket API (remote), Socket.IO (local)
+- **Messaging**: AWS SNS (remote), Redis Pub/Sub (local)
+
 # Database Schemas
 
 ## Actual Database Schema
@@ -44,9 +51,9 @@ erDiagram
         int Avatar
         int Level
         int Power
-        list Class
-        list Race
-        list Gender
+        string Class
+        string Race
+        string Gender
         datetime CreatedAt "NOT NULL"
         datetime UpdatedAt "NOT NULL"
     }
@@ -55,65 +62,6 @@ erDiagram
     ROOM ||--o{ CHARACTER : contains
     USER ||--o{ CHARACTER : owns
 ```
-
-## Proposed Database Schema
-```mermaid
-erDiagram
-    ROOM_TYPE {
-        string Id PK "NOT NULL"
-        string Name "NOT NULL"
-        datetime CreatedAt "NOT NULL"
-    }
-
-    AVATAR {
-        string Id PK "NOT NULL"
-        string Path "NOT NULL"
-        datetime CreatedAt "NOT NULL"
-    }
-
-    ROOM {
-        string Id PK "NOT NULL"
-        string RoomTypeId FK "NOT NULL"
-        datetime CreatedAt "NOT NULL"
-    }
-
-    USER {
-        string Id PK "NOT NULL"
-        string Name "NOT NULL"
-        string AvatarId FK "NOT NULL"
-        datetime CreatedAt "NOT NULL"
-        datetime UpdatedAt "NOT NULL"
-    }
-
-    ROOM_CHARACTER {
-        string Id PK "NOT NULL"
-        string RoomId FK "NOT NULL"
-        string UserId FK "NULLABLE"
-        string CharacterId FK "NOT NULL"
-        datetime CreatedAt "NOT NULL"
-    }
-
-    MUNCH_CHARACTER {
-        string Id PK "NOT NULL"
-        string Name "NOT NULL"
-        string AvatarId FK "NOT NULL"
-        int Level
-        int Power
-        string Class
-        string Race
-        string Gender
-        datetime CreatedAt "NOT NULL"
-        datetime UpdatedAt "NOT NULL"
-    }
-
-    ROOM_TYPE ||--o{ ROOM : has
-    ROOM ||--o{ ROOM_CHARACTER : contains
-    USER ||--o{ ROOM_CHARACTER : participates
-    AVATAR ||--o{ USER : represents
-    AVATAR ||--o{ MUNCH_CHARACTER : represents
-    MUNCH_CHARACTER ||--o{ ROOM_CHARACTER : participates
-```
-
 
 # Flows
 

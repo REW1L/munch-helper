@@ -116,7 +116,7 @@ sequenceDiagram
 
 **Type**: `HTTP`
 
-**Method**: `POST`
+**Method**: `PATCH`
 
 **Input**:
 
@@ -149,7 +149,7 @@ sequenceDiagram
     participant Database
     participant Notifications Message Broker
 
-    Client ->>+ Character Management: POST /characters/{characterId}
+    Client ->>+ Character Management: PATCH /characters/{characterId}
     Character Management ->>+ Database: Update Character
     Database -->>- Character Management: OK
     Character Management ->>+ Notifications Message Broker: Publish Character Updated Event

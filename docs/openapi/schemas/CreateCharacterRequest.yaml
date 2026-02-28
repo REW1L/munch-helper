@@ -9,4 +9,4 @@ properties:
   name:
     type: string
   avatar:
-    type: string
+    type: integer

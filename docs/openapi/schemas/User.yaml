@@ -8,5 +8,5 @@ properties:
     type: string
     description: Nickname of the user.
   avatarId:
-    type: string
+    type: integer
     description: Avatar id of the user.

@@ -7,5 +7,5 @@ properties:
       - type: "null"
   avatarId:
     anyOf:
-      - type: string
+      - type: integer
       - type: "null"

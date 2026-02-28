@@ -8,7 +8,7 @@ properties:
   name:
     type: string
   avatar:
-    type: string
+    type: integer
   level:
     type: integer
   power:
