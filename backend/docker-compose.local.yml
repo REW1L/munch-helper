@@ -1,0 +1,84 @@
+services:
+  gateway:
+    build:
+      context: ./gateway
+    container_name: tabletop-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      GATEWAY_PORT: 8080
+      USER_SERVICE_URL: http://user-service:8081
+      ROOM_SERVICE_URL: http://room-service:8082
+      CHARACTER_SERVICE_URL: http://character-service:8083
+    depends_on:
+      - user-service
+      - room-service
+      - character-service
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: tabletop-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      USER_SERVICE_PORT: 8081
+      USER_MONGO_URI: mongodb://mongo-user:27017/tabletop_user_service
+    depends_on:
+      - mongo-user
+
+  room-service:
+    build:
+      context: ./room-service
+    container_name: tabletop-room-service
+    ports:
+      - "8082:8082"
+    environment:
+      ROOM_SERVICE_PORT: 8082
+      ROOM_MONGO_URI: mongodb://mongo-room:27017/tabletop_room_service
+      CHARACTER_SERVICE_URL: http://character-service:8083
+      CHARACTER_CALL_TIMEOUT_MS: 2000
+    depends_on:
+      - mongo-room
+      - character-service
+
+  character-service:
+    build:
+      context: ./character-service
+    container_name: tabletop-character-service
+    ports:
+      - "8083:8083"
+    environment:
+      CHARACTER_SERVICE_PORT: 8083
+      CHARACTER_MONGO_URI: mongodb://mongo-character:27017/tabletop_character_service
+    depends_on:
+      - mongo-character
+
+  mongo-user:
+    image: mongo:7
+    container_name: tabletop-mongo-user
+    ports:
+      - "27021:27017"
+    volumes:
+      - mongo-user-data:/data/db
+
+  mongo-room:
+    image: mongo:7
+    container_name: tabletop-mongo-room
+    ports:
+      - "27022:27017"
+    volumes:
+      - mongo-room-data:/data/db
+
+  mongo-character:
+    image: mongo:7
+    container_name: tabletop-mongo-character
+    ports:
+      - "27023:27017"
+    volumes:
+      - mongo-character-data:/data/db
+
+volumes:
+  mongo-user-data:
+  mongo-room-data:
+  mongo-character-data:

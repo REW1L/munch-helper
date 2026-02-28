@@ -1,0 +1,23 @@
+{
+  "name": "tabletop-helper-backend",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "gateway",
+    "user-service",
+    "room-service",
+    "character-service"
+  ],
+  "scripts": {
+    "dev": "concurrently -n gateway,user,room,character -c cyan,green,yellow,magenta \"npm run dev -w gateway\" \"npm run dev -w user-service\" \"npm run dev -w room-service\" \"npm run dev -w character-service\"",
+    "start": "concurrently -n gateway,user,room,character -c cyan,green,yellow,magenta \"npm run start -w gateway\" \"npm run start -w user-service\" \"npm run start -w room-service\" \"npm run start -w character-service\"",
+    "test": "vitest run",
+    "typecheck": "npm run typecheck -w gateway && npm run typecheck -w user-service && npm run typecheck -w room-service && npm run typecheck -w character-service"
+  },
+  "devDependencies": {
+    "@types/supertest": "^6.0.3",
+    "concurrently": "^9.2.1",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
+  }
+}
