@@ -1,9 +1,12 @@
+import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { userProfileContext } from '@/context/UserContext';
+import { useRoomCharacters } from '@/hooks/useCharacters';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Platform,
   ScrollView,
@@ -13,7 +16,6 @@ import {
   View
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { colorKit } from 'reanimated-color-picker';
 import ChangeCharacterModal from './modal-change-caracter';
 import CreateCharacterModal from './modal-create-character';
 
@@ -32,80 +34,14 @@ const COLORS = {
   ATTRIBUTE_BG: 'rgba(0, 0, 0, 0.30)',
 };
 
-interface Character {
-  id: string;
-  nickname: string;
-  avatar: number;
-  level: number;
-  power: number;
-  color: string;
-  race: string[];
-  gender: string[];
-  class: string[];
-}
-
-// Mock data
-const MOCK_CHARACTERS: Character[] = [
-  {
-    id: '1',
-    nickname: 'Nickname 1',
-    level: 10,
-    power: 50,
-    color: '#FFFB00',
-    race: ['Human'],
-    gender: ['male'],
-    class: ['Cleric'],
-    avatar: Math.floor(Math.random() * avatars.length),
-  },
-  {
-    id: '2',
-    nickname: 'Nickname 2',
-    level: 10,
-    power: 50,
-    color: '#2600FF',
-    race: ['Elf'],
-    gender: ['female'],
-    class: ['Thief'],
-    avatar: Math.floor(Math.random() * avatars.length),
-  },
-  {
-    id: '3',
-    nickname: 'Nickname 33',
-    level: 10,
-    power: 50,
-    color: '#FF0004',
-    race: ['Human'],
-    gender: ['male', 'female'],
-    class: ['Cleric'],
-    avatar: Math.floor(Math.random() * avatars.length),
-  },
-  {
-    id: '4',
-    nickname: 'Nickname 4',
-    level: 10,
-    power: 50,
-    color: '#11FF00',
-    race: ['Elf'],
-    gender: ['female'],
-    class: ['Thief'],
-    avatar: Math.floor(Math.random() * avatars.length),
-  },
-];
-
-function changeCharacter(character: Character) {
-  // Placeholder function for changing character
-  /* TODO: Not implemented yet */
-  console.log('CHANGING CHARACTER BACK NOT IMPLEMENTED YET');
-}
-
-const ATTRIBUTES: string[] = [
-  "race", "gender", "class"
+const ATTRIBUTES: ('race' | 'gender' | 'class')[] = [
+  'race', 'gender', 'class'
 ];
 
 const CharacterCard: React.FC<{
-  character: Character;
+  character: RoomCharacter;
   isHighlight?: boolean;
-  onChangePress: (character: Character) => void;
+  onChangePress: (character: RoomCharacter) => void;
 }> = ({ character, isHighlight = false, onChangePress }) => {
   return (
     <View
@@ -135,8 +71,8 @@ const CharacterCard: React.FC<{
 
       <View style={styles.attributesBox}>
         <ScrollView>
-          {ATTRIBUTES.map((attr, index) => (
-            (character[attr as keyof Character] as string[]).map((value: string) => (
+          {ATTRIBUTES.map((attr) => (
+            character[attr].map((value: string) => (
               <Text key={`attribute-${character.id}-${value}`} style={styles.attributeText}>
                 {value}
               </Text>
@@ -154,35 +90,17 @@ const CharacterCard: React.FC<{
 };
 
 const MunchkinIndexView: React.FC = () => {
-
-  const [characters] = useState<Character[]>(MOCK_CHARACTERS);
+  const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const { userProfile } = useContext(userProfileContext);
+  const { characters, create, update, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
 
-  const { id: currentCharacterId, nickname, avatar } = { ...userProfile };
-  let currentCharacterIndex = characters.findIndex(c => c.id === currentCharacterId);
-  if (currentCharacterIndex === -1) {
-    currentCharacterIndex = characters.push({
-      id: currentCharacterId,
-      nickname: nickname as string,
-      avatar: avatar,
-      level: 1,
-      power: 0,
-      color: colorKit.randomRgbColor().hex(),
-      race: ['Human'],
-      gender: ['male'],
-      class: [],
-    } as Character) - 1;
-  } else {
-    characters[currentCharacterIndex] = {
-      ...characters[currentCharacterIndex],
-      avatar: avatar,
-    };
-  }
-  const currentCharacter = characters[currentCharacterIndex];
+  const currentCharacterIndex = characters.findIndex((character) => character.userId === userProfile.id);
+  const currentCharacter = currentCharacterIndex === -1 ? undefined : characters[currentCharacterIndex];
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | undefined>(undefined);
-  const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const [selectedCharacter, setSelectedCharacter] = useState<RoomCharacter | undefined>(undefined);
+
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
       <SafeAreaView style={{
@@ -197,6 +115,19 @@ const MunchkinIndexView: React.FC = () => {
 
             {/* Characters List */}
             <View style={styles.charactersList}>
+              {isLoading && characters.length === 0 && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.TEXT_WHITE} />
+                  <Text style={styles.loadingText}>Loading characters...</Text>
+                </View>
+              )}
+
+              {errorMessage && characters.length === 0 && (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>{errorMessage}</Text>
+                </View>
+              )}
+
               {characters.map((character) => (
                 <CharacterCard
                   key={character.id}
@@ -230,50 +161,61 @@ const MunchkinIndexView: React.FC = () => {
           </View>
 
           {/* Current Character Footer */}
-          <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
-            <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
-              <Image
-                source={avatars[currentCharacter.avatar]}
-                style={styles.footerAvatar}
+          {currentCharacter && (
+            <View style={styles.currentCharacterFooter} key={`own-char-${currentCharacter.id}`}>
+              <View style={{ backgroundColor: currentCharacter.color, borderRadius: 20 }}>
+                <Image
+                  source={avatars[currentCharacter.avatar]}
+                  style={styles.footerAvatar}
+                />
+              </View>
+              <View style={styles.footerInfo}>
+                <Text style={styles.footerNickname}>{currentCharacter.nickname}</Text>
+                <View style={styles.footerStats}>
+                  <Text style={styles.footerStatText}>
+                    {currentCharacter.level} lvl
+                  </Text>
+                  <Text style={styles.footerStatText}>
+                    {currentCharacter.power} str
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.footerAttributes}>
+                <ScrollView>
+                  {ATTRIBUTES.map((attr, index) => (
+                    currentCharacter[attr].map((value: string) => (
+                      <Text key={`footer-attribute-${currentCharacter.id}-${index}-${value}`} style={styles.footerAttributeText}>
+                        {value}
+                      </Text>
+                    ))
+                  ))}
+                </ScrollView>
+              </View>
+
+              <VioletButton
+                title="Change"
+                onPress={() => {
+                  setSelectedCharacter(currentCharacter);
+                  setChangeCharacterModalVisible(true);
+                }}
               />
             </View>
-            <View style={styles.footerInfo}>
-              <Text style={styles.footerNickname}>{currentCharacter.nickname}</Text>
-              <View style={styles.footerStats}>
-                <Text style={styles.footerStatText}>
-                  {currentCharacter.level} lvl
-                </Text>
-                <Text style={styles.footerStatText}>
-                  {currentCharacter.power} str
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.footerAttributes}>
-              <ScrollView>
-                {ATTRIBUTES.map((attr, index) => (
-                  (currentCharacter[attr as keyof Character] as string[]).map((value: string) => (
-                    <Text key={`footer-attribute-${currentCharacter.id}-${index}-${value}`} style={styles.footerAttributeText}>
-                      {value}
-                    </Text>
-                  ))
-                ))}
-              </ScrollView>
-            </View>
-
-            <VioletButton
-              title="Change"
-              onPress={() => {
-                setSelectedCharacter(currentCharacter);
-                setChangeCharacterModalVisible(true);
-              }}
-            />
-          </View>
+          )}
 
           <CreateCharacterModal
             visible={createCharacterModalVisible}
-            onConfirm={(character) => {
-              console.log('Character created:', character);
+            onConfirm={async (character) => {
+              await create({
+                userId: userProfile.id,
+                nickname: character.name,
+                avatar: character.avatar ?? userProfile.avatar,
+                level: 1,
+                power: 0,
+                race: character.race,
+                gender: character.gender,
+                class: character.class,
+              });
               setCreateCharacterModalVisible(false);
             }}
             onCancel={() => setCreateCharacterModalVisible(false)}
@@ -282,14 +224,17 @@ const MunchkinIndexView: React.FC = () => {
           {changeCharacterModalVisible &&
             <ChangeCharacterModal
               character={selectedCharacter}
-              onConfirm={(character) => {
-                console.log('Character changed:', character);
+              onConfirm={async (character) => {
+                await update(character.id, {
+                  nickname: character.nickname,
+                  avatar: character.avatar,
+                  level: character.level,
+                  power: character.power,
+                  race: character.race,
+                  gender: character.gender,
+                  class: character.class,
+                });
                 setChangeCharacterModalVisible(false);
-                const index = characters.findIndex(c => c.id === character.id);
-                if (index !== -1) {
-                  characters[index] = character;
-                }
-                changeCharacter(character);
               }}
               onCancel={() => setChangeCharacterModalVisible(false)}
             />
@@ -368,6 +313,16 @@ const styles = StyleSheet.create({
   },
   charactersList: {
     gap: 10,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.TEXT_WHITE,
   },
   characterCard: {
     height: 85,
