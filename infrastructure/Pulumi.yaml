@@ -1,0 +1,10 @@
+name: tabletop-helper-frontend
+runtime: nodejs
+description: Frontend infrastructure (S3 + CloudFront) for Expo web artifacts
+config:
+  tabletop-helper-frontend:apiUrl:
+    description: API base URL injected into Expo web export via EXPO_PUBLIC_API_URL
+    default: http://localhost:8080
+  tabletop-helper-frontend:artifactDir:
+    description: Relative path to frontend build artifacts directory
+    default: ../frontend/dist

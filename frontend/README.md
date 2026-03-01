@@ -24,6 +24,20 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+## Build web artifacts
+
+To generate static assets for infrastructure deployment (CloudFront + S3):
+
+```bash
+EXPO_PUBLIC_API_URL=https://your-api-domain npm run export:web
+```
+
+Artifacts are written to `frontend/dist`.
+
+## Deploy infrastructure
+
+See `../infrastructure/README.md` for Pulumi deployment steps.
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

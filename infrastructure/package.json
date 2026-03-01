@@ -1,0 +1,22 @@
+{
+  "name": "tabletop-helper-frontend-infrastructure",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "preview": "pulumi preview",
+    "up": "pulumi up",
+    "destroy": "pulumi destroy"
+  },
+  "dependencies": {
+    "@pulumi/aws": "^7.10.0",
+    "@pulumi/pulumi": "^3.203.0",
+    "mime-types": "^2.1.35"
+  },
+  "devDependencies": {
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}

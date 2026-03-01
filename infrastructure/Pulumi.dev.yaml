@@ -1,0 +1,5 @@
+config:
+  aws:region: eu-central-1
+  tabletop-helper-frontend:apiUrl: http://localhost:8080
+  tabletop-helper-frontend:artifactDir: ../frontend/dist
+encryptionsalt: v1:PaCaDn0zU6o=:v1:TAXA7l2bF1bKP+Mr:9ksrMaoTkqUtqTs1edD5+muEVZFuOA==
