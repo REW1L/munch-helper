@@ -102,7 +102,7 @@ export default function Home() {
             visible={joinRoomModalVisible}
             onClose={() => setJoinRoomModalVisible(false)}
             onJoin={(roomName) => {
-              router.navigate({ pathname: `./munchkin/${roomName}` })
+              router.navigate({ pathname: `./munchkin`, params: { roomId: roomName } });
             }}
             game="Munchkin"
           />

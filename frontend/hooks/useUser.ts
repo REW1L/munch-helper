@@ -2,6 +2,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { ApiError } from '@/api/http';
+import { createUser, getUser, updateUser } from '@/api/users';
 import avatars from '@/constants/avatars';
 
 const USER_STORAGE_KEY = 'user';
@@ -30,19 +32,39 @@ export interface UseUserResult {
 function generateDefaultUserProfile(): UserProfileInterface {
   const randomPostfix = generateRandomNicknamePostfix();
   return {
-    id: `user-${Date.now()}-${randomPostfix}`,
+    id: '',
     nickname: `Player ${randomPostfix}`,
     avatar: Math.floor(Math.random() * avatars.length),
   };
 }
 
-async function updateUserProfile(newUserProfile: UserProfileInterface) {
-  // Not implemented yet
-  console.log('UPDATE USER PROFILE NOT IMPLEMENTED YET FOR USER ID:', newUserProfile.id);
+async function createRemoteUser(defaultProfile: UserProfileInterface): Promise<UserProfileInterface> {
+  const createdUser = await createUser({
+    name: defaultProfile.nickname,
+    avatarId: defaultProfile.avatar,
+  });
+
+  return {
+    id: createdUser.id,
+    nickname: createdUser.name,
+    avatar: createdUser.avatarId,
+  };
+}
+
+async function updateUserProfile(newUserProfile: UserProfileInterface): Promise<void> {
+  if (!newUserProfile.id) {
+    return;
+  }
+
+  await updateUser(newUserProfile.id, {
+    name: newUserProfile.nickname,
+    avatarId: newUserProfile.avatar,
+  });
 }
 
 export function useUserProfile(): UseUserResult {
   const [userProfile, setUserProfileState] = useState<UserProfileInterface | null>(null);
+  const [fallbackProfile] = useState<UserProfileInterface>(() => generateDefaultUserProfile());
 
   const persistAndSyncProfile = useCallback(async (nextProfile: UserProfileInterface) => {
     await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextProfile));
@@ -66,18 +88,38 @@ export function useUserProfile(): UseUserResult {
         if (storedUserProfileString) {
           const storedUserProfile = JSON.parse(storedUserProfileString) as UserProfileInterface;
           if (storedUserProfile && mounted) {
-            setUserProfileState(storedUserProfile);
+            try {
+              const remoteUser = await getUser(storedUserProfile.id);
+              const syncedProfile: UserProfileInterface = {
+                id: remoteUser.id,
+                nickname: remoteUser.name,
+                avatar: remoteUser.avatarId,
+              };
+              setUserProfileState(syncedProfile);
+              await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(syncedProfile));
+            } catch (error) {
+              if (error instanceof ApiError && error.status === 404) {
+                const recreatedProfile = await createRemoteUser(storedUserProfile);
+                setUserProfileState(recreatedProfile);
+                await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(recreatedProfile));
+              } else {
+                setUserProfileState(storedUserProfile);
+              }
+            }
             return;
           }
         }
 
-        const defaultUserProfile = generateDefaultUserProfile();
+        const defaultUserProfile = await createRemoteUser(generateDefaultUserProfile());
         if (mounted) {
           setUserProfileState(defaultUserProfile);
         }
-        await persistAndSyncProfile(defaultUserProfile);
+        await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(defaultUserProfile));
       } catch (error) {
         console.error('Failed to load user profile from storage:', error);
+        if (mounted) {
+          setUserProfileState(fallbackProfile);
+        }
       }
     };
 
@@ -90,9 +132,9 @@ export function useUserProfile(): UseUserResult {
 
   return useMemo(
     () => ({
-      userProfile: userProfile || generateDefaultUserProfile(),
+      userProfile: userProfile || fallbackProfile,
       setUserProfile,
     }),
-    [userProfile, setUserProfile]
+    [fallbackProfile, setUserProfile, userProfile]
   );
 }

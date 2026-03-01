@@ -59,7 +59,7 @@ export default function ChangeAvatarModal({
               {avatars.map((avatar, index) => (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => setSelectedAvatar(index)}
+                  onPress={() => handleSelectAvatar(index)}
                   activeOpacity={0.7}
                 >
                   <Image
