@@ -14,11 +14,11 @@
     "test": "vitest run",
     "typecheck": "npm run typecheck -w gateway && npm run typecheck -w user-service && npm run typecheck -w room-service && npm run typecheck -w character-service",
     "sam:build": "sam build --template-file sam/template.yaml",
-    "sam:local:api": "sam local start-api --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\"",
-    "sam:invoke:user:health": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" -e sam/events/user-get-health.json",
-    "sam:invoke:user:create": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" -e sam/events/user-post-users.json",
-    "sam:invoke:user:update": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" -e sam/events/user-patch-user.json",
-    "sam:deploy": "sam deploy --config-file sam/samconfig.toml"
+    "sam:local:api": "sam local start-api --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" RoomMongoUri=\"mongodb://host.docker.internal:27022/munch_room_service\" CharacterMongoUri=\"mongodb://host.docker.internal:27023/munch_character_service\" CharacterServiceUrl=\"http://host.docker.internal:3000\" CharacterCallTimeoutMs=\"2000\"",
+    "sam:invoke:user:health": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" RoomMongoUri=\"mongodb://host.docker.internal:27022/munch_room_service\" CharacterMongoUri=\"mongodb://host.docker.internal:27023/munch_character_service\" CharacterServiceUrl=\"http://host.docker.internal:3000\" CharacterCallTimeoutMs=\"2000\" -e sam/events/user-get-health.json",
+    "sam:invoke:user:create": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" RoomMongoUri=\"mongodb://host.docker.internal:27022/munch_room_service\" CharacterMongoUri=\"mongodb://host.docker.internal:27023/munch_character_service\" CharacterServiceUrl=\"http://host.docker.internal:3000\" CharacterCallTimeoutMs=\"2000\" -e sam/events/user-post-users.json",
+    "sam:invoke:user:update": "sam local invoke UserServiceFunction --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" RoomMongoUri=\"mongodb://host.docker.internal:27022/munch_room_service\" CharacterMongoUri=\"mongodb://host.docker.internal:27023/munch_character_service\" CharacterServiceUrl=\"http://host.docker.internal:3000\" CharacterCallTimeoutMs=\"2000\" -e sam/events/user-patch-user.json",
+    "sam:deploy": "npm run sam:build && sam deploy --config-file sam/samconfig.toml"
   },
   "devDependencies": {
     "@types/supertest": "^6.0.3",

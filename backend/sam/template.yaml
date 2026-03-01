@@ -1,11 +1,27 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: "Munch Helper backend SAM template (phase 1: user-service)"
+Description: "Munch Helper backend SAM template (phase 2: user, room, character services)"
 
 Parameters:
   UserMongoUri:
     Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/user?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
     Description: MongoDB connection URI used by user-service Lambda
+  RoomMongoUri:
+    Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/room?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
+    Description: MongoDB connection URI used by room-service Lambda
+  CharacterMongoUri:
+    Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/character?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
+    Description: MongoDB connection URI used by character-service Lambda
+  CharacterServiceUrl:
+    Type: String
+    Description: Base URL for character-service called by room-service
+  CharacterCallTimeoutMs:
+    Type: Number
+    Default: 2000
+    Description: Timeout in milliseconds for room-service to call character-service
 
 Globals:
   Function:
@@ -15,14 +31,72 @@ Globals:
     MemorySize: 512
     Timeout: 15
     Tracing: Active
+  HttpApi:
+    CorsConfiguration:
+      AllowOrigins:
+        - https://helpamunch.click
+      AllowHeaders:
+        - "*"
+      AllowMethods:
+        - GET
+        - POST
+        - PATCH
+        - DELETE
+        - OPTIONS
 
 Resources:
+  UserServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub user-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
+  RoomServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub room-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
+  CharacterServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub character-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
   UserServiceFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${AWS::StackName}-user-service
       CodeUri: ../user-service
       Handler: lambda.handler
+      Role: !GetAtt UserServiceRole.Arn
       Environment:
         Variables:
           USER_MONGO_URI: !Ref UserMongoUri
@@ -47,6 +121,80 @@ Resources:
           Properties:
             Path: /users/{userId}
             Method: PATCH
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+  RoomServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-room-service
+      CodeUri: ../room-service
+      Handler: lambda.handler
+      Role: !GetAtt RoomServiceRole.Arn
+      Environment:
+        Variables:
+          ROOM_MONGO_URI: !Ref RoomMongoUri
+          CHARACTER_SERVICE_URL: !Ref CharacterServiceUrl
+          CHARACTER_CALL_TIMEOUT_MS: !Ref CharacterCallTimeoutMs
+      Events:
+        RoomCreatePost:
+          Type: HttpApi
+          Properties:
+            Path: /rooms
+            Method: POST
+        RoomAssociationCreatePost:
+          Type: HttpApi
+          Properties:
+            Path: /rooms/associations
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+  CharacterServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-character-service
+      CodeUri: ../character-service
+      Handler: lambda.handler
+      Role: !GetAtt CharacterServiceRole.Arn
+      Environment:
+        Variables:
+          CHARACTER_MONGO_URI: !Ref CharacterMongoUri
+      Events:
+        CharacterListGet:
+          Type: HttpApi
+          Properties:
+            Path: /characters
+            Method: GET
+        CharacterCreatePost:
+          Type: HttpApi
+          Properties:
+            Path: /characters
+            Method: POST
+        CharacterUpdatePatch:
+          Type: HttpApi
+          Properties:
+            Path: /characters/{characterId}
+            Method: PATCH
+        CharacterDelete:
+          Type: HttpApi
+          Properties:
+            Path: /characters/{characterId}
+            Method: DELETE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

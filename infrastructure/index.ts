@@ -9,7 +9,29 @@ const config = new pulumi.Config();
 const apiUrl = config.require("apiUrl");
 const artifactDirConfig = config.get("artifactDir") ?? "../frontend/dist";
 const artifactDir = path.resolve(__dirname, artifactDirConfig);
+const apiOriginUrl = "https://zf2as72hof.execute-api.eu-central-1.amazonaws.com";
+const apiOriginDomainName = new URL(apiOriginUrl).hostname;
 const cachePolicyCachingOptimizedId = "658327ea-f89d-4fab-a63d-7e88639e58f6";
+const cachePolicyCachingDisabled = aws.cloudfront.getCachePolicyOutput({
+  name: "Managed-CachingDisabled",
+});
+const originRequestPolicyAllViewerExceptHostHeader = aws.cloudfront.getOriginRequestPolicyOutput({
+  name: "Managed-AllViewerExceptHostHeader",
+});
+const cachePolicyCachingDisabledId = pulumi.output(cachePolicyCachingDisabled.id).apply((id) => {
+  if (!id) {
+    throw new Error("Unable to resolve CloudFront managed cache policy: Managed-CachingDisabled");
+  }
+  return id;
+});
+const originRequestPolicyAllViewerExceptHostHeaderId = pulumi
+  .output(originRequestPolicyAllViewerExceptHostHeader.id)
+  .apply((id) => {
+    if (!id) {
+      throw new Error("Unable to resolve CloudFront managed origin request policy: Managed-AllViewerExceptHostHeader");
+    }
+    return id;
+  });
 const customDomainName = "helpamunch.click";
 const customCertificateArn = "arn:aws:acm:us-east-1:366609327063:certificate/57725cb9-2f4f-41f0-a38d-cf92397324ed";
 
@@ -47,6 +69,20 @@ const originAccessControl = new aws.cloudfront.OriginAccessControl("frontendOrig
   signingProtocol: "sigv4",
 });
 
+const apiPathRewriteFunction = new aws.cloudfront.Function("apiPathRewriteFunction", {
+  name: "munch-helper-api-path-rewrite",
+  runtime: "cloudfront-js-1.0",
+  comment: "Strip /api prefix for API origin requests",
+  publish: true,
+  code: `function handler(event) {
+  var request = event.request;
+  if (request.uri && request.uri.indexOf('/api') === 0) {
+    request.uri = request.uri.substring(4) || '/';
+  }
+  return request;
+}`,
+});
+
 const distribution = new aws.cloudfront.Distribution("frontendDistribution", {
   enabled: true,
   defaultRootObject: "index.html",
@@ -59,6 +95,34 @@ const distribution = new aws.cloudfront.Distribution("frontendDistribution", {
       s3OriginConfig: {
         originAccessIdentity: "",
       },
+    },
+    {
+      originId: "apiOrigin",
+      domainName: apiOriginDomainName,
+      customOriginConfig: {
+        httpPort: 80,
+        httpsPort: 443,
+        originProtocolPolicy: "https-only",
+        originSslProtocols: ["TLSv1.2"],
+      },
+    },
+  ],
+  orderedCacheBehaviors: [
+    {
+      pathPattern: "/api/*",
+      targetOriginId: "apiOrigin",
+      viewerProtocolPolicy: "redirect-to-https",
+      allowedMethods: ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"],
+      cachedMethods: ["GET", "HEAD", "OPTIONS"],
+      compress: true,
+      cachePolicyId: cachePolicyCachingDisabledId,
+      originRequestPolicyId: originRequestPolicyAllViewerExceptHostHeaderId,
+      functionAssociations: [
+        {
+          eventType: "viewer-request",
+          functionArn: apiPathRewriteFunction.arn,
+        },
+      ],
     },
   ],
   defaultCacheBehavior: {
