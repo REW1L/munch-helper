@@ -46,7 +46,7 @@ const userModel: UserModelLike = {
 
 const app = createApp(userModel);
 const port = Number(process.env.USER_SERVICE_PORT || 8081);
-const mongoUri = process.env.USER_MONGO_URI || 'mongodb://localhost:27017/tabletop_user_service';
+const mongoUri = process.env.USER_MONGO_URI || 'mongodb://localhost:27017/munch_user_service';
 
 connectToMongo(mongoUri)
   .then(() => {

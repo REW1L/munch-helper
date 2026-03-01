@@ -2,7 +2,7 @@ services:
   gateway:
     build:
       context: ./gateway
-    container_name: tabletop-gateway
+    container_name: munch-gateway
     ports:
       - "8080:8080"
     environment:
@@ -18,24 +18,24 @@ services:
   user-service:
     build:
       context: ./user-service
-    container_name: tabletop-user-service
+    container_name: munch-user-service
     ports:
       - "8081:8081"
     environment:
       USER_SERVICE_PORT: 8081
-      USER_MONGO_URI: mongodb://mongo-user:27017/tabletop_user_service
+      USER_MONGO_URI: mongodb://mongo-user:27017/munch_user_service
     depends_on:
       - mongo-user
 
   room-service:
     build:
       context: ./room-service
-    container_name: tabletop-room-service
+    container_name: munch-room-service
     ports:
       - "8082:8082"
     environment:
       ROOM_SERVICE_PORT: 8082
-      ROOM_MONGO_URI: mongodb://mongo-room:27017/tabletop_room_service
+      ROOM_MONGO_URI: mongodb://mongo-room:27017/munch_room_service
       CHARACTER_SERVICE_URL: http://character-service:8083
       CHARACTER_CALL_TIMEOUT_MS: 2000
     depends_on:
@@ -45,18 +45,18 @@ services:
   character-service:
     build:
       context: ./character-service
-    container_name: tabletop-character-service
+    container_name: munch-character-service
     ports:
       - "8083:8083"
     environment:
       CHARACTER_SERVICE_PORT: 8083
-      CHARACTER_MONGO_URI: mongodb://mongo-character:27017/tabletop_character_service
+      CHARACTER_MONGO_URI: mongodb://mongo-character:27017/munch_character_service
     depends_on:
       - mongo-character
 
   mongo-user:
     image: mongo:7
-    container_name: tabletop-mongo-user
+    container_name: munch-mongo-user
     ports:
       - "27021:27017"
     volumes:
@@ -64,7 +64,7 @@ services:
 
   mongo-room:
     image: mongo:7
-    container_name: tabletop-mongo-room
+    container_name: munch-mongo-room
     ports:
       - "27022:27017"
     volumes:
@@ -72,7 +72,7 @@ services:
 
   mongo-character:
     image: mongo:7
-    container_name: tabletop-mongo-character
+    container_name: munch-mongo-character
     ports:
       - "27023:27017"
     volumes:

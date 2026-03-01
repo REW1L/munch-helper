@@ -1,4 +1,4 @@
-# Tabletop Helper Backend (Local Microservices)
+# Munch Helper Backend (Local Microservices)
 
 This backend is split into local microservices under `backend`:
 
