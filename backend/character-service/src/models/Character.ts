@@ -10,6 +10,7 @@ interface CharacterDocument {
   class: string;
   race: string;
   gender: string;
+  color: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +53,10 @@ const characterSchema = new mongoose.Schema<CharacterDocument>(
       default: ''
     },
     gender: {
+      type: String,
+      default: ''
+    },
+    color: {
       type: String,
       default: ''
     }
