@@ -37,12 +37,30 @@ async function createDefaultCharacter({ roomId, userId, userName, avatarId }: Cr
 
 const roomModel: RoomModelLike = {
   create: async (payload) => {
-    const room = await Room.create(payload);
-    return {
-      id: room.id,
-      roomTypeId: room.roomTypeId,
-      createdAt: room.createdAt
-    };
+    const maxAttempts = 5;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const room = await Room.create(payload);
+        return {
+          id: room.id,
+          roomTypeId: room.roomTypeId,
+          createdAt: room.createdAt
+        };
+      } catch (error: unknown) {
+        const isDuplicateKeyError =
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          (error as { code?: number }).code === 11000;
+
+        if (!isDuplicateKeyError || attempt === maxAttempts) {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error('Failed to create room after retries');
   },
   findById: async (id) => {
     const room = await Room.findById(id);

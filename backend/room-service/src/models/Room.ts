@@ -1,6 +1,8 @@
+import { generate } from 'random-words';
 import { mongoose } from '../db';
 
 interface RoomDocument {
+  _id: string;
   roomTypeId: 'munchkin';
   createdAt: Date;
   updatedAt: Date;
@@ -14,8 +16,27 @@ interface RoomAssociationDocument {
   updatedAt: Date;
 }
 
+function generateRoomId() {
+  const word = generate({
+    exactly: 1,
+    join: '',
+    minLength: 2,
+    maxLength: 6,
+    formatter: (value) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+  }).toUpperCase();
+  const number = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, '0');
+
+  return `${word}${number}`;
+}
+
 const roomSchema = new mongoose.Schema<RoomDocument>(
   {
+    _id: {
+      type: String,
+      default: generateRoomId
+    },
     roomTypeId: {
       type: String,
       required: true,
