@@ -6,9 +6,11 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
+    "start:lambda": "tsx src/lambda.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@codegenie/serverless-express": "^4.17.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",

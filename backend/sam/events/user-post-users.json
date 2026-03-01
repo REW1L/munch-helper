@@ -1,0 +1,21 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /users",
+  "rawPath": "/users",
+  "rawQueryString": "",
+  "headers": {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "host": "localhost"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST",
+      "path": "/users",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "sam-local"
+    }
+  },
+  "body": "{\"name\":\"Alice\",\"avatarId\":1}",
+  "isBase64Encoded": false
+}

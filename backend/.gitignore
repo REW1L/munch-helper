@@ -45,3 +45,8 @@ vitest-report/
 
 # Docker overrides
 docker-compose.override.yml
+
+# AWS SAM
+.aws-sam/
+samconfig.local.toml
+samconfig.*.local.toml

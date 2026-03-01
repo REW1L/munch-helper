@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: "Munch Helper backend SAM template (phase 1: user-service)"
+
+Parameters:
+  UserMongoUri:
+    Type: String
+    Description: MongoDB connection URI used by user-service Lambda
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    MemorySize: 512
+    Timeout: 15
+    Tracing: Active
+
+Resources:
+  UserServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-user-service
+      CodeUri: ../user-service
+      Handler: lambda.handler
+      Environment:
+        Variables:
+          USER_MONGO_URI: !Ref UserMongoUri
+      Events:
+        UserHealthGet:
+          Type: HttpApi
+          Properties:
+            Path: /health
+            Method: GET
+        UserCreatePost:
+          Type: HttpApi
+          Properties:
+            Path: /users
+            Method: POST
+        UserReadGet:
+          Type: HttpApi
+          Properties:
+            Path: /users/{userId}
+            Method: GET
+        UserUpdatePatch:
+          Type: HttpApi
+          Properties:
+            Path: /users/{userId}
+            Method: PATCH
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+Outputs:
+  ApiBaseUrl:
+    Description: HTTP API endpoint for this stack
+    Value: !Sub https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com

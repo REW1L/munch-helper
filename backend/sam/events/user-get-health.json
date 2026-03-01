@@ -1,0 +1,19 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /health",
+  "rawPath": "/health",
+  "rawQueryString": "",
+  "headers": {
+    "accept": "application/json",
+    "host": "localhost"
+  },
+  "requestContext": {
+    "http": {
+      "method": "GET",
+      "path": "/health",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "sam-local"
+    }
+  },
+  "isBase64Encoded": false
+}
