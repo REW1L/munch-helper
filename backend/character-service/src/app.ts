@@ -86,9 +86,9 @@ export function createApp(characterModel: CharacterModelLike) {
         avatarId,
         level = 1,
         power = 0,
-        class: klass = '',
-        race = '',
-        gender = ''
+        class: klass = JSON.stringify([]),
+        race = JSON.stringify(['Human']),
+        gender = JSON.stringify(['male'])
       } = req.body || {};
 
       if (typeof roomId !== 'string' || !roomId.trim()) {
