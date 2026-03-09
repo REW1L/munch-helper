@@ -3,8 +3,8 @@ version = 0.1
 [default]
 [default.global.parameters]
 stack_name = "munch-helper-user-service"
-region = "us-east-1"
-capabilities = "CAPABILITY_IAM"
+region = "eu-central-1"
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM"
 
 [default.build.parameters]
 template_file = "sam/template.yaml"
