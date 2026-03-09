@@ -10,10 +10,10 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
 import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
-import ShopModal from './main/modal-shop';
 
 export default function Home() {
-  const [shopModalVisible, setShopModalVisible] = useState(false);
+  // TODO: Not implemented yet
+  // const [shopModalVisible, setShopModalVisible] = useState(false);
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
@@ -40,11 +40,9 @@ export default function Home() {
               <View style={styles.gameActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
                   <Text style={styles.actionButtonLabel}>Create</Text>
-                  <Text style={styles.actionButtonCost}>20 coins</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
                   <Text style={styles.actionButtonLabel}>Join</Text>
-                  <Text style={styles.actionButtonCost}>10 coins</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -70,6 +68,7 @@ export default function Home() {
                 <VioletButton title="Change" onPress={() => setChangeUserModalVisible(true)} />
               </View>
             </View>
+            {/* Currently not implemented
             <View style={styles.profileStats}>
               <View style={styles.coinDisplay}>
                 <Text style={styles.coinAmount}>100</Text>
@@ -77,9 +76,10 @@ export default function Home() {
               </View>
               <VioletButton title="Shop" onPress={() => setShopModalVisible(true)} />
             </View>
+            */}
           </View>
 
-          <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} />
+          {/* Currently not implemented <ShopModal visible={shopModalVisible} onClose={() => setShopModalVisible(false)} /> */}
           {changeUserModalVisible && <ChangeUserModal
             user={userProfile}
             visible={changeUserModalVisible}
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     minWidth: 80,
+    height: 50,
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: '#3C3636',
     borderRadius: 5,
-    flexDirection: 'column',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 5,
   },
