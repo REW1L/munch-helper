@@ -1,5 +1,5 @@
 type: object
-required: [id, userId, name, avatar, level, power, class, race, gender]
+required: [id, userId, name, avatar, color, level, power, class, race, gender]
 properties:
   id:
     type: string
@@ -9,6 +9,10 @@ properties:
     type: string
   avatar:
     type: integer
+  color:
+    type: string
+    pattern: "^#[0-9A-Fa-f]{6}$"
+    description: Hex color code in #RRGGBB format
   level:
     type: integer
   power:

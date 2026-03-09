@@ -42,13 +42,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       try {
         const fetchedCharacters = await getCharactersByRoom(roomId);
 
-        setCharacters((previousCharacters) => {
-          const previousById = new Map(previousCharacters.map((character) => [character.id, character]));
-          return fetchedCharacters.map((character) => {
-            const previous = previousById.get(character.id);
-            return previous ? { ...character, color: previous.color } : character;
-          });
-        });
+        setCharacters(fetchedCharacters);
         setErrorMessage(null);
 
         const hasCurrentCharacter = fetchedCharacters.some((character) => character.userId === userProfile.id);
@@ -62,21 +56,16 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
               userId: userProfile.id,
               nickname: userProfile.nickname,
               avatar: userProfile.avatar,
+              color: '#9966FF',
               level: 1,
               power: 0,
               race: ['Human'],
               gender: ['male'],
-              class: [],
+              class: []
             });
 
             const refreshedCharacters = await getCharactersByRoom(roomId);
-            setCharacters((previousCharacters) => {
-              const previousById = new Map(previousCharacters.map((character) => [character.id, character]));
-              return refreshedCharacters.map((character) => {
-                const previous = previousById.get(character.id);
-                return previous ? { ...character, color: previous.color } : character;
-              });
-            });
+            setCharacters(refreshedCharacters);
           } finally {
             isEnsuringCurrentCharacterRef.current = false;
           }
@@ -125,9 +114,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     const updatedCharacter = await updateCharacter(characterId, payload);
     setCharacters((previousCharacters) =>
       previousCharacters.map((character) =>
-        character.id === updatedCharacter.id
-          ? { ...updatedCharacter, color: character.color || updatedCharacter.color }
-          : character
+        character.id === updatedCharacter.id ? updatedCharacter : character
       )
     );
     return updatedCharacter;

@@ -7,15 +7,38 @@ export interface RoomServiceOptions {
   characterCallTimeoutMs: number;
 }
 
+function deterministicHexColor(seed: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  const red = (hash >>> 16) & 0xff;
+  const green = (hash >>> 8) & 0xff;
+  const blue = hash & 0xff;
+
+  const normalizeChannel = (channel: number): number => {
+    const min = 70;
+    const max = 210;
+    return Math.round((channel / 255) * (max - min) + min);
+  };
+
+  const toHex = (channel: number): string => normalizeChannel(channel).toString(16).padStart(2, '0').toUpperCase();
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+}
+
 function createDefaultCharacterFactory(options: RoomServiceOptions): AppDependencies['createDefaultCharacter'] {
   return async ({ roomId, userId, userName, avatarId }) => {
+    const colorSeed = typeof userId === 'string' && userId.trim() ? userId : `${roomId}:${userName}`;
     const response = await axios.post(
       `${options.characterServiceUrl}/characters`,
       {
         roomId,
         userId,
         name: typeof userName === 'string' && userName.trim() ? userName.trim() : 'Adventurer',
-        avatarId: typeof avatarId === 'number' ? avatarId : 1
+        avatarId: typeof avatarId === 'number' ? avatarId : 1,
+        color: deterministicHexColor(colorSeed)
       },
       {
         timeout: options.characterCallTimeoutMs

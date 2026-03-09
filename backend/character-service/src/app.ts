@@ -8,6 +8,7 @@ export interface CharacterLike {
   userId: string | null;
   name: string;
   avatarId: number;
+  color: string;
   level: number;
   power: number;
   class: string;
@@ -30,6 +31,57 @@ export interface CharacterModelLike {
 
 export function createApp(characterModel: CharacterModelLike) {
   const app = express();
+  const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
+
+  const deterministicHexColor = (seed: string): string => {
+    let hash = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+      hash ^= seed.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    const red = (hash >>> 16) & 0xff;
+    const green = (hash >>> 8) & 0xff;
+    const blue = hash & 0xff;
+
+    const normalizeChannel = (channel: number): number => {
+      const min = 70;
+      const max = 210;
+      return Math.round((channel / 255) * (max - min) + min);
+    };
+
+    const toHex = (channel: number): string => normalizeChannel(channel).toString(16).padStart(2, '0').toUpperCase();
+    return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+  };
+
+  const normalizeHexColor = (value: string): string => value.trim().toUpperCase();
+
+  const getCharacterColor = (character: CharacterLike): string => {
+    if (typeof character.color === 'string') {
+      const normalizedColor = normalizeHexColor(character.color);
+      if (hexColorPattern.test(normalizedColor)) {
+        return normalizedColor;
+      }
+    }
+
+    return deterministicHexColor(character.id);
+  };
+
+  const toResponseCharacter = (character: CharacterLike) => ({
+    id: character.id,
+    roomId: character.roomId,
+    userId: character.userId,
+    name: character.name,
+    avatarId: character.avatarId,
+    color: getCharacterColor(character),
+    level: character.level,
+    power: character.power,
+    class: character.class,
+    race: character.race,
+    gender: character.gender,
+    createdAt: character.createdAt,
+    updatedAt: character.updatedAt
+  });
 
   const toParamString = (value: string | string[] | undefined): string => {
     if (Array.isArray(value)) {
@@ -57,20 +109,7 @@ export function createApp(characterModel: CharacterModelLike) {
       const characters = await characterModel.find({ roomId }).sort({ createdAt: 1 });
 
       res.json({
-        items: characters.map((character) => ({
-          id: character.id,
-          roomId: character.roomId,
-          userId: character.userId,
-          name: character.name,
-          avatarId: character.avatarId,
-          level: character.level,
-          power: character.power,
-          class: character.class,
-          race: character.race,
-          gender: character.gender,
-          createdAt: character.createdAt,
-          updatedAt: character.updatedAt
-        }))
+        items: characters.map(toResponseCharacter)
       });
     } catch (error) {
       next(error);
@@ -84,6 +123,7 @@ export function createApp(characterModel: CharacterModelLike) {
         userId = null,
         name,
         avatarId,
+        color,
         level = 1,
         power = 0,
         class: klass = JSON.stringify([]),
@@ -100,12 +140,16 @@ export function createApp(characterModel: CharacterModelLike) {
       if (typeof avatarId !== 'number') {
         return res.status(400).json({ message: 'Field avatarId is required and must be a number' });
       }
+      if (typeof color !== 'string' || !hexColorPattern.test(normalizeHexColor(color))) {
+        return res.status(400).json({ message: 'Field color is required and must be a valid hex color (#RRGGBB)' });
+      }
 
       const character = await characterModel.create({
         roomId: roomId.trim(),
         userId,
         name: name.trim(),
         avatarId,
+        color: normalizeHexColor(color),
         level,
         power,
         class: klass,
@@ -113,20 +157,7 @@ export function createApp(characterModel: CharacterModelLike) {
         gender
       });
 
-      res.status(201).json({
-        id: character.id,
-        roomId: character.roomId,
-        userId: character.userId,
-        name: character.name,
-        avatarId: character.avatarId,
-        level: character.level,
-        power: character.power,
-        class: character.class,
-        race: character.race,
-        gender: character.gender,
-        createdAt: character.createdAt,
-        updatedAt: character.updatedAt
-      });
+      res.status(201).json(toResponseCharacter(character));
     } catch (error) {
       next(error);
     }
@@ -135,7 +166,7 @@ export function createApp(characterModel: CharacterModelLike) {
   app.patch('/characters/:characterId', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const characterId = toParamString(req.params.characterId as string | string[] | undefined);
-      const allowed = ['name', 'avatarId', 'level', 'power', 'class', 'race', 'gender', 'userId'];
+      const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId'];
       const updates: Record<string, unknown> = {};
 
       for (const key of allowed) {
@@ -158,6 +189,12 @@ export function createApp(characterModel: CharacterModelLike) {
       if (Object.prototype.hasOwnProperty.call(updates, 'avatarId') && typeof updates.avatarId !== 'number') {
         return res.status(400).json({ message: 'Field avatarId must be a number when provided' });
       }
+      if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
+        if (typeof updates.color !== 'string' || !hexColorPattern.test(normalizeHexColor(updates.color))) {
+          return res.status(400).json({ message: 'Field color must be a valid hex color (#RRGGBB) when provided' });
+        }
+        updates.color = normalizeHexColor(updates.color);
+      }
 
       const character = await characterModel.findByIdAndUpdate(characterId, updates, {
         new: true,
@@ -168,20 +205,7 @@ export function createApp(characterModel: CharacterModelLike) {
         return res.status(404).json({ message: 'Character not found' });
       }
 
-      res.json({
-        id: character.id,
-        roomId: character.roomId,
-        userId: character.userId,
-        name: character.name,
-        avatarId: character.avatarId,
-        level: character.level,
-        power: character.power,
-        class: character.class,
-        race: character.race,
-        gender: character.gender,
-        createdAt: character.createdAt,
-        updatedAt: character.updatedAt
-      });
+      res.json(toResponseCharacter(character));
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'CastError') {
         return res.status(404).json({ message: 'Character not found' });

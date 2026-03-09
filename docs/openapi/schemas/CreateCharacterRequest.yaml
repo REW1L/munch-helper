@@ -1,5 +1,5 @@
 type: object
-required: [name, avatar, roomId]
+required: [name, avatar, roomId, color]
 additionalProperties: false
 properties:
   roomId:
@@ -10,3 +10,7 @@ properties:
     type: string
   avatar:
     type: integer
+  color:
+    type: string
+    pattern: "^#[0-9A-Fa-f]{6}$"
+    description: Hex color code in #RRGGBB format

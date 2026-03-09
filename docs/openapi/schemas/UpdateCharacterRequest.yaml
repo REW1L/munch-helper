@@ -5,6 +5,10 @@ properties:
     type: string
   avatar:
     type: integer
+  color:
+    type: string
+    pattern: "^#[0-9A-Fa-f]{6}$"
+    description: Hex color code in #RRGGBB format
   level:
     type: integer
   power:

@@ -210,11 +210,12 @@ const MunchkinIndexView: React.FC = () => {
                 userId: userProfile.id,
                 nickname: character.name,
                 avatar: character.avatar ?? userProfile.avatar,
+                color: character.color,
                 level: 1,
                 power: 0,
                 race: character.race,
                 gender: character.gender,
-                class: character.class,
+                class: character.class
               });
               setCreateCharacterModalVisible(false);
             }}
@@ -228,11 +229,12 @@ const MunchkinIndexView: React.FC = () => {
                 await update(character.id, {
                   nickname: character.nickname,
                   avatar: character.avatar,
+                  color: character.color,
                   level: character.level,
                   power: character.power,
                   race: character.race,
                   gender: character.gender,
-                  class: character.class,
+                  class: character.class
                 });
                 setChangeCharacterModalVisible(false);
               }}
