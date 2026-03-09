@@ -9,13 +9,13 @@ export default function LandingPage() {
         flex: 1,
         backgroundColor: "#121212",
       }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
-        <Stack.Screen options={{ title: 'Tabletop Helper', headerShown: false }} />
+        <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
           <View style={styles.heroSection}>
-            <Text style={styles.title}>Tabletop Helper</Text>
-            <Text style={styles.subtitle}>Your companion for tabletop games</Text>
+            <Text style={styles.title}>Munch Helper</Text>
+            <Text style={styles.subtitle}>Your companion for tabletop games like Munchkin</Text>
             <Text style={styles.description}>
-              Join or create game rooms, manage your profile, and enjoy classic tabletop games like Munchkin — all in one place.
+              Create game rooms with your friends, manage characters in games, and forget about remembering and recalculating stats.
             </Text>
           </View>
           <View style={styles.actionsSection}>
