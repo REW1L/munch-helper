@@ -38,12 +38,44 @@ export interface AppDependencies {
   }) => Promise<{ id: string }>;
 }
 
-export function createApp(deps: AppDependencies) {
+interface CreateRoomAppOptions {
+  routePrefix?: string;
+}
+
+const normalizeRoutePrefix = (value: string | undefined): string => {
+  if (!value) {
+    return '/';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '/') {
+    return '/';
+  }
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
+  return withoutTrailingSlash || '/';
+};
+
+export function createApp(deps: AppDependencies, options: CreateRoomAppOptions = {}) {
   const app = express();
+  const routePrefix = normalizeRoutePrefix(options.routePrefix);
 
   app.use(cors());
   app.use(morgan('dev'));
   app.use(express.json());
+
+  if (routePrefix !== '/') {
+    // Lambda events may contain stage-prefixed URLs; strip once so route handlers stay unchanged.
+    app.use((req: Request, _res: Response, next: NextFunction) => {
+      if (req.url === routePrefix) {
+        req.url = '/';
+      } else if (req.url.startsWith(`${routePrefix}/`)) {
+        req.url = req.url.slice(routePrefix.length) || '/';
+      }
+      next();
+    });
+  }
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ service: 'room-service', status: 'ok' });

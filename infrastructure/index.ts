@@ -9,8 +9,12 @@ const config = new pulumi.Config();
 const apiUrl = config.require("apiUrl");
 const artifactDirConfig = config.get("artifactDir") ?? "../frontend/dist";
 const artifactDir = path.resolve(__dirname, artifactDirConfig);
-const apiOriginUrl = "https://zf2as72hof.execute-api.eu-central-1.amazonaws.com";
-const apiOriginDomainName = new URL(apiOriginUrl).hostname;
+const backend = aws.cloudformation.getStack({
+  name: "munch-helper-user-service",
+  region: "eu-central-1",
+});
+const apiOriginUrl = backend.then(stack => stack.outputs?.ApiBaseUrl);
+const apiOriginDomainName = apiOriginUrl.then(url => new URL(url).hostname);
 const cachePolicyCachingOptimizedId = "658327ea-f89d-4fab-a63d-7e88639e58f6";
 const cachePolicyCachingDisabled = aws.cloudfront.getCachePolicyOutput({
   name: "Managed-CachingDisabled",
@@ -69,20 +73,6 @@ const originAccessControl = new aws.cloudfront.OriginAccessControl("frontendOrig
   signingProtocol: "sigv4",
 });
 
-const apiPathRewriteFunction = new aws.cloudfront.Function("apiPathRewriteFunction", {
-  name: "munch-helper-api-path-rewrite",
-  runtime: "cloudfront-js-1.0",
-  comment: "Strip /api prefix for API origin requests",
-  publish: true,
-  code: `function handler(event) {
-  var request = event.request;
-  if (request.uri && request.uri.indexOf('/api') === 0) {
-    request.uri = request.uri.substring(4) || '/';
-  }
-  return request;
-}`,
-});
-
 const distribution = new aws.cloudfront.Distribution("frontendDistribution", {
   enabled: true,
   defaultRootObject: "index.html",
@@ -117,12 +107,6 @@ const distribution = new aws.cloudfront.Distribution("frontendDistribution", {
       compress: true,
       cachePolicyId: cachePolicyCachingDisabledId,
       originRequestPolicyId: originRequestPolicyAllViewerExceptHostHeaderId,
-      functionAssociations: [
-        {
-          eventType: "viewer-request",
-          functionArn: apiPathRewriteFunction.arn,
-        },
-      ],
     },
   ],
   defaultCacheBehavior: {

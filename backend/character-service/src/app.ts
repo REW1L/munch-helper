@@ -29,8 +29,28 @@ export interface CharacterModelLike {
   findByIdAndDelete: (id: string) => Promise<CharacterLike | null>;
 }
 
-export function createApp(characterModel: CharacterModelLike) {
+interface CreateCharacterAppOptions {
+  routePrefix?: string;
+}
+
+const normalizeRoutePrefix = (value: string | undefined): string => {
+  if (!value) {
+    return '/';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '/') {
+    return '/';
+  }
+
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
+  return withoutTrailingSlash || '/';
+};
+
+export function createApp(characterModel: CharacterModelLike, options: CreateCharacterAppOptions = {}) {
   const app = express();
+  const routePrefix = normalizeRoutePrefix(options.routePrefix);
   const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
 
   const deterministicHexColor = (seed: string): string => {
@@ -93,6 +113,18 @@ export function createApp(characterModel: CharacterModelLike) {
   app.use(cors());
   app.use(morgan('dev'));
   app.use(express.json());
+
+  if (routePrefix !== '/') {
+    // Lambda events may contain stage-prefixed URLs; strip once so route handlers stay unchanged.
+    app.use((req: Request, _res: Response, next: NextFunction) => {
+      if (req.url === routePrefix) {
+        req.url = '/';
+      } else if (req.url.startsWith(`${routePrefix}/`)) {
+        req.url = req.url.slice(routePrefix.length) || '/';
+      }
+      next();
+    });
+  }
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ service: 'character-service', status: 'ok' });

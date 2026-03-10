@@ -1,6 +1,10 @@
 import { createApp, type CharacterModelLike } from './app';
 import { Character } from './models/Character';
 
+interface BuildCharacterAppOptions {
+  routePrefix?: string;
+}
+
 export function createCharacterModel(): CharacterModelLike {
   return {
     find: (query) => ({
@@ -86,6 +90,6 @@ export function createCharacterModel(): CharacterModelLike {
   };
 }
 
-export function buildCharacterApp() {
-  return createApp(createCharacterModel());
+export function buildCharacterApp(options: BuildCharacterAppOptions = {}) {
+  return createApp(createCharacterModel(), { routePrefix: options.routePrefix });
 }

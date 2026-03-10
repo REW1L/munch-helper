@@ -19,4 +19,4 @@ template_file = "sam/template.yaml"
 template_file = ".aws-sam/build/template.yaml"
 confirm_changeset = true
 resolve_s3 = true
-parameter_overrides = "UserMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/user?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox RoomMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/room?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox CharacterMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/character?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox CharacterServiceUrl=https://helpamunch.click/api CharacterCallTimeoutMs=2000"
+parameter_overrides = "UserMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/user?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox RoomMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/room?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox CharacterMongoUri=mongodb+srv://sandbox.4ty9upc.mongodb.net/character?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox CharacterServiceUrl=https://helpamunch.click/api CharacterCallTimeoutMs=2000 RoutePrefix=/api/"

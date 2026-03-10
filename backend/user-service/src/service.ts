@@ -1,6 +1,10 @@
 import { createApp, type UserModelLike } from './app';
 import { User } from './models/User';
 
+interface BuildUserAppOptions {
+  routePrefix?: string;
+}
+
 export function createUserModel(): UserModelLike {
   return {
     create: async (payload) => {
@@ -42,6 +46,6 @@ export function createUserModel(): UserModelLike {
   };
 }
 
-export function buildUserApp() {
-  return createApp(createUserModel());
+export function buildUserApp(options: BuildUserAppOptions = {}) {
+  return createApp(createUserModel(), { routePrefix: options.routePrefix });
 }

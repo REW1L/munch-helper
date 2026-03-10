@@ -22,6 +22,10 @@ Parameters:
     Type: Number
     Default: 2000
     Description: Timeout in milliseconds for room-service to call character-service
+  RoutePrefix:
+    Type: String
+    Default: /
+    Description: Optional route prefix stripped by Lambda apps before route matching
 
 Globals:
   Function:
@@ -31,20 +35,23 @@ Globals:
     MemorySize: 512
     Timeout: 15
     Tracing: Active
-  HttpApi:
-    CorsConfiguration:
-      AllowOrigins:
-        - https://helpamunch.click
-      AllowHeaders:
-        - "*"
-      AllowMethods:
-        - GET
-        - POST
-        - PATCH
-        - DELETE
-        - OPTIONS
-
 Resources:
+  CloudHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: api
+      CorsConfiguration:
+        AllowOrigins:
+          - https://helpamunch.click
+        AllowHeaders:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - DELETE
+          - OPTIONS
+
   UserServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -100,25 +107,30 @@ Resources:
       Environment:
         Variables:
           USER_MONGO_URI: !Ref UserMongoUri
+          ROUTE_PREFIX: !Ref RoutePrefix
       Events:
         UserHealthGet:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /health
             Method: GET
         UserCreatePost:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /users
             Method: POST
         UserReadGet:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /users/{userId}
             Method: GET
         UserUpdatePatch:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /users/{userId}
             Method: PATCH
     Metadata:
@@ -143,15 +155,18 @@ Resources:
           ROOM_MONGO_URI: !Ref RoomMongoUri
           CHARACTER_SERVICE_URL: !Ref CharacterServiceUrl
           CHARACTER_CALL_TIMEOUT_MS: !Ref CharacterCallTimeoutMs
+          ROUTE_PREFIX: !Ref RoutePrefix
       Events:
         RoomCreatePost:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /rooms
             Method: POST
         RoomAssociationCreatePost:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /rooms/associations
             Method: POST
     Metadata:
@@ -174,25 +189,30 @@ Resources:
       Environment:
         Variables:
           CHARACTER_MONGO_URI: !Ref CharacterMongoUri
+          ROUTE_PREFIX: !Ref RoutePrefix
       Events:
         CharacterListGet:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /characters
             Method: GET
         CharacterCreatePost:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /characters
             Method: POST
         CharacterUpdatePatch:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /characters/{characterId}
             Method: PATCH
         CharacterDelete:
           Type: HttpApi
           Properties:
+            ApiId: !Ref CloudHttpApi
             Path: /characters/{characterId}
             Method: DELETE
     Metadata:
@@ -208,4 +228,4 @@ Resources:
 Outputs:
   ApiBaseUrl:
     Description: HTTP API endpoint for this stack
-    Value: !Sub https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com
+    Value: !Sub https://${CloudHttpApi}.execute-api.${AWS::Region}.amazonaws.com/api

@@ -5,6 +5,7 @@ import { Room, RoomAssociation } from './models/Room';
 export interface RoomServiceOptions {
   characterServiceUrl: string;
   characterCallTimeoutMs: number;
+  routePrefix?: string;
 }
 
 function deterministicHexColor(seed: string): string {
@@ -125,5 +126,7 @@ export function buildRoomApp(options: RoomServiceOptions) {
     roomModel: createRoomModel(),
     roomAssociationModel: createRoomAssociationModel(),
     createDefaultCharacter: createDefaultCharacterFactory(options)
+  }, {
+    routePrefix: options.routePrefix
   });
 }
