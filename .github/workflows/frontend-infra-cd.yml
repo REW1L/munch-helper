@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "frontend/**"
+      - "infrastructure/**"
+      - ".github/workflows/frontend-infra-cd.yml"
+      - "backend/sam/template.yaml"
 
 permissions:
   contents: read
