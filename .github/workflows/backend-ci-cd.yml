@@ -22,16 +22,12 @@ jobs:
         include:
           - service: gateway
             has_tests: false
-            test_glob: ""
           - service: user-service
             has_tests: true
-            test_glob: user-service/src/**/*.test.ts
           - service: room-service
             has_tests: true
-            test_glob: room-service/src/**/*.test.ts
           - service: character-service
             has_tests: true
-            test_glob: character-service/src/**/*.test.ts
 
     defaults:
       run:
@@ -59,7 +55,7 @@ jobs:
 
       - name: Test Service
         if: ${{ matrix.has_tests }}
-        run: npx vitest run "${{ matrix.test_glob }}" --config vitest.config.ts
+        run: npx vitest run "${{ matrix.service }}" --config vitest.config.ts
 
       - name: Skip Tests (No Test Suite)
         if: ${{ !matrix.has_tests }}
