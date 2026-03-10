@@ -120,3 +120,4 @@ jobs:
           command: up
           stack-name: ${{ env.PULUMI_STACK_NAME }}
           cloud-url: ${{ secrets.PULUMI_CLOUD_URL }}
+          work-dir: infrastructure
