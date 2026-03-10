@@ -6,7 +6,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const config = new pulumi.Config();
-const apiUrl = config.require("apiUrl");
 const artifactDirConfig = config.get("artifactDir") ?? "../frontend/dist";
 const artifactDir = path.resolve(__dirname, artifactDirConfig);
 const backend = aws.cloudformation.getStack({
@@ -37,14 +36,19 @@ const originRequestPolicyAllViewerExceptHostHeaderId = pulumi
     return id;
   });
 const customDomainName = "helpamunch.click";
-const customCertificateArn = "arn:aws:acm:us-east-1:366609327063:certificate/57725cb9-2f4f-41f0-a38d-cf92397324ed";
+const customCertificateArn = aws.acm.getCertificate({
+  domain: customDomainName,
+  region: "us-east-1",
+  types: ["AMAZON_ISSUED"],
+  mostRecent: true,
+}).then(cert => cert.arn);
 
 if (!fs.existsSync(artifactDir)) {
   throw new Error(
     `Frontend artifacts directory not found at ${artifactDir}. Run \"npm run export:web\" in ../frontend before \"pulumi up\".`
   );
 }
-export const accountId = aws.getCallerIdentity({}).then(current => current.accountId);
+const accountId = aws.getCallerIdentity({}).then(current => current.accountId);
 
 const bucket = new aws.s3.Bucket("frontendBucket", {
   bucket: pulumi.interpolate`munch-helper-frontend-${accountId}-sandbox`,
@@ -237,9 +241,4 @@ files.forEach((filePath) => {
   });
 });
 
-export const frontendApiUrl = apiUrl;
 export const artifactsPath = artifactDir;
-export const bucketName = bucket.bucket;
-export const distributionId = distribution.id;
-export const distributionDomainName = distribution.domainName;
-export const distributionUrl = pulumi.interpolate`https://${distribution.domainName}`;

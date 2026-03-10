@@ -48,7 +48,7 @@ jobs:
         run: npm ci
 
       - name: Build Docker Image
-        run: docker build -t tabletop-helper/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
+        run: docker build -t munch-helper/${{ matrix.service }}:${{ github.sha }} ./${{ matrix.service }}
 
       - name: Typecheck Service
         run: npm run typecheck -w ${{ matrix.service }}

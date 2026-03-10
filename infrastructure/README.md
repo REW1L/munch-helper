@@ -44,8 +44,7 @@ This Pulumi project deploys static frontend artifacts from `../frontend/dist` to
 
    ```bash
    pulumi config set aws:region eu-central-1
-   pulumi config set tabletop-helper-frontend:apiUrl https://your-api-domain
-   pulumi config set tabletop-helper-frontend:artifactDir ../frontend/dist
+   pulumi config set munch-helper-frontend:artifactDir ../frontend/dist
    ```
 
 5. Preview and deploy:
