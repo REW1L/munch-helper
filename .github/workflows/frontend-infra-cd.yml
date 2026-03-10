@@ -79,6 +79,7 @@ jobs:
       API_BASE_URL: ${{ vars.API_BASE_URL }}
       AWS_DEPLOY_ROLE_NAME: ${{ vars.AWS_DEPLOY_ROLE_NAME }}
       PULUMI_CLOUD_URL: ${{ secrets.PULUMI_CLOUD_URL }}
+      PULUMI_STACK_NAME: ${{ vars.PULUMI_STACK_NAME }}
 
     defaults:
       run:
@@ -117,5 +118,5 @@ jobs:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
         with:
           command: up
-          stack-name: dev
+          stack-name: ${{ env.PULUMI_STACK_NAME }}
           cloud-url: ${{ secrets.PULUMI_CLOUD_URL }}
