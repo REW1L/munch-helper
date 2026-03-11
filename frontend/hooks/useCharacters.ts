@@ -7,7 +7,8 @@ import {
   updateCharacter,
 } from '@/api/characters';
 import { UserProfileInterface } from '@/hooks/useUser';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 interface UseRoomCharactersResult {
   characters: Character[];
@@ -19,6 +20,13 @@ interface UseRoomCharactersResult {
 }
 
 const POLL_INTERVAL_MS = 5000;
+const ENSURE_CHARACTER_COOLDOWN_MS = 5000;
+
+const getCharactersQueryKey = (roomId: string | undefined): readonly ['characters', string | undefined] => ['characters', roomId];
+
+type CharactersMutationContext = {
+  previousCharacters: Character[];
+};
 
 function isAbortError(error: unknown): boolean {
   return (
@@ -28,132 +36,184 @@ function isAbortError(error: unknown): boolean {
 }
 
 export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const isFetchingRef = useRef(false);
+  const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
-  const requestVersionRef = useRef(0);
+  const lastEnsureAttemptAtRef = useRef(0);
 
-  const updateCharactersIfCurrent = useCallback((requestVersion: number, nextCharacters: Character[]) => {
-    if (requestVersionRef.current !== requestVersion) {
-      return;
-    }
-
-    setCharacters(nextCharacters);
-  }, []);
-
-  const updateErrorIfCurrent = useCallback((requestVersion: number, message: string | null) => {
-    if (requestVersionRef.current !== requestVersion) {
-      return;
-    }
-
-    setErrorMessage(message);
-  }, []);
-
-  const fetchCharacters = useCallback(
-    async (silent: boolean = false, signal?: AbortSignal) => {
-      if (!roomId || isFetchingRef.current) {
-        return;
+  const charactersQuery = useQuery({
+    queryKey: getCharactersQueryKey(roomId),
+    queryFn: async ({ signal }) => {
+      if (!roomId) {
+        return [] as Character[];
       }
 
-      const requestVersion = ++requestVersionRef.current;
-      isFetchingRef.current = true;
-      if (!silent) {
-        setIsLoading(true);
-      }
-
-      try {
-        const fetchedCharacters = await getCharactersByRoom(roomId, signal);
-
-        updateCharactersIfCurrent(requestVersion, fetchedCharacters);
-        updateErrorIfCurrent(requestVersion, null);
-
-        const hasCurrentCharacter = fetchedCharacters.some((character) => character.userId === userProfile.id);
-
-        if (!hasCurrentCharacter && userProfile.id && !isEnsuringCurrentCharacterRef.current) {
-          isEnsuringCurrentCharacterRef.current = true;
-
-          try {
-            await createCharacter({
-              roomId,
-              userId: userProfile.id,
-              nickname: userProfile.nickname,
-              avatar: userProfile.avatar,
-              color: '#9966FF',
-              level: 1,
-              power: 0,
-              race: ['Human'],
-              gender: ['male'],
-              class: []
-            });
-
-            const refreshedCharacters = await getCharactersByRoom(roomId, signal);
-            updateCharactersIfCurrent(requestVersion, refreshedCharacters);
-          } finally {
-            isEnsuringCurrentCharacterRef.current = false;
-          }
-        }
-      } catch (error) {
-        if (isAbortError(error)) {
-          return;
-        }
-        updateErrorIfCurrent(requestVersion, error instanceof Error ? error.message : 'Failed to load characters');
-      } finally {
-        isFetchingRef.current = false;
-        if (!silent && requestVersionRef.current === requestVersion) {
-          setIsLoading(false);
-        }
-      }
+      return getCharactersByRoom(roomId, signal);
     },
-    [roomId, updateCharactersIfCurrent, updateErrorIfCurrent, userProfile.avatar, userProfile.id, userProfile.nickname]
-  );
+    enabled: Boolean(roomId),
+    refetchInterval: roomId ? POLL_INTERVAL_MS : false,
+  });
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    setCharacters([]);
-    setErrorMessage(null);
-    setIsLoading(true);
-    void fetchCharacters(false, controller.signal);
-
-    const timer = setInterval(() => {
-      void fetchCharacters(true, controller.signal);
-    }, POLL_INTERVAL_MS);
-
-    return () => {
-      controller.abort();
-      clearInterval(timer);
-    };
-  }, [fetchCharacters, roomId]);
-
-  const create = useCallback(
-    async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
+  const createMutation = useMutation<Character, Error, Omit<CharacterWritePayload, 'roomId'>, CharactersMutationContext>({
+    mutationFn: async (payload) => {
       if (!roomId) {
         throw new Error('Room ID is required to create a character');
       }
 
-      const createdCharacter = await createCharacter({ ...payload, roomId });
-      setCharacters((previousCharacters) => [...previousCharacters, createdCharacter]);
-      return createdCharacter;
+      return createCharacter({ ...payload, roomId });
     },
-    [roomId]
+    onMutate: async (payload) => {
+      const queryKey = getCharactersQueryKey(roomId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
+
+      const optimisticCharacter: Character = {
+        id: `temp-${Date.now()}`,
+        roomId: roomId ?? '',
+        userId: payload.userId ?? null,
+        nickname: payload.nickname,
+        avatar: payload.avatar,
+        color: payload.color,
+        level: payload.level ?? 1,
+        power: payload.power ?? 0,
+        class: payload.class ?? [],
+        race: payload.race ?? [],
+        gender: payload.gender ?? [],
+      };
+
+      queryClient.setQueryData<Character[]>(queryKey, [...previousCharacters, optimisticCharacter]);
+
+      return { previousCharacters };
+    },
+    onError: (_error, _payload, context) => {
+      if (context) {
+        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+      }
+    },
+    onSuccess: (createdCharacter) => {
+      queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
+        const nonOptimisticCharacters = currentCharacters.filter((character) => !character.id.startsWith('temp-'));
+        return [...nonOptimisticCharacters, createdCharacter];
+      });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+    },
+  });
+
+  const updateMutation = useMutation<Character, Error, { characterId: string; payload: CharacterUpdatePayload }, CharactersMutationContext>({
+    mutationFn: async ({ characterId, payload }) => {
+      return updateCharacter(characterId, payload);
+    },
+    onMutate: async ({ characterId, payload }) => {
+      const queryKey = getCharactersQueryKey(roomId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
+
+      queryClient.setQueryData<Character[]>(queryKey, (currentCharacters = []) =>
+        currentCharacters.map((character) =>
+          character.id === characterId
+            ? {
+              ...character,
+              userId: payload.userId ?? character.userId,
+              nickname: payload.nickname ?? character.nickname,
+              avatar: payload.avatar ?? character.avatar,
+              color: payload.color ?? character.color,
+              level: payload.level ?? character.level,
+              power: payload.power ?? character.power,
+              class: payload.class ?? character.class,
+              race: payload.race ?? character.race,
+              gender: payload.gender ?? character.gender,
+            }
+            : character
+        )
+      );
+
+      return { previousCharacters };
+    },
+    onError: (_error, _variables, context) => {
+      if (context) {
+        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+      }
+    },
+    onSuccess: (updatedCharacter) => {
+      queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) =>
+        currentCharacters.map((character) => (character.id === updatedCharacter.id ? updatedCharacter : character))
+      );
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+    },
+  });
+
+  const create = useCallback(
+    async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
+      return createMutation.mutateAsync(payload);
+    },
+    [createMutation]
   );
 
   const update = useCallback(async (characterId: string, payload: CharacterUpdatePayload) => {
-    const updatedCharacter = await updateCharacter(characterId, payload);
-    setCharacters((previousCharacters) =>
-      previousCharacters.map((character) =>
-        character.id === updatedCharacter.id ? updatedCharacter : character
-      )
-    );
-    return updatedCharacter;
-  }, []);
+    return updateMutation.mutateAsync({ characterId, payload });
+  }, [updateMutation]);
+
+  const characters = charactersQuery.data ?? [];
+  const hasCompletedInitialFetch = charactersQuery.isFetchedAfterMount && !charactersQuery.isFetching;
+
+  useEffect(() => {
+    if (!roomId || !userProfile.id || !hasCompletedInitialFetch) {
+      return;
+    }
+
+    const hasCurrentCharacter = characters.some((character) => character.userId === userProfile.id);
+    if (hasCurrentCharacter || isEnsuringCurrentCharacterRef.current) {
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastEnsureAttemptAtRef.current < ENSURE_CHARACTER_COOLDOWN_MS) {
+      return;
+    }
+
+    lastEnsureAttemptAtRef.current = now;
+    isEnsuringCurrentCharacterRef.current = true;
+
+    void createMutation
+      .mutateAsync({
+        userId: userProfile.id,
+        nickname: userProfile.nickname,
+        avatar: userProfile.avatar,
+        color: '#9966FF',
+        level: 1,
+        power: 0,
+        race: ['Human'],
+        gender: ['male'],
+        class: [],
+      })
+      .catch((error) => {
+        if (isAbortError(error)) {
+          return;
+        }
+
+        console.error('Failed to auto-create current character:', error);
+      })
+      .finally(() => {
+        isEnsuringCurrentCharacterRef.current = false;
+      });
+  }, [characters, createMutation, hasCompletedInitialFetch, roomId, userProfile.avatar, userProfile.id, userProfile.nickname]);
 
   const refresh = useCallback(async () => {
-    await fetchCharacters();
-  }, [fetchCharacters]);
+    await charactersQuery.refetch();
+  }, [charactersQuery]);
+
+  const errorMessage =
+    (charactersQuery.error instanceof Error && charactersQuery.error.message) ||
+    (createMutation.error instanceof Error && createMutation.error.message) ||
+    (updateMutation.error instanceof Error && updateMutation.error.message) ||
+    null;
+
+  const isLoading =
+    charactersQuery.isLoading ||
+    (charactersQuery.isFetching && characters.length === 0);
 
   return useMemo(
     () => ({
