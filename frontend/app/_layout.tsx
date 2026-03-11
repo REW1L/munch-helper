@@ -1,7 +1,11 @@
+import { RootErrorBoundary } from '@/components/RootErrorBoundary';
+import { getRuntimeConfig } from '@/config/runtime';
+import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useUserProfile } from '@/hooks/useUser';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import 'react-native-reanimated';
 
 export const unstable_settings = {
@@ -10,16 +14,40 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  // Fail fast on invalid runtime configuration instead of silently using wrong endpoints.
+  getRuntimeConfig();
+
   const { userProfile, setUserProfile } = useUserProfile();
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 15_000,
+            retry: 1,
+          },
+        },
+      })
+  );
+
+  const providerValue = useMemo(
+    () => ({ userProfile, setUserProfile }),
+    [setUserProfile, userProfile]
+  );
+
   return (
-    <userProfileContext.Provider value={{ userProfile, setUserProfile }}>
-      <Stack screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: '#473F3F' },
-        headerTintColor: 'white',
-        contentStyle: { backgroundColor: '#3C3636' },
-        headerShadowVisible: false, // Remove header white line
-      }} />
-    </userProfileContext.Provider>
+    <RootErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <userProfileContext.Provider value={providerValue}>
+          <Stack screenOptions={{
+            headerShown: true,
+            headerStyle: { backgroundColor: AppTheme.colors.surface },
+            headerTintColor: AppTheme.colors.textPrimary,
+            contentStyle: { backgroundColor: AppTheme.colors.background },
+            headerShadowVisible: false,
+          }} />
+        </userProfileContext.Provider>
+      </QueryClientProvider>
+    </RootErrorBoundary>
   );
 }

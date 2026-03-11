@@ -1,21 +1,30 @@
-const DEFAULT_API_BASE_URL = 'http://localhost:8080';
-
-const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
-
-const resolveApiBaseUrl = (): string => {
-  const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (configuredApiUrl) {
-    return trimTrailingSlash(configuredApiUrl);
-  }
-
-  return DEFAULT_API_BASE_URL;
-};
-
-export const API_BASE_URL = resolveApiBaseUrl();
+import { API_BASE_URL } from '@/config/runtime';
 
 type ApiRequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
+  retryCount?: number;
+  retryDelayMs?: number;
 };
+
+const DEFAULT_RETRY_COUNT = 1;
+const DEFAULT_RETRY_DELAY_MS = 250;
+
+function sleep(delayMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (typeof DOMException !== 'undefined' && error instanceof DOMException && error.name === 'AbortError') ||
+    (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError')
+  );
+}
+
+function isRetriableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -30,28 +39,56 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<TResponse>(path: string, options: ApiRequestOptions = {}): Promise<TResponse> {
-  const { body, headers, ...restOptions } = options;
+  const { body, headers, retryCount = DEFAULT_RETRY_COUNT, retryDelayMs = DEFAULT_RETRY_DELAY_MS, ...restOptions } = options;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...restOptions,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let attempt = 0;
+  while (attempt <= retryCount) {
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...restOptions,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
 
-  const hasJsonResponse = response.headers.get('content-type')?.includes('application/json') ?? false;
-  const responseBody = hasJsonResponse ? await response.json() : undefined;
+      const hasJsonResponse = response.headers.get('content-type')?.includes('application/json') ?? false;
+      const responseBody = hasJsonResponse ? await response.json() : undefined;
 
-  if (!response.ok) {
-    const errorMessage =
-      (typeof responseBody === 'object' && responseBody && 'message' in responseBody && typeof responseBody.message === 'string'
-        ? responseBody.message
-        : `Request failed with status ${response.status}`);
+      if (!response.ok) {
+        const errorMessage =
+          (typeof responseBody === 'object' && responseBody && 'message' in responseBody && typeof responseBody.message === 'string'
+            ? responseBody.message
+            : `Request failed with status ${response.status}`);
 
-    throw new ApiError(errorMessage, response.status, responseBody);
+        if (attempt < retryCount && isRetriableStatus(response.status)) {
+          attempt += 1;
+          await sleep(retryDelayMs * attempt);
+          continue;
+        }
+
+        throw new ApiError(errorMessage, response.status, responseBody);
+      }
+
+      return responseBody as TResponse;
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      if (attempt >= retryCount) {
+        throw error;
+      }
+
+      attempt += 1;
+      await sleep(retryDelayMs * attempt);
+    }
   }
 
-  return responseBody as TResponse;
+  throw new Error('Request failed unexpectedly.');
 }

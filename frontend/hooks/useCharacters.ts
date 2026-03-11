@@ -20,6 +20,13 @@ interface UseRoomCharactersResult {
 
 const POLL_INTERVAL_MS = 5000;
 
+function isAbortError(error: unknown): boolean {
+  return (
+    (typeof DOMException !== 'undefined' && error instanceof DOMException && error.name === 'AbortError') ||
+    (typeof error === 'object' && error !== null && 'name' in error && error.name === 'AbortError')
+  );
+}
+
 export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -27,23 +34,41 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
   const isFetchingRef = useRef(false);
   const isEnsuringCurrentCharacterRef = useRef(false);
+  const requestVersionRef = useRef(0);
+
+  const updateCharactersIfCurrent = useCallback((requestVersion: number, nextCharacters: Character[]) => {
+    if (requestVersionRef.current !== requestVersion) {
+      return;
+    }
+
+    setCharacters(nextCharacters);
+  }, []);
+
+  const updateErrorIfCurrent = useCallback((requestVersion: number, message: string | null) => {
+    if (requestVersionRef.current !== requestVersion) {
+      return;
+    }
+
+    setErrorMessage(message);
+  }, []);
 
   const fetchCharacters = useCallback(
-    async (silent: boolean = false) => {
+    async (silent: boolean = false, signal?: AbortSignal) => {
       if (!roomId || isFetchingRef.current) {
         return;
       }
 
+      const requestVersion = ++requestVersionRef.current;
       isFetchingRef.current = true;
       if (!silent) {
         setIsLoading(true);
       }
 
       try {
-        const fetchedCharacters = await getCharactersByRoom(roomId);
+        const fetchedCharacters = await getCharactersByRoom(roomId, signal);
 
-        setCharacters(fetchedCharacters);
-        setErrorMessage(null);
+        updateCharactersIfCurrent(requestVersion, fetchedCharacters);
+        updateErrorIfCurrent(requestVersion, null);
 
         const hasCurrentCharacter = fetchedCharacters.some((character) => character.userId === userProfile.id);
 
@@ -64,35 +89,41 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
               class: []
             });
 
-            const refreshedCharacters = await getCharactersByRoom(roomId);
-            setCharacters(refreshedCharacters);
+            const refreshedCharacters = await getCharactersByRoom(roomId, signal);
+            updateCharactersIfCurrent(requestVersion, refreshedCharacters);
           } finally {
             isEnsuringCurrentCharacterRef.current = false;
           }
         }
       } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to load characters');
+        if (isAbortError(error)) {
+          return;
+        }
+        updateErrorIfCurrent(requestVersion, error instanceof Error ? error.message : 'Failed to load characters');
       } finally {
         isFetchingRef.current = false;
-        if (!silent) {
+        if (!silent && requestVersionRef.current === requestVersion) {
           setIsLoading(false);
         }
       }
     },
-    [roomId, userProfile.avatar, userProfile.id, userProfile.nickname]
+    [roomId, updateCharactersIfCurrent, updateErrorIfCurrent, userProfile.avatar, userProfile.id, userProfile.nickname]
   );
 
   useEffect(() => {
+    const controller = new AbortController();
+
     setCharacters([]);
     setErrorMessage(null);
     setIsLoading(true);
-    void fetchCharacters();
+    void fetchCharacters(false, controller.signal);
 
     const timer = setInterval(() => {
-      void fetchCharacters(true);
+      void fetchCharacters(true, controller.signal);
     }, POLL_INTERVAL_MS);
 
     return () => {
+      controller.abort();
       clearInterval(timer);
     };
   }, [fetchCharacters, roomId]);

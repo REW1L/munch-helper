@@ -1,11 +1,6 @@
 import { createRoom, CreateRoomResponse, joinRoom, JoinRoomResponse } from '@/api/rooms';
-import { useCallback, useState } from 'react';
-
-interface RoomActionState<T> {
-  isLoading: boolean;
-  errorMessage: string | null;
-  result: T | null;
-}
+import { useMutation } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
 
 type UserRoomContext = {
   userId: string;
@@ -14,65 +9,53 @@ type UserRoomContext = {
 };
 
 export function useRoomCreate() {
-  const [state, setState] = useState<RoomActionState<CreateRoomResponse>>({
-    isLoading: false,
-    errorMessage: null,
-    result: null,
-  });
-
-  const create = useCallback(async ({ userId, nickname, avatar }: UserRoomContext): Promise<CreateRoomResponse> => {
-    setState({ isLoading: true, errorMessage: null, result: null });
-
-    try {
-      const response = await createRoom({
+  const mutation = useMutation<CreateRoomResponse, Error, UserRoomContext>({
+    mutationFn: async ({ userId, nickname, avatar }: UserRoomContext): Promise<CreateRoomResponse> => {
+      return createRoom({
         roomTypeId: 'munchkin',
         userId,
         userName: nickname,
         avatarId: avatar,
       });
-      setState({ isLoading: false, errorMessage: null, result: response });
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create room';
-      setState({ isLoading: false, errorMessage, result: null });
-      throw error;
-    }
-  }, []);
+    },
+  });
 
-  return {
-    create,
-    ...state,
-  };
+  const create = mutation.mutateAsync;
+
+  return useMemo(
+    () => ({
+      create,
+      isLoading: mutation.isPending,
+      errorMessage: mutation.error?.message ?? null,
+      result: mutation.data ?? null,
+    }),
+    [create, mutation.data, mutation.error?.message, mutation.isPending]
+  );
 }
 
 export function useRoomJoin() {
-  const [state, setState] = useState<RoomActionState<JoinRoomResponse>>({
-    isLoading: false,
-    errorMessage: null,
-    result: null,
+  const mutation = useMutation<JoinRoomResponse, Error, { roomId: string; context: UserRoomContext }>({
+    mutationFn: async ({ roomId, context }): Promise<JoinRoomResponse> => {
+      return joinRoom({
+        roomId,
+        userId: context.userId,
+        userName: context.nickname,
+        avatarId: context.avatar,
+      });
+    },
   });
 
-  const join = useCallback(async (roomId: string, { userId, nickname, avatar }: UserRoomContext): Promise<JoinRoomResponse> => {
-    setState({ isLoading: true, errorMessage: null, result: null });
+  const join = useCallback(async (roomId: string, context: UserRoomContext): Promise<JoinRoomResponse> => {
+    return mutation.mutateAsync({ roomId, context });
+  }, [mutation.mutateAsync]);
 
-    try {
-      const response = await joinRoom({
-        roomId,
-        userId,
-        userName: nickname,
-        avatarId: avatar,
-      });
-      setState({ isLoading: false, errorMessage: null, result: response });
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to join room';
-      setState({ isLoading: false, errorMessage, result: null });
-      throw error;
-    }
-  }, []);
-
-  return {
-    join,
-    ...state,
-  };
+  return useMemo(
+    () => ({
+      join,
+      isLoading: mutation.isPending,
+      errorMessage: mutation.error?.message ?? null,
+      result: mutation.data ?? null,
+    }),
+    [join, mutation.data, mutation.error?.message, mutation.isPending]
+  );
 }

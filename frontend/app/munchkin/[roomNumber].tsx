@@ -100,6 +100,7 @@ const MunchkinIndexView: React.FC = () => {
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<RoomCharacter | undefined>(undefined);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
@@ -125,6 +126,12 @@ const MunchkinIndexView: React.FC = () => {
               {errorMessage && characters.length === 0 && (
                 <View style={styles.loadingContainer}>
                   <Text style={styles.loadingText}>{errorMessage}</Text>
+                </View>
+              )}
+
+              {actionError && (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>{actionError}</Text>
                 </View>
               )}
 
@@ -206,18 +213,23 @@ const MunchkinIndexView: React.FC = () => {
           <CreateCharacterModal
             visible={createCharacterModalVisible}
             onConfirm={async (character) => {
-              await create({
-                userId: userProfile.id,
-                nickname: character.name,
-                avatar: character.avatar ?? userProfile.avatar,
-                color: character.color,
-                level: 1,
-                power: 0,
-                race: character.race,
-                gender: character.gender,
-                class: character.class
-              });
-              setCreateCharacterModalVisible(false);
+              try {
+                setActionError(null);
+                await create({
+                  userId: userProfile.id,
+                  nickname: character.name,
+                  avatar: character.avatar ?? userProfile.avatar,
+                  color: character.color,
+                  level: 1,
+                  power: 0,
+                  race: character.race,
+                  gender: character.gender,
+                  class: character.class
+                });
+                setCreateCharacterModalVisible(false);
+              } catch (error) {
+                setActionError(error instanceof Error ? error.message : 'Failed to create character');
+              }
             }}
             onCancel={() => setCreateCharacterModalVisible(false)}
           />
@@ -226,17 +238,22 @@ const MunchkinIndexView: React.FC = () => {
             <ChangeCharacterModal
               character={selectedCharacter}
               onConfirm={async (character) => {
-                await update(character.id, {
-                  nickname: character.nickname,
-                  avatar: character.avatar,
-                  color: character.color,
-                  level: character.level,
-                  power: character.power,
-                  race: character.race,
-                  gender: character.gender,
-                  class: character.class
-                });
-                setChangeCharacterModalVisible(false);
+                try {
+                  setActionError(null);
+                  await update(character.id, {
+                    nickname: character.nickname,
+                    avatar: character.avatar,
+                    color: character.color,
+                    level: character.level,
+                    power: character.power,
+                    race: character.race,
+                    gender: character.gender,
+                    class: character.class
+                  });
+                  setChangeCharacterModalVisible(false);
+                } catch (error) {
+                  setActionError(error instanceof Error ? error.message : 'Failed to update character');
+                }
               }}
               onCancel={() => setChangeCharacterModalVisible(false)}
             />

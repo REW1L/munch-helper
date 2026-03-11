@@ -30,16 +30,18 @@ export interface JoinRoomResponse {
   alreadyJoined: boolean;
 }
 
-export async function createRoom(payload: CreateRoomRequest): Promise<CreateRoomResponse> {
+export async function createRoom(payload: CreateRoomRequest, signal?: AbortSignal): Promise<CreateRoomResponse> {
   return apiRequest<CreateRoomResponse>('/rooms', {
     method: 'POST',
     body: payload,
+    signal,
   });
 }
 
-export async function joinRoom(payload: JoinRoomRequest): Promise<JoinRoomResponse> {
+export async function joinRoom(payload: JoinRoomRequest, signal?: AbortSignal): Promise<JoinRoomResponse> {
   return apiRequest<JoinRoomResponse>('/rooms/associations', {
     method: 'POST',
     body: payload,
+    signal,
   });
 }

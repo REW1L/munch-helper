@@ -139,8 +139,10 @@ function toFrontendCharacter(apiCharacter: ApiCharacter): Character {
   };
 }
 
-export async function getCharactersByRoom(roomId: string): Promise<Character[]> {
-  const response = await apiRequest<GetCharactersResponse>(`/characters?roomId=${encodeURIComponent(roomId)}`);
+export async function getCharactersByRoom(roomId: string, signal?: AbortSignal): Promise<Character[]> {
+  const response = await apiRequest<GetCharactersResponse>(`/characters?roomId=${encodeURIComponent(roomId)}`, {
+    signal,
+  });
   return response.items.map(toFrontendCharacter);
 }
 
@@ -195,7 +197,7 @@ export async function updateCharacter(characterId: string, payload: CharacterUpd
     body.gender = serializeArrayField(payload.gender);
   }
 
-  const updated = await apiRequest<ApiCharacter>(`/characters/${characterId}`, {
+  const updated = await apiRequest<ApiCharacter>(`/characters/${encodeURIComponent(characterId)}`, {
     method: 'PATCH',
     body,
   });

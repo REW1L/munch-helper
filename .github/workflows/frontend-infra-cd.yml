@@ -54,6 +54,15 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Lint Frontend
+        run: npm run lint
+
+      - name: Typecheck Frontend
+        run: npm run tsc
+
+      - name: Run Frontend Tests
+        run: npm run test
+
       - name: Build Frontend
         run: EXPO_PUBLIC_API_URL="$API_BASE_URL" npm run export:web --clear
 

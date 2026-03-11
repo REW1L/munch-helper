@@ -18,22 +18,25 @@ interface UpdateUserRequest {
   avatarId?: number;
 }
 
-export async function createUser(payload: CreateUserRequest): Promise<ApiUser> {
+export async function createUser(payload: CreateUserRequest, signal?: AbortSignal): Promise<ApiUser> {
   return apiRequest<ApiUser>('/users', {
     method: 'POST',
     body: payload,
+    signal,
   });
 }
 
-export async function getUser(userId: string): Promise<ApiUser> {
+export async function getUser(userId: string, signal?: AbortSignal): Promise<ApiUser> {
   return apiRequest<ApiUser>(`/users/${encodeURIComponent(userId)}`, {
     method: 'GET',
+    signal,
   });
 }
 
-export async function updateUser(userId: string, payload: UpdateUserRequest): Promise<ApiUser> {
+export async function updateUser(userId: string, payload: UpdateUserRequest, signal?: AbortSignal): Promise<ApiUser> {
   return apiRequest<ApiUser>(`/users/${encodeURIComponent(userId)}`, {
     method: 'PATCH',
     body: payload,
+    signal,
   });
 }

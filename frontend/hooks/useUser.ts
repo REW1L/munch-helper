@@ -1,6 +1,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { z } from 'zod';
 
 import { ApiError } from '@/api/http';
 import { createUser, getUser, updateUser } from '@/api/users';
@@ -28,6 +29,12 @@ export interface UseUserResult {
   userProfile: UserProfileInterface;
   setUserProfile: (newUserProfile: UserProfileInterface) => Promise<void>;
 }
+
+const StoredUserProfileSchema = z.object({
+  id: z.string(),
+  nickname: z.string(),
+  avatar: z.number().int().min(0),
+});
 
 function generateDefaultUserProfile(): UserProfileInterface {
   const randomPostfix = generateRandomNicknamePostfix();
@@ -86,7 +93,8 @@ export function useUserProfile(): UseUserResult {
       try {
         const storedUserProfileString = await AsyncStorage.getItem(USER_STORAGE_KEY);
         if (storedUserProfileString) {
-          const storedUserProfile = JSON.parse(storedUserProfileString) as UserProfileInterface;
+          const parsedProfile = StoredUserProfileSchema.safeParse(JSON.parse(storedUserProfileString));
+          const storedUserProfile = parsedProfile.success ? parsedProfile.data : null;
           if (storedUserProfile && mounted) {
             try {
               const remoteUser = await getUser(storedUserProfile.id);
@@ -100,9 +108,15 @@ export function useUserProfile(): UseUserResult {
             } catch (error) {
               if (error instanceof ApiError && error.status === 404) {
                 const recreatedProfile = await createRemoteUser(storedUserProfile);
+                if (!mounted) {
+                  return;
+                }
                 setUserProfileState(recreatedProfile);
                 await AsyncStorage.setItem(USER_STORAGE_KEY, JSON.stringify(recreatedProfile));
               } else {
+                if (!mounted) {
+                  return;
+                }
                 setUserProfileState(storedUserProfile);
               }
             }
@@ -128,7 +142,7 @@ export function useUserProfile(): UseUserResult {
     return () => {
       mounted = false;
     };
-  }, [persistAndSyncProfile]);
+  }, [fallbackProfile]);
 
   return useMemo(
     () => ({
