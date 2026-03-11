@@ -1,6 +1,6 @@
-# Tabletop Helper Frontend
+# Munch Helper Frontend
 
-Native-first Expo Router client for Tabletop Helper.
+Native-first Expo Router client for Munch Helper.
 
 ## Architecture
 

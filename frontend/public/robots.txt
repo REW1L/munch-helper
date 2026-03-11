@@ -1,4 +1,4 @@
-# Munch Helper: Your companion for tabletop games like Munchkin.
+# Munch Helper: Your companion for board games like Munchkin.
 # Create game rooms with your friends, manage characters in games,
 # and forget about remembering and recalculating stats.
 

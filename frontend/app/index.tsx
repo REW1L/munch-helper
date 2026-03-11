@@ -13,7 +13,7 @@ export default function LandingPage() {
         <View style={styles.container}>
           <View style={styles.heroSection}>
             <Text style={styles.title}>Munch Helper</Text>
-            <Text style={styles.subtitle}>Your companion for tabletop games like Munchkin</Text>
+            <Text style={styles.subtitle}>Your companion for board games like Munchkin</Text>
             <Text style={styles.description}>
               Create game rooms with your friends, manage characters in games, and forget about remembering and recalculating stats.
             </Text>
