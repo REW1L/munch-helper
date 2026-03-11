@@ -4,9 +4,10 @@ import avatars from '@/constants/avatars';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useContext, useState } from 'react';
+import React, { memo, useCallback, useContext, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   Platform,
   ScrollView,
@@ -38,11 +39,35 @@ const ATTRIBUTES: ('race' | 'gender' | 'class')[] = [
   'race', 'gender', 'class'
 ];
 
-const CharacterCard: React.FC<{
+const AttributeList = memo(function AttributeList({
+  character,
+  textStyle,
+}: {
+  character: RoomCharacter;
+  textStyle: typeof styles.attributeText;
+}) {
+  return (
+    <>
+      {ATTRIBUTES.map((attr) => (
+        character[attr].map((value: string) => (
+          <Text key={`attribute-${character.id}-${attr}-${value}`} style={textStyle}>
+            {value}
+          </Text>
+        ))
+      ))}
+    </>
+  );
+});
+
+const CharacterCard = memo(function CharacterCard({
+  character,
+  isHighlight = false,
+  onChangePress,
+}: {
   character: RoomCharacter;
   isHighlight?: boolean;
   onChangePress: (character: RoomCharacter) => void;
-}> = ({ character, isHighlight = false, onChangePress }) => {
+}) {
   return (
     <View
       style={[
@@ -71,13 +96,7 @@ const CharacterCard: React.FC<{
 
       <View style={styles.attributesBox}>
         <ScrollView>
-          {ATTRIBUTES.map((attr) => (
-            character[attr].map((value: string) => (
-              <Text key={`attribute-${character.id}-${value}`} style={styles.attributeText}>
-                {value}
-              </Text>
-            ))
-          ))}
+          <AttributeList character={character} textStyle={styles.attributeText} />
         </ScrollView>
       </View>
 
@@ -87,7 +106,7 @@ const CharacterCard: React.FC<{
       />
     </View>
   );
-};
+});
 
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
@@ -95,12 +114,70 @@ const MunchkinIndexView: React.FC = () => {
   const { userProfile } = useContext(userProfileContext);
   const { characters, create, update, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
 
-  const currentCharacterIndex = characters.findIndex((character) => character.userId === userProfile.id);
-  const currentCharacter = currentCharacterIndex === -1 ? undefined : characters[currentCharacterIndex];
+  const currentCharacter = useMemo(
+    () => characters.find((character) => character.userId === userProfile.id),
+    [characters, userProfile.id]
+  );
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<RoomCharacter | undefined>(undefined);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleChangePress = useCallback((character: RoomCharacter) => {
+    setSelectedCharacter(character);
+    setChangeCharacterModalVisible(true);
+  }, []);
+
+  const renderCharacter = useCallback(
+    ({ item }: { item: RoomCharacter }) => (
+      <CharacterCard character={item} onChangePress={handleChangePress} />
+    ),
+    [handleChangePress]
+  );
+
+  const keyExtractor = useCallback((item: RoomCharacter) => item.id, []);
+
+  const ListHeader = useMemo(() => {
+    if (!actionError) {
+      return null;
+    }
+
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>{actionError}</Text>
+      </View>
+    );
+  }, [actionError]);
+
+  const ListEmpty = useMemo(() => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={COLORS.TEXT_WHITE} />
+          <Text style={styles.loadingText}>Loading characters...</Text>
+        </View>
+      );
+    }
+
+    if (errorMessage) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{errorMessage}</Text>
+        </View>
+      );
+    }
+
+    return null;
+  }, [errorMessage, isLoading]);
+
+  const ListFooter = useMemo(() => (
+    <View style={styles.createCharacterButtonContainer}>
+      <VioletButton
+        title="Create a character"
+        onPress={() => setCreateCharacterModalVisible(true)}
+      />
+    </View>
+  ), []);
 
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
@@ -111,50 +188,19 @@ const MunchkinIndexView: React.FC = () => {
         <View style={styles.container}>
           <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
 
-          {/* Main Content */}
-          <ScrollView style={styles.mainContent} showsVerticalScrollIndicator={false}>
-
-            {/* Characters List */}
-            <View style={styles.charactersList}>
-              {isLoading && characters.length === 0 && (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={COLORS.TEXT_WHITE} />
-                  <Text style={styles.loadingText}>Loading characters...</Text>
-                </View>
-              )}
-
-              {errorMessage && characters.length === 0 && (
-                <View style={styles.loadingContainer}>
-                  <Text style={styles.loadingText}>{errorMessage}</Text>
-                </View>
-              )}
-
-              {actionError && (
-                <View style={styles.loadingContainer}>
-                  <Text style={styles.loadingText}>{actionError}</Text>
-                </View>
-              )}
-
-              {characters.map((character) => (
-                <CharacterCard
-                  key={character.id}
-                  character={character}
-                  onChangePress={(char) => {
-                    setSelectedCharacter(char);
-                    setChangeCharacterModalVisible(true);
-                  }}
-                />
-              ))}
-            </View>
-
-            {/* Create Character Button */}
-            <View style={{ padding: 10, alignItems: 'center' }}>
-              <VioletButton
-                title="Create a character"
-                onPress={() => setCreateCharacterModalVisible(true)}
-              />
-            </View>
-          </ScrollView>
+          <FlatList
+            data={characters}
+            renderItem={renderCharacter}
+            keyExtractor={keyExtractor}
+            style={styles.mainContent}
+            contentContainerStyle={styles.mainContentContainer}
+            showsVerticalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={styles.characterSeparator} />}
+            ListHeaderComponent={ListHeader}
+            ListEmptyComponent={ListEmpty}
+            ListFooterComponent={ListFooter}
+            removeClippedSubviews
+          />
 
           {/* Bottom Action Buttons */}
           <View style={styles.actionButtons}>
@@ -190,21 +236,14 @@ const MunchkinIndexView: React.FC = () => {
 
               <View style={styles.footerAttributes}>
                 <ScrollView>
-                  {ATTRIBUTES.map((attr, index) => (
-                    currentCharacter[attr].map((value: string) => (
-                      <Text key={`footer-attribute-${currentCharacter.id}-${index}-${value}`} style={styles.footerAttributeText}>
-                        {value}
-                      </Text>
-                    ))
-                  ))}
+                  <AttributeList character={currentCharacter} textStyle={styles.footerAttributeText} />
                 </ScrollView>
               </View>
 
               <VioletButton
                 title="Change"
                 onPress={() => {
-                  setSelectedCharacter(currentCharacter);
-                  setChangeCharacterModalVisible(true);
+                  handleChangePress(currentCharacter);
                 }}
               />
             </View>
@@ -311,7 +350,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.CONTENT_BG,
     paddingHorizontal: 5,
-    paddingBottom: 10,
+  },
+  mainContentContainer: {
+    paddingVertical: 10,
   },
   roomHeader: {
     paddingHorizontal: 10,
@@ -330,8 +371,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: COLORS.TEXT_BLACK,
   },
-  charactersList: {
-    gap: 10,
+  characterSeparator: {
+    height: 10,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -417,6 +458,10 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_WHITE,
     letterSpacing: 0.5,
     lineHeight: 16,
+  },
+  createCharacterButtonContainer: {
+    padding: 10,
+    alignItems: 'center',
   },
   actionButtons: {
     height: 0,
