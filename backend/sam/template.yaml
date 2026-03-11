@@ -132,7 +132,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - execute-api:ManageConnections
-                Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CloudWebSocketApi}/${CloudWebSocketStage}/POST/@connections/*
+                Resource:
+                  - !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CloudWebSocketApi}/${CloudWebSocketStage}/POST/@connections/*
+                  - !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CloudWebSocketApi}/${CloudWebSocketStage}/GET/@connections/*
 
   RoomCharacterEventsTopic:
     Type: AWS::SNS::Topic
