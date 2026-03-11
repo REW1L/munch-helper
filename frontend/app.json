@@ -4,7 +4,7 @@
     "slug": "munch-helper",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/munchkin-cat.png",
     "scheme": "munchhelper",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -16,7 +16,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.ico"
     },
     "plugins": [
       "expo-router",
