@@ -15,12 +15,16 @@ Parameters:
     Type: String
     Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/character?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
     Description: MongoDB connection URI used by character-service Lambda
+  RoomNotificationsMongoUri:
+    Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/notifications?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
+    Description: MongoDB connection URI used by room-notifications-service Lambda
   CharacterServiceUrl:
     Type: String
     Description: Base URL for character-service called by room-service
   CharacterCallTimeoutMs:
     Type: Number
-    Default: 2000
+    Default: "2000"
     Description: Timeout in milliseconds for room-service to call character-service
   RoutePrefix:
     Type: String
@@ -96,6 +100,86 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: PublishRoomCharacterEvents
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref RoomCharacterEventsTopic
+
+  RoomNotificationsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub room-notifications-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: ManageWebSocketConnections
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - execute-api:ManageConnections
+                Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CloudWebSocketApi}/${CloudWebSocketStage}/POST/@connections/*
+
+  RoomCharacterEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-room-character-events
+
+  CloudWebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ${AWS::StackName}-room-notifications
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: $request.body.action
+
+  CloudWebSocketStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref CloudWebSocketApi
+      StageName: ws
+      AutoDeploy: true
+
+  RoomNotificationsLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CloudWebSocketApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RoomNotificationsFunction.Arn}/invocations
+
+  RoomNotificationsConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CloudWebSocketApi
+      RouteKey: $connect
+      Target: !Sub integrations/${RoomNotificationsLambdaIntegration}
+
+  RoomNotificationsDisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CloudWebSocketApi
+      RouteKey: $disconnect
+      Target: !Sub integrations/${RoomNotificationsLambdaIntegration}
+
+  RoomNotificationsDefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CloudWebSocketApi
+      RouteKey: $default
+      Target: !Sub integrations/${RoomNotificationsLambdaIntegration}
 
   UserServiceFunction:
     Type: AWS::Serverless::Function
@@ -189,6 +273,7 @@ Resources:
       Environment:
         Variables:
           CHARACTER_MONGO_URI: !Ref CharacterMongoUri
+          ROOM_CHARACTER_EVENTS_TOPIC_ARN: !Ref RoomCharacterEventsTopic
           ROUTE_PREFIX: !Ref RoutePrefix
       Events:
         CharacterListGet:
@@ -225,7 +310,47 @@ Resources:
         Sourcemap: false
         Format: cjs
 
+  RoomNotificationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-room-notifications-service
+      CodeUri: ../room-notifications-service
+      Handler: lambda.handler
+      Role: !GetAtt RoomNotificationsRole.Arn
+      Environment:
+        Variables:
+          ROOM_NOTIFICATIONS_MONGO_URI: !Ref RoomNotificationsMongoUri
+          ROOM_NOTIFICATIONS_WS_ENDPOINT: !Sub https://${CloudWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${CloudWebSocketStage}
+      Events:
+        RoomCharacterEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref RoomCharacterEventsTopic
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+  RoomNotificationsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RoomNotificationsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${CloudWebSocketApi}/*/*
+
 Outputs:
   ApiBaseUrl:
     Description: HTTP API endpoint for this stack
     Value: !Sub https://${CloudHttpApi}.execute-api.${AWS::Region}.amazonaws.com/api
+  WebSocketApiUrl:
+    Description: WebSocket API endpoint for room notifications
+    Value: !Sub wss://${CloudWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${CloudWebSocketStage}
+  RoomCharacterEventsTopicArn:
+    Description: SNS topic used to fan out room character lifecycle notifications
+    Value: !Ref RoomCharacterEventsTopic

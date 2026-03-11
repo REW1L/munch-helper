@@ -6,6 +6,7 @@ This backend is split into local microservices under `backend`:
 - `user-service`
 - `room-service`
 - `character-service`
+- `room-notifications-service`
 
 ## Scope
 
@@ -15,11 +16,12 @@ Implemented in this phase:
 - Room management (`POST /rooms`, `POST /rooms/associations`)
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
 - Room service synchronous call to character service on create/join flow.
+- Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
 
-Postponed:
+Transport by environment:
 
-- WebSocket notifications
-- Messaging/broker integrations
+- Cloud: API Gateway WebSocket + Lambda + SNS topic fanout
+- Local: native WebSocket container + Redis Pub/Sub
 
 ## Prerequisites
 
@@ -41,6 +43,9 @@ cp .env.example .env
 ```
 
 Gateway runs on `http://localhost:8080` by default.
+
+Room notifications service runs on `ws://localhost:8084`.
+Use `ws://localhost:8084/rooms/<RoomId>?userId=<UserId>` for local subscriptions.
 
 ## AWS SAM option (user/room/character services on Lambda)
 

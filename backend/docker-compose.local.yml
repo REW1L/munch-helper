@@ -51,8 +51,30 @@ services:
     environment:
       CHARACTER_SERVICE_PORT: 8083
       CHARACTER_MONGO_URI: mongodb://mongo-character:27017/munch_character_service
+      CHARACTER_EVENTS_REDIS_URL: redis://redis:6379
+      ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
     depends_on:
       - mongo-character
+      - redis
+
+  room-notifications-service:
+    build:
+      context: ./room-notifications-service
+    container_name: munch-room-notifications-service
+    ports:
+      - "8084:8084"
+    environment:
+      ROOM_NOTIFICATIONS_PORT: 8084
+      REDIS_URL: redis://redis:6379
+      ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: munch-redis
+    ports:
+      - "6379:6379"
 
   mongo-user:
     image: mongo:7

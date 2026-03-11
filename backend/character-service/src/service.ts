@@ -1,8 +1,10 @@
 import { createApp, type CharacterModelLike } from './app';
 import { Character } from './models/Character';
+import { type CharacterEventPublisher } from './publisher';
 
 interface BuildCharacterAppOptions {
   routePrefix?: string;
+  publisher?: CharacterEventPublisher;
 }
 
 export function createCharacterModel(): CharacterModelLike {
@@ -91,5 +93,8 @@ export function createCharacterModel(): CharacterModelLike {
 }
 
 export function buildCharacterApp(options: BuildCharacterAppOptions = {}) {
-  return createApp(createCharacterModel(), { routePrefix: options.routePrefix });
+  return createApp(createCharacterModel(), {
+    routePrefix: options.routePrefix,
+    publisher: options.publisher
+  });
 }

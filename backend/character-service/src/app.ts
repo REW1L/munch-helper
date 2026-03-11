@@ -1,6 +1,11 @@
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
+import {
+  type CharacterEventPublisher,
+  NoopCharacterEventPublisher,
+  createCharacterEventPayload
+} from './publisher';
 
 export interface CharacterLike {
   id: string;
@@ -31,6 +36,7 @@ export interface CharacterModelLike {
 
 interface CreateCharacterAppOptions {
   routePrefix?: string;
+  publisher?: CharacterEventPublisher;
 }
 
 const normalizeRoutePrefix = (value: string | undefined): string => {
@@ -51,6 +57,7 @@ const normalizeRoutePrefix = (value: string | undefined): string => {
 export function createApp(characterModel: CharacterModelLike, options: CreateCharacterAppOptions = {}) {
   const app = express();
   const routePrefix = normalizeRoutePrefix(options.routePrefix);
+  const publisher = options.publisher || new NoopCharacterEventPublisher();
   const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
 
   const deterministicHexColor = (seed: string): string => {
@@ -189,6 +196,18 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         gender
       });
 
+      void publisher
+        .publish(
+          createCharacterEventPayload({
+            event: 'character_created',
+            roomId: character.roomId,
+            characterId: character.id
+          })
+        )
+        .catch((error) => {
+          console.error('Failed to publish character_created event', error);
+        });
+
       res.status(201).json(toResponseCharacter(character));
     } catch (error) {
       next(error);
@@ -237,6 +256,18 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         return res.status(404).json({ message: 'Character not found' });
       }
 
+      void publisher
+        .publish(
+          createCharacterEventPayload({
+            event: 'character_updated',
+            roomId: character.roomId,
+            characterId: character.id
+          })
+        )
+        .catch((error) => {
+          console.error('Failed to publish character_updated event', error);
+        });
+
       res.json(toResponseCharacter(character));
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'CastError') {
@@ -254,6 +285,18 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (!character) {
         return res.status(404).json({ message: 'Character not found' });
       }
+
+      void publisher
+        .publish(
+          createCharacterEventPayload({
+            event: 'character_deleted',
+            roomId: character.roomId,
+            characterId: character.id
+          })
+        )
+        .catch((error) => {
+          console.error('Failed to publish character_deleted event', error);
+        });
 
       res.status(204).send();
     } catch (error: unknown) {

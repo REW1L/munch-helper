@@ -1,37 +1,41 @@
 # Room Notifications
 
-Room Notifications Service is responsible for sending real-time notifications to clients subscribed to a room.
+Room Notifications Service sends real-time events to clients subscribed to a room.
+
+Cloud transport uses AWS API Gateway WebSocket + AWS Lambda + AWS SNS.
+Local transport uses native WebSocket server + Redis Pub/Sub.
 
 # Flow
 ```mermaid
 sequenceDiagram
-		participant Client
-		participant Room Notifications
-		participant Message Broker
-		participant Character Management
+  participant Client
+  participant RoomNotifications as Room Notifications
+  participant Broker as SNS / Redis
+  participant CharacterService as Character Management
 
-		Client ->> Room Notifications: Connect (WebSocket)
-		Room Notifications ->> Client: 101 Switching Protocols (WebSocket Established)
+  Client ->> RoomNotifications: Connect (WebSocket)
+  RoomNotifications ->> Client: 101 Switching Protocols
 
-		Character Management ->> Message Broker: Character Created Event
-		Message Broker -->> Room Notifications: Character Created Event
-		Room Notifications -->> Client: Character Created Event
+  CharacterService ->> Broker: character_created
+  Broker -->> RoomNotifications: character_created
+  RoomNotifications -->> Client: character_created
 
-		Character Management ->> Message Broker: Character Updated Event
-		Message Broker -->> Room Notifications: Character Updated Event
-		Room Notifications -->> Client: Character Updated Event
+  CharacterService ->> Broker: character_updated
+  Broker -->> RoomNotifications: character_updated
+  RoomNotifications -->> Client: character_updated
 
-		Character Management ->> Message Broker: Character Deleted Event
-		Message Broker -->> Room Notifications: Character Deleted Event
-		Room Notifications -->> Client: Character Deleted Event
+  CharacterService ->> Broker: character_deleted
+  Broker -->> RoomNotifications: character_deleted
+  RoomNotifications -->> Client: character_deleted
 
-		Client ->> Room Notifications: Disconnect (WebSocket)
-		Room Notifications ->> Client: 200 OK
+  Client ->> RoomNotifications: Disconnect
+  RoomNotifications ->> Client: 200 OK
 ```
 
 # API Endpoints
 
-**Global initial Path**: `/rooms/<RoomId>`
+Cloud WebSocket endpoint is API Gateway WebSocket URL with required query params.
+Local WebSocket endpoint path includes room id.
 
 **Type**: `WebSocket`
 
@@ -39,19 +43,21 @@ sequenceDiagram
 
 **Description**: Creates a WebSocket connection
 
-**Path**: `/rooms/<RoomId>`
+**Cloud URL**: `wss://<WebSocketApiId>.execute-api.<region>.amazonaws.com/ws?roomId=<RoomId>&userId=<UserId>`
+
+**Local URL**: `ws://localhost:8084/rooms/<RoomId>?userId=<UserId>`
 
 **Method**: WebSocket
 
-**Inputs**: `UserID`
+**Inputs**: `RoomId`, `UserID`
 
 **Outputs**: `101 Switching Protocols` (WebSocket Established)
 
-# Disconnect
+## Disconnect
 
 **Description**: Close a WebSocket connection
 
-**Path**: `/rooms/<RoomId>`
+**Path**: Same WebSocket connection used by connect
 
 **Method**: WebSocket
 

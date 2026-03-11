@@ -31,6 +31,8 @@ jobs:
             has_tests: true
           - service: character-service
             has_tests: true
+          - service: room-notifications-service
+            has_tests: true
 
     defaults:
       run:
@@ -86,6 +88,7 @@ jobs:
       USER_MONGO_URI: ${{ secrets.USER_MONGO_URI }}
       ROOM_MONGO_URI: ${{ secrets.ROOM_MONGO_URI }}
       CHARACTER_MONGO_URI: ${{ secrets.CHARACTER_MONGO_URI }}
+      ROOM_NOTIFICATIONS_MONGO_URI: ${{ secrets.ROOM_NOTIFICATIONS_MONGO_URI }}
 
     steps:
       - name: Checkout
@@ -104,7 +107,7 @@ jobs:
       - name: Validate Required Inputs
         run: |
           set -euo pipefail
-          for key in AWS_ACCOUNT_ID AWS_REGION AWS_DEPLOY_ROLE_NAME API_PREFIX CHARACTER_SERVICE_URL USER_MONGO_URI ROOM_MONGO_URI CHARACTER_MONGO_URI; do
+          for key in AWS_ACCOUNT_ID AWS_REGION AWS_DEPLOY_ROLE_NAME API_PREFIX CHARACTER_SERVICE_URL USER_MONGO_URI ROOM_MONGO_URI CHARACTER_MONGO_URI ROOM_NOTIFICATIONS_MONGO_URI; do
             if [ -z "${!key:-}" ]; then
               echo "Missing required variable or secret: $key" >&2
               exit 1
@@ -136,4 +139,5 @@ jobs:
               RoomMongoUri="$ROOM_MONGO_URI" \
               CharacterMongoUri="$CHARACTER_MONGO_URI" \
               CharacterServiceUrl="$CHARACTER_SERVICE_URL" \
-              RoutePrefix="$API_PREFIX"
+              RoutePrefix="$API_PREFIX" \
+              RoomNotificationsMongoUri="$ROOM_NOTIFICATIONS_MONGO_URI"
