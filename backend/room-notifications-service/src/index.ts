@@ -18,7 +18,7 @@ wss.on('connection', (socket, request) => {
   const connection = parseLocalConnectionRequest(request.url);
 
   if (!connection) {
-    socket.close(1008, 'Expected /rooms/:roomId?userId=<id>');
+    socket.close(1008, 'Expected /ws?roomId=<id>&userId=<id>');
     return;
   }
 

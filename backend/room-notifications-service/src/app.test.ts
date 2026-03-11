@@ -16,7 +16,7 @@ describe('room-notifications app helpers', () => {
   });
 
   it('parses local websocket URL', () => {
-    const parsed = parseLocalConnectionRequest('/rooms/ROOM01?userId=user-1');
+    const parsed = parseLocalConnectionRequest('/ws?roomId=ROOM01&userId=user-1');
 
     expect(parsed).toEqual({
       roomId: 'ROOM01',

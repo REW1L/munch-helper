@@ -34,12 +34,11 @@ export const parseLocalConnectionRequest = (
   }
 
   const url = new URL(requestUrl, 'http://localhost');
-  const pathMatch = /^\/rooms\/([^/]+)$/.exec(url.pathname);
-  if (!pathMatch) {
+  if (url.pathname !== '/ws') {
     return null;
   }
 
-  const roomId = decodeURIComponent(pathMatch[1] || '').trim();
+  const roomId = (url.searchParams.get('roomId') || '').trim();
   const userId = (url.searchParams.get('userId') || '').trim();
 
   if (!roomId || !userId) {
