@@ -6,6 +6,7 @@ import {
   getCharactersByRoom,
   updateCharacter,
 } from '@/api/characters';
+import { useRoomWebSocket } from '@/hooks/useRoomWebSocket';
 import { UserProfileInterface } from '@/hooks/useUser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -19,7 +20,6 @@ interface UseRoomCharactersResult {
   update: (characterId: string, payload: CharacterUpdatePayload) => Promise<Character>;
 }
 
-const POLL_INTERVAL_MS = 5000;
 const ENSURE_CHARACTER_COOLDOWN_MS = 5000;
 
 const getCharactersQueryKey = (roomId: string | undefined): readonly ['characters', string | undefined] => ['characters', roomId];
@@ -40,6 +40,13 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
 
+  // Set up WebSocket connection for real-time updates
+  const { isConnected, subscribe } = useRoomWebSocket(
+    roomId,
+    userProfile.id,
+    Boolean(roomId && userProfile.id)
+  );
+
   const charactersQuery = useQuery({
     queryKey: getCharactersQueryKey(roomId),
     queryFn: async ({ signal }) => {
@@ -50,7 +57,6 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       return getCharactersByRoom(roomId, signal);
     },
     enabled: Boolean(roomId),
-    refetchInterval: roomId ? POLL_INTERVAL_MS : false,
   });
 
   const createMutation = useMutation<Character, Error, Omit<CharacterWritePayload, 'roomId'>, CharactersMutationContext>({
@@ -144,6 +150,35 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
     },
   });
+
+  // Subscribe to WebSocket events for real-time character updates
+  useEffect(() => {
+    if (!isConnected) {
+      return;
+    }
+
+    const unsubscribe = subscribe((event) => {
+      switch (event.event) {
+        case 'character_created': {
+          // Refetch all characters when a new one is created
+          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          break;
+        }
+        case 'character_updated': {
+          // Refetch all characters when one is updated
+          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          break;
+        }
+        case 'character_deleted': {
+          // Refetch all characters when one is deleted
+          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          break;
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [isConnected, subscribe, roomId, queryClient]);
 
   const create = useCallback(
     async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
