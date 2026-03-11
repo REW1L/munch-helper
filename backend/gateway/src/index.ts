@@ -12,7 +12,15 @@ const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8081';
 const roomServiceUrl = process.env.ROOM_SERVICE_URL || 'http://localhost:8082';
 const characterServiceUrl = process.env.CHARACTER_SERVICE_URL || 'http://localhost:8083';
 
-app.use(cors());
+// This Gateway should only be used for local development
+// Thus, we allow all origins and methods for simplicity.
+const options: cors.CorsOptions = {
+  origin: '*',
+  methods: ['*'],
+  allowedHeaders: ['*'],
+};
+
+app.use(cors(options));
 app.use(morgan('dev'));
 
 app.get('/health', (_req: Request, res: Response) => {
