@@ -2,7 +2,7 @@
 
 This backend is split into local microservices under `backend`:
 
-- `gateway` (single client entrypoint)
+- `nginx` (single client entrypoint and WebSocket reverse proxy)
 - `user-service`
 - `room-service`
 - `character-service`
@@ -42,10 +42,15 @@ cp .env.example .env
 ./scripts/dev-up.sh
 ```
 
-Gateway runs on `http://localhost:8080` by default.
+Nginx runs on `http://localhost:8080` by default and proxies:
 
-Room notifications service runs on `ws://localhost:8084`.
-Use `ws://localhost:8084/rooms/<RoomId>?userId=<UserId>` for local subscriptions.
+- `/users` -> `user-service`
+- `/rooms` -> `room-service`
+- `/characters` -> `character-service`
+- `/ws` -> `room-notifications-service`
+
+Room notifications are available through `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`.
+The notifications container is also exposed directly on `ws://localhost:8084/ws?roomId=<RoomId>&userId=<UserId>` for debugging.
 
 ## AWS SAM option (user/room/character services on Lambda)
 

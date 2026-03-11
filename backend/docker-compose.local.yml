@@ -1,28 +1,25 @@
 services:
-  gateway:
-    build:
-      context: ./gateway
-    container_name: munch-gateway
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: munch-nginx
     ports:
       - "8080:8080"
-    environment:
-      GATEWAY_PORT: 8080
-      USER_SERVICE_URL: http://user-service:8081
-      ROOM_SERVICE_URL: http://room-service:8082
-      CHARACTER_SERVICE_URL: http://character-service:8083
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - user-service
       - room-service
       - character-service
+      - room-notifications-service
 
   user-service:
     build:
       context: ./user-service
     container_name: munch-user-service
     ports:
-      - "8081:8081"
+      - "8082:8082"
     environment:
-      USER_SERVICE_PORT: 8081
+      USER_SERVICE_PORT: 8082
       USER_MONGO_URI: mongodb://mongo-user:27017/munch_user_service
     depends_on:
       - mongo-user
@@ -32,11 +29,11 @@ services:
       context: ./room-service
     container_name: munch-room-service
     ports:
-      - "8082:8082"
+      - "8083:8083"
     environment:
-      ROOM_SERVICE_PORT: 8082
+      ROOM_SERVICE_PORT: 8083
       ROOM_MONGO_URI: mongodb://mongo-room:27017/munch_room_service
-      CHARACTER_SERVICE_URL: http://character-service:8083
+      CHARACTER_SERVICE_URL: http://character-service:8084
       CHARACTER_CALL_TIMEOUT_MS: 2000
     depends_on:
       - mongo-room
@@ -47,9 +44,9 @@ services:
       context: ./character-service
     container_name: munch-character-service
     ports:
-      - "8083:8083"
+      - "8084:8084"
     environment:
-      CHARACTER_SERVICE_PORT: 8083
+      CHARACTER_SERVICE_PORT: 8084
       CHARACTER_MONGO_URI: mongodb://mongo-character:27017/munch_character_service
       CHARACTER_EVENTS_REDIS_URL: redis://redis:6379
       ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
@@ -62,9 +59,9 @@ services:
       context: ./room-notifications-service
     container_name: munch-room-notifications-service
     ports:
-      - "8084:8084"
+      - "8085:8085"
     environment:
-      ROOM_NOTIFICATIONS_PORT: 8084
+      ROOM_NOTIFICATIONS_PORT: 8085
       REDIS_URL: redis://redis:6379
       ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
     depends_on:
