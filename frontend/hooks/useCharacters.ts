@@ -56,7 +56,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
       return getCharactersByRoom(roomId, signal);
     },
-    enabled: Boolean(roomId),
+    enabled: Boolean(roomId)
   });
 
   const createMutation = useMutation<Character, Error, Omit<CharacterWritePayload, 'roomId'>, CharactersMutationContext>({

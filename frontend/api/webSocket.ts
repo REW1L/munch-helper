@@ -46,7 +46,8 @@ export class RoomWebSocketClient {
         // Convert http(s) to ws(s)
         const wsUrl = API_BASE_URL
           .replace(/^https:/, 'wss:')
-          .replace(/^http:/, 'ws:');
+          .replace(/^http:/, 'ws:')
+          .replace(/\/api$/, ''); // Remove trailing /api if present
 
         const connectionUrl = `${wsUrl}/ws?roomId=${encodeURIComponent(this.roomId)}&userId=${encodeURIComponent(this.userId)}`;
 
@@ -66,6 +67,7 @@ export class RoomWebSocketClient {
             if (this.isValidNotificationEvent(parsedEvent)) {
               this.listeners.forEach((listener) => listener(parsedEvent));
             }
+            console.info('[WebSocket] Received message:', parsedEvent);
           } catch (error) {
             console.error('[WebSocket] Failed to parse message:', error);
           }

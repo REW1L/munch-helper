@@ -14,6 +14,8 @@ const backend = aws.cloudformation.getStack({
 });
 const apiOriginUrl = backend.then(stack => stack.outputs?.ApiBaseUrl);
 const apiOriginDomainName = apiOriginUrl.then(url => new URL(url).hostname);
+const webSocketApiOriginUrl = backend.then(stack => stack.outputs?.WebSocketApiUrl);
+const webSocketApiOriginDomainName = webSocketApiOriginUrl.then(url => new URL(url).hostname);
 const cachePolicyCachingOptimizedId = "658327ea-f89d-4fab-a63d-7e88639e58f6";
 const cachePolicyCachingDisabled = aws.cloudfront.getCachePolicyOutput({
   name: "Managed-CachingDisabled",
@@ -100,8 +102,38 @@ const distribution = new aws.cloudfront.Distribution("frontendDistribution", {
         originSslProtocols: ["TLSv1.2"],
       },
     },
+    {
+      originId: "webSocketApiOrigin",
+      domainName: webSocketApiOriginDomainName,
+      customOriginConfig: {
+        httpPort: 80,
+        httpsPort: 443,
+        originProtocolPolicy: "https-only",
+        originSslProtocols: ["TLSv1.2"],
+      },
+    },
   ],
   orderedCacheBehaviors: [
+    {
+      pathPattern: "/ws",
+      targetOriginId: "webSocketApiOrigin",
+      viewerProtocolPolicy: "redirect-to-https",
+      allowedMethods: ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"],
+      cachedMethods: ["GET", "HEAD", "OPTIONS"],
+      compress: true,
+      cachePolicyId: cachePolicyCachingDisabledId,
+      originRequestPolicyId: originRequestPolicyAllViewerExceptHostHeaderId,
+    },
+    {
+      pathPattern: "/ws/*",
+      targetOriginId: "webSocketApiOrigin",
+      viewerProtocolPolicy: "redirect-to-https",
+      allowedMethods: ["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "POST", "DELETE"],
+      cachedMethods: ["GET", "HEAD", "OPTIONS"],
+      compress: true,
+      cachePolicyId: cachePolicyCachingDisabledId,
+      originRequestPolicyId: originRequestPolicyAllViewerExceptHostHeaderId,
+    },
     {
       pathPattern: "/api/*",
       targetOriginId: "apiOrigin",
