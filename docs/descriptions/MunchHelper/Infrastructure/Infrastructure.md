@@ -1,7 +1,7 @@
 # AWS Diagram
 
 The diagram goes from left to right.
-```mermaid-js
+```mermaid
 architecture-beta
     group account(logos:aws)[AWS Account]
 
