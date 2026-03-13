@@ -23,8 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - service: gateway
-            has_tests: false
           - service: user-service
             has_tests: true
           - service: room-service
