@@ -25,14 +25,35 @@ const handleSnsEvent = async (event: unknown) => {
   }
 
   const messages = parseSnsRecords(event);
+  console.info('room-notifications.sns.received', {
+    messageCount: messages.length
+  });
+
   for (const message of messages) {
     const parsed = parseNotificationEvent(message);
     if (!parsed) {
+      console.warn('room-notifications.sns.invalid_event', {
+        message
+      });
       continue;
     }
 
     const connections = await listRoomConnections(parsed.roomId);
+    console.info('room-notifications.sns.event', {
+      event: parsed.event,
+      roomId: parsed.roomId,
+      characterId: parsed.event_body.characterId,
+      correlationId: parsed.correlationId,
+      connectionsCount: connections.length
+    });
     await sendEventToConnections(wsClient, connections, parsed);
+
+    console.info('room-notifications.sns.event_dispatched', {
+      event: parsed.event,
+      roomId: parsed.roomId,
+      characterId: parsed.event_body.characterId,
+      connectionsCount: connections.length
+    });
   }
 
   return {
@@ -55,6 +76,9 @@ const handleWebSocketEvent = async (event: unknown) => {
   if (routeKey === '$connect') {
     const connectRequest = parseConnectRequest(event);
     if (!connectRequest) {
+      console.warn('room-notifications.ws.connect_rejected', {
+        connectionId
+      });
       return {
         statusCode: 400,
         body: 'Missing required query params roomId and userId'
@@ -62,20 +86,39 @@ const handleWebSocketEvent = async (event: unknown) => {
     }
 
     await upsertConnection(connectRequest);
+    console.info('room-notifications.ws.connected', {
+      connectionId: connectRequest.connectionId,
+      roomId: connectRequest.roomId,
+      userId: connectRequest.userId
+    });
     return { statusCode: 200, body: 'Connected.' };
   }
 
   if (routeKey === '$disconnect') {
     if (connectionId) {
       await removeConnection(connectionId);
+      console.info('room-notifications.ws.disconnected', {
+        connectionId
+      });
+    } else {
+      console.warn('room-notifications.ws.disconnect_missing_connection_id');
     }
 
     return { statusCode: 200, body: 'Disconnected.' };
   }
 
   if (routeKey === '$default') {
+    console.info('room-notifications.ws.event_received', {
+      routeKey,
+      connectionId
+    });
     return { statusCode: 200, body: 'Ignored.' };
   }
+
+  console.info('room-notifications.ws.route_received', {
+    routeKey,
+    connectionId
+  });
 
   return { statusCode: 200, body: 'OK' };
 };

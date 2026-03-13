@@ -22,10 +22,20 @@ export const upsertConnection = async (input: {
       setDefaultsOnInsert: true
     }
   );
+
+  console.info('room-notifications.connection.upserted', {
+    connectionId: input.connectionId,
+    roomId: input.roomId,
+    userId: input.userId
+  });
 };
 
 export const removeConnection = async (connectionId: string): Promise<void> => {
   await RoomConnection.deleteOne({ connectionId });
+
+  console.info('room-notifications.connection.removed', {
+    connectionId
+  });
 };
 
 export const listRoomConnections = async (roomId: string): Promise<ConnectionRecord[]> => {
@@ -70,12 +80,33 @@ export const sendEventToConnections = async (
             Data: Buffer.from(payload)
           })
         );
+
+        console.info('room-notifications.event.delivered', {
+          event: event.event,
+          roomId: event.roomId,
+          characterId: event.event_body.characterId,
+          connectionId: connection.connectionId,
+          userId: connection.userId
+        });
       } catch (error) {
         if (isGoneConnectionError(error)) {
+          console.warn('room-notifications.connection.stale', {
+            connectionId: connection.connectionId,
+            roomId: connection.roomId,
+            userId: connection.userId
+          });
           await removeConnection(connection.connectionId);
           return;
         }
 
+        console.error('room-notifications.event.delivery_failed', {
+          event: event.event,
+          roomId: event.roomId,
+          characterId: event.event_body.characterId,
+          connectionId: connection.connectionId,
+          userId: connection.userId,
+          error
+        });
         throw error;
       }
     })

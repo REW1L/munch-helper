@@ -60,6 +60,11 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   const publisher = options.publisher || new NoopCharacterEventPublisher();
   const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
 
+  console.info('[character-service] app initialized', {
+    routePrefix,
+    publisher: publisher.constructor.name
+  });
+
   const deterministicHexColor = (seed: string): string => {
     let hash = 2166136261;
     for (let index = 0; index < seed.length; index += 1) {
@@ -141,11 +146,21 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
     try {
       const { roomId } = req.query;
 
+      console.info('[character-service] list characters request', {
+        roomId,
+        query: req.query
+      });
+
       if (!roomId || typeof roomId !== 'string') {
         return res.status(400).json({ message: 'Query parameter roomId is required' });
       }
 
       const characters = await characterModel.find({ roomId }).sort({ createdAt: 1 });
+
+      console.info('[character-service] list characters success', {
+        roomId,
+        count: characters.length
+      });
 
       res.json({
         items: characters.map(toResponseCharacter)
@@ -169,6 +184,13 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         race = JSON.stringify(['Human']),
         gender = JSON.stringify(['male'])
       } = req.body || {};
+
+      console.info('[character-service] create character request', {
+        roomId,
+        userId,
+        name,
+        avatarId
+      });
 
       if (typeof roomId !== 'string' || !roomId.trim()) {
         return res.status(400).json({ message: 'Field roomId is required and must be a non-empty string' });
@@ -196,6 +218,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         gender
       });
 
+      console.info('[character-service] create character success', {
+        roomId: character.roomId,
+        characterId: character.id,
+        userId: character.userId
+      });
+
       void publisher
         .publish(
           createCharacterEventPayload({
@@ -204,6 +232,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
             characterId: character.id
           })
         )
+        .then(() => {
+          console.info('[character-service] character_created event queued', {
+            roomId: character.roomId,
+            characterId: character.id
+          });
+        })
         .catch((error) => {
           console.error('Failed to publish character_created event', error);
         });
@@ -219,6 +253,11 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       const characterId = toParamString(req.params.characterId as string | string[] | undefined);
       const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId'];
       const updates: Record<string, unknown> = {};
+
+      console.info('[character-service] update character request', {
+        characterId,
+        bodyKeys: Object.keys(req.body || {})
+      });
 
       for (const key of allowed) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
@@ -256,6 +295,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         return res.status(404).json({ message: 'Character not found' });
       }
 
+      console.info('[character-service] update character success', {
+        characterId: character.id,
+        roomId: character.roomId,
+        updatedKeys: Object.keys(updates)
+      });
+
       void publisher
         .publish(
           createCharacterEventPayload({
@@ -264,11 +309,17 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
             characterId: character.id
           })
         )
+        .then(() => {
+          console.info('[character-service] character_updated event queued', {
+            roomId: character.roomId,
+            characterId: character.id
+          });
+          res.json(toResponseCharacter(character));
+        })
         .catch((error) => {
           console.error('Failed to publish character_updated event', error);
+          res.json(toResponseCharacter(character));
         });
-
-      res.json(toResponseCharacter(character));
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'CastError') {
         return res.status(404).json({ message: 'Character not found' });
@@ -280,11 +331,17 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   app.delete('/characters/:characterId', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const characterId = toParamString(req.params.characterId as string | string[] | undefined);
+      console.info('[character-service] delete character request', { characterId });
       const character = await characterModel.findByIdAndDelete(characterId);
 
       if (!character) {
         return res.status(404).json({ message: 'Character not found' });
       }
+
+      console.info('[character-service] delete character success', {
+        characterId: character.id,
+        roomId: character.roomId
+      });
 
       void publisher
         .publish(
@@ -294,6 +351,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
             characterId: character.id
           })
         )
+        .then(() => {
+          console.info('[character-service] character_deleted event queued', {
+            roomId: character.roomId,
+            characterId: character.id
+          });
+        })
         .catch((error) => {
           console.error('Failed to publish character_deleted event', error);
         });
@@ -308,6 +371,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('[character-service] unhandled error', { message: err.message, name: err.name });
     res.status(500).json({ message: 'Internal server error', details: err.message });
   });
 

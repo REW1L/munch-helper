@@ -13,8 +13,17 @@ const app = buildCharacterApp({ publisher });
 const port = Number(process.env.CHARACTER_SERVICE_PORT || 8083);
 const mongoUri = process.env.CHARACTER_MONGO_URI || 'mongodb://localhost:27017/munch_character_service';
 
+console.info('[character-service] local bootstrap config', {
+  port,
+  mongoUri,
+  publisher: publisher.constructor.name,
+  eventsChannel,
+  redisConfigured: Boolean(redisUrl)
+});
+
 connectToMongo(mongoUri)
   .then(() => {
+    console.info('[character-service] connected to MongoDB', { mongoUri });
     app.listen(port, () => {
       console.log(`character-service listening on :${port}`);
     });

@@ -18,7 +18,14 @@ export interface CharacterEventPublisher {
 }
 
 export class NoopCharacterEventPublisher implements CharacterEventPublisher {
-  async publish(_payload: CharacterEventPayload): Promise<void> { }
+  async publish(payload: CharacterEventPayload): Promise<void> {
+    console.info('[character-events] noop publisher configured; skipping publish', {
+      event: payload.event,
+      roomId: payload.roomId,
+      characterId: payload.event_body.characterId,
+      correlationId: payload.correlationId
+    });
+  }
 }
 
 export class SnsCharacterEventPublisher implements CharacterEventPublisher {
@@ -28,12 +35,28 @@ export class SnsCharacterEventPublisher implements CharacterEventPublisher {
   ) { }
 
   async publish(payload: CharacterEventPayload): Promise<void> {
+    console.info('[character-events] publishing to SNS', {
+      topicArn: this.topicArn,
+      event: payload.event,
+      roomId: payload.roomId,
+      characterId: payload.event_body.characterId,
+      correlationId: payload.correlationId
+    });
+
     await this.snsClient.send(
       new PublishCommand({
         TopicArn: this.topicArn,
         Message: JSON.stringify(payload)
       })
     );
+
+    console.info('[character-events] published to SNS', {
+      topicArn: this.topicArn,
+      event: payload.event,
+      roomId: payload.roomId,
+      characterId: payload.event_body.characterId,
+      correlationId: payload.correlationId
+    });
   }
 }
 
@@ -46,6 +69,13 @@ export class RedisCharacterEventPublisher implements CharacterEventPublisher {
     private readonly channel: string
   ) {
     this.client = createClient({ url: this.redisUrl });
+    this.client.on('error', (error) => {
+      console.error('[character-events] redis client error', {
+        channel: this.channel,
+        redisUrl: this.redisUrl,
+        error
+      });
+    });
   }
 
   private async ensureConnected(): Promise<void> {
@@ -54,6 +84,10 @@ export class RedisCharacterEventPublisher implements CharacterEventPublisher {
     }
 
     if (!this.connectPromise) {
+      console.info('[character-events] connecting to Redis', {
+        channel: this.channel,
+        redisUrl: this.redisUrl
+      });
       this.connectPromise = this.client.connect().then(() => undefined).catch((error) => {
         this.connectPromise = null;
         throw error;
@@ -65,7 +99,21 @@ export class RedisCharacterEventPublisher implements CharacterEventPublisher {
 
   async publish(payload: CharacterEventPayload): Promise<void> {
     await this.ensureConnected();
+    console.info('[character-events] publishing to Redis', {
+      channel: this.channel,
+      event: payload.event,
+      roomId: payload.roomId,
+      characterId: payload.event_body.characterId,
+      correlationId: payload.correlationId
+    });
     await this.client.publish(this.channel, JSON.stringify(payload));
+    console.info('[character-events] published to Redis', {
+      channel: this.channel,
+      event: payload.event,
+      roomId: payload.roomId,
+      characterId: payload.event_body.characterId,
+      correlationId: payload.correlationId
+    });
   }
 }
 

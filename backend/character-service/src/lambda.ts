@@ -12,9 +12,18 @@ const publisher = topicArn
 const app = buildCharacterApp({ routePrefix, publisher });
 const mongoUri = process.env.CHARACTER_MONGO_URI || 'mongodb://localhost:27017/munch_character_service';
 
+console.info('[character-service] lambda bootstrap config', {
+  routePrefix,
+  mongoUri,
+  publisher: publisher.constructor.name,
+  topicArnConfigured: Boolean(topicArn)
+});
+
 const server = serverlessExpress({ app });
 
 export const handler = async (event: unknown, context: unknown) => {
+  console.info('[character-service] lambda invocation started');
   await connectToMongo(mongoUri);
+  console.info('[character-service] lambda mongo connection ready');
   return server(event, context);
 };
