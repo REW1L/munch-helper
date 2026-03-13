@@ -224,23 +224,21 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         userId: character.userId
       });
 
-      void publisher
-        .publish(
+      try {
+        await publisher.publish(
           createCharacterEventPayload({
             event: 'character_created',
             roomId: character.roomId,
             characterId: character.id
           })
-        )
-        .then(() => {
-          console.info('[character-service] character_created event queued', {
-            roomId: character.roomId,
-            characterId: character.id
-          });
-        })
-        .catch((error) => {
-          console.error('Failed to publish character_created event', error);
+        );
+        console.info('[character-service] character_created event queued', {
+          roomId: character.roomId,
+          characterId: character.id
         });
+      } catch (error) {
+        console.error('Failed to publish character_created event', error);
+      }
 
       res.status(201).json(toResponseCharacter(character));
     } catch (error) {
@@ -301,25 +299,23 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         updatedKeys: Object.keys(updates)
       });
 
-      void publisher
-        .publish(
+      try {
+        await publisher.publish(
           createCharacterEventPayload({
             event: 'character_updated',
             roomId: character.roomId,
             characterId: character.id
           })
-        )
-        .then(() => {
-          console.info('[character-service] character_updated event queued', {
-            roomId: character.roomId,
-            characterId: character.id
-          });
-          res.json(toResponseCharacter(character));
-        })
-        .catch((error) => {
-          console.error('Failed to publish character_updated event', error);
-          res.json(toResponseCharacter(character));
+        );
+        console.info('[character-service] character_updated event queued', {
+          roomId: character.roomId,
+          characterId: character.id
         });
+      } catch (error) {
+        console.error('Failed to publish character_updated event', error);
+      }
+
+      res.json(toResponseCharacter(character));
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'CastError') {
         return res.status(404).json({ message: 'Character not found' });
@@ -343,23 +339,21 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         roomId: character.roomId
       });
 
-      void publisher
-        .publish(
+      try {
+        await publisher.publish(
           createCharacterEventPayload({
             event: 'character_deleted',
             roomId: character.roomId,
             characterId: character.id
           })
-        )
-        .then(() => {
-          console.info('[character-service] character_deleted event queued', {
-            roomId: character.roomId,
-            characterId: character.id
-          });
-        })
-        .catch((error) => {
-          console.error('Failed to publish character_deleted event', error);
+        );
+        console.info('[character-service] character_deleted event queued', {
+          roomId: character.roomId,
+          characterId: character.id
         });
+      } catch (error) {
+        console.error('Failed to publish character_deleted event', error);
+      }
 
       res.status(204).send();
     } catch (error: unknown) {
