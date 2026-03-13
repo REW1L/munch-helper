@@ -20,7 +20,7 @@ describe('room-service db', () => {
 
   it('skips connecting when mongoose is already connected', async () => {
     mockMongoose.connection.readyState = 1;
-    const { connectToMongo } = await import('./db');
+    const { connectToMongo } = await import('./db.js');
 
     await connectToMongo('mongodb://example/room');
 
@@ -33,7 +33,7 @@ describe('room-service db', () => {
       resolveConnection = () => resolve(mockMongoose as never);
     }));
 
-    const { connectToMongo } = await import('./db');
+    const { connectToMongo } = await import('./db.js');
 
     const first = connectToMongo('mongodb://example/room');
     const second = connectToMongo('mongodb://example/room');
@@ -50,7 +50,7 @@ describe('room-service db', () => {
       .mockRejectedValueOnce(new Error('first failure'))
       .mockResolvedValueOnce(mockMongoose as never);
 
-    const { connectToMongo } = await import('./db');
+    const { connectToMongo } = await import('./db.js');
 
     await expect(connectToMongo('mongodb://example/room')).rejects.toThrow('first failure');
     await expect(connectToMongo('mongodb://example/room')).resolves.toBeUndefined();

@@ -47,7 +47,7 @@ describe('room-notifications lambda', () => {
   });
 
   it('handles websocket connect events', async () => {
-    const { handler } = await import('./lambda');
+    const { handler } = await import('./lambda.js');
 
     const response = await handler({
       requestContext: { routeKey: '$connect', connectionId: 'conn-1' },
@@ -71,7 +71,7 @@ describe('room-notifications lambda', () => {
       },
     ]);
 
-    const { handler } = await import('./lambda');
+    const { handler } = await import('./lambda.js');
     const response = await handler({
       Records: [
         {

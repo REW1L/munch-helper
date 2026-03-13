@@ -41,7 +41,7 @@ describe('room-service lambda', () => {
     process.env.ROUTE_PREFIX = '/prod';
     mockServerHandler.mockResolvedValueOnce({ statusCode: 200 });
 
-    const { handler } = await import('./lambda');
+    const { handler } = await import('./lambda.js');
     const response = await handler({ path: '/rooms' }, { requestId: 'ctx' });
 
     expect(mockBuildRoomApp).toHaveBeenCalledWith({

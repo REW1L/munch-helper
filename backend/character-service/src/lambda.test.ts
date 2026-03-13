@@ -52,7 +52,7 @@ describe('character-service lambda', () => {
     process.env.ROOM_CHARACTER_EVENTS_TOPIC_ARN = 'arn:aws:sns:topic';
     mockServerHandler.mockResolvedValueOnce({ statusCode: 200 });
 
-    const { handler } = await import('./lambda');
+    const { handler } = await import('./lambda.js');
     const response = await handler({ path: '/characters' }, { requestId: 'ctx' });
 
     expect(mockBuildCharacterApp).toHaveBeenCalledWith({

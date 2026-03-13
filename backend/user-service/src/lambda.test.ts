@@ -37,7 +37,7 @@ describe('user-service lambda', () => {
     process.env.USER_MONGO_URI = 'mongodb://mongo/user';
     mockServerHandler.mockResolvedValueOnce({ statusCode: 200 });
 
-    const { handler } = await import('./lambda');
+    const { handler } = await import('./lambda.js');
     const response = await handler({ path: '/users' }, { requestId: 'ctx' });
 
     expect(mockBuildUserApp).toHaveBeenCalledWith({ routePrefix: '/prod' });

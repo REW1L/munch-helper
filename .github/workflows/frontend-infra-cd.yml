@@ -9,6 +9,12 @@ on:
       - "infrastructure/**"
       - ".github/workflows/frontend-infra-cd.yml"
       - "backend/sam/template.yaml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "infrastructure/**"
+      - ".github/workflows/frontend-infra-cd.yml"
+      - "backend/sam/template.yaml"
 
 permissions:
   contents: read
