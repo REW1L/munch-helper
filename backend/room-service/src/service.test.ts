@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockAxiosPost, mockCreateApp, mockRoom, mockRoomAssociation } = vi.hoisted(() => ({
   mockAxiosPost: vi.fn(),
-  mockCreateApp: vi.fn(() => 'room-app'),
+  mockCreateApp: vi.fn<(
+    deps: import('./app').AppDependencies,
+    options?: { routePrefix?: string }
+  ) => string>(() => 'room-app'),
   mockRoom: {
     create: vi.fn(),
     findById: vi.fn(),
@@ -91,7 +94,8 @@ describe('room-service service', () => {
     });
 
     expect(app).toBe('room-app');
-    const dependencies = mockCreateApp.mock.calls[0]?.[0];
+    expect(mockCreateApp).toHaveBeenCalledTimes(1);
+    const [dependencies, appOptions] = mockCreateApp.mock.calls[0]!;
     expect(dependencies).toEqual(
       expect.objectContaining({
         roomModel: expect.objectContaining({ create: expect.any(Function), findById: expect.any(Function), deleteOne: expect.any(Function) }),
@@ -99,7 +103,7 @@ describe('room-service service', () => {
         createDefaultCharacter: expect.any(Function),
       })
     );
-    expect(mockCreateApp.mock.calls[0]?.[1]).toEqual({ routePrefix: '/prod' });
+    expect(appOptions).toEqual({ routePrefix: '/prod' });
 
     await expect(
       dependencies.createDefaultCharacter({ roomId: 'room-1', userId: 'user-1', userName: ' Alice ', avatarId: 4 })
