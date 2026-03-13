@@ -17,6 +17,13 @@ vi.mock('@/api/characters', () => ({
   updateCharacter: vi.fn(),
 }));
 
+vi.mock('@/hooks/useRoomWebSocket', () => ({
+  useRoomWebSocket: () => ({
+    isConnected: false,
+    subscribe: vi.fn(() => () => undefined),
+  }),
+}));
+
 const mockGetCharactersByRoom = vi.mocked(getCharactersByRoom);
 const mockCreateCharacter = vi.mocked(createCharacter);
 const mockUpdateCharacter = vi.mocked(updateCharacter);

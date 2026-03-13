@@ -13,6 +13,7 @@
     "dev": "concurrently -n gateway,user,room,character,notifications -c cyan,green,yellow,magenta,blue \"npm run dev -w gateway\" \"npm run dev -w user-service\" \"npm run dev -w room-service\" \"npm run dev -w character-service\" \"npm run dev -w room-notifications-service\"",
     "start": "concurrently -n gateway,user,room,character,notifications -c cyan,green,yellow,magenta,blue \"npm run start -w gateway\" \"npm run start -w user-service\" \"npm run start -w room-service\" \"npm run start -w character-service\" \"npm run start -w room-notifications-service\"",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "npm run typecheck -w gateway && npm run typecheck -w user-service && npm run typecheck -w room-service && npm run typecheck -w character-service && npm run typecheck -w room-notifications-service",
     "sam:build": "sam build --template-file sam/template.yaml",
     "sam:local:api": "sam local start-api --template-file sam/template.yaml --parameter-overrides UserMongoUri=\"mongodb://host.docker.internal:27021/munch_user_service\" RoomMongoUri=\"mongodb://host.docker.internal:27022/munch_room_service\" CharacterMongoUri=\"mongodb://host.docker.internal:27023/munch_character_service\" CharacterServiceUrl=\"http://host.docker.internal:3000\" CharacterCallTimeoutMs=\"2000\"",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
     "concurrently": "^9.2.1",
     "supertest": "^7.1.4",
     "vitest": "^3.2.4"

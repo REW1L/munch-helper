@@ -13,8 +13,11 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
-      include: ['api/**/*.ts', 'config/**/*.ts'],
+      reporter: ['text', 'html', 'json-summary'],
+      include: ['api/**/*.ts', 'config/**/*.ts', 'hooks/**/*.ts'],
+      thresholds: {
+        lines: 70,
+      },
     },
   },
 });

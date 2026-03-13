@@ -270,10 +270,17 @@ The complete OpenAPI specification is in [docs/openapi/openapi.yaml](docs/openap
 
 # Testing
 
+## Workspace Coverage
+```bash
+# Run both frontend and backend coverage from repository root
+npm run coverage
+```
+
 ## Backend
 ```bash
 cd backend
 npm test              # Run all tests
+npm run test:coverage # Run tests with coverage and enforce >=70% line threshold
 npm run test:watch   # Watch mode
 ```
 
@@ -281,10 +288,20 @@ npm run test:watch   # Watch mode
 ```bash
 cd frontend
 npm test              # Run all tests
+npm run test:coverage # Run tests with coverage and enforce >=70% line threshold
 npm run test:watch   # Watch mode
 ```
 
-**Current Coverage**: Working towards 70%+ target
+**Current Coverage (2026-03-13)**
+- Frontend line coverage: **75.31%**
+- Backend line coverage: **78.77%**
+- Backend service area line coverage:
+   - character-service: **76.4%**
+   - room-notifications-service: **78.81%**
+   - room-service: **80.6%**
+   - user-service: **82.5%**
+
+Coverage target status: **Met** (>=70% line coverage for frontend overall, backend overall, and each backend service area).
 **Testing Strategy**: Unit tests for critical paths (HTTP transport, retry logic, cancellation, WebSocket client); hook tests for feature orchestration (useCharacters, useRoomWebSocket)
 
 # Architecture

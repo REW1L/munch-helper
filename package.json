@@ -1,0 +1,10 @@
+{
+  "name": "munch-helper-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "coverage:frontend": "npm --prefix frontend run test:coverage",
+    "coverage:backend": "npm --prefix backend run test:coverage",
+    "coverage": "npm run coverage:frontend && npm run coverage:backend && node scripts/coverage-combined.mjs"
+  }
+}

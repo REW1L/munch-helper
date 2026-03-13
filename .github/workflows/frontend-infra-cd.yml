@@ -61,7 +61,7 @@ jobs:
         run: npm run tsc
 
       - name: Run Frontend Tests
-        run: npm run test
+        run: npm run test:coverage
 
       - name: Build Frontend
         run: EXPO_PUBLIC_API_URL="$API_BASE_URL" npm run export:web --clear
