@@ -2,6 +2,8 @@
 
 A mobile application for managing and tracking board games with multiple players. Currently focused on **Munchkin**, enabling real-time character management with level counter and stats tracking, and game state synchronization across Web, iOS and Android devices.
 
+**Live**: [helpamunch.click](https://helpamunch.click)
+
 # Overview
 
 **Munch Helper** solves key problems in multiplayer board gaming:
@@ -52,7 +54,8 @@ munch-helper/
 - **Container**: Docker (local development) and AWS SAM
 - **Database**: MongoDB
 - **Messaging**: AWS SNS (production), Redis Pub/Sub (local)
-- **WebSocket**: AWS Lambda WebSocket API (production), Socket.IO (local)
+- **WebSocket**: AWS API Gateway WebSocket API (production), custom Socket server (local)
+- **Edge Layer**: Nginx (local), AWS API Gateway HTTP + WebSocket APIs (production)
 - **Testing**: Vitest
 
 ## Frontend
@@ -87,15 +90,16 @@ munch-helper/
 - Character ownership per player
 - Real-time updates across all players in a room
 
+## Real-time Synchronization
+- WebSocket-based room notifications via `room-notifications-service`
+- Event-driven pipeline: character mutations → Redis/SNS → room-notifications-service → WebSocket broadcast
+- Frontend `RoomWebSocketClient` with auto-reconnection (exponential backoff) and heartbeat
+- Cross-device synchronization (~100ms latency)
+
 ## Battle System (NOT IMPLEMENTED YET)
 - Real-time battle state management
 - Card and buff tracking
 - Event logging for game history
-
-## Real-time Synchronization (NOT IMPLEMENTED YET)
-- WebSocket-based room notifications
-- Event-driven architecture for state updates
-- Cross-device synchronization
 
 # Getting Started
 
@@ -121,12 +125,16 @@ munch-helper/
    ./scripts/dev-up.sh
    ```
    This starts:
-   - MongoDB instances (3 databases for each service)
-   - Redis (for pub/sub)
-   - Nginx gateway
-   - All three microservices
+   - Nginx edge layer (routes HTTP + WebSocket traffic)
+   - MongoDB instances (one per service: ports 27021–27023)
+   - Redis (for pub/sub between character-service and room-notifications-service)
+   - All four microservices
 
-   Gateway runs on `http://localhost:8080`
+   Nginx gateway runs on `http://localhost:8080`
+   - User service: `http://localhost:8082`
+   - Room service: `http://localhost:8083`
+   - Character service: `http://localhost:8084`
+   - Room notifications (WebSocket): `ws://localhost:8085`
 
 2. **Run tests**:
    ```bash
@@ -250,7 +258,9 @@ The complete OpenAPI specification is in [docs/openapi/openapi.yaml](docs/openap
 **Room Management**
 - `POST /rooms` - Create new game room
 - `POST /rooms/associations` - Join existing room
-- `GET /rooms/:roomId` (WebSocket) - Subscribe to room updates
+
+**Room Notifications (WebSocket)**
+- Connect to room-notifications WebSocket endpoint with `roomId` query parameter to receive real-time character events
 
 **Character Management**
 - `GET /characters?roomId=...` - List characters in a room
@@ -275,7 +285,7 @@ npm run test:watch   # Watch mode
 ```
 
 **Current Coverage**: Working towards 70%+ target
-**Testing Strategy**: Unit tests for critical paths (HTTP transport, retry logic, cancellation); hook tests for feature orchestration
+**Testing Strategy**: Unit tests for critical paths (HTTP transport, retry logic, cancellation, WebSocket client); hook tests for feature orchestration (useCharacters, useRoomWebSocket)
 
 # Architecture
 
@@ -283,23 +293,24 @@ npm run test:watch   # Watch mode
 
 The backend uses a clear separation of concerns:
 
-- **Gateway**: Single entry point, request routing, authentication placeholder
+- **Nginx (local) / API Gateway (AWS)**: Single entry point, HTTP + WebSocket routing
 - **User Service**: User profiles and auth
-- **Room Service**: Game session management and WebSocket coordination
-- **Character Service**: Character creation, updates, and game state
+- **Room Service**: Game session management
+- **Character Service**: Character creation, updates, game state, and event publishing
+- **Room Notifications Service**: WebSocket connection management and real-time broadcast
 
 Communication patterns:
 - HTTP for REST endpoints
 - Service-to-service HTTP calls (room → character)
-- WebSocket for real-time notifications
-- Async messaging via SNS (production) or Redis (local)
+- WebSocket for real-time room notifications (AWS API Gateway WebSocket API / local Socket server)
+- Async event publishing via SNS (production) or Redis Pub/Sub (local) from character-service to room-notifications-service
 
 ## Frontend Architecture
 
 Layered architecture with clear dependencies:
 
-1. **Transport Layer** (`api/*`): Typed HTTP clients per domain
-2. **Feature Layer** (`hooks/*`): Composable orchestration hooks
+1. **Transport Layer** (`api/*`): Typed HTTP clients per domain + `RoomWebSocketClient` for real-time events
+2. **Feature Layer** (`hooks/*`): Composable orchestration hooks including `useRoomWebSocket` and `useCharacters`
 3. **State Layer** (`context/*`): Global app state (user profile)
 4. **Route Layer** (`app/*`): Expo Router screen definitions
 5. **Component Layer** (`components/*`): Reusable UI building blocks
@@ -343,15 +354,17 @@ ROOM (1) ──── (N) CHARACTER
 
 # License
 
-UNLICENSED
+GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
 
 # Current Status
 
 **Phase**: MVP Development
 - Core backend services: ✅ Complete
+- Room Notifications Service: ✅ Complete (Redis/SNS → WebSocket broadcast)
+- WebSocket integration: ✅ Complete (frontend client + backend Lambda + API Gateway)
 - Frontend screens: ✅ In progress
-- WebSocket integration: 🚧 Design complete, implementation pending
-- Production deployment: 🚧 Infrastructure ready, Lambda SAM configured
+- Production deployment: ✅ Live at [helpamunch.click](https://helpamunch.click)
+- Battle system: ⏳ Not yet implemented
 - App store submissions: ⏳ Pending feature completion
 
 # Get Started
@@ -367,7 +380,8 @@ cd backend && ./scripts/dev-up.sh
 # Frontend development (in another terminal)
 cd frontend && npm ci && npm run start
 
-# Open http://localhost:8084 for API
+# Open http://localhost:8080 for the API (Nginx gateway)
+# WebSocket connections via ws://localhost:8080/ws
 # and use `npm run ios` or `npm run android` for mobile
 ```
 
