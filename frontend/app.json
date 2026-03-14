@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "munch-helper",
+    "name": "Munch Helper",
     "slug": "munch-helper",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,7 +12,8 @@
       "bundleIdentifier": "com.anonymous.munch-helper"
     },
     "android": {
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.munchhelper"
     },
     "web": {
       "output": "static",
@@ -22,7 +23,11 @@
       "expo-router",
       [
         "expo-splash-screen",
-        {}
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/images/shopkeeper.png",
+          "imageWidth": 100
+        }
       ],
       "expo-navigation-bar",
       "expo-font",

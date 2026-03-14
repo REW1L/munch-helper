@@ -1,10 +1,7 @@
-import avatars from '@/constants/avatars';
-import { Picker } from '@react-native-picker/picker';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +11,9 @@ import {
   View,
 } from 'react-native';
 import ColorPicker, { Panel5 } from 'reanimated-color-picker';
+
+import NativePicker from '@/components/munchkin/NativePicker';
+import avatars from '@/constants/avatars';
 
 interface Character {
   id: string;
@@ -155,21 +155,16 @@ export default function ChangeCharacterModal({
                 {character.class.map((cls, index) => (
                   <View style={styles.classRow} key={`class-${index}`}>
                     <View style={styles.classDropdown}>
-                      <Picker
+                      <NativePicker
                         selectedValue={character.class[index]}
                         onValueChange={(value: string) => {
                           const newClasses = [...character.class];
                           newClasses[index] = value;
                           setCharacter({ ...character, class: newClasses });
                         }}
-                        style={Platform.OS === "ios" ? styles.picker : undefined}
-                        itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
-                      >
-                        <Picker.Item label="<Select>" value="<Select>" />
-                        {classes.map((cls) => (
-                          <Picker.Item key={`class-${index}-${cls}`} label={cls} value={cls} />
-                        ))}
-                      </Picker>
+                        options={classes}
+                        pickerKey={`class-${index}`}
+                      />
                     </View>
                     <TouchableOpacity style={styles.classButton}
                       onPress={() => {
@@ -184,19 +179,12 @@ export default function ChangeCharacterModal({
                 ))}
                 <View style={styles.classRow}>
                   <View style={styles.classDropdown}>
-                    <Picker
-                      onValueChange={(value: string) =>
-                        setNewClass(value)
-                      }
-                      style={Platform.OS === "ios" ? styles.picker : undefined}
-                      itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
+                    <NativePicker
                       selectedValue={newClass}
-                    >
-                      <Picker.Item label="<Select>" value="<Select>" />
-                      {classes.map((cls) => (
-                        <Picker.Item key={`newclass-${cls}`} label={cls} value={cls} />
-                      ))}
-                    </Picker>
+                      onValueChange={(value: string) => setNewClass(value)}
+                      options={classes}
+                      pickerKey="newclass"
+                    />
                   </View>
                   <TouchableOpacity style={styles.classButton}
                     onPress={() => {
@@ -218,22 +206,16 @@ export default function ChangeCharacterModal({
                 {character.race.map((race, index) => (
                   <View style={styles.classRow} key={`race-${index}`}>
                     <View style={styles.classDropdown}>
-                      <Picker
+                      <NativePicker
                         selectedValue={character.race[index]}
                         onValueChange={(value: string) => {
                           const newRaces = [...character.race];
-
                           newRaces[index] = value;
                           setCharacter({ ...character, race: newRaces });
                         }}
-                        style={Platform.OS === "ios" ? styles.picker : undefined}
-                        itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
-                      >
-                        <Picker.Item label="<Select>" value="<Select>" />
-                        {races.map((option) => (
-                          <Picker.Item key={`race-${index}-${option}`} label={option} value={option} />
-                        ))}
-                      </Picker>
+                        options={races}
+                        pickerKey={`race-${index}`}
+                      />
                     </View>
                     <TouchableOpacity
                       style={styles.classButton}
@@ -253,17 +235,12 @@ export default function ChangeCharacterModal({
                 ))}
                 <View style={styles.classRow}>
                   <View style={styles.classDropdown}>
-                    <Picker
-                      onValueChange={(value: string) => setNewRace(value)}
+                    <NativePicker
                       selectedValue={newRace}
-                      style={Platform.OS === "ios" ? styles.picker : undefined}
-                      itemStyle={Platform.OS === "ios" ? styles.pickerItem : undefined}
-                    >
-                      <Picker.Item label="<Select>" value="<Select>" />
-                      {races.map((option) => (
-                        <Picker.Item key={`newrace-${option}`} label={option} value={option} />
-                      ))}
-                    </Picker>
+                      onValueChange={(value: string) => setNewRace(value)}
+                      options={races}
+                      pickerKey="newrace"
+                    />
                   </View>
                   <TouchableOpacity
                     style={styles.classButton}
@@ -525,7 +502,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
     borderColor: '#484848',
-    // backgroundColor: '#DFDFDF',
+    backgroundColor: '#DFDFDF',
+    color: '#000000',
     overflow: 'hidden'
   },
   picker: {

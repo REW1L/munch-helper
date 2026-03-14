@@ -43,7 +43,7 @@ const MunchkinIndexView: React.FC = () => {
       <SafeAreaView style={{
         flex: 1,
         backgroundColor: COLORS.CONTENT_BG, // Dark theme background
-      }} edges={Platform.OS === "ios" ? ["bottom"] : ["top", "bottom", "left", "right"]}>
+      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
         <View style={styles.container}>
           <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
 
