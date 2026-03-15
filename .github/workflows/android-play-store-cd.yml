@@ -46,6 +46,12 @@ jobs:
           distribution: zulu
           java-version: 17
 
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: false
+
       - name: Validate Required Inputs
         run: |
           set -euo pipefail
