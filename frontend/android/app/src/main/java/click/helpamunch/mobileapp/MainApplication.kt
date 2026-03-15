@@ -1,4 +1,4 @@
-package com.anonymous.munchhelper
+package click.helpamunch.mobileapp
 
 import android.app.Application
 import android.content.res.Configuration

@@ -1,0 +1,97 @@
+name: Android Play Store CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/android-play-store-cd.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: android-play-store-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy_android:
+    name: Build and Upload Android App
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend/android
+
+    env:
+      ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+      ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/.tmp/android-upload-key.jks
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: false
+
+      - name: Validate Required Inputs
+        run: |
+          set -euo pipefail
+          for key in ANDROID_SIGNING_KEY ANDROID_SIGNING_KEY_PASSWORD GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+        env:
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install Frontend Dependencies
+        run: |
+          npm ci
+          npx -y expo prebuild --platform android
+        working-directory: frontend
+
+      - name: Install Fastlane Dependencies
+        run: bundle install --jobs 4 --retry 3
+
+      - name: Restore Android Signing Key
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/.tmp"
+          echo "$ANDROID_SIGNING_KEY" | base64 --decode > "$ANDROID_SIGNING_KEY_PATH"
+        env:
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+
+      - name: Build Android Release
+        run: bundle exec fastlane build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+
+      - name: Upload Android Build to Play Store
+        run: bundle exec fastlane beta

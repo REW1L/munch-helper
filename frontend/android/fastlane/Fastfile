@@ -1,0 +1,45 @@
+default_platform(:android)
+app_slug = "munch-helper"
+
+gradle_properties = {}
+if ENV["ANDROID_SIGNING_KEY_PASSWORD"]
+  gradle_properties = {
+    "android.injected.signing.store.file" => ENV["ANDROID_SIGNING_KEY_PATH"],
+    "android.injected.signing.store.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"],
+    "android.injected.signing.key.alias" => "upload-key-alias",
+    "android.injected.signing.key.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"]
+  }
+else
+  UI.error("Android signing key password not found in environment variables. Please set ANDROID_SIGNING_KEY_PASSWORD to the password of your signing key.")
+end
+
+platform :android do
+    desc "Build only a release version of the app"
+    lane :build do
+        gradle(
+            gradle_path: "./gradlew",
+            task: "assembleRelease bundleRelease",
+            print_command: false,
+            properties: gradle_properties
+        )
+    end
+    desc "Deploy a new version to the Google Play Beta track"
+    lane :beta do
+        # Grab the latest build number from the Play Store
+        previous_build_number = google_play_track_version_codes(
+            track: "internal"
+        )[0]
+
+        # Increment the build number
+        increment_version_code(
+            gradle_file_path: "app/build.gradle",
+            version_code: previous_build_number + 1
+        )
+        
+        # Build a release version of the app
+        build()
+
+        # Upload the app to the Play Store
+        upload_to_play_store(track: "internal")
+    end
+end

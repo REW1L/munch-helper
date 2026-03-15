@@ -1,0 +1,9 @@
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
+
+package_name("click.helpamunch.mobileapp")
+if ENV["GOOGLE_GHA_CREDS_PATH"]
+  json_key_file(ENV["GOOGLE_GHA_CREDS_PATH"])
+else
+  UI.error("Google Play JSON key not found in environment variables. Please set GOOGLE_GHA_CREDS_PATH to the path of your JSON key file.")
+end

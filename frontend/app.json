@@ -9,11 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.munch-helper"
+      "bundleIdentifier": "click.helpamunch.mobileapp"
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.munchhelper"
+      "package": "click.helpamunch.mobileapp"
     },
     "web": {
       "output": "static",
