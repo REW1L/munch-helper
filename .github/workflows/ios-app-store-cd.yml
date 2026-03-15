@@ -1,0 +1,76 @@
+name: iOS App Store CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ios-app-store-cd.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-app-store-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy_ios:
+    name: Build and Upload iOS App
+    runs-on: macos-latest
+
+    defaults:
+      run:
+        working-directory: frontend/ios
+
+    env:
+      APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_PATH: ${{ github.workspace }}/.tmp/app-store-connect-key.p8
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_CONNECT_TEAM_ID: ${{ secrets.APPLE_CONNECT_TEAM_ID }}
+      APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.1"
+          bundler-cache: false
+
+      - name: Install Frontend Dependencies
+        run: |
+          npm ci
+          npx -y expo prebuild --platform ios
+        working-directory: frontend
+
+      - name: Install Fastlane Dependencies
+        run: bundle install --jobs 4 --retry 3
+
+      - name: Setup SSH Agent for Match
+        uses: webfactory/ssh-agent@v0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_GIT_DEPLOY_KEY }}
+
+      - name: Restore App Store Connect API Key
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.tmp"
+          echo "$APP_STORE_CONNECT_KEY" > "$APP_STORE_CONNECT_KEY_PATH"
+        env:
+          APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+
+      - name: Build and Upload iOS App to TestFlight
+        run: bundle exec fastlane beta
