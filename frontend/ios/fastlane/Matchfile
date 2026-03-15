@@ -1,0 +1,10 @@
+git_url(ENV["MATCH_GIT_URL"])
+
+storage_mode("git")
+type("appstore")
+app_identifier(["click.helpamunch.mobileapp"])
+
+readonly(false)
+
+# Keep repository interactions fast for CI and local lanes.
+shallow_clone(true)

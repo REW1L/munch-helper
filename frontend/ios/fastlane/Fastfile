@@ -1,71 +1,73 @@
 default_platform(:ios)
 
 platform :ios do
+    lane :certs_update do
+        # Retrieve the api key from key file
+        app_store_connect_api_key(
+              key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+              issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+              key_filepath: ENV["APP_STORE_CONNECT_KEY_PATH"],
+              duration: 1000,
+              in_house: false
+        )
+        sync_code_signing(readonly: false)
+    end
+
     desc "Push a new beta build to TestFlight"
     lane :beta do
         # Retrieve the api key from key file
-        # api_key = app_store_connect_api_key(
-        #     # Replace key_id and issuer_id with your api key key and issuer IDs
-        #     key_id: "[key_id]",
-        #     issuer_id: "[issuer_id]",
-        #     key_filepath: "AppStoreConnectApiKey.p8",
-        #     duration: 1000,
-        #     in_house: false
-        # )
+        app_store_connect_api_key(
+            key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+            issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+            key_filepath: ENV["APP_STORE_CONNECT_KEY_PATH"],
+            duration: 1000,
+            in_house: false
+        )
 
-        # Retrieve signing certificate from file
-        # import_certificate(
-        #     certificate_path: "PrivateKey.p12",
-        #     keychain_name: ENV["MATCH_KEYCHAIN_NAME"]
-        # )
-
-        # Import mobile provisioning profile from app store
-        # get_provisioning_profile(
-        #     filename: "distribution.mobileprovision",
-        #     # Replace provisioning_name with your provisioning profile name
-        #     provisioning_name: "[provisioning_name]",
-        #     ignore_profiles_with_different_name: true,
-        #     readonly: true,
-        #     api_key: api_key
-        # )
+        sync_code_signing(
+            type: "appstore",
+            readonly: true
+        )
 
         # Get latest build number
-        # previous_build_number = latest_testflight_build_number(
-        #     api_key: api_key
-        # )
+        previous_build_number = latest_testflight_build_number()
 
         # Increment build number
-        # increment_build_number(
-        #     # Replace xcodeproj
-        #     xcodeproj: "munchhelper.xcodeproj",
-        #     build_number: previous_build_number + 1
-        # )
+        increment_build_number(
+            # Replace xcodeproj
+            xcodeproj: "munchhelper.xcodeproj",
+            build_number: previous_build_number + 1
+        )
 
         # Disable automatic code signing, so the signing certificate on the filesystem can be used
-        # update_code_signing_settings(
-        #     use_automatic_signing: false,
-        #     # Replace xcodeproj, bundle_identifier and profile_name
-        #     path: "munchhelper.xcodeproj",
-        #     bundle_identifier: "click.helpamunch.mobileapp",
-        #     profile_name: "munchhelper",
-        # )
+        update_code_signing_settings(
+            use_automatic_signing: false,
+            path: "munchhelper.xcodeproj",
+            targets: ["munchhelper"],
+            bundle_identifier: "click.helpamunch.mobileapp",
+            code_sign_identity: "Apple Distribution",
+            profile_name: "match AppStore click.helpamunch.mobileapp"
+        )
 
         # Build the iOS app
         build_app(
             workspace: "munchhelper.xcworkspace",
             scheme: "munchhelper",
             configuration: "Release",
+            skip_profile_detection: true,
             export_method: "app-store",
             export_options: {
-                signingStyle: "automatic"
+                signingStyle: "manual",
+                provisioningProfiles: {
+                    "click.helpamunch.mobileapp" => "match AppStore click.helpamunch.mobileapp"
+                }
             },
-            xcargs: "-allowProvisioningUpdates"
+            codesigning_identity: "Apple Distribution"
         )
 
         # Upload app to TestFlight, skipping waiting for build processing to reduce CI credit waste
-        # upload_to_testflight(
-        #     skip_waiting_for_build_processing: true,
-        #     api_key: api_key
-        # )
+        upload_to_testflight(
+            skip_waiting_for_build_processing: true
+        )
     end
 end
