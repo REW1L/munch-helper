@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>munchhelper</string>
-          <string>com.anonymous.munch-helper</string>
+          <string>click.helpamunch.mobileapp</string>
         </array>
       </dict>
       <dict>
