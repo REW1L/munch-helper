@@ -11,6 +11,10 @@ export default function LandingPage() {
       }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
+          <TouchableOpacity style={styles.supportButton} onPress={() => router.navigate('/support')}>
+            <Text style={styles.supportButtonText}>Support</Text>
+          </TouchableOpacity>
+
           <View style={styles.heroSection}>
             <Text style={styles.title}>Munch Helper</Text>
             <Text style={styles.subtitle}>Your companion for board games like Munchkin</Text>
@@ -83,5 +87,22 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontFamily: 'Roboto',
     fontWeight: '500',
+  },
+  supportButton: {
+    position: 'absolute',
+    top: 16,
+    right: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  supportButtonText: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontSize: 18,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
   },
 });

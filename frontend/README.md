@@ -16,7 +16,7 @@ Feature-oriented orchestration (`useUser`, `useRoomCharacters`, `useRoomCreate`,
 Global user profile context shared across route groups.
 
 4. `app/*`
-Expo Router route files and screen composition.
+Expo Router route files and screen composition, including the App Store support page route at `/support`.
 
 5. `components/*`
 Reusable UI building blocks and app shell boundary components.
