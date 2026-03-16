@@ -32,3 +32,6 @@ project.xcworkspace
 # Symbols
 *.dSYM.*
 *.dSYM
+
+# Fastlane reports
+fastlane/report.xml
