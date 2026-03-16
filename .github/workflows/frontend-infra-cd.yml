@@ -83,6 +83,7 @@ jobs:
     name: Deploy Frontend Infrastructure
     runs-on: ubuntu-latest
     needs: build_frontend
+    environment: Frontend
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
