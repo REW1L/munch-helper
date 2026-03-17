@@ -11,6 +11,10 @@ export default function LandingPage() {
       }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
+          <TouchableOpacity style={styles.privacyButton} onPress={() => router.navigate('/privacy')}>
+            <Text style={styles.privacyButtonText}>Privacy</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.supportButton} onPress={() => router.navigate('/support')}>
             <Text style={styles.supportButtonText}>Support</Text>
           </TouchableOpacity>
@@ -100,6 +104,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   supportButtonText: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontSize: 18,
+    fontFamily: 'Roboto',
+    fontWeight: '400',
+  },
+  privacyButton: {
+    position: 'absolute',
+    top: 16,
+    left: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'transparent',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  privacyButtonText: {
     color: 'rgba(255, 255, 255, 0.65)',
     fontSize: 18,
     fontFamily: 'Roboto',
