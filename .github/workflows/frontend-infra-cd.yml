@@ -9,6 +9,8 @@ on:
       - "infrastructure/**"
       - ".github/workflows/frontend-infra-cd.yml"
       - "backend/sam/template.yaml"
+      - "!frontend/android/**"
+      - "!frontend/ios/**"
   pull_request:
     paths:
       - "frontend/**"

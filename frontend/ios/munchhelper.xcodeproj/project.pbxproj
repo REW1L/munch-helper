@@ -365,7 +365,7 @@
 				CODE_SIGN_ENTITLEMENTS = munchhelper/munchhelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 3BQY72JE52;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -386,7 +386,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = click.helpamunch.mobileapp;
-				PRODUCT_NAME = "MunchHelper";
+				PRODUCT_NAME = MunchHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "match AppStore click.helpamunch.mobileapp";
 				SWIFT_OBJC_BRIDGING_HEADER = "munchhelper/munchhelper-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -405,7 +405,7 @@
 				CODE_SIGN_ENTITLEMENTS = munchhelper/munchhelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 3BQY72JE52;
 				INFOPLIST_FILE = munchhelper/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
@@ -421,7 +421,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = click.helpamunch.mobileapp;
-				PRODUCT_NAME = "MunchHelper";
+				PRODUCT_NAME = MunchHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "match AppStore click.helpamunch.mobileapp";
 				SWIFT_OBJC_BRIDGING_HEADER = "munchhelper/munchhelper-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
