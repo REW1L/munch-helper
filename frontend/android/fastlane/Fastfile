@@ -16,15 +16,6 @@ end
 platform :android do
     desc "Build only a release version of the app"
     lane :build do
-        gradle(
-            gradle_path: "./gradlew",
-            task: "assembleRelease bundleRelease",
-            print_command: false,
-            properties: gradle_properties
-        )
-    end
-    desc "Deploy a new version to the Google Play Beta track"
-    lane :beta do
         # Grab the latest build number from the Play Store
         previous_build_number = google_play_track_version_codes(
             track: "internal"
@@ -35,7 +26,15 @@ platform :android do
             gradle_file_path: "app/build.gradle",
             version_code: previous_build_number + 1
         )
-        
+        gradle(
+            gradle_path: "./gradlew",
+            task: "assembleRelease bundleRelease",
+            print_command: false,
+            properties: gradle_properties
+        )
+    end
+    desc "Deploy a new version to the Google Play Beta track"
+    lane :beta do
         # Build a release version of the app
         build()
 
