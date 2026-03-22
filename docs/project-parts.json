@@ -1,0 +1,76 @@
+{
+  "repository_type": "monorepo",
+  "scan_level": "quick",
+  "generated_at": "2026-03-19T22:50:33Z",
+  "parts": [
+    {
+      "part_id": "backend",
+      "display_name": "Backend",
+      "root_path": "backend",
+      "project_type_id": "backend",
+      "primary_stack": [
+        "Node.js 20",
+        "Express 5",
+        "MongoDB",
+        "Redis",
+        "AWS SAM"
+      ]
+    },
+    {
+      "part_id": "frontend",
+      "display_name": "Frontend",
+      "root_path": "frontend",
+      "project_type_id": "mobile",
+      "primary_stack": [
+        "Expo 55",
+        "React Native",
+        "Expo Router",
+        "TanStack Query"
+      ]
+    },
+    {
+      "part_id": "infrastructure",
+      "display_name": "Infrastructure",
+      "root_path": "infrastructure",
+      "project_type_id": "infra",
+      "primary_stack": [
+        "Pulumi",
+        "AWS S3",
+        "CloudFront",
+        "Route53"
+      ]
+    }
+  ],
+  "integration_points": [
+    {
+      "from": "frontend",
+      "to": "backend",
+      "type": "REST",
+      "details": "HTTP API access via shared edge URL"
+    },
+    {
+      "from": "frontend",
+      "to": "backend",
+      "type": "WebSocket",
+      "details": "Room notifications over /ws with roomId and userId"
+    },
+    {
+      "from": "room-service",
+      "to": "character-service",
+      "type": "internal-http",
+      "details": "Room flows call character service during room lifecycle actions"
+    },
+    {
+      "from": "character-service",
+      "to": "room-notifications-service",
+      "type": "event-bus",
+      "details": "Redis locally, SNS in AWS"
+    },
+    {
+      "from": "infrastructure",
+      "to": "backend",
+      "type": "stack-output",
+      "details": "Pulumi reads API and WebSocket origin URLs from backend CloudFormation outputs"
+    }
+  ]
+}
