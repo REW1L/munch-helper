@@ -1,25 +1,25 @@
 ---
 inputDocuments:
-  - /Users/rew1l/own/munch-helper/docs/index.md
-  - /Users/rew1l/own/munch-helper/docs/project-overview.md
-  - /Users/rew1l/own/munch-helper/docs/architecture-frontend.md
-  - /Users/rew1l/own/munch-helper/docs/architecture-backend.md
-  - /Users/rew1l/own/munch-helper/docs/integration-architecture.md
-  - /Users/rew1l/own/munch-helper/_bmad-output/project-context.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Backend Services.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Infrastructure/Infrastructure.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Main View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Room View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Battle View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Log View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Create Character View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Frontend/Change Character View.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Backend Services/User Management.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Backend Services/Room Management.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Backend Services/Character Management.md
-  - /Users/rew1l/own/munch-helper/docs/descriptions/MunchHelper/Backend Services/Room Notifications.md
+  - docs/index.md
+  - docs/project-overview.md
+  - docs/architecture-frontend.md
+  - docs/architecture-backend.md
+  - docs/integration-architecture.md
+  - _bmad-output/project-context.md
+  - docs/descriptions/MunchHelper.md
+  - docs/descriptions/MunchHelper/Frontend.md
+  - docs/descriptions/MunchHelper/Backend Services.md
+  - docs/descriptions/MunchHelper/Infrastructure/Infrastructure.md
+  - docs/descriptions/MunchHelper/Frontend/Main View.md
+  - docs/descriptions/MunchHelper/Frontend/Room View.md
+  - docs/descriptions/MunchHelper/Frontend/Battle View.md
+  - docs/descriptions/MunchHelper/Frontend/Log View.md
+  - docs/descriptions/MunchHelper/Frontend/Create Character View.md
+  - docs/descriptions/MunchHelper/Frontend/Change Character View.md
+  - docs/descriptions/MunchHelper/Backend Services/User Management.md
+  - docs/descriptions/MunchHelper/Backend Services/Room Management.md
+  - docs/descriptions/MunchHelper/Backend Services/Character Management.md
+  - docs/descriptions/MunchHelper/Backend Services/Room Notifications.md
 workflowType: 'prd'
 documentCounts:
   briefCount: 0
