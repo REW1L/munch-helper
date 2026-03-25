@@ -204,7 +204,7 @@ Players see a shared live view of room state, receive real-time visual signals w
 **Cross-platform exit criteria apply to this epic**
 
 ### Epic 5: Battle Management
-Players can start a named battle within an active room, track hero and monster sides with adjustable values, view the current battle state from the Room View and a dedicated Battle screen, and conclude or discard the battle — preserving the outcome for the session record.
+Players can create and resume a single active battle in a room, manage both sides of the battle in real time, and either conclude or discard it so the room returns to a clear, usable state.
 **FRs covered:** FR20, FR21, FR22, FR23, FR24, FR25, FR26, FR27, FR28
 **Status:** New
 **Cross-platform exit criteria apply to this epic**
@@ -350,7 +350,6 @@ So that I can share the code with latecomers without manually selecting or retyp
 **Then** the accessibility label announces the full room code
 
 > **Covers:** UX-DR3
-> **Depends on:** AppTheme token migration (Story 3.1)
 
 ## Epic 3: Character Management
 
@@ -638,158 +637,195 @@ So that animations don't cause discomfort during play.
 
 ## Epic 5: Battle Management
 
-Players can start a named battle within an active room, track hero and monster sides with characters and bonuses, view and update the in-progress battle state, and conclude or discard the battle — preserving the outcome for the session record.
+Players can create and resume a single active battle in a room, manage both sides of the battle in real time, and either conclude or discard it so the room returns to a clear, usable state.
 
-### Story 5.1: `battle-service` Backend `[TODO]`
-
-As a developer,
-I want a `battle-service` Lambda microservice scaffolded from `character-service`,
-So that battle lifecycle operations have a dedicated, tested backend.
-
-**Acceptance Criteria:**
-
-**Given** the service is scaffolded
-**When** deployed
-**Then** it exposes: `POST /battles`, `GET /battles/:id`, `PATCH /battles/:id`, `POST /battles/:id/conclude`, `DELETE /battles/:id`
-**And** all mutations enforce a status guard — only `active` battles can be PATCHed, concluded, or discarded
-**And** `battle-service` publishes to `NOTIFICATIONS_TOPIC_ARN` on create, conclude, and discard; `LOG_TOPIC_ARN` publish is stubbed/mocked — wired in Epic 6
-**And** test coverage meets the 70% floor targeting create, conclude, and discard flows
-
-### Story 5.2: Battle WebSocket Fanout `[TODO]`
-
-As a developer,
-I want `room-notifications-service` to subscribe to `battle_*` events from its own notifications SNS topic / Redis channel and fan them out via WebSocket,
-So that connected clients receive realtime battle state updates.
-
-**Acceptance Criteria:**
-
-**Given** `battle-service` publishes a `battle_started`, `battle_updated`, `battle_concluded`, or `battle_discarded` event to the notifications topic
-**When** `room-notifications-service` receives it from its own topic
-**Then** the event is broadcast via WebSocket to all connected clients in the relevant room
-**And** existing character WebSocket event handlers are not modified
-
-### Story 5.3: Battle API Client & Hook `[TODO]`
-
-As a developer,
-I want `battles.ts` API module and `useRoomBattle` / `useBattleActions` hooks,
-So that the frontend can query and mutate battle state using the established pattern.
-
-**Acceptance Criteria:**
-
-**Given** the hooks are implemented
-**When** the Room View mounts
-**Then** `useRoomBattle` fetches the active battle on mount and subscribes to `battle_*` WebSocket events
-**And** the hook returns battle state, loading, and error — mirroring `useRoomCharacters` shape
-**And** TanStack Query key shape is `['battle', roomId]`
-**And** `useBattleActions` exposes create, update sides, conclude, and discard mutations
-
-### Story 5.4: Active Battle Banner in Room View `[TODO]`
+### Story 5.1: Start a Battle `[TODO]`
 
 As a player,
-I want to see a banner in the Room View when a battle is in progress,
-So that I'm always aware of an active battle and can navigate to it quickly.
+I want to create a battle for my room when no battle is active,
+So that the group has a shared battle state to use for the current encounter.
 
 **Acceptance Criteria:**
 
-**Given** a battle is active in the room
-**When** I view the Room View
-**Then** an `ActiveBattleBanner` is displayed in the character list header showing the battle name (if set)
-**And** a "View Battle" button is visible and navigates me to the Battle View
-**And** the banner is not dismissible — it reflects live server state
-**And** the banner is accessible: `accessibilityLabel="Battle in progress. Tap to view."`, `accessibilityRole="button"`
+**Given** no battle is currently active in the room
+**When** I start a battle from the Room View
+**Then** a new battle is created for that room with status `active`
+**And** the battle can include a user-provided name or a generated default name
+**And** only one active battle is allowed per room
 
-**Given** no battle is active
+**Given** a battle is already active in the room
+**When** I attempt to start another battle
+**Then** the app does not create a second active battle
+**And** I am routed to the existing active battle instead
+
+**Given** a battle has been created successfully
+**When** the creation completes
+**Then** the Battle View opens with the active battle state loaded
+**And** the active battle can be retrieved by room using the active-battle query contract
+
+### Story 5.2: Show Active Battle in Room View `[TODO]`
+
+As a player,
+I want the Room View to clearly show when a battle is active,
+So that I can tell the room is in battle state and return to it quickly.
+
+**Acceptance Criteria:**
+
+**Given** an active battle exists for the room
 **When** I view the Room View
-**Then** no banner is shown and the Battle button label reads "Battle"
+**Then** an `ActiveBattleBanner` is shown in the character list header
+**And** the banner displays the battle name when one is available
+**And** the banner includes a `View Battle` action
+
+**Given** I tap `View Battle` from the active battle banner
+**When** the action is triggered
+**Then** I am navigated to the Battle View for the current active battle
+**And** the Battle View shows the latest available battle state
+
+**Given** no battle is active for the room
+**When** I view the Room View
+**Then** no active battle banner is shown
+**And** the battle entry point remains available for starting a battle
+
+**Given** I reconnect or reopen the app during an active room session
+**When** the Room View loads
+**Then** it checks for an active battle for the room
+**And** it reflects that state in the banner without automatically forcing navigation into the Battle View
 
 > **Covers:** UX-DR10
-> **Depends on:** Stories 3.1, 3.2, 5.3
+> **Depends on:** Stories 3.1, 3.2
 
-### Story 5.5: Start a Battle `[TODO]`
+### Story 5.3: Manage Battle State `[TODO]`
 
 As a player,
-I want to start a battle from the Room View,
-So that the group has a shared battle context to track in the current session.
+I want to manage the players, monsters, and bonuses in an active battle,
+So that the battle state stays accurate as play changes.
 
 **Acceptance Criteria:**
 
-**Given** no battle is currently active
-**When** I tap "Battle" and confirm
-**Then** a new battle is created via `POST /battles` with status `active`
-**And** a random battle name is generated on the frontend and sent as the default name — I can override it before confirming
-**And** the `ActiveBattleBanner` appears in the Room View for all connected players
-**And** I am navigated to the Battle View
-
-**Given** a battle is already active
-**When** I tap the "Battle" button
-**Then** I am navigated directly to the active Battle View — no new battle is created
-
-### Story 5.6: Battle View — Sides, Characters & Bonuses `[TODO]`
-
-As a player,
-I want to view and manage the two sides of the battle — players and monsters,
-So that everyone can see the current battle state and adjust participants and bonuses as the game progresses.
-
-**Acceptance Criteria:**
-
-**Given** I am in the Battle View
+**Given** I am in the Battle View for an active battle
 **When** the screen loads
-**Then** I see the player side (`accent` colour) and the monster side (`danger` colour)
-**And** I can add and remove characters to/from the player side
-**And** I can add and remove monsters (main and wandering) to/from the monster side
-**And** I can add and remove bonus items for either side — bonuses cannot be modified once added, only removed and re-added
-**And** updates are sent via full-replace PATCH (complete array sent by client; client generates item IDs as UUID v4)
-**And** the current battle outcome (player total vs monster total) is always visible
+**Then** I see separate player and monster sides
+**And** the current totals or outcome comparison for both sides is visible
 
-**Given** a character is deleted while a battle is active
-**When** the `character_deleted` WebSocket event is received
-**Then** the character is removed from the Battle View display only — the battle record retains the original `characterIds`
+**Given** I am managing the player side
+**When** I add or remove room characters
+**Then** the battle state updates to reflect the selected participants
+
+**Given** I am managing the monster side
+**When** I add or remove monsters
+**Then** the battle state updates to reflect the selected monsters
+
+**Given** I am managing either side
+**When** I add or remove bonus items
+**Then** the battle state updates to reflect those modifiers
+**And** bonus items are removed and re-added rather than edited in place
+
+**Given** I save a battle-state change
+**When** the update is submitted
+**Then** the full updated side state is persisted for the active battle
+**And** only active battles can be updated
 
 > **Covers:** UX-DR13
-> **Depends on:** Stories 3.1, 3.2, 5.3
+> **Depends on:** Stories 3.1, 3.2
 
-### Story 5.7: Conclude a Battle `[TODO]`
+### Story 5.4: Realtime Battle Updates from Battle Actions `[TODO]`
 
 As a player,
-I want to conclude the active battle with an explicit result,
-So that the outcome is preserved in the session record and the room returns to its normal state.
+I want battle changes made by other players to appear in real time,
+So that everyone sees the same current battle state during the encounter.
 
 **Acceptance Criteria:**
 
-**Given** a battle is active and I am in the Battle View
-**When** I tap "Conclude" and provide a result
-**Then** `POST /battles/:id/conclude` is called with the required `result` field
-**And** the battle status changes to `concluded`
-**And** the `ActiveBattleBanner` disappears from the Room View for all connected players
-**And** I am returned to the Room View
+**Given** a battle is started, updated, concluded, or discarded by another player
+**When** that battle change is published for the room
+**Then** connected clients in the room receive the corresponding `battle_*` realtime update
+**And** existing non-battle realtime behaviour remains unaffected
 
-### Story 5.8: Discard a Battle `[TODO]`
+**Given** another player changes the active battle
+**When** I am viewing the Room View or Battle View
+**Then** my screen updates to reflect the latest battle state
+**And** the Room View banner remains accurate
+
+**Given** realtime delivery is temporarily interrupted
+**When** the Room View or Battle View restores battle state
+**Then** the app reconciles to the latest active battle for the room
+**And** it does not create duplicate active battle state in the UI
+
+### Story 5.5: Realtime Battle Updates from Character Changes `[TODO]`
 
 As a player,
-I want to discard a battle that should not remain part of the session record,
-So that accidental or invalid battles don't pollute the room history.
+I want the battle's player side to reflect character updates made in the room,
+So that the battle stays aligned with the current state of participating characters.
 
 **Acceptance Criteria:**
 
-**Given** a battle is active and I am in the Battle View
-**When** I tap "Discard Battle"
-**Then** an explicit confirmation step is shown before any action is taken
-**And** on confirmation, `DELETE /battles/:id` soft-deletes the battle (status → `discarded`)
-**And** the `ActiveBattleBanner` disappears from the Room View for all connected players
-**And** I am returned to the Room View
+**Given** a character participating in the active battle is updated in the room
+**When** that character update is received by the client
+**Then** the Battle View updates that character's displayed battle information using the latest character state
 
-### Story 5.9: Return to Active Battle `[TODO]`
+**Given** a character participating in the active battle is deleted from the room
+**When** that room change is received by the client
+**Then** the Battle View removes that character from the displayed active player side
+**And** the persisted battle record retains the original participation history
+
+**Given** a character update is received for a room character that is not participating in the active battle
+**When** the update is processed
+**Then** the current Battle View state is unchanged
+
+**Given** I return to the Battle View after room character changes were made
+**When** the active battle state is shown
+**Then** the displayed player-side character information is consistent with the latest room character state
+
+### Story 5.6: Conclude a Battle `[TODO]`
 
 As a player,
-I want to return to an in-progress battle at any point while it remains active,
-So that I can continue tracking values if I navigated away.
+I want to conclude an active battle with an explicit result,
+So that the room can leave battle state and preserve the outcome.
 
 **Acceptance Criteria:**
 
-**Given** a battle is active in my room
-**When** I tap "View Battle" on the `ActiveBattleBanner`
-**Then** I am navigated to the Battle View showing the current battle state
-**And** the battle state reflects any updates made by other players while I was away
+**Given** an active battle exists
+**When** I conclude the battle and choose a result
+**Then** the battle is updated to status `concluded` with the selected result
+**And** concluding the battle requires an explicit result value
+
+**Given** a battle has been concluded successfully
+**When** the update is applied
+**Then** the room no longer shows an active battle banner
+**And** players are returned to a clear non-battle room state
+
+**Given** another player is connected to the same room
+**When** the battle is concluded
+**Then** their client receives the concluded battle update in real time
+**And** the active battle UI is removed from their room state
+
+### Story 5.7: Discard a Battle `[TODO]`
+
+As a player,
+I want to discard an active battle that should not remain in session state,
+So that the room can recover cleanly from an invalid or abandoned battle.
+
+**Acceptance Criteria:**
+
+**Given** an active battle exists
+**When** I choose to discard it
+**Then** I must confirm the discard action before it is applied
+
+**Given** I confirm the discard action
+**When** the discard is submitted
+**Then** the battle is updated to status `discarded`
+**And** discarded battles can no longer be managed as active battles
+
+**Given** a battle has been discarded successfully
+**When** the update is applied
+**Then** the room no longer shows an active battle banner
+**And** players are returned to a clear non-battle room state
+
+**Given** another player is connected to the same room
+**When** the battle is discarded
+**Then** their client receives the discarded battle update in real time
+**And** the active battle UI is removed from their room state
 
 ## Epic 6: Session Event Log
 
