@@ -188,8 +188,8 @@ Players can enter the app without creating an account, establish a persistent pl
 **Status:** Existing (brownfield — all stories DONE)
 
 ### Epic 2: Room Management
-Players can create a new game room and share the room code, join an existing room, see the current participants, and leave or re-enter a room without breaking session integrity for others.
-**FRs covered:** FR4, FR5, FR6, FR7, FR10, FR11, FR12
+Players can create a new game room and share the room code, join an existing room, and re-enter a session without creating duplicate participation state.
+**FRs covered:** FR4, FR5, FR6, FR7, FR12
 **Status:** Existing + Enhancement (room code copy-to-clipboard is TODO)
 
 ### Epic 3: Character Management
@@ -215,9 +215,9 @@ Players can open a room history view to catch up on what happened earlier in the
 **Status:** New
 **Cross-platform exit criteria apply to this epic**
 
-### Epic 7: Distribution, Availability & Release Operations
-Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, and release-readiness operations.
-**FRs covered:** FR40, FR41, FR42, FR43, FR44, FR47, FR48
+### Epic 7: Distribution, Availability, Supportability & Release Operations
+Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, supportability instrumentation, and release-readiness operations.
+**FRs covered:** FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48
 **NFRs addressed:** NFR6, NFR7, NFR8, NFR9, NFR11, NFR12
 **Status:** Existing + New (store presence and web CI/CD are in place; mobile release automation and release-facing content refinement remain in progress)
 
@@ -355,7 +355,7 @@ So that I can share the code with latecomers without manually selecting or retyp
 
 Players can create, view, quick-edit, and remove characters. Includes prerequisite AppTheme token migration and Room View routing migration that gate Epics 5 and 6.
 
-### Story 3.1: AppTheme Token Migration `[TODO]` ⛔ Gate for Epics 5–6
+### Story 3.1: AppTheme Token Migration (technical prerequisite) `[TODO]` ⛔ Gate for Epics 5–6
 
 As a developer,
 I want all hardcoded colour values in existing components migrated to AppTheme tokens,
@@ -374,7 +374,7 @@ So that new screens can be built consistently without introducing hardcoded hex 
 
 > **Covers:** UX-DR1, UX-DR2
 
-### Story 3.2: Room View Routing Migration `[TODO]` ⛔ Gate for Epics 5–6
+### Story 3.2: Room View Routing Migration (technical prerequisite) `[TODO]` ⛔ Gate for Epics 5–6
 
 As a developer,
 I want `app/munchkin/[roomNumber].tsx` migrated to `app/munchkin/[roomNumber]/index.tsx`,
@@ -608,16 +608,14 @@ So that I'm aware of the connection state without being blocked from viewing the
 ### Story 4.5: Late-Join Context Awareness `[TODO]`
 
 As a player joining a room mid-session,
-I want to immediately see the current room state including active characters and any in-progress battle,
+I want to immediately see the current room state including active characters,
 So that I can understand what's happening and participate without confusion.
 
 **Acceptance Criteria:**
 
-**Given** a room has active characters and possibly an in-progress battle
+**Given** a room has active characters
 **When** I join the room
-**Then** I see the current character list with all attributes
-**And** if a battle is active, the `ActiveBattleBanner` is visible in the Room View
-**And** I can navigate to the Battle View to see the full current battle state
+**Then** I see the current character list with all attributes fully visible
 
 ### Story 4.6: Reduced Motion Support `[TODO]`
 
@@ -965,9 +963,9 @@ So that I can understand battle outcomes and revisit the full record when needed
 > **Covers:** UX-DR12, UX-DR14
 > **Depends on:** Stories 3.1, 3.2, 6.5, Epic 5 completed battle record support
 
-## Epic 7: Distribution, Availability & Release Operations
+## Epic 7: Distribution, Availability, Supportability & Release Operations
 
-Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, and release-readiness operations.
+Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, supportability instrumentation, and release-readiness operations.
 
 ### Story 7.1: Collaborative Release Foundation `[DONE]`
 
@@ -1060,7 +1058,38 @@ So that we can decide whether a release is shippable based on defined criteria i
 **And** the checklist includes room, character, battle, log, and session-continuity validation
 **And** the checklist captures known failure categories and release blockers clearly enough for go/no-go decisions
 
-### Story 7.7: Release Channel Availability Validation `[TODO]`
+### Story 7.7: Supportability Signals & Failure Taxonomy `[TODO]`
+
+As a support team member,
+I want core session failures to emit clear, subsystem-specific diagnostic signals,
+So that I can quickly identify whether a problem is caused by room state, character state, battle state, log history, or session continuity.
+
+**Acceptance Criteria:**
+
+**Given** a failure occurs in a core room, character, battle, log, or session-continuity flow
+**When** the failure is surfaced through the product's defined supportability surfaces
+**Then** the failure emits a structured classification signal that includes at minimum a subsystem category, a stable error code or failure type, and a correlation identifier
+**And** the classification signal is visible in structured backend logs and documented in the release-support reference used by support and engineering
+**And** the signal includes enough contextual metadata to correlate the failure to the affected room or session without exposing unrelated user data
+**And** the classification scheme defines distinct categories for room state, character state, battle state, log history, and session continuity so support and engineering interpret failures consistently
+
+### Story 7.8: Diagnostic Validation Matrix `[TODO]`
+
+As a QA engineer,
+I want a repeatable validation matrix for core session failure modes,
+So that FR45 and FR46 can be verified with evidence before a release is approved.
+
+**Acceptance Criteria:**
+
+**Given** a candidate release
+**When** QA executes the diagnostic validation matrix
+**Then** the matrix covers at least one injected or simulated failure for room, character, battle, log, and session-continuity flows
+**And** each scenario defines the expected subsystem category, failure signal, and supportability surface that must be observed
+**And** each scenario passes only when support can both identify the failure and distinguish its subsystem classification from the other four categories without ambiguity
+**And** any missing, misclassified, or non-observable failure signal is recorded as a release blocker until corrected or explicitly waived
+**And** the validation output is recorded in a durable release evidence artifact alongside the cross-platform readiness review
+
+### Story 7.9: Release Channel Availability Validation `[TODO]`
 
 As a user,
 I want to be able to access the current release from each intended distribution channel,

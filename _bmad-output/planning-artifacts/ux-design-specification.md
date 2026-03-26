@@ -310,7 +310,7 @@ No user education required. The patterns are immediately legible to any smartpho
 User taps any character card on the Room View. No long-press, no edit button — tap is the universal entry.
 
 **2. Interaction**
-Character Modal slides up (bottom sheet). Header shows character name. Controls: +/− for Level, Gear Score, and any other tracked stats. All controls use `Haptics.ImpactFeedbackStyle.Light` on every tap — tactile confirmation is required behavior.
+Character Modal slides up (bottom sheet). Header shows character name. Controls: +/− for Level, Power, and any other tracked stats. All controls use `Haptics.ImpactFeedbackStyle.Light` on every tap — tactile confirmation is required behavior.
 
 **3. Feedback**
 - Stat numbers update instantly on tap (optimistic local update)
@@ -351,7 +351,7 @@ Built on the existing `AppTheme` (source of truth: `frontend/constants/theme.ts`
 | `surfaceSubtle` | `#353535` | Dark grey — muted surfaces |
 | `textAccentSoft` | `#E8D89A` | Soft gold — character names on cards and modal header |
 
-**`accent` usage rule:** `#D4C26E` is reserved for exactly two purposes — (1) numerical values the player cares most about (level, gear score stat values), and (2) the primary actionable element on any given screen. Using `accent` outside these contexts dilutes its signal value.
+**`accent` usage rule:** `#D4C26E` is reserved for exactly two purposes — (1) numerical values the player cares most about (level, Power stat values), and (2) the primary actionable element on any given screen. Using `accent` outside these contexts dilutes its signal value.
 
 `textAccentSoft` (`#E8D89A`) is the desaturated sibling — used for character names. Close enough to `accent` to read as family; muted enough that full-strength stat numbers dominate in vibrancy.
 
@@ -366,8 +366,8 @@ System fonts only for this phase — SF Pro (iOS) and Roboto (Android), resolved
 | `displayLarge` | 32pt | 700 | `accent` | Room code display |
 | `heading1` | 22pt | 700 | `textPrimary` | Screen titles |
 | `heading2` | 18pt | 600 | `textAccentSoft` | Character name in modal header |
-| `statNumberLarge` | 28pt | 700 | `accent` | Level/gear values in modal |
-| `statNumberCard` | 20pt | 700 | `accent` | Level/gear values on Room View cards |
+| `statNumberLarge` | 28pt | 700 | `accent` | Level/Power values in modal |
+| `statNumberCard` | 20pt | 700 | `accent` | Level/Power values on Room View cards |
 | `cardName` | 15pt | 700 | `textAccentSoft` | Character name on Room View card |
 | `body` | 15pt | 400 | `textPrimary` | General content |
 | `caption` | 12pt | 400 | `textMuted` | Labels, secondary info |
@@ -640,13 +640,13 @@ No third-party UI library — pure React Native StyleSheet throughout. `AppTheme
 
 ### 11.3 New Screens
 
-**`app/munchkin/battle/[roomNumber].tsx` — Battle Screen**
+**`app/munchkin/[roomNumber]/(battle)/index.tsx` — Battle Screen**
 - Full Expo Router stack push from Room View
 - Back button pops to Room View (standard stack behaviour)
 - Battle state is room-level (server), safe to navigate away and return
 - Entry points: Battle button (no active battle) or "View Battle" via `ActiveBattleBanner`
 
-**`app/munchkin/log/[roomNumber].tsx` — Log Screen**
+**`app/munchkin/[roomNumber]/log.tsx` — Log Screen**
 - Full Expo Router stack push from Room View
 - Renders scrollable list of `LogEntry` components
 - Ordered newest-first
