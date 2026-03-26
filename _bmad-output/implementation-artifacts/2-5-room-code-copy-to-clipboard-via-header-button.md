@@ -143,6 +143,8 @@ gpt-5 (Codex)
 - `cd frontend && npm run tsc` passed.
 - Story status set to `review`.
 - Sprint tracking updated for story `2-5-room-code-copy-to-clipboard-via-header-button`: `ready-for-dev` -> `in-progress` -> `review`.
+- Addressed reviewer race condition in `useRoomCodeClipboard`: stale async clipboard completions no longer set copied state or schedule reset after `roomCode` changes.
+- Added regression test to ensure pending copy for previous room code is ignored after rerender with a new code.
 
 ### File List
 
@@ -158,3 +160,4 @@ gpt-5 (Codex)
 - 2026-03-26: Implemented room header copy-to-clipboard flow with accessibility + timer-safe copied-state reset; added hook-level tests; moved story to review.
 - 2026-03-26: Updated acceptance criteria from Epic 2 source (`epic-2-room-management.md`) to reflect latest header styling and visibility requirements.
 - 2026-03-26: Re-ran `dev-story` for Story 2.5 and aligned implementation with updated AC by applying `caption` token styling to room label in the header.
+- 2026-03-26: Resolved review feedback for stale clipboard async race when `roomCode` changes before `setStringAsync` resolves; added regression test coverage.

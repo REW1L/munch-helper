@@ -105,6 +105,31 @@ describe('useRoomCodeClipboard', () => {
     expect(setTimeoutSpy).not.toHaveBeenCalled();
   });
 
+  it('ignores stale clipboard completion when room code changes before promise resolves', async () => {
+    const deferred = createDeferredPromise<boolean>();
+    mockSetStringAsync.mockReturnValueOnce(deferred.promise);
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const { result, rerender } = renderHook(
+      ({ code }) => useRoomCodeClipboard(code),
+      {
+        initialProps: {
+          code: 'ROOM42',
+        },
+      }
+    );
+
+    const pendingCopy = result.current.copyRoomCode();
+    rerender({ code: 'ROOM77' });
+    deferred.resolve(true);
+
+    await pendingCopy;
+
+    expect(mockSetStringAsync).toHaveBeenCalledWith('ROOM42');
+    expect(result.current.buttonLabel).toBe('Copy');
+    expect(result.current.accessibilityLabel).toBe('Copy room code ROOM77');
+    expect(setTimeoutSpy).not.toHaveBeenCalled();
+  });
+
   it('resets copied state when room code changes during copied window', async () => {
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
     const { result, rerender } = renderHook(

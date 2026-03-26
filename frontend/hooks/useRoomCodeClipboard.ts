@@ -13,6 +13,7 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   const [isCopied, setIsCopied] = useState(false);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
+  const roomCodeRef = useRef(roomCode);
 
   const clearResetTimeout = useCallback(() => {
     if (!resetTimeoutRef.current) {
@@ -24,8 +25,9 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   }, []);
 
   const copyRoomCode = useCallback(async () => {
-    await setStringAsync(roomCode);
-    if (!isMountedRef.current) {
+    const requestedRoomCode = roomCodeRef.current;
+    await setStringAsync(requestedRoomCode);
+    if (!isMountedRef.current || requestedRoomCode !== roomCodeRef.current) {
       return;
     }
 
@@ -40,9 +42,10 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
       setIsCopied(false);
       resetTimeoutRef.current = null;
     }, COPIED_LABEL_RESET_MS);
-  }, [clearResetTimeout, roomCode]);
+  }, [clearResetTimeout]);
 
   useEffect(() => {
+    roomCodeRef.current = roomCode;
     setIsCopied(false);
     clearResetTimeout();
   }, [clearResetTimeout, roomCode]);
