@@ -53,4 +53,21 @@ export const AppTheme = {
     lg: 12,
     pill: 999,
   },
+  typography: {
+    caption: {
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: '500',
+    },
+    labelSm: {
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: '500',
+    },
+    labelMd: {
+      fontSize: 15,
+      lineHeight: 20,
+      fontWeight: '500',
+    },
+  },
 } as const;

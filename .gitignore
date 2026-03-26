@@ -4,3 +4,4 @@ coverage
 .agents
 .github/skills
 .kiro
+node_modules/

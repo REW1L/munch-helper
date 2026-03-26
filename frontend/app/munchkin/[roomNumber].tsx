@@ -1,6 +1,8 @@
 import { Character as RoomCharacter } from '@/api/characters';
+import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,19 +12,13 @@ import RoomCharactersList from '../../components/munchkin/RoomCharactersList';
 import ChangeCharacterModal from './modal-change-caracter';
 import CreateCharacterModal from './modal-create-character';
 
-// Color constants from design
-const COLORS = {
-  BACKGROUND: '#4C4545',
-  CONTENT_BG: '#3C3636',
-  BUTTON_DANGER: '#922525',
-  TEXT_WHITE: '#FFFFFF',
-};
-
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
+  const roomCode = roomId ?? '';
   const { userProfile } = useContext(userProfileContext);
   const { characters, create, update, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
+  const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
   const currentCharacter = useMemo(
     () => characters.find((character) => character.userId === userProfile.id),
@@ -38,14 +34,44 @@ const MunchkinIndexView: React.FC = () => {
     setChangeCharacterModalVisible(true);
   }, []);
 
+  const handleCopyRoomCodePress = useCallback(() => {
+    void copyRoomCode().catch((error) => {
+      console.error('Failed to copy room code:', error);
+    });
+  }, [copyRoomCode]);
+
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
       <SafeAreaView style={{
         flex: 1,
-        backgroundColor: COLORS.CONTENT_BG, // Dark theme background
+        backgroundColor: AppTheme.colors.background,
       }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
         <View style={styles.container}>
-          <Stack.Screen options={{ title: `Room ${roomNumber}` }} />
+          <Stack.Screen
+            options={{
+              headerTitle: () => (
+                <View style={styles.headerTitleRow}>
+                  <Text style={styles.headerRoomLabel}>Room</Text>
+                  <Text
+                    style={styles.headerRoomCode}
+                    numberOfLines={1}
+                    ellipsizeMode="middle"
+                  >
+                    {roomCode}
+                  </Text>
+                  <TouchableOpacity
+                    accessibilityLabel={accessibilityLabel}
+                    accessibilityRole="button"
+                    onPress={handleCopyRoomCodePress}
+                    style={styles.headerCopyButton}
+                    disabled={roomCode.length === 0}
+                  >
+                    <Text style={styles.headerCopyButtonLabel}>{buttonLabel}</Text>
+                  </TouchableOpacity>
+                </View>
+              ),
+            }}
+          />
 
           <RoomCharactersList
             characters={characters}
@@ -133,13 +159,45 @@ const MunchkinIndexView: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: AppTheme.colors.elevated,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: AppTheme.spacing.sm,
+    flexShrink: 1,
+    minWidth: 0,
+    maxWidth: '100%',
+  },
+  headerRoomCode: {
+    color: AppTheme.colors.accent,
+    fontSize: 18,
+    fontWeight: '600',
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  headerRoomLabel: {
+    color: AppTheme.colors.textMuted,
+    ...AppTheme.typography.labelMd,
+  },
+  headerCopyButton: {
+    backgroundColor: AppTheme.colors.elevated,
+    borderColor: AppTheme.colors.accent,
+    borderRadius: AppTheme.radius.pill,
+    borderWidth: 1,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.xs,
+  },
+  headerCopyButtonLabel: {
+    color: AppTheme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
   },
   actionButtons: {
     height: 0,
     paddingHorizontal: 10,
     paddingVertical: 10,
-    backgroundColor: COLORS.CONTENT_BG,
+    backgroundColor: AppTheme.colors.background,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -148,7 +206,7 @@ const styles = StyleSheet.create({
   battleButton: {
     paddingHorizontal: 50,
     paddingVertical: 7,
-    backgroundColor: COLORS.BUTTON_DANGER,
+    backgroundColor: AppTheme.colors.danger,
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -156,7 +214,7 @@ const styles = StyleSheet.create({
   battleButtonText: {
     fontSize: 32,
     fontWeight: '400',
-    color: COLORS.TEXT_WHITE,
+    color: AppTheme.colors.textPrimary,
   },
   logButton: {
     paddingHorizontal: 21,
@@ -169,9 +227,8 @@ const styles = StyleSheet.create({
   logButtonText: {
     fontSize: 32,
     fontWeight: '400',
-    color: COLORS.TEXT_WHITE,
+    color: AppTheme.colors.textPrimary,
   },
 });
 
 export default MunchkinIndexView;
-

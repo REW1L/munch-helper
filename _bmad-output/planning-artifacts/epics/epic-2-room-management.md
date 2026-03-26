@@ -67,8 +67,10 @@ So that I can share the code with latecomers without manually selecting or retyp
 **Acceptance Criteria:**
 
 **Given** I am inside an active room
-**When** I view the room header
-**Then** the room code is displayed in `accent` color alongside an inline copy icon button
+**When** I view Room View in any state (empty, pre-game, or in-game)
+**Then** the room code and inline copy button are visible in Room View `Stack.Screen` header options (same visual layer as the title)
+**And** the room "label" (e.g. "Room") is styled with the `labelMd` token
+**And** the room code is styled with `accent` color and remains available regardless of room content state
 **And** the button is accessible: `accessibilityLabel="Copy room code [code]"`, `accessibilityRole="button"`
 
 **Given** I tap the copy button

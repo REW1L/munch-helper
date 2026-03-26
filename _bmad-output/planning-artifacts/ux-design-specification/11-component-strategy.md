@@ -34,7 +34,7 @@ No third-party UI library — pure React Native StyleSheet throughout. `AppTheme
 **`RoomCodeHeader`**
 - **Purpose:** Sticky room identification + share affordance, always visible
 - **Anatomy:** Room label (caption) · room code (displayLarge, accent) · Copy button (copy-to-clipboard via `expo-clipboard`)
-- **Placement:** `ListHeaderComponent` of `RoomCharactersList` FlatList — stays pinned during scroll
+- **Placement:** Screen title area, above character list — visible on all Room View states (empty, pre-game, in-game)
 - **States:** Default · Copied (button briefly shows "Copied ✓")
 - **Tokens:** `elevated` bg, `accent` code text, `caption` label
 
