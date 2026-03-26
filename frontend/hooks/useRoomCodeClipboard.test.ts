@@ -110,7 +110,7 @@ describe('useRoomCodeClipboard', () => {
     const deferred = createDeferredPromise<boolean>();
     mockSetStringAsync.mockReturnValueOnce(deferred.promise);
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
-    const { result, rerender } = renderHook(
+    const { result, rerender, unmount } = renderHook(
       ({ code }) => useRoomCodeClipboard(code),
       {
         initialProps: {
@@ -120,7 +120,9 @@ describe('useRoomCodeClipboard', () => {
     );
 
     const pendingCopy = result.current.copyRoomCode();
-    rerender({ code: 'ROOM77' });
+    await act(async () => {
+      rerender({ code: 'ROOM77' });
+    });
     deferred.resolve(true);
 
     await pendingCopy;
@@ -133,7 +135,7 @@ describe('useRoomCodeClipboard', () => {
 
   it('resets copied state when room code changes during copied window', async () => {
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
-    const { result, rerender } = renderHook(
+    const { result, rerender, unmount } = renderHook(
       ({ code }) => useRoomCodeClipboard(code),
       {
         initialProps: {
@@ -147,7 +149,9 @@ describe('useRoomCodeClipboard', () => {
     });
 
     expect(result.current.buttonLabel).toBe('Copied ✓');
-    rerender({ code: 'ROOM77' });
+    act(() => {
+      rerender({ code: 'ROOM77' });
+    });
 
     expect(result.current.buttonLabel).toBe('Copy');
     expect(result.current.accessibilityLabel).toBe('Copy room code ROOM77');
@@ -158,5 +162,38 @@ describe('useRoomCodeClipboard', () => {
     });
 
     expect(result.current.buttonLabel).toBe('Copy');
+  });
+
+  it('copies the latest room code after a room code rerender', async () => {
+    const deferred = createDeferredPromise<boolean>();
+    mockSetStringAsync.mockReturnValueOnce(deferred.promise);
+    const { result, rerender, unmount } = renderHook(
+      ({ code }) => useRoomCodeClipboard(code),
+      {
+        initialProps: {
+          code: 'ROOM42',
+        },
+      }
+    );
+
+    act(() => {
+      rerender({ code: 'ROOM77' });
+    });
+
+    expect(result.current.accessibilityLabel).toBe('Copy room code ROOM77');
+
+    let pendingCopy!: Promise<void>;
+    act(() => {
+      pendingCopy = result.current.copyRoomCode();
+    });
+
+    expect(mockSetStringAsync).toHaveBeenLastCalledWith('ROOM77');
+
+    await act(async () => {
+      deferred.resolve(true);
+      await pendingCopy;
+    });
+
+    unmount();
   });
 });

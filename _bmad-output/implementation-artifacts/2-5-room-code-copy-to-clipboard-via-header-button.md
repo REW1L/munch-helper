@@ -145,6 +145,8 @@ gpt-5 (Codex)
 - Sprint tracking updated for story `2-5-room-code-copy-to-clipboard-via-header-button`: `ready-for-dev` -> `in-progress` -> `review`.
 - Addressed reviewer race condition in `useRoomCodeClipboard`: stale async clipboard completions no longer set copied state or schedule reset after `roomCode` changes.
 - Added regression test to ensure pending copy for previous room code is ignored after rerender with a new code.
+- Updated `roomCodeRef` synchronization to occur during render so copy action always uses current render's room code (no post-render `useEffect` window).
+- Added regression test for rerendered room code ensuring clipboard receives latest code immediately after room-code change.
 
 ### File List
 
@@ -161,3 +163,4 @@ gpt-5 (Codex)
 - 2026-03-26: Updated acceptance criteria from Epic 2 source (`epic-2-room-management.md`) to reflect latest header styling and visibility requirements.
 - 2026-03-26: Re-ran `dev-story` for Story 2.5 and aligned implementation with updated AC by applying `caption` token styling to room label in the header.
 - 2026-03-26: Resolved review feedback for stale clipboard async race when `roomCode` changes before `setStringAsync` resolves; added regression test coverage.
+- 2026-03-26: Resolved review feedback for `roomCodeRef` timing window by synchronizing ref during render and extending hook tests for latest-code copy behavior after rerender.

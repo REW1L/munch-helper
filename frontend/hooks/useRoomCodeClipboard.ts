@@ -14,6 +14,7 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   const roomCodeRef = useRef(roomCode);
+  roomCodeRef.current = roomCode;
 
   const clearResetTimeout = useCallback(() => {
     if (!resetTimeoutRef.current) {
@@ -45,7 +46,6 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   }, [clearResetTimeout]);
 
   useEffect(() => {
-    roomCodeRef.current = roomCode;
     setIsCopied(false);
     clearResetTimeout();
   }, [clearResetTimeout, roomCode]);
