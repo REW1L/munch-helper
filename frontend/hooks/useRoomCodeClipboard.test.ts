@@ -38,6 +38,7 @@ describe('useRoomCodeClipboard', () => {
   afterEach(() => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('copies current room code and resets copied state after 1500ms', async () => {
