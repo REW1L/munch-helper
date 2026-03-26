@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T17:42:48Z
-last_updated: 2026-03-26T18:00:00Z
+last_updated: 2026-03-26T17:42:48Z
 project: munch-helper
 project_key: NOKEY
 tracking_system: file-system
@@ -53,7 +53,7 @@ development_status:
   2-2-room-code-visibility: done
   2-3-room-joining: done
   2-4-session-re-entry-without-duplicate-state: done
-  2-5-room-code-copy-to-clipboard-via-header-button: ready-for-dev
+  2-5-room-code-copy-to-clipboard-via-header-button: backlog
   epic-2-retrospective: optional
 
   epic-3: in-progress
