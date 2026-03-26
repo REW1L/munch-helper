@@ -1,6 +1,12 @@
 ---
-stepsCompleted: [step-01-document-discovery, step-02-prd-analysis, step-03-epic-coverage-validation, step-04-ux-alignment, step-05-epic-quality-review, step-06-final-assessment]
-filesIncluded:
+stepsCompleted:
+  - step-01-document-discovery
+  - step-02-prd-analysis
+  - step-03-epic-coverage-validation
+  - step-04-ux-alignment
+  - step-05-epic-quality-review
+  - step-06-final-assessment
+documentsIncluded:
   prd: prd.md
   architecture: architecture.md
   epics: epics.md
@@ -16,13 +22,12 @@ filesIncluded:
 
 | Document Type | File | Size | Modified |
 |---|---|---|---|
-| PRD | prd.md | 25,745 bytes | Mar 23 2026 |
-| Architecture | architecture.md | 49,790 bytes | Mar 25 2026 |
-| Epics & Stories | epics.md | 63,665 bytes | Mar 26 2026 |
-| UX Design | ux-design-specification.md | 53,191 bytes | Mar 26 2026 |
+| PRD | prd.md | 26,101 bytes | Mar 26 18:15 |
+| Architecture | architecture.md | 49,790 bytes | Mar 25 01:21 |
+| Epics & Stories | epics.md | 63,915 bytes | Mar 26 18:19 |
+| UX Design | ux-design-specification.md | 53,309 bytes | Mar 26 18:04 |
 
 **Notes:**
-- `ux-design-directions.html` also present but not included (supplementary reference)
 - No duplicate (whole vs sharded) conflicts found
 - All four required document types present ✅
 
@@ -99,7 +104,7 @@ filesIncluded:
 ### Non-Functional Requirements
 
 **Performance (NFR1–NFR3)**
-- NFR1: Core room-entry actions, including create and join, shall complete within 3 seconds under normal supported conditions.
+- NFR1: Core room-entry actions (create/join) shall complete within 3 seconds under normal supported conditions.
 - NFR2: Character updates, battle interactions, and room-log access shall complete within 2 seconds under normal supported conditions.
 - NFR3: Recovery from reconnect or delayed refresh shall restore usable room context within 5 seconds under normal supported conditions.
 
@@ -133,147 +138,145 @@ filesIncluded:
 
 **Constraints & Guardrails:**
 - Preserve current brownfield service boundaries (frontend, backend, realtime, infrastructure).
-- No platform-specific divergence in core feature set across iOS, Android, and web.
+- No platform-specific divergence in the core feature set across iOS, Android, and web.
 - Offline support out of scope.
 - Push notifications out of scope.
-- No new device-dependent capabilities beyond standard local storage and network access.
+- No new device-dependent capabilities required.
 - Aligned to app store release preparation requirements.
 - Early operational cost expected to remain under $150/month.
 
-**Assumptions:**
-- Current room, character, and realtime foundation is sufficient for core session loop completion.
-- Next release prioritizes completion of documented Munchkin companion experience over expansion.
-- Users evaluate primarily on live-session dependability, not feature breadth.
-- iOS, Android, and web are all active supported platforms for this phase.
-- Release-readiness work is part of this increment.
-
-**Open Decision Points:**
-- Battle scope depth: documented lifecycle only vs. richer battle history in Phase 1.
-- Log detail depth: character events and battle summaries only vs. broader room-event coverage.
-- Web parity threshold: minor UX limitations with complete core coverage acceptable?
+**Decision Points (Resolved):**
+- ADR-5: Battle scope — Phase 1 supports documented battle lifecycle only. `battle_updated` is not logged; log captures lifecycle events only (character_created, character_updated, character_deleted, battle_started, battle_concluded, battle_discarded).
+- Web parity threshold — minor UX limitations acceptable if complete core capability coverage is maintained.
 
 ### PRD Completeness Assessment
 
-The PRD is well-structured and comprehensive for a brownfield completion phase:
-- **48 FRs** cover identity, rooms, characters, battles, logs, realtime, cross-platform, and supportability.
-- **17 NFRs** cover performance, reliability, cross-platform consistency, supportability, security, and accessibility.
-- Clear scope boundaries with explicit out-of-scope items.
-- 3 open decision points that may need resolution before implementation begins.
-- Measurable success criteria are defined.
+The PRD is well-structured and thorough. It provides:
+- Clear functional requirements (48 FRs) covering all core domains
+- Measurable non-functional requirements (17 NFRs) with specific thresholds
+- Explicit scope boundaries and out-of-scope items
+- Resolved decision points with rationale
+- User journeys that ground requirements in real use cases
+- Clear MVP vs post-MVP boundaries
 
 ## Epic Coverage Validation
 
 ### Coverage Matrix
 
-| FR | PRD Requirement (summary) | Epic Coverage | Status |
+| FR | PRD Requirement | Epic Coverage | Status |
 |---|---|---|---|
-| FR1 | New users enter without account setup | Epic 1 (Story 1.1, 1.2) | ✅ Covered |
-| FR2 | Establish and retain player identity | Epic 1 (Story 1.2) | ✅ Covered |
-| FR3 | Update visible player profile | Epic 1 (Story 1.3) | ✅ Covered |
-| FR4 | Enter app and begin session from any platform | Epic 2 (Stories 2.1–2.4) | ✅ Covered |
-| FR5 | Create a new room | Epic 2 (Story 2.1) | ✅ Covered |
-| FR6 | Join existing room using room info | Epic 2 (Story 2.3) | ✅ Covered |
-| FR7 | Re-enter session without duplicate state | Epic 2 (Story 2.4) | ✅ Covered |
-| FR8 | See current room participants | Epic 3 (Story 3.5) | ✅ Covered |
-| FR9 | Shared view of room state | Epic 3 (Stories 3.4, 3.5) | ✅ Covered |
-| FR10 | Preserve room participation state | Epic 4 (Story 4.1) | ✅ Covered |
-| FR11 | Leave room without breaking integrity | Epic 4 (Story 4.2) | ✅ Covered |
-| FR12 | Room setup as starting point for session | Epic 2 (Stories 2.1–2.3) | ✅ Covered |
-| FR13 | Create a character in a room | Epic 3 (Story 3.3) | ✅ Covered |
-| FR14 | View own character details | Epic 3 (Story 3.4) | ✅ Covered |
-| FR15 | View summaries of other room characters | Epic 3 (Story 3.5) | ✅ Covered |
-| FR16 | Update mutable character attributes | Epic 3 (Stories 3.7, 3.9) | ✅ Covered |
-| FR17 | Maintain character ownership | Epic 3 (Story 3.3) | ✅ Covered |
-| FR18 | Prevent duplicate/conflicting character records | Epic 3 (Story 3.3) | ✅ Covered |
-| FR19 | Remove or end active use of a character | Epic 3 (Story 3.10) | ✅ Covered |
-| FR20 | Initiate a battle in a room | Epic 5 (Story 5.1) | ✅ Covered |
-| FR21 | Battle can be named/identified | Epic 5 (Story 5.1) | ✅ Covered |
-| FR22 | Add participants and opposing forces | Epic 5 (Story 5.3) | ✅ Covered |
-| FR23 | Adjust battle-relevant values | Epic 5 (Story 5.3) | ✅ Covered |
-| FR24 | View state of in-progress battle | Epic 5 (Story 5.3) | ✅ Covered |
-| FR25 | Determine outcome/result state | Epic 5 (Story 5.6) | ✅ Covered |
-| FR26 | Conclude battle and preserve outcome | Epic 5 (Story 5.6) | ✅ Covered |
-| FR27 | Discard/abandon a battle | Epic 5 (Story 5.7) | ✅ Covered |
-| FR28 | Return to and continue active battle | Epic 5 (Stories 5.1, 5.2) | ✅ Covered |
-| FR29 | Access room-level history | Epic 6 (Story 6.5) | ✅ Covered |
-| FR30 | Review character creation events in history | Epic 6 (Story 6.6) | ✅ Covered |
-| FR31 | Review character change events in history | Epic 6 (Story 6.6) | ✅ Covered |
-| FR32 | Review battle summaries in history | Epic 6 (Story 6.7) | ✅ Covered |
-| FR33 | Open/inspect completed battle records from history | Epic 6 (Story 6.7) | ✅ Covered |
-| FR34 | Identify prior character and battle outcomes | Epic 6 (Stories 6.6, 6.7) | ✅ Covered |
-| FR35 | Room state changes visible to participants | Epic 3 (Story 3.8) | ✅ Covered |
-| FR36 | Aware of room changes without manual rebuild | Epic 3 (Stories 3.8, 4.1) | ✅ Covered |
-| FR37 | Recover from disconnection/restart | Epic 4 (Story 4.3) | ✅ Covered |
-| FR38 | Late-join context awareness | Epic 4 (Story 4.5) | ✅ Covered |
-| FR39 | Restore room context after reconnection | Epic 4 (Story 4.3) | ✅ Covered |
-| FR40 | Core session loop on iOS | Epic 7 (Stories 7.3, 7.6, 7.9) | ✅ Covered |
-| FR41 | Core session loop on Android | Epic 7 (Stories 7.4, 7.6, 7.9) | ✅ Covered |
-| FR42 | Core session loop on web | Epic 7 (Stories 7.2, 7.6, 7.9) | ✅ Covered |
-| FR43 | Core capabilities on each platform | Epic 7 (Story 7.6) | ✅ Covered |
-| FR44 | Complete core workflow on each platform | Epic 7 (Story 7.6) | ✅ Covered |
-| FR45 | Identify failures in core flows | Epic 7 (Story 7.7) | ✅ Covered |
-| FR46 | Distinguish failure subsystem | Epic 7 (Stories 7.7, 7.8) | ✅ Covered |
-| FR47 | Release-readiness checklist | Epic 7 (Story 7.6) | ✅ Covered |
-| FR48 | App store distribution without excluding core flows | Epic 7 (Story 7.9) | ✅ Covered |
+| FR1 | New users can enter without prior account setup | Epic 1 (Story 1.1, 1.2) | ✓ Covered |
+| FR2 | Users can establish and retain a player identity | Epic 1 (Story 1.2) | ✓ Covered |
+| FR3 | Users can update their visible player profile | Epic 1 (Story 1.3) | ✓ Covered |
+| FR4 | Users can enter the app from any supported platform | Epic 2 (Story 2.1) | ✓ Covered |
+| FR5 | Users can create a new room | Epic 2 (Story 2.1) | ✓ Covered |
+| FR6 | Users can join an existing room | Epic 2 (Story 2.3) | ✓ Covered |
+| FR7 | Users can re-enter a session without duplicate state | Epic 2 (Story 2.4) | ✓ Covered |
+| FR8 | Players see current room participants | Epic 3 (Story 3.5) | ✓ Covered |
+| FR9 | Players see shared room state | Epic 3 (Story 3.5) | ✓ Covered |
+| FR10 | Preserve room participation during active session | Epic 4 (Story 4.1) | ✓ Covered |
+| FR11 | Users leave room without breaking integrity | Epic 4 (Story 4.2) | ✓ Covered |
+| FR12 | Hosts/joiners rely on room entry as starting point | Epic 2 (Story 2.1, 2.3) | ✓ Covered |
+| FR13 | Player can create a character in a room | Epic 3 (Story 3.3) | ✓ Covered |
+| FR14 | Player can view own character details | Epic 3 (Story 3.4) | ✓ Covered |
+| FR15 | Players can view summaries of other characters | Epic 3 (Story 3.5) | ✓ Covered |
+| FR16 | Player can update mutable character attributes | Epic 3 (Story 3.7, 3.9) | ✓ Covered |
+| FR17 | Maintain character ownership within room | Epic 3 (Story 3.3) | ✓ Covered |
+| FR18 | Prevent duplicate/conflicting character records | Epic 3 (Story 3.3, 3.10) | ✓ Covered |
+| FR19 | Player can remove a character | Epic 3 (Story 3.10) | ✓ Covered |
+| FR20 | Players can initiate a battle | Epic 5 (Story 5.1) | ✓ Covered |
+| FR21 | Battle can be named or identified | Epic 5 (Story 5.1) | ✓ Covered |
+| FR22 | Users can add participants/forces to a battle | Epic 5 (Story 5.3) | ✓ Covered |
+| FR23 | Users can adjust battle-relevant values | Epic 5 (Story 5.3) | ✓ Covered |
+| FR24 | Users can view in-progress battle state | Epic 5 (Story 5.3) | ✓ Covered |
+| FR25 | Users can determine battle outcome | Epic 5 (Story 5.3, 5.6) | ✓ Covered |
+| FR26 | Users can conclude a battle and preserve outcome | Epic 5 (Story 5.6) | ✓ Covered |
+| FR27 | Users can discard/abandon a battle | Epic 5 (Story 5.7) | ✓ Covered |
+| FR28 | Users can return to an active battle | Epic 5 (Story 5.2) | ✓ Covered |
+| FR29 | Users can access room-level history | Epic 6 (Story 6.5, 6.6) | ✓ Covered |
+| FR30 | Users can review character creation events in history | Epic 6 (Story 6.1, 6.6) | ✓ Covered |
+| FR31 | Users can review character change events in history | Epic 6 (Story 6.1, 6.6) | ✓ Covered |
+| FR32 | Users can review battle summaries in history | Epic 6 (Story 6.3, 6.7) | ✓ Covered |
+| FR33 | Users can inspect completed battle records from history | Epic 6 (Story 6.7) | ✓ Covered |
+| FR34 | Users can identify prior events and outcomes in history | Epic 6 (Story 6.6, 6.7) | ✓ Covered |
+| FR35 | Room state changes visible to participants | Epic 3 (Story 3.8, 4.1) | ✓ Covered |
+| FR36 | Players aware of room changes without manual rebuild | Epic 3 (Story 3.8, 4.1) | ✓ Covered |
+| FR37 | Users recover from disconnection/restart | Epic 4 (Story 4.3) | ✓ Covered |
+| FR38 | Late-joining player understands current context | Epic 4 (Story 4.5) | ✓ Covered |
+| FR39 | Product restores room context after reconnection | Epic 4 (Story 4.3) | ✓ Covered |
+| FR40 | Core session loop completable on iOS | Epic 7 (Story 7.3, 7.6, 7.9) | ✓ Covered |
+| FR41 | Core session loop completable on Android | Epic 7 (Story 7.4, 7.6, 7.9) | ✓ Covered |
+| FR42 | Core session loop completable on web | Epic 7 (Story 7.2, 7.6, 7.9) | ✓ Covered |
+| FR43 | Users access core capabilities on each platform | Epic 7 (Story 7.6, 7.9) | ✓ Covered |
+| FR44 | Users complete core workflow on each platform | Epic 7 (Story 7.6, 7.9) | ✓ Covered |
+| FR45 | Support can identify failures in core flows | Epic 7 (Story 7.7, 7.8) | ✓ Covered |
+| FR46 | Support can distinguish failure types | Epic 7 (Story 7.7, 7.8) | ✓ Covered |
+| FR47 | Product reviewable against release-readiness checklist | Epic 7 (Story 7.6) | ✓ Covered |
+| FR48 | Product prepared for app store distribution | Epic 7 (Story 7.5, 7.9) | ✓ Covered |
 
 ### Missing Requirements
 
-No missing FRs identified. All 48 PRD Functional Requirements have explicit coverage in the epics and stories document.
-
-No orphan FRs in the epics (i.e., no FRs appear in epics that are absent from the PRD).
+No FRs are missing from epic coverage. All 48 FRs have traceable story coverage.
 
 ### Coverage Statistics
 
 - Total PRD FRs: 48
 - FRs covered in epics: 48
-- Coverage percentage: **100%**
+- Coverage percentage: 100%
 
 ## UX Alignment Assessment
 
 ### UX Document Status
 
-**Found:** `ux-design-specification.md` (53,191 bytes, Mar 26 2026) — comprehensive 14-step UX design specification with executive summary, visual foundation, component strategy, accessibility, and responsive design.
+**Found:** `ux-design-specification.md` (53,309 bytes, comprehensive 14-step specification)
 
 ### UX ↔ PRD Alignment
 
-The UX spec directly references the PRD as an input document. Coverage:
-
-| PRD Domain | UX Coverage | Status |
+| PRD Area | UX Coverage | Status |
 |---|---|---|
-| Identity & Onboarding (FR1–FR3) | Journey 1, auto identity, profile | ✅ Aligned |
-| Room Management (FR4–FR7, FR12) | Room entry flows, room code, copy-to-clipboard | ✅ Aligned |
-| Character Management (FR13–FR19) | Room View loop, QuickEditSheet, character cards, removal | ✅ Aligned |
-| Battle Management (FR20–FR28) | Battle lifecycle flow, Battle View, two-sided layout | ✅ Aligned |
-| Session History & Logs (FR29–FR34) | Log View screen, LogEntry component, pagination | ✅ Aligned |
-| Realtime Awareness (FR35–FR39) | Realtime flash, ReconnectingBanner, warm resume | ✅ Aligned |
-| Cross-Platform (FR40–FR44) | Platform strategy (iOS, Android, web), device targets | ✅ Aligned |
-| Supportability (FR45–FR48) | Not directly addressed in UX (expected — backend/ops concern) | ⚠️ N/A |
+| User Identity & Session Entry (FR1-7) | Journey 1 (Session Start), auto-character creation, cold/warm resume flows | ✅ Aligned |
+| Room Participation (FR8-12) | Room View as ambient awareness layer, RoomCodeHeader, participants list | ✅ Aligned |
+| Character Management (FR13-19) | QuickEditSheet, RoomCharacterCard, ChangeCharacterModal, two-tier edit pattern | ✅ Aligned |
+| Battle Management (FR20-28) | Battle View screen spec, two-sided layout, conclude/discard flows, lifecycle mermaid diagrams | ✅ Aligned |
+| Session History & Logs (FR29-34) | Log View screen, LogEntry component, cursor pagination, drill-into-battles | ✅ Aligned |
+| Realtime Awareness (FR35-39) | useRealtimeFlash hook, ReconnectingBanner, warm resume behavior, WebSocket propagation | ✅ Aligned |
+| Cross-Platform (FR40-44) | Platform strategy (iOS/Android primary, web secondary), responsive layout, device targets | ✅ Aligned |
+| Supportability (FR45-48) | Not directly UX-facing (appropriately deferred to operational/Epic 7 concerns) | ✅ N/A for UX |
+
+**No PRD-to-UX gaps found.** All user-facing functional requirements have corresponding UX specifications.
 
 ### UX ↔ Architecture Alignment
 
-The UX spec correctly references the existing tech stack:
-- **AppTheme** token system in `frontend/constants/theme.ts`
-- **Expo Router** for navigation (stack push for Battle/Log, modal for ChangeCharacter)
-- **react-native-reanimated** for border flash animation
-- **expo-haptics** for tactile stat feedback
-- **expo-clipboard** for room code sharing
-- **WebSocket** for realtime updates
-- **React Native StyleSheet** — no third-party UI library
+| UX Requirement | Architecture Support | Status |
+|---|---|---|
+| QuickEditSheet optimistic updates | TanStack Query optimistic update + reconcile pattern (architecture §Frontend) | ✅ Aligned |
+| Realtime border flash on character updates | WebSocket client extension, character_* events via SNS/Redis fanout | ✅ Aligned |
+| Battle View two-sided layout | Battle schema with playerSide/monsterSide structure, BonusItem/MonsterItem types | ✅ Aligned |
+| Battle conclude with required result | Dedicated POST /battles/:id/conclude endpoint (ADR-2) | ✅ Aligned |
+| Battle discard with confirmation | Soft delete via DELETE /battles/:id (ADR-1) | ✅ Aligned |
+| Log View with cursor pagination | Cursor-based via MongoDB _id, compound index (ADR-7) | ✅ Aligned |
+| Room code copy-to-clipboard | expo-clipboard already in dependency set | ✅ Aligned |
+| Warm resume → Room View (not Battle View) | ADR-10 explicitly codifies this behavior | ✅ Aligned |
+| AppTheme token migration prerequisite | Architecture Step 1 in implementation sequence | ✅ Aligned |
+| Room View routing migration | Architecture acknowledges nested Expo Router routes for battle/log | ✅ Aligned |
+| ReconnectingBanner behavior | Architecture documents reconnect/recovery within 5 seconds (NFR3) | ✅ Aligned |
+| Haptics on stat changes | expo-haptics in existing dependency set | ✅ Aligned |
+| Reduced motion support | react-native-reanimated useReducedMotion() specified in both UX and stories | ✅ Aligned |
 
-All new UX components are designed within existing architectural boundaries.
+**No UX-to-Architecture gaps found.** The architecture explicitly accounts for all UX interaction patterns and component requirements.
 
 ### UX Design Requirements Traceability
 
-The epics document defines 21 UX Design Requirements (UX-DR1 through UX-DR21), all traced to specific stories:
+The epics document defines 21 UX Design Requirements (UX-DR1 through UX-DR21) with explicit story mappings:
 
 | UX-DR | Description | Story Coverage |
 |---|---|---|
-| UX-DR1 | AppTheme token migration | Story 3.1 |
-| UX-DR2 | New AppTheme color tokens | Story 3.1 |
+| UX-DR1 | AppTheme token consolidation | Story 3.1 |
+| UX-DR2 | New role-based color tokens | Story 3.1 |
 | UX-DR3 | RoomCodeHeader component | Story 2.5 |
-| UX-DR4 | RoomCharacterCard styling | Story 3.6 |
-| UX-DR5 | CurrentCharacterFooter styling | Story 3.6 |
-| UX-DR6 | VioletButton token update | Story 3.1 |
+| UX-DR4 | RoomCharacterCard token updates | Story 3.6 |
+| UX-DR5 | CurrentCharacterFooter token updates | Story 3.6 |
+| UX-DR6 | VioletButton token migration | Story 3.1 |
 | UX-DR7 | QuickEditSheet component | Story 3.7 |
 | UX-DR8 | StatStepper component | Story 3.7 |
 | UX-DR9 | useRealtimeFlash hook | Story 3.8 |
@@ -284,133 +287,156 @@ The epics document defines 21 UX Design Requirements (UX-DR1 through UX-DR21), a
 | UX-DR14 | Log View screen | Stories 6.6, 6.7 |
 | UX-DR15 | Optimistic updates with error revert | Story 3.7 |
 | UX-DR16 | Reduced motion support | Story 4.6 |
-| UX-DR17 | Colour blindness testing | Story 7.6 (checklist) |
-| UX-DR18 | Responsive layout conventions | Across all new stories |
-| UX-DR19 | Button hierarchy rule | Across all new stories |
+| UX-DR17 | Color blindness testing requirement | Story 7.6 |
+| UX-DR18 | Responsive layout conventions | All new screen stories |
+| UX-DR19 | Button hierarchy rule | All new screen stories |
 | UX-DR20 | Field error pattern | Story 3.7 |
-| UX-DR21 | QA device targets | Story 7.6 (checklist) |
+| UX-DR21 | QA device targets | Story 7.6 |
 
-### Warnings & Open Items
+**All 21 UX-DRs have traceable story coverage.**
 
-1. **Power stepper ceiling is TBD** — UX spec (Section 12.4) notes "Ceiling: TBD — standard Munchkin caps Level at 10, Power at 9; enforce once confirmed by product." The epics specify "no upper ceiling" — this conflicts and needs resolution.
-2. **Deep link sharing mentioned but not in PRD scope** — UX spec references `munchhelper://join/MUNCH-4F7K` deep links as ideal, but this is not an FR and not in any epic. Acknowledged as post-MVP.
-3. **Contrast exception** — `accent` on `surfaceWarm` at ~4.2:1 is below WCAG AA (4.5:1). Mitigated by bold weight. Tracked as known exception.
-4. **Discard changes behavior discrepancy** — UX spec (Section 7.5) mentions "Discard changes?" prompt on tap outside with unsaved changes, while later section (12.3) specifies Undo toast instead. The epics follow the Undo toast pattern (Story 3.7). The UX spec has internal inconsistency on this point.
+### Warnings
+
+- **Known contrast exception:** `accent` (#D4C26E) on `surfaceWarm` (#8A6150) at ~4.2:1 is below WCAG AA (4.5:1). Mitigated by bold weight, text shadow, and darkened background. Tracked in Story 7.6 release-readiness checklist with explicit sign-off required.
 
 ## Epic Quality Review
 
-### Epic-Level Validation
+### Epic Structure Validation
 
-| Epic | User Value | Independence | FR Traceability | Verdict |
+#### A. User Value Focus Check
+
+| Epic | Title | User-Centric? | Value Standalone? | Verdict |
 |---|---|---|---|---|
-| Epic 1: Player Identity & Onboarding | ✅ Players enter and establish identity | ✅ Stands alone | FR1–FR3 | ✅ Pass |
-| Epic 2: Room Management | ✅ Players create/join rooms | ✅ Uses Epic 1 output only | FR4–FR7, FR12 | ✅ Pass |
-| Epic 3: Character Management | ✅ Players manage characters | ✅ Uses Epics 1–2 output | FR8–FR9, FR13–FR19, FR35–FR36 | ⚠️ See findings |
-| Epic 4: Realtime Room Awareness | ✅ Players stay synced, recover | ✅ Uses Epics 1–3 output | FR10–FR11, FR37–FR39 | ✅ Pass |
-| Epic 5: Battle Management | ✅ Players create/manage battles | ✅ Uses Epics 1–4 output | FR20–FR28 | ✅ Pass |
-| Epic 6: Room History | ✅ Players review session events | ✅ Uses Epics 1–5 output | FR29–FR34 | ✅ Pass |
-| Epic 7: Distribution & Release | ⚠️ Mixed user/operational | ✅ Final rollup epic | FR40–FR48 | ⚠️ See findings |
+| Epic 1 | Player Identity & Onboarding | ✅ Player can enter, create identity, update profile | ✅ | PASS |
+| Epic 2 | Room Management | ✅ Player can create/join rooms, share codes | ✅ (needs Epic 1) | PASS |
+| Epic 3 | Character Management | ✅ Player can create/view/edit/remove characters | ✅ (needs Epics 1-2) | PASS with note¹ |
+| Epic 4 | Realtime Room Awareness & Recovery | ✅ Player stays in sync, recovers from disconnections | ✅ (needs Epics 1-3) | PASS |
+| Epic 5 | Battle Management | ✅ Player can create/manage/conclude/discard battles | ✅ (needs Epics 1-3 + prereqs) | PASS |
+| Epic 6 | Room History | ✅ Player can review session history | ✅ (needs Epics 1-5) | PASS |
+| Epic 7 | Distribution, Availability, Supportability & Release Operations | 🟡 Mixed user/team value | 🟡 Some stories are team-facing | PASS with note² |
 
-### Dependency Flow Analysis
+**¹ Note on Epic 3:** Contains two developer-facing prerequisite stories (3.1 AppTheme token migration, 3.2 Room View routing migration). These are correctly identified as technical prerequisites and marked as gates for Epics 5-6. In a brownfield completion project, this is an acceptable structural pattern — the alternative (scattering infrastructure changes across multiple epics) would be worse. However, they are "As a developer" stories, not user stories.
 
-All cross-epic dependencies flow **forward** (earlier → later). No backward or circular dependencies found.
+**² Note on Epic 7:** Title is process-oriented. Several stories (7.6 Release Checklist, 7.7 Supportability Signals, 7.8 Diagnostic Validation Matrix) are team/ops-facing rather than user-facing. The aggregate epic value — "users can actually access the product on all platforms" — justifies their grouping. This is a pragmatic brownfield release operations epic, not a pure user-value epic.
 
-```
-Epic 1 (standalone)
-  ↓
-Epic 2 (needs Epic 1)
-  ↓
-Epic 3 (needs Epics 1–2; contains gates for Epics 5–6)
-  ↓
-Epic 4 (needs Epics 1–3; Story 4.6 depends on Stories 3.7, 3.8)
-  ↓
-Epic 5 (needs Epics 1–4; depends on Stories 3.1, 3.2 gates)
-  ↓
-Epic 6 (needs Epics 1–5; depends on Stories 3.1, 3.2, 6.5, Epic 5 battle records)
-  ↓
-Epic 7 (needs all epics; final validation and release)
-```
+#### B. Epic Independence Validation
+
+| Epic | Forward Dependencies? | Can Function Without Later Epics? | Verdict |
+|---|---|---|---|
+| Epic 1 | None | ✅ Fully standalone | PASS |
+| Epic 2 | None (depends on Epic 1 only) | ✅ | PASS |
+| Epic 3 | None (depends on Epics 1-2 only) | ✅ | PASS |
+| Epic 4 | None (depends on Epics 1-3 only) | ✅ | PASS |
+| Epic 5 | None (depends on Epics 1-3 + Stories 3.1, 3.2) | ✅ | PASS |
+| Epic 6 | Story 6.7 depends on "Epic 5 completed battle record support" | ✅ (Epic 5 is sequenced before Epic 6) | PASS — backward cross-epic dependency |
+| Epic 7 | None (release validation naturally comes last) | ✅ | PASS |
+
+**No forward dependencies found.** All cross-epic dependencies point backward (to earlier epics).
 
 ### Story Quality Assessment
 
-**Total stories: 37** (13 DONE, 24 TODO)
+#### A. Story Sizing Validation
 
-#### Acceptance Criteria Quality
+All stories reviewed for appropriate sizing:
+- **Epic 1:** 3 stories, all DONE, appropriately sized (landing screen, identity creation, profile update)
+- **Epic 2:** 5 stories, 4 DONE + 1 TODO. Appropriately sized individual features
+- **Epic 3:** 10 stories, 5 DONE + 5 TODO. Well-decomposed: technical prereqs are separate from feature stories
+- **Epic 4:** 6 stories, 2 DONE + 4 TODO. Each story targets a distinct recovery/awareness behavior
+- **Epic 5:** 7 stories. Good decomposition: create → display → manage → realtime → conclude → discard
+- **Epic 6:** 7 stories. Clean separation: backend publishing → storage → API → frontend display → character events → battle events
+- **Epic 7:** 9 stories. Appropriate granularity for release operations work
 
-- ✅ All stories use proper Given/When/Then BDD format
-- ✅ Error/edge cases are covered (e.g., invalid room code in 2.3, missing LOG_TOPIC_ARN in 6.1/6.2)
-- ✅ Stories reference specific UX-DR requirements where applicable
-- ✅ Accessibility acceptance criteria included where relevant
+**No oversized stories found.** All stories are individually completable units.
 
-#### Story Sizing
+#### B. Acceptance Criteria Review
 
-- ✅ Most stories are independently completable and appropriately sized
-- ⚠️ Story 5.3 (Manage Battle State) is large — covers add/remove characters, add/remove monsters, add/remove bonuses, and save mutations. Could be split but is cohesive enough to remain as-is.
-- ⚠️ Story 7.7 (Supportability Signals & Failure Taxonomy) is document-heavy — delivers a classification scheme + structured logging rather than a traditional user feature.
+| Quality Dimension | Assessment | Status |
+|---|---|---|
+| Given/When/Then Format | All stories use proper BDD format | ✅ |
+| Testable | Each AC is independently verifiable | ✅ |
+| Error Conditions | Covered where applicable (invalid room codes, save failures, disconnection, battle state conflicts) | ✅ |
+| Specificity | Clear expected outcomes with specific values (e.g., "1500ms", "44×44pt", "#D4C26E") | ✅ |
 
-#### Database/Entity Creation Timing
+**Standout ACs (well-written examples):**
+- Story 5.1 covers both happy path (create battle) and conflict path (battle already active → route to existing)
+- Story 4.3 covers warm resume, cold start, AND crash recovery as three distinct scenarios
+- Story 3.7 covers save, dismiss-with-changes, and server error as three distinct outcome paths
 
-- ✅ Brownfield project — existing schemas in place
-- ✅ Battle collection created implicitly when battle-service stores first battle (Story 5.1)
-- ✅ Log collection created implicitly when log-service stores first event (Story 6.2)
-- ✅ Compound index `{ roomId: 1, _id: -1 }` specified in Story 6.4 where pagination is needed
+### Dependency Analysis
 
-### Quality Findings
+#### A. Within-Epic Dependencies
 
-#### 🟠 Major Issues
+All within-epic dependencies are backward-pointing:
 
-**M1: Technical prerequisite stories in Epic 3 (Stories 3.1, 3.2)**
+| Story | Depends On | Direction | Verdict |
+|---|---|---|---|
+| 3.6 | 3.1 | Backward ✅ | PASS |
+| 3.7 | 3.1, 3.2 | Backward ✅ | PASS |
+| 3.8 | 3.1, 3.6 | Backward ✅ | PASS |
+| 4.4 | 4.3 | Backward ✅ | PASS |
+| 4.6 | 3.7, 3.8 (cross-epic) | Backward ✅ | PASS |
+| 5.2 | 3.1, 3.2 (cross-epic) | Backward ✅ | PASS |
+| 5.3 | 3.1, 3.2 (cross-epic) | Backward ✅ | PASS |
+| 6.6 | 3.1, 3.2, 6.5 | Backward ✅ | PASS |
+| 6.7 | 3.1, 3.2, 6.5, Epic 5 | Backward ✅ | PASS |
 
-Stories 3.1 (AppTheme Token Migration) and 3.2 (Room View Routing Migration) are "As a developer" technical stories with no direct user value. They are marked as ⛔ gates for Epics 5 and 6.
+**No forward dependencies found.**
 
-- **Why it matters:** Technical stories should ideally be folded into the first user-facing story that needs the change, not stand as separate deliverables.
-- **Mitigating factor:** Both are prerequisite refactors that affect multiple downstream stories and epics. Separating them is pragmatic — they touch existing code and should be validated independently before new feature work builds on them.
-- **Recommendation:** Acceptable as-is given the brownfield context. The gate markers make the dependency explicit. No action required unless the team prefers to fold them into Story 3.6 or 3.7.
+#### B. Database/Entity Creation Timing
 
-**M2: Epic 7 scope breadth**
+- **battle-service:** Battle MongoDB collection created when battle-service is scaffolded (Story 5.1). Not created upfront. ✅
+- **log-service:** LogEvent MongoDB collection created when log-service is scaffolded (Story 6.2). Not created upfront. ✅
+- Tables/collections are created when first needed, not in a bulk setup story. ✅
 
-Epic 7 bundles distribution (user-facing), supportability (operational), and release process into one epic. It covers FR40–FR48 (9 FRs) and NFR6–NFR12 (6 NFRs) — the broadest epic by requirement count.
+### Special Implementation Checks
 
-- **Why it matters:** The epic mixes user outcomes ("I can download the app") with team processes ("we have a release checklist").
-- **Mitigating factor:** All stories trace to PRD requirements. The theme is cohesive: "make the product shippable." Splitting into multiple epics would create tiny epics with 1–2 stories each.
-- **Recommendation:** Acceptable as-is. The stories are well-structured and independently completable.
+#### A. Starter Template Requirement
 
-**M3: Story 5.5 edge case — character deleted during active battle**
+Architecture specifies: **No external starter template.** This is a brownfield project. New services scaffold from existing services (battle-service from character-service, log-service from room-notifications-service). ✅ Correctly handled.
 
-Story 5.5 defines behavior when a participating character is deleted from the room, but the acceptance criteria don't explicitly test the server-side retention of original `characterIds` in the battle record. The Additional Requirements (ADR-9) specify this behavior but Story 5.5 ACs only cover the frontend display removal.
+#### B. Brownfield Indicators
 
-- **Recommendation:** Add an AC to Story 5.5 or Story 5.6: "And the persisted battle record retains the original participation list including deleted characters." Actually, this IS present in Story 5.5 AC: "the persisted battle record retains the original participation history." Severity downgraded to minor.
-
-#### 🟡 Minor Concerns
-
-**m1: Power stepper ceiling inconsistency**
-
-UX spec says ceiling is "TBD" (Section 12.4). Epics (Story 3.7) say "no upper ceiling." These should be aligned.
-
-**m2: Discard changes behavior — internal UX spec inconsistency**
-
-UX spec Section 7.5 mentions "Discard changes?" prompt on tap outside with unsaved changes; Section 12.3 specifies Undo toast instead. Story 3.7 follows the Undo toast pattern. The epics are internally consistent; the UX spec has the inconsistency.
-
-**m3: Story 7.7 and 7.8 are process/document deliverables**
-
-These stories produce taxonomies, matrices, and documentation rather than software features. While traced to FR45–FR46, their acceptance criteria are about document existence and classification schemes, not user-facing behavior.
-
-**m4: Story 4.5 (Late-Join Context Awareness) is thin**
-
-Only one AC: "see the current character list with all attributes fully visible." Could include verifying active battle visibility, but this is covered by Story 5.2's AC for reconnect/reopen.
+- ✅ Integration with existing services (character-service, room-notifications-service)
+- ✅ Migration stories (3.1 AppTheme tokens, 3.2 Room View routing)
+- ✅ Existing CI/CD in place (Story 7.2 DONE for web)
+- ✅ Status labels distinguish existing (DONE) from new (TODO) work
 
 ### Best Practices Compliance Summary
 
-| Criterion | Status |
-|---|---|
-| Epics deliver user value | ✅ All 7 (with caveats on Epic 7) |
-| Epics function independently | ✅ Forward-only dependency chain |
-| Stories appropriately sized | ✅ (Story 5.3 borderline large) |
-| No forward dependencies | ✅ All dependencies reference earlier work |
-| Database tables created when needed | ✅ Brownfield + just-in-time creation |
-| Clear acceptance criteria | ✅ BDD format throughout |
-| FR traceability maintained | ✅ 100% coverage |
-| Brownfield integration points | ✅ Scaffolding from existing services documented |
+| Criterion | Epic 1 | Epic 2 | Epic 3 | Epic 4 | Epic 5 | Epic 6 | Epic 7 |
+|---|---|---|---|---|---|---|---|
+| User value | ✅ | ✅ | ✅¹ | ✅ | ✅ | ✅ | 🟡² |
+| Independence | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Story sizing | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| No forward deps | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| DB when needed | N/A | N/A | N/A | N/A | ✅ | ✅ | N/A |
+| Clear ACs | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| FR traceability | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### Quality Findings
+
+#### 🔴 Critical Violations
+None found.
+
+#### 🟠 Major Issues
+
+**1. Technical prerequisite stories in Epic 3 (Stories 3.1, 3.2)**
+- **Issue:** Stories 3.1 (AppTheme token migration) and 3.2 (Room View routing migration) are "As a developer" stories without direct user value. They are technical infrastructure changes framed as character management stories.
+- **Mitigation already in place:** Both are clearly marked as `⛔ Gate for Epics 5–6`, have precise acceptance criteria, and are correctly sequenced before dependent stories.
+- **Assessment:** Acceptable for brownfield. These are real technical prerequisites — not avoidable scope. Re-framing them as user stories ("As a player, I want consistent visual styling...") would be dishonest. The honest labeling is appropriate.
+- **Recommendation:** No change needed. The current approach (developer stories with clear gates) is the correct brownfield pattern.
+
+#### �� Minor Concerns
+
+**1. Epic 7 mixed audience**
+- **Issue:** Epic 7 mixes user-facing stories (7.5 Compliance Content, 7.9 Channel Availability) with team/ops stories (7.6 Checklist, 7.7 Supportability, 7.8 Diagnostic Matrix).
+- **Assessment:** Acceptable grouping. Splitting release-operations work into two epics (user-facing + team-facing) would create artificial fragmentation. The aggregate value proposition is coherent.
+- **Recommendation:** No change needed.
+
+**2. Cross-epic dependency concentration on Stories 3.1 and 3.2**
+- **Issue:** Stories 3.1 and 3.2 are dependencies for 8+ stories across Epics 3, 5, and 6. This makes them high-risk single points of failure in the implementation sequence.
+- **Assessment:** This is an inherent brownfield reality, not a planning error. AppTheme consolidation and routing migration must happen once, not piecemeal.
+- **Recommendation:** Prioritize Stories 3.1 and 3.2 as the first TODO stories in the sprint plan. Any delay cascades across three epics.
 
 ## Summary and Recommendations
 
@@ -418,49 +444,47 @@ Only one AC: "see the current character list with all attributes fully visible."
 
 # ✅ READY
 
-The project artifacts are implementation-ready. All 48 PRD Functional Requirements have 100% coverage in epics and stories. The UX design specification is comprehensive and well-aligned with the PRD. Epic quality is high with no critical violations. The brownfield completion scope is well-defined with clear boundaries.
+This project is implementation-ready. The planning artifacts are thorough, well-aligned, and demonstrate a high degree of traceability across all four documents (PRD, Architecture, UX Design, Epics & Stories).
 
-### Issues Summary
+### Assessment Summary
 
-| Severity | Count | Description |
+| Dimension | Score | Detail |
 |---|---|---|
-| 🔴 Critical | 0 | — |
-| 🟠 Major | 3 | All have mitigating factors; acceptable as-is |
-| 🟡 Minor | 4 | Inconsistencies and thin coverage in isolated areas |
-| ⚠️ Warnings | 4 | UX alignment open items |
+| FR Coverage | 48/48 (100%) | All functional requirements traced to epic/story coverage |
+| NFR Coverage | 17/17 (100%) | All non-functional requirements addressed in architecture and stories |
+| UX-DR Coverage | 21/21 (100%) | All UX design requirements traced to stories |
+| UX ↔ PRD Alignment | Full | No gaps between UX specification and PRD requirements |
+| UX ↔ Architecture Alignment | Full | Architecture explicitly supports all UX interaction patterns |
+| Epic Independence | Pass | No forward dependencies; all cross-epic dependencies point backward |
+| Story Quality | Pass | Proper BDD format, testable ACs, appropriate sizing |
+| Brownfield Readiness | Pass | Technical prerequisites correctly sequenced as gates |
 
-### Items to Resolve Before or During Implementation
+### Critical Issues Requiring Immediate Action
 
-1. **Power stepper ceiling** — Resolve the inconsistency between UX spec ("TBD") and epics ("no upper ceiling"). Decide whether level and power have caps and document the decision.
+**None.** No critical blockers to beginning implementation.
 
-2. **Discard changes UX pattern** — Confirm that the Undo toast approach (Story 3.7, UX spec Section 12.3) is the canonical pattern, and update UX spec Section 7.5 to match.
+### Issues Identified (Non-Blocking)
 
-3. **Contrast exception tracking** — `accent` on `surfaceWarm` at ~4.2:1 is below WCAG AA. This is already tracked as a known exception with mitigation (bold weight). Ensure it appears in the release-readiness checklist (Story 7.6).
-
-4. **Open PRD decision points** — Three decision points remain open: battle scope depth, log detail depth, and web parity threshold. These should be resolved before Epic 5 and Epic 6 implementation begins.
-
-### Strengths
-
-- **100% FR coverage** — All 48 FRs mapped to specific epics and stories with traceability
-- **21 UX Design Requirements** — All traced to specific stories
-- **Clear brownfield approach** — New services scaffold from existing services; no greenfield setup overhead
-- **Comprehensive ACs** — BDD format throughout with error/edge case coverage
-- **Explicit gates** — Technical prerequisites (Stories 3.1, 3.2) clearly marked as gates for downstream work
-- **Well-defined scope boundaries** — Out-of-scope items, constraints, and assumptions are explicit
+| # | Severity | Issue | Impact | Recommendation |
+|---|---|---|---|---|
+| 1 | 🟠 Major | Stories 3.1 and 3.2 are technical prerequisites with 8+ downstream dependents across 3 epics | High-risk if delayed — cascades to Epics 3, 5, 6 | Prioritize as first TODO items in sprint plan |
+| 2 | 🟡 Minor | Epic 7 mixes user-facing and team-facing stories | Could cause sprint planning ambiguity | Acceptable as-is; no split needed |
+| 3 | 🟡 Minor | Known WCAG AA contrast exception (accent on surfaceWarm ~4.2:1) | Accessibility risk tracked in Story 7.6 | Already mitigated with bold weight + text shadow; explicit sign-off required at release |
 
 ### Recommended Next Steps
 
-1. Resolve the 4 open items listed above (especially power ceiling and PRD decision points)
-2. Begin implementation with Epic 1 (already DONE) and Epic 2 (Story 2.5 only remaining)
-3. Prioritize the Epic 3 gate stories (3.1, 3.2) early — they unblock Epics 5 and 6
-4. Use the FR Coverage Matrix in this report to track implementation progress against requirements
+1. **Begin implementation with Stories 3.1 (AppTheme Token Migration) and 3.2 (Room View Routing Migration)** — these are the critical-path prerequisites that unblock Epics 5 and 6. Prioritize them as Sprint 1 work.
+2. **Proceed to sprint planning** — the epics and stories are well-structured for sprint decomposition. All TODO stories have clear acceptance criteria and dependency chains.
+3. **Use the FR Coverage Map in the epics document** as the traceability reference during implementation to ensure no requirements are dropped.
 
 ### Final Note
 
-This assessment identified **7 issues** across **3 severity categories** and **4 UX alignment warnings**. None are blocking. The planning artifacts are thorough, well-structured, and ready for implementation. The PRD, Architecture, UX Design, and Epics are aligned and traceable. Address the open items during early implementation to prevent them from becoming blockers later.
+This assessment reviewed 4 planning artifacts (PRD, Architecture, UX Design, Epics & Stories) covering 48 functional requirements, 17 non-functional requirements, and 21 UX design requirements across 7 epics and 39 stories. **3 issues were identified (0 critical, 1 major, 2 minor).** The major issue (technical prerequisite sequencing risk) is already mitigated by the existing gate markers in the epics document.
+
+The project planning is exceptionally thorough for a brownfield completion phase. The documents are well-cross-referenced, decision points are resolved with ADRs, and the implementation sequence is clearly defined. This is ready for sprint planning and implementation.
 
 ---
 
 **Assessment Date:** 2026-03-26
-**Assessed By:** Implementation Readiness Workflow
+**Assessor Role:** Expert Product Manager & Scrum Master
 **Project:** munch-helper
