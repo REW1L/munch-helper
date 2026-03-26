@@ -215,11 +215,11 @@ Players can open a room history view to catch up on what happened earlier in the
 **Status:** New
 **Cross-platform exit criteria apply to this epic**
 
-### Epic 7: Release Pipeline & Store Delivery
-iOS and Android CI/CD pipelines work reliably in GitHub Actions via Fastlane with match-based code signing; privacy and support pages accurately reflect the current app scope; production backend infrastructure is documented and stable; and the team can ship a new version to both stores without manual steps.
-**FRs covered:** FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48
-**NFRs addressed:** NFR1–NFR17
-**Status:** Existing + New (v1 store submissions and web CI/CD are DONE; iOS/Android pipelines, privacy/support page rework are TODO)
+### Epic 7: Distribution, Availability & Release Operations
+Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, and release-readiness operations.
+**FRs covered:** FR40, FR41, FR42, FR43, FR44, FR47, FR48
+**NFRs addressed:** NFR6, NFR7, NFR8, NFR9, NFR11, NFR12
+**Status:** Existing + New (store presence and web CI/CD are in place; mobile release automation and release-facing content refinement remain in progress)
 
 ## Epic 1: Player Identity & Onboarding
 
@@ -965,138 +965,111 @@ So that I can understand battle outcomes and revisit the full record when needed
 > **Covers:** UX-DR12, UX-DR14
 > **Depends on:** Stories 3.1, 3.2, 6.5, Epic 5 completed battle record support
 
-## Epic 7: Release Pipeline & Store Delivery
+## Epic 7: Distribution, Availability & Release Operations
 
-iOS and Android CI/CD pipelines work reliably via Fastlane with match-based code signing; privacy and support pages accurately reflect the current app scope; production backend infrastructure is documented and stable; and new versions can be shipped to both stores without manual steps.
+Users can access Munch Helper through web and mobile distribution channels, while the team can ship updates quickly and reliably through collaborative development workflows, automated deployment pipelines, and release-readiness operations.
 
-### Story 7.1: Initial App Store Submissions `[DONE]`
+### Story 7.1: Collaborative Release Foundation `[DONE]`
 
-As a team,
-I want the app published to the App Store and Play Store,
-So that users can download Munch Helper on iOS and Android.
+As a developer,
+I want a shared release foundation for signing, secrets, infrastructure references, and release conventions,
+So that multiple developers can contribute and ship without breaking the delivery workflow.
 
 **Acceptance Criteria:**
 
-**Given** the v1 release
-**When** it was submitted
-**Then** the iOS app is live on the App Store
-**And** the Android app is live on the Play Store
+**Given** a developer is preparing a release change
+**When** they review the project release setup
+**Then** the repository contains documented Fastlane lanes, signing approach, required secrets, and production infrastructure references
+**And** iOS signing uses match-based certificate management
+**And** the release setup is usable by more than one developer without relying on undocumented local machine state
 
-### Story 7.2: Web CI/CD Pipeline `[DONE]`
+### Story 7.2: Web Availability Pipeline `[DONE]`
 
-As a developer,
-I want web builds to deploy automatically via GitHub Actions,
-So that web releases require no manual steps.
+As a user,
+I want the current web version of Munch Helper to be deployed automatically,
+So that the web channel stays available without manual release work.
 
 **Acceptance Criteria:**
 
 **Given** a push to the release branch
-**When** the GitHub Actions workflow runs
+**When** the web release workflow runs
 **Then** the web build completes successfully and is deployed to production
+**And** the live web version reflects the current release branch state
+**And** no manual deployment step is required to make the web release available
 
-### Story 7.3: Privacy Policy Page `[DONE]`
+### Story 7.3: Automated iOS Delivery `[TODO]`
 
-As a user,
-I want to access a privacy policy from the app,
-So that I understand how my data is handled.
-
-**Acceptance Criteria:**
-
-**Given** I tap "Privacy" on the landing screen
-**When** the page loads
-**Then** the privacy policy content is displayed at `frontend/app/privacy.tsx`
-
-### Story 7.4: Support Page `[DONE]`
-
-As a user,
-I want to access a support page from the app,
-So that I can get help if I encounter issues.
-
-**Acceptance Criteria:**
-
-**Given** I tap "Support" on the landing screen
-**When** the page loads
-**Then** the support page content is displayed at `frontend/app/support.tsx`
-
-### Story 7.5: Fastlane + match Setup `[DONE]`
-
-As a developer,
-I want Fastlane configured with match for iOS code signing,
-So that mobile builds can be signed consistently without manual certificate management.
-
-**Acceptance Criteria:**
-
-**Given** the Fastlane setup
-**When** it is configured
-**Then** match is set up with a private certs repository
-**And** the match passphrase and App Store Connect API key are stored in GitHub secrets
-**And** a Fastfile with iOS and Android lanes exists in the repository
-
-### Story 7.6: Production Infrastructure Baseline `[DONE]`
-
-As a developer,
-I want the production backend infrastructure documented as a baseline,
-So that future service additions (battle-service, log-service) have a clear deployment reference.
-
-**Acceptance Criteria:**
-
-**Given** the production environment
-**When** reviewed
-**Then** Lambda services are deployed via SAM, MongoDB Atlas is configured, and all required environment variables are set for the live environment
-
-### Story 7.7: Fix iOS GitHub Actions Pipeline `[TODO]`
-
-As a developer,
-I want the iOS GitHub Actions pipeline to trigger Fastlane and deliver a signed build to TestFlight without manual steps,
-So that iOS releases are fully automated.
+As a team,
+I want the iOS pipeline to build, sign, and deliver the app to TestFlight automatically,
+So that iOS releases are repeatable and do not depend on manual intervention.
 
 **Acceptance Criteria:**
 
 **Given** a push to the release branch
 **When** the iOS GitHub Actions workflow runs
-**Then** it invokes `bundle exec fastlane` with the iOS lane
-**And** match pulls the correct provisioning profiles and certificates using the configured secrets
+**Then** it invokes the configured Fastlane iOS lane
+**And** match pulls the correct provisioning profiles and certificates using repository secrets
 **And** a signed `.ipa` is produced and delivered to TestFlight
-**And** no manual steps are required outside of triggering the pipeline
+**And** the workflow fails with actionable logs if signing or delivery cannot be completed
 
-### Story 7.8: Fix Android GitHub Actions Pipeline `[TODO]`
+### Story 7.4: Automated Android Delivery `[TODO]`
 
-As a developer,
-I want the Android GitHub Actions pipeline to trigger Fastlane and deliver a signed build to the Play Internal Track without manual steps,
-So that Android releases are fully automated.
+As a team,
+I want the Android pipeline to build, sign, and deliver the app to the Play internal track automatically,
+So that Android releases are repeatable and do not depend on manual intervention.
 
 **Acceptance Criteria:**
 
 **Given** a push to the release branch
 **When** the Android GitHub Actions workflow runs
-**Then** it invokes `bundle exec fastlane` with the Android lane
-**And** the keystore secrets are correctly mapped to environment variables
-**And** a signed `.aab` is produced and delivered to the Play Internal Track
-**And** no manual steps are required outside of triggering the pipeline
+**Then** it invokes the configured Fastlane Android lane
+**And** the keystore and Play credentials are correctly mapped from repository secrets
+**And** a signed `.aab` is produced and delivered to the Play internal track
+**And** the workflow fails with actionable logs if signing or delivery cannot be completed
 
-### Story 7.9: Rework Privacy Policy Page `[TODO]`
+### Story 7.5: Release-Facing Compliance Content `[TODO]`
 
 As a user,
-I want the privacy policy to accurately reflect the current app's data practices,
-So that I have up-to-date information and the app meets store review requirements.
+I want the privacy and support pages to reflect the current app behavior and support path,
+So that I can trust the published release information and stores can review the app accurately.
 
 **Acceptance Criteria:**
 
-**Given** the updated `frontend/app/privacy.tsx`
-**When** I open the privacy page
-**Then** the content reflects the current app scope including session data, anonymous identity, and room participation
-**And** the page is accessible and readable on all supported screen sizes
-**And** the URL is stable and usable as the store-submitted privacy policy link
+**Given** I open the privacy page from the app or its public URL
+**When** the page loads
+**Then** it reflects the current app scope including anonymous identity, session data, and room participation behavior
+**And** the content is readable and accessible on supported screen sizes
+**And** the URL is stable for store submission use
 
-### Story 7.10: Rework Support Page `[TODO]`
+**Given** I open the support page from the app or its public URL
+**When** the page loads
+**Then** it reflects the current app features and provides a clear support path for the current release
+**And** the content is readable and accessible on supported screen sizes
 
-As a user,
-I want the support page to provide accurate and helpful contact or guidance information,
-So that I can get help relevant to the current version of the app.
+### Story 7.6: Cross-Platform Release Readiness Checklist `[TODO]`
+
+As a team,
+I want an explicit release-readiness checklist for the cross-platform core session experience,
+So that we can decide whether a release is shippable based on defined criteria instead of assumptions.
 
 **Acceptance Criteria:**
 
-**Given** the updated `frontend/app/support.tsx`
-**When** I open the support page
-**Then** the content reflects the current app features and provides a clear way to get help
-**And** the page is accessible and readable on all supported screen sizes
+**Given** a candidate release
+**When** the team runs the release-readiness review
+**Then** there is a documented checklist covering iOS, Android, and web core session flows
+**And** the checklist includes room, character, battle, log, and session-continuity validation
+**And** the checklist captures known failure categories and release blockers clearly enough for go/no-go decisions
+
+### Story 7.7: Release Channel Availability Validation `[TODO]`
+
+As a user,
+I want to be able to access the current release from each intended distribution channel,
+So that the completed app is actually available where I expect to get it.
+
+**Acceptance Criteria:**
+
+**Given** a release has passed the readiness checklist
+**When** channel availability is validated
+**Then** the current release is reachable on the intended web, iOS, and Android distribution channels
+**And** store or channel metadata does not misrepresent the supported core session experience
+**And** no intended channel is treated as release-ready while missing a materially incomplete core workflow
