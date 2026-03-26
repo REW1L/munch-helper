@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import { StrictMode, createElement, type PropsWithChildren } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setStringAsync } from 'expo-clipboard';
@@ -26,6 +27,10 @@ function createDeferredPromise<T>(): DeferredPromise<T> {
   });
 
   return { promise, resolve, reject };
+}
+
+function StrictModeWrapper({ children }: PropsWithChildren) {
+  return createElement(StrictMode, null, children);
 }
 
 describe('useRoomCodeClipboard', () => {
@@ -194,6 +199,20 @@ describe('useRoomCodeClipboard', () => {
       await pendingCopy;
     });
 
+    unmount();
+  });
+
+  it('updates copied state when mounted in React StrictMode', async () => {
+    const { result, unmount } = renderHook(() => useRoomCodeClipboard('ROOM42'), {
+      wrapper: StrictModeWrapper,
+    });
+
+    await act(async () => {
+      await result.current.copyRoomCode();
+    });
+
+    expect(mockSetStringAsync).toHaveBeenCalledWith('ROOM42');
+    expect(result.current.buttonLabel).toBe('Copied ✓');
     unmount();
   });
 });

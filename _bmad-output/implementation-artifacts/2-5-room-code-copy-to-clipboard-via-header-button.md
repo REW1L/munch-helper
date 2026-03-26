@@ -147,6 +147,8 @@ gpt-5 (Codex)
 - Added regression test to ensure pending copy for previous room code is ignored after rerender with a new code.
 - Updated `roomCodeRef` synchronization to occur during render so copy action always uses current render's room code (no post-render `useEffect` window).
 - Added regression test for rerendered room code ensuring clipboard receives latest code immediately after room-code change.
+- Fixed StrictMode resilience in `useRoomCodeClipboard` by setting `isMountedRef.current = true` on effect setup and `false` on cleanup.
+- Added regression test mounting hook under `React.StrictMode` to verify copied-state updates still occur.
 
 ### File List
 
@@ -164,3 +166,4 @@ gpt-5 (Codex)
 - 2026-03-26: Re-ran `dev-story` for Story 2.5 and aligned implementation with updated AC by applying `caption` token styling to room label in the header.
 - 2026-03-26: Resolved review feedback for stale clipboard async race when `roomCode` changes before `setStringAsync` resolves; added regression test coverage.
 - 2026-03-26: Resolved review feedback for `roomCodeRef` timing window by synchronizing ref during render and extending hook tests for latest-code copy behavior after rerender.
+- 2026-03-27: Resolved StrictMode mount/cleanup remount issue by reinitializing `isMountedRef` in effect setup; added StrictMode regression test.

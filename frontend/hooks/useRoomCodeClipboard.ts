@@ -51,6 +51,7 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   }, [clearResetTimeout, roomCode]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
       clearResetTimeout();
