@@ -1057,6 +1057,7 @@ So that we can decide whether a release is shippable based on defined criteria i
 **Then** there is a documented checklist covering iOS, Android, and web core session flows
 **And** the checklist includes room, character, battle, log, and session-continuity validation
 **And** the checklist captures known failure categories and release blockers clearly enough for go/no-go decisions
+**And** the checklist includes the known WCAG AA contrast exception: `accent` (#D4C26E) on `surfaceWarm` (#8A6150) at ~4.2:1 (below 4.5:1), mitigated by bold weight, text shadow, and darkened background — requiring explicit sign-off before release
 
 ### Story 7.7: Supportability Signals & Failure Taxonomy `[TODO]`
 

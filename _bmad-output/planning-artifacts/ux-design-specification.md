@@ -317,7 +317,7 @@ Character Modal slides up (bottom sheet). Header shows character name. Controls:
 - Haptic pulse on every +/−
 - Save button becomes active once any change is made
 - Tap outside with no changes → dismiss cleanly
-- Tap outside with unsaved changes → lightweight "Discard changes?" prompt (not a blocking modal-on-modal)
+- Tap outside with unsaved changes → sheet dismisses, brief Undo toast appears at bottom (1500ms). Tap "Undo" to restore sheet state with changes preserved. Toast auto-expires silently if ignored.
 
 **4. Completion**
 User taps Save → modal closes → Room View reflects updated stats → border color flash fires on the updated character card across all connected devices (300ms, character's own color, via `react-native-reanimated`).
@@ -785,7 +785,7 @@ No third-party UI library — pure React Native StyleSheet throughout. `AppTheme
 - Haptic: `Light` impact on every tap
 - Display: current value between the two buttons, bold, `accent` color
 - Floor: 0 (value cannot go negative)
-- Ceiling: TBD — standard Munchkin caps Level at 10, Power at 9; enforce once confirmed by product
+- Ceiling: No ceiling besides practical limits (e.g. level 20, power 50) — no hardcoded max, but UX should prevent wild values
 
 **Picker inputs (class/race):**
 - Scroll-type picker, always shows current value
