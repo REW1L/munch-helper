@@ -61,13 +61,13 @@ Existing spacing tokens retained, one addition:
 | `xl` | 24pt |
 | `xxl` | 32pt *(new — modal horizontal padding)* |
 
-**Room View layout — compact 2-column grid:**
-- `FlatList` with `numColumns=2`, column count as named constant
-- Outer horizontal padding: `lg` (16pt) each side
-- Gutter between columns: `lg` (16pt)
+**Room View layout — single-column stacked list:**
+- `FlatList` in one-column mode (default `numColumns=1`)
+- Full-width cards for clearer scan/read order and reliable tap targets on small screens
+- Outer horizontal padding: `sm` (8pt) each side
+- Vertical rhythm between cards: `sm` (8pt) to keep the list compact without crowding
 - Card internal padding: `md` (12pt)
-- Grid math (375pt screen): 375 − 32 (outer) − 16 (gutter) = 327pt ÷ 2 ≈ **163pt per card** — SE-safe
-- Room code header: sticky `ListHeaderComponent` above `FlatList` — always visible, always copyable during scroll
+- Room code header: Screen title area, above character list — visible on all Room View states (empty, pre-game, in-game)
 
 **Character Modal layout:**
 - Bottom sheet, `elevated` background (`#4C4545`)
@@ -77,7 +77,7 @@ Existing spacing tokens retained, one addition:
 - Minimum touch target: 44×44pt on all interactive elements
 - Save button: full-width, `accent` background, pinned to bottom of sheet
 
-**Density principle:** Compact but complete — maximum useful information per screen, no stat omitted from cards, no scrolling required for ≤4 players.
+**Density principle:** Compact but complete — maximum useful information per screen, no stat omitted from cards, and predictable vertical scan order over grid density.
 
 ## 8.4 Accessibility Considerations
 
