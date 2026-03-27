@@ -1,6 +1,6 @@
 # Story 2.5: Room Code Copy-to-Clipboard via Header Button
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -149,13 +149,55 @@ gpt-5 (Codex)
 - Added regression test for rerendered room code ensuring clipboard receives latest code immediately after room-code change.
 - Fixed StrictMode resilience in `useRoomCodeClipboard` by setting `isMountedRef.current = true` on effect setup and `false` on cleanup.
 - Added regression test mounting hook under `React.StrictMode` to verify copied-state updates still occur.
+- Kept `useRoomCodeClipboard` accessibility label stable as `Copy room code [code]` during the temporary copied state to match AC1/AC3.
+- Added room-route integration coverage in `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` to verify the header title wiring, copy-button accessibility label, clipboard call, and 1500ms reset behavior.
+- Updated frontend Vitest resolution to map `react-native` to `react-native-web` so route-level jsdom tests can execute.
+- Re-ran validation after review fixes:
+- `cd frontend && npm run test` passed (11 files, 50 tests).
+- `cd frontend && npm run tsc -- --noEmit` passed.
+- Scoped the `react-native` -> `react-native-web` alias to a dedicated route-test Vitest config so the main frontend suite no longer rewrites `react-native` resolution globally.
+- Tightened frontend Vitest discovery to exclude `node_modules/**`, preventing dependency test suites from being executed by the app test command.
+- Re-ran validation after test-config follow-up:
+- `cd frontend && npm run test` passed (11 files, 50 tests across unit + route suites).
+- `cd frontend && npm run tsc -- --noEmit` passed.
+- Corrected sprint tracking metadata so `_bmad-output/implementation-artifacts/sprint-status.yaml` advances `last_updated` instead of regressing it during review follow-up edits.
+- Replaced the route-level header regression test's deprecated `react-test-renderer` usage with `@testing-library/react` while keeping the dedicated route-test Vitest config.
+- Removed the temporary `frontend/test/react-test-renderer.d.ts` shim because the route test no longer depends on `react-test-renderer`.
+- Re-ran validation after removing deprecated test infrastructure:
+- `cd frontend && npm run test` passed (11 files, 50 tests across unit + route suites).
+- `cd frontend && npm run tsc --noEmit` passed.
+- Updated repository and frontend README testing guidance so the split `test`, `test:unit`, `test:room-route`, and `test:watch` behavior matches the current frontend scripts.
+- Re-corrected `_bmad-output/implementation-artifacts/sprint-status.yaml` `last_updated` metadata to a monotonic review-follow-up timestamp after the prior follow-up edit regressed it.
+- Escaped literal bracket segments in room-route Vitest include/exclude patterns so `test:room-route` selects the intended file and unit/watch excludes remain reliable.
+- Corrected story artifact references so the documented route test path matches `frontend/__tests__/app/munchkin/[roomNumber].test.tsx`.
+- Generalized route-suite Vitest include/exclude patterns from a single hard-coded file to `frontend/__tests__/app/**/*.test.tsx` so future route tests are automatically covered by the dedicated suite.
+- Added route-level regression coverage for missing `roomNumber` params, asserting the header copy button is disabled and clipboard writes are not attempted.
+- Re-ran validation after review follow-up fixes:
+- `cd frontend && npm run test` passed (11 files, 51 tests across unit + route suites).
+- `cd frontend && npm run tsc -- --noEmit` passed.
+- Expanded route-suite Vitest globs to `frontend/__tests__/app/**/*.test.{ts,tsx}` so both `.test.ts` and `.test.tsx` route tests are covered consistently by route/unit/watch split configs.
+- Added empty-room-code accessibility fallback in `useRoomCodeClipboard` so the disabled copy control exposes `Copy room code` instead of a trailing empty-value label.
+- Added hook-level regression coverage for empty room-code accessibility label fallback.
+- Re-ran validation after follow-up accessibility + test-glob fixes:
+- `cd frontend && npm run test` passed (11 files, 52 tests across unit + route suites).
+- `cd frontend && npm run tsc -- --noEmit` passed.
+- Updated `frontend/package.json` `test:watch` route-test exclusion to use double-quoted glob syntax for better cross-shell portability.
+- Re-ran validation after test:watch quoting fix:
+- `cd frontend && npm run test` passed (11 files, 52 tests across unit + route suites).
+- `cd frontend && npm run tsc -- --noEmit` passed.
 
 ### File List
 
+- frontend/__tests__/app/munchkin/[roomNumber].test.tsx
 - frontend/app/munchkin/[roomNumber].tsx
 - frontend/constants/theme.ts
 - frontend/hooks/useRoomCodeClipboard.ts
 - frontend/hooks/useRoomCodeClipboard.test.ts
+- frontend/vitest.config.ts
+- frontend/vitest.room-route.config.ts
+- frontend/package.json
+- frontend/README.md
+- README.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
 - _bmad-output/implementation-artifacts/2-5-room-code-copy-to-clipboard-via-header-button.md
 
@@ -167,3 +209,13 @@ gpt-5 (Codex)
 - 2026-03-26: Resolved review feedback for stale clipboard async race when `roomCode` changes before `setStringAsync` resolves; added regression test coverage.
 - 2026-03-26: Resolved review feedback for `roomCodeRef` timing window by synchronizing ref during render and extending hook tests for latest-code copy behavior after rerender.
 - 2026-03-27: Resolved StrictMode mount/cleanup remount issue by reinitializing `isMountedRef` in effect setup; added StrictMode regression test.
+- 2026-03-27: Resolved review findings by fixing the copied-state accessibility label contract and adding route-level header integration coverage for `[roomNumber].tsx`.
+- 2026-03-27: Narrowed route-test `react-native` aliasing to a dedicated Vitest config and excluded `node_modules/**` from frontend test discovery so `npm run test` validates only project suites.
+- 2026-03-27: Corrected `sprint-status.yaml` metadata so `last_updated` reflects the latest review follow-up change instead of moving backward.
+- 2026-03-27: Replaced deprecated `react-test-renderer` usage in the route-level header regression test with `@testing-library/react` and removed the temporary shim file.
+- 2026-03-27: Updated frontend testing documentation for the split unit/route scripts and fixed the regressed `sprint-status.yaml` timestamp metadata.
+- 2026-03-27: Fixed room-route test glob escaping for literal bracket filenames and aligned story artifact test-path references with `frontend/__tests__/app/munchkin/[roomNumber].test.tsx`.
+- 2026-03-27: Generalized route-suite test globs to `frontend/__tests__/app/**/*.test.tsx` and added missing-room-code route regression coverage for disabled copy behavior.
+- 2026-03-27: Expanded route-suite globs to include `.test.ts` files and added empty-room-code accessibility label fallback with regression coverage.
+- 2026-03-27: Switched `test:watch` exclusion glob quoting to double quotes for cross-shell compatibility.
+- 2026-03-27: Story verified after repeated code-review passes with no actionable findings; status moved from `review` to `done`.

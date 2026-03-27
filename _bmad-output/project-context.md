@@ -44,6 +44,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Validate runtime configuration at startup and fail fast for invalid production API configuration; do not add silent production fallbacks.
 - Use TanStack Query for server-state concerns and keep query defaults aligned with existing app-level configuration unless there is a clear feature-specific reason.
 - Keep Expo Router conventions: route behavior is defined by file structure in app, and global providers stay in the root layout.
+- When using Expo Router, keep `frontend/app` route-only: every file under `frontend/app` must be a route or layout file, never a test file.
 - Preserve React hook discipline: only call hooks at top level, keep dependency arrays explicit, and avoid creating hidden side effects in render paths.
 - For backend services, keep Express app construction separated from process bootstrap to preserve testability and Lambda/server entrypoint reuse.
 - Preserve existing route-prefix/stage handling patterns used for Lambda compatibility; avoid hardcoding environment-specific paths in handlers.
@@ -52,7 +53,8 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Do not bypass existing WebSocket/event flow contracts when adding real-time features; publish/propagate through established notifications patterns.
 
 ### Testing Rules
-- Keep test files colocated with source using *.test.ts / *.test.tsx naming to match current include patterns.
+- Keep test files using `*.test.ts` / `*.test.tsx` naming to match current include patterns.
+- Do not place tests inside `frontend/app` when using Expo Router; put tests for files in `frontend/app` under `frontend/__tests__` instead.
 - Backend tests run in Node environment; frontend tests run in jsdom. Do not mix environment assumptions between suites.
 - Preserve coverage provider/reporters: v8 with text, html, and json-summary outputs.
 - Maintain the 70% line coverage threshold baseline; do not reduce thresholds without explicit approval.

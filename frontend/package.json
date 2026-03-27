@@ -11,9 +11,11 @@
     "export:web": "expo export --platform web",
     "lint": "expo lint",
     "tsc": "tsc --noEmit",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test": "npm run test:unit && npm run test:room-route",
+    "test:unit": "vitest run",
+    "test:room-route": "vitest run -c vitest.room-route.config.ts",
+    "test:coverage": "vitest run --coverage && npm run test:room-route",
+    "test:watch": "vitest --exclude \"__tests__/app/**/*.test.{ts,tsx}\""
   },
   "dependencies": {
     "@expo/ui": "~55.0.0",

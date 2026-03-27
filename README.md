@@ -287,9 +287,10 @@ npm run test:watch   # Watch mode
 ## Frontend
 ```bash
 cd frontend
-npm test              # Run all tests
-npm run test:coverage # Run tests with coverage and enforce >=70% line threshold
-npm run test:watch   # Watch mode
+npm test                # Run unit + dedicated room-route suites
+npm run test:coverage   # Run coverage for the unit suite, then the room-route suite
+npm run test:watch      # Watch the unit suite only
+npm run test:room-route # Run the dedicated Expo Router room-route suite
 ```
 
 **Current Coverage (2026-03-13)**
