@@ -1,6 +1,6 @@
 # Story 1.1: Landing Screen
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,20 +20,20 @@ so that I immediately understand the app's purpose and know how to proceed.
 
 ## Tasks / Subtasks
 
-- [ ] Implement store links on landing screen (AC: 3, 4)
-- [ ] Add iOS App Store link action in `frontend/app/index.tsx` using `Linking.openURL(...)` and URL `https://apps.apple.com/us/app/munch-helper/id6760627502`.
-- [ ] Render Google Play store link UI in `frontend/app/index.tsx` as disabled/non-interactive for now with a visible `soon` label.
-- [ ] Keep existing Privacy and Support actions unchanged and still accessible (AC: 2).
-- [ ] Place App Store and Google Play links at the bottom area of the landing screen (AC: 3, 4).
-- [ ] Render App Store and Google Play links with standard store-link presentation (AC: 3, 4).
-- [ ] Preserve current Rooms button behavior and route to `/rooms` (AC: 1, 5).
-- [ ] Decide stable source for store URLs (constant in file or config module) and avoid duplicated literals (AC: 2).
-- [ ] Add/extend tests for landing screen interactions (AC: 1, 2, 3, 4, 5)
-- [ ] Add a UI test that verifies landing screen renders title/description/Rooms.
-- [ ] Add a UI test that verifies Privacy and Support actions are present and tappable.
-- [ ] Add a UI test that verifies App Store link is present at the bottom and opens the configured iOS URL.
-- [ ] Add a UI test that verifies Google Play link is present at the bottom with disabled behavior (no navigation / openURL call) and visible `soon` label text.
-- [ ] Add a UI test that verifies tapping Rooms navigates to `/rooms`.
+- [x] Implement store links on landing screen (AC: 3, 4)
+- [x] Add iOS App Store link action in `frontend/app/index.tsx` using `Linking.openURL(...)` and URL `https://apps.apple.com/us/app/munch-helper/id6760627502`.
+- [x] Render Google Play store link UI in `frontend/app/index.tsx` as disabled/non-interactive for now with a visible `soon` label.
+- [x] Keep existing Privacy and Support actions unchanged and still accessible (AC: 2).
+- [x] Place App Store and Google Play links at the bottom area of the landing screen (AC: 3, 4).
+- [x] Render App Store and Google Play links with standard store-link presentation (AC: 3, 4).
+- [x] Preserve current Rooms button behavior and route to `/rooms` (AC: 1, 5).
+- [x] Decide stable source for store URLs (constant in file or config module) and avoid duplicated literals (AC: 2).
+- [x] Add/extend tests for landing screen interactions (AC: 1, 2, 3, 4, 5)
+- [x] Add a UI test that verifies landing screen renders title/description/Rooms.
+- [x] Add a UI test that verifies Privacy and Support actions are present and tappable.
+- [x] Add a UI test that verifies App Store link is present at the bottom and opens the configured iOS URL.
+- [x] Add a UI test that verifies Google Play link is present at the bottom with disabled behavior (no navigation / openURL call) and visible `soon` label text.
+- [x] Add a UI test that verifies tapping Rooms navigates to `/rooms`.
 
 ## Dev Notes
 
@@ -111,7 +111,20 @@ gpt-5
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
 - Story status set to `ready-for-dev` for implementation handoff.
+- Implemented bottom-positioned App Store and disabled Google Play store links on landing screen with stable URL constant usage and preserved Rooms/Privacy/Support behaviors.
+- Added guarded App Store open flow using `Linking.canOpenURL` + `Linking.openURL` with graceful failure handling.
+- Added landing route test coverage for content render, Privacy/Support navigation, App Store open behavior, disabled Google Play state with visible `soon` label, and Rooms navigation.
+- Validation run results: `npm run test:room-route` (pass), `npm test` (pass), `npm run lint` (pass with pre-existing warnings outside story scope).
 
 ### File List
 
 - _bmad-output/implementation-artifacts/1-1-landing-screen.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- frontend/app/index.tsx
+- frontend/__tests__/app/index.test.tsx
+- frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg
+- frontend/assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg
+
+### Change Log
+
+- 2026-03-27: Implemented Story 1.1 landing-store-link scope and moved story status to `review`.

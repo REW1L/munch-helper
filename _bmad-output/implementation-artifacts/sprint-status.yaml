@@ -35,15 +35,15 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T17:42:48Z
-last_updated: 2026-03-27T12:37:03Z
+last_updated: 2026-03-27T13:54:36Z
 project: munch-helper
 project_key: NOKEY
 tracking_system: file-system
 story_location: /Users/rew1l/own/munch-helper/_bmad-output/implementation-artifacts
 
 development_status:
-  epic-1: in-progress
-  1-1-landing-screen: ready-for-dev
+  epic-1: done
+  1-1-landing-screen: done
   1-2-automatic-player-identity-creation: done
   1-3-optional-player-profile-update: done
   epic-1-retrospective: optional
