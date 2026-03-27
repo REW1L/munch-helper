@@ -2,7 +2,7 @@
 
 Players can enter the app without an account, establish a persistent player identity with a random name and avatar, and optionally update their profile at any time.
 
-## Story 1.1: Landing Screen `[TODO]`
+## Story 1.1: Landing Screen `[DONE]`
 
 As a new or returning user,
 I want to land on a screen that clearly explains what Munch Helper is and gives me a single button to enter the app,
@@ -17,6 +17,12 @@ So that I immediately understand the app's purpose and know how to proceed.
 **And** an App Store (iOS) link is accessible at the bottom of the landing screen, appears as a standard store link, and opens `https://apps.apple.com/us/app/munch-helper/id6760627502`
 **And** a Google Play (Android) link is visible at the bottom of the landing screen as a standard store link style, is disabled for now, and includes a visible `soon` label
 **And** tapping "Rooms" navigates me to the rooms view
+
+**Implementation Sync (2026-03-27):**
+- Store links implemented with official App Store and Google Play badge assets.
+- App Store and Google Play badges are rendered on the same bottom row, with no extra button chrome around the images.
+- Google Play remains disabled and shows `soon` above the badge.
+- Badge sizing is fixed (non-responsive) with a 40px minimum/actual height, per implementation constraints.
 
 ## Story 1.2: Automatic Player Identity Creation `[DONE]`
 

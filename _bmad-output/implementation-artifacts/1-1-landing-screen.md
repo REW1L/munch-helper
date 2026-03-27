@@ -115,6 +115,7 @@ gpt-5
 - Added guarded App Store open flow using `Linking.canOpenURL` + `Linking.openURL` with graceful failure handling.
 - Added landing route test coverage for content render, Privacy/Support navigation, App Store open behavior, disabled Google Play state with visible `soon` label, and Rooms navigation.
 - Validation run results: `npm run test:room-route` (pass), `npm test` (pass), `npm run lint` (pass with pre-existing warnings outside story scope).
+- Incorporated implementation refinements from user feedback: switched to provided store badge SVG assets, removed extra button chrome, aligned both badges on the same horizontal level, positioned `soon` above Google Play, tightened inter-badge spacing, and enforced fixed non-responsive badge sizing with 40px minimum/actual height.
 
 ### File List
 
@@ -128,3 +129,4 @@ gpt-5
 ### Change Log
 
 - 2026-03-27: Implemented Story 1.1 landing-store-link scope and moved story status to `review`.
+- 2026-03-27: Applied user-requested UX refinements for badge assets/layout/spacing and finalized story + epic status as `done`.
