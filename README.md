@@ -1,219 +1,132 @@
 # Munch Helper
 
-A mobile application for managing and tracking board games with multiple players. Currently focused on **Munchkin**, enabling real-time character management with level counter and stats tracking, and game state synchronization across Web, iOS and Android devices.
+Munch Helper is a digital companion for tabletop games, currently focused on Munchkin. It provides shared room state, character tracking, and real-time updates across web and mobile clients.
 
-**Live**: [helpamunch.click](https://helpamunch.click)
+Live app: https://helpamunch.click
 
-# Overview
+[![Download on the App Store](frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg)](https://apps.apple.com/us/app/munch-helper/id6760627502)
 
-**Munch Helper** solves key problems in multiplayer board gaming:
-- 👥 **Visibility**: Multiple players at a table can't easily see what others have in play
-- 🧮 **Complexity**: Complex card interactions and score calculations complicate gameplay
-- 📊 **Tracking**: Manual tracking of character stats, levels, and game events is error-prone
+## Repository Structure
 
-The app provides a digital companion for board games, particularly Munchkin, that streamlines gameplay while keeping the physical game intact.
-
-# Project Goals
-
-- Improve the player experience with digital support for multiplayer board games
-- Create a mobile application (iOS and Android) for managing and tracking gameplay
-- Build a scalable, cloud-native backend with clear service boundaries
-- Deliver a highly testable codebase (>70% coverage) with automated testing
-
-# Project Structure
-
-```
+```text
 munch-helper/
-├── backend/                 # Microservices backend (Express.js + Lambda)
-│   ├── gateway/            # API Gateway service
-│   ├── user-service/       # User management and authentication
-│   ├── room-service/       # Room and game session management
-│   ├── character-service/  # Character data and game state
-│   ├── sam/                # AWS SAM templates for Lambda deployment
-│   └── scripts/            # Docker Compose startup scripts
-├── frontend/               # Native mobile app (Expo Router + React Native)
-│   ├── app/                # Route definitions and screens
-│   ├── api/                # Typed HTTP client modules
-│   ├── hooks/              # Feature-oriented composable logic
-│   ├── components/         # Reusable UI components
-│   ├── context/            # Global app state (user profile)
-│   └── ios/, android/      # Platform-specific native code
-├── infrastructure/         # Infrastructure as Code (Pulumi + AWS)
-│   └── Frontend deployment configuration
-└── docs/                   # Architecture and design documentation
-    ├── descriptions/       # Feature specifications
-    └── openapi/           # API specifications
+├── backend/         # Node.js microservices + Docker local stack + AWS SAM
+├── frontend/        # Expo Router app (iOS, Android, Web)
+├── infrastructure/  # Pulumi stack for frontend hosting (S3 + CloudFront)
+├── docs/            # Architecture, API contracts, OpenAPI spec
+├── scripts/         # Workspace-level utility scripts
+└── README.md
 ```
 
-# Technology Stack
+## What Is Implemented
 
-## Backend
-- **Runtime**: Node.js 20+
-- **Framework**: Express.js
-- **Serverless**: AWS Lambda with API Gateway
-- **Container**: Docker (local development) and AWS SAM
-- **Database**: MongoDB
-- **Messaging**: AWS SNS (production), Redis Pub/Sub (local)
-- **WebSocket**: AWS API Gateway WebSocket API (production), custom Socket server (local)
-- **Edge Layer**: Nginx (local), AWS API Gateway HTTP + WebSocket APIs (production)
-- **Testing**: Vitest
+- User management: create, read, and update users
+- Room management: create room and join room
+- Character management: list, create, update, and delete characters
+- Real-time room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`)
+- Frontend app routes for onboarding, room flow, and Munchkin gameplay screens
+- Frontend web export and infrastructure deployment
 
-## Frontend
-- **Framework**: Expo Router (React Native)
-- **Language**: TypeScript
-- **State Management**: React Context + custom hooks
-- **Platforms**: iOS and Android (native targets), Web (web export)
-- **Testing**: Vitest
-- **Linting**: ESLint
+Not implemented yet:
 
-## Infrastructure
-- **IaC**: Pulumi (TypeScript)
-- **Cloud Provider**: AWS
-- **CDN**: CloudFront
-- **Storage**: S3 (artifact hosting)
+- Battle system and room history features
 
-# Core Features
+## Tech Stack
 
-## User Management
-- Anonymous player access with limited game creation
-- User registration for persistent profiles
-- Avatar selection for character customization
+- Backend: Node.js, TypeScript, Express, MongoDB, Redis, Docker, AWS Lambda/SAM
+- Frontend: Expo Router, React Native, TypeScript, Vitest
+- Infrastructure: Pulumi (TypeScript), AWS S3, CloudFront
 
-## Room Management (Game Sessions)
-- Create and join multiplayer game rooms
-- Different room types (extensible design)
-- Real-time player synchronization
+## Quick Start
 
-## Character Management
-- Create and manage player characters
-- Track character stats (level, power, class, race, gender)
-- Character ownership per player
-- Real-time updates across all players in a room
-
-## Real-time Synchronization
-- WebSocket-based room notifications via `room-notifications-service`
-- Event-driven pipeline: character mutations → Redis/SNS → room-notifications-service → WebSocket broadcast
-- Frontend `RoomWebSocketClient` with auto-reconnection (exponential backoff) and heartbeat
-- Cross-device synchronization (~100ms latency)
-
-## Battle System (NOT IMPLEMENTED YET)
-- Real-time battle state management
-- Card and buff tracking
-- Event logging for game history
-
-# Getting Started
-
-## Prerequisites
-
-### All Platforms
-- Node.js 20+ (backend) / Node.js 24+ (frontend)
-- npm 10+
-
-### Backend
-- Docker
-- AWS SAM CLI (optional, for Lambda deployment)
-
-### Frontend
-- Xcode 15+ (for iOS development)
-- Android Studio (for Android development)
-
-## Backend Development
-
-1. **Start local services**:
-   ```bash
-   cd backend
-   ./scripts/dev-up.sh
-   ```
-   This starts:
-   - Nginx edge layer (routes HTTP + WebSocket traffic)
-   - MongoDB instances (one per service: ports 27021–27023)
-   - Redis (for pub/sub between character-service and room-notifications-service)
-   - All four microservices
-
-   Nginx gateway runs on `http://localhost:8080`
-   - User service: `http://localhost:8082`
-   - Room service: `http://localhost:8083`
-   - Character service: `http://localhost:8084`
-   - Room notifications (WebSocket): `ws://localhost:8085`
-
-2. **Run tests**:
-   ```bash
-   cd backend
-   npm test
-   ```
-
-3. **Stop services**:
-   ```bash
-   ./scripts/dev-down.sh
-   ```
-
-## Frontend Development
-
-1. **Install dependencies**:
-   ```bash
-   cd frontend
-   npm ci
-   ```
-
-2. **Configure environment**:
-   ```bash
-   # Create .env file
-   echo "EXPO_PUBLIC_API_URL=http://localhost:8080" > .env
-   ```
-
-3. **Start development server**:
-   ```bash
-   npm run start
-   ```
-
-4. **Run on iOS/Android**:
-   ```bash
-   npm run ios    # Requires Xcode + iOS simulator
-   npm run android # Requires Android SDK + emulator
-   ```
-
-5. **Quality gates before PR**:
-   ```bash
-   npm run lint
-   npm run tsc
-   npm run test
-   ```
-
-## Backend as AWS Lambda
-
-The backend services support deployment to AWS Lambda with API Gateway:
+### 1. Backend (local microservices)
 
 ```bash
 cd backend
+cp .env.example .env
+./scripts/dev-up.sh
+```
 
-# Build Lambda artifacts
+Local endpoints:
+
+- Gateway: `http://localhost:8080`
+- User service: `http://localhost:8082`
+- Room service: `http://localhost:8083`
+- Character service: `http://localhost:8084`
+- Room notifications service: `ws://localhost:8085`
+- Proxied room notifications: `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`
+
+Stop services:
+
+```bash
+cd backend
+./scripts/dev-down.sh
+```
+
+### 2. Frontend
+
+```bash
+cd frontend
+npm ci
+echo "EXPO_PUBLIC_API_URL=http://localhost:8080" > .env
+npm run start
+```
+
+Run native targets:
+
+```bash
+npm run ios
+npm run android
+```
+
+## Testing
+
+Workspace coverage:
+
+```bash
+npm run coverage
+```
+
+Backend:
+
+```bash
+cd backend
+npm test
+npm run test:coverage
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run tsc
+npm run test
+npm run test:coverage
+```
+
+## AWS SAM (backend)
+
+From `backend/`:
+
+```bash
 npm run sam:build
-
-# Test locally
 npm run sam:local:api
-
-# Deploy to AWS
 npm run sam:deploy
 ```
 
-See [backend/README.md](backend/README.md) for detailed SAM configuration.
+See `backend/README.md` for details.
 
-## Frontend Web Deployment
+## Web Export and Infrastructure Deploy
 
-Export frontend as web artifacts for static hosting:
+Build frontend web artifacts:
 
 ```bash
 cd frontend
 EXPO_PUBLIC_API_URL=https://your-api-domain npm run export:web
 ```
 
-Artifacts are written to `frontend/dist` and ready for infrastructure deployment.
-
-# Deployment
-
-## Infrastructure (AWS)
-
-Frontend is deployed using Pulumi infrastructure as code:
+Deploy infrastructure:
 
 ```bash
 cd infrastructure
@@ -224,186 +137,52 @@ pulumi config set munch-helper-frontend:artifactDir ../frontend/dist
 pulumi up
 ```
 
-This deploys:
-- Private S3 bucket for artifacts
-- CloudFront distribution (CDN)
-- Origin Access Control for security
-- SPA routing (404/403 → `/index.html`)
+See `infrastructure/README.md` for details.
 
-See [infrastructure/README.md](infrastructure/README.md) for full details.
+## BMAD Docs and Workflow
 
-## Backend Deployment
+This repository is BMAD-enabled. Use these folders as your working map:
 
-Deploy backend services to AWS Lambda:
+- `_bmad/`: BMAD framework config, manifests, agent/workflow definitions
+- `_bmad-output/`: generated BMAD outputs (project context, planning, implementation)
+- Official BMAD docs (setup and workflow reference): `https://docs.bmad-method.org/`
 
-```bash
-cd backend
-npm run sam:build
-npm run sam:deploy
-```
+Primary artifact locations in this repo:
 
-Configure via `sam/samconfig.toml` or environment variables.
+- Project context: `_bmad-output/project-context.md`
+- Planning artifacts: `_bmad-output/planning-artifacts/`
+- Implementation artifacts: `_bmad-output/implementation-artifacts/`
+- Current sprint plan/status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- Project knowledge (for grounding): `docs/`
 
-# API Specification
+Recommended full BMAD flow (for new or major work):
 
-The complete OpenAPI specification is in [docs/openapi/openapi.yaml](docs/openapi/openapi.yaml).
+1. Generate/refresh context: `bmad-bmm-generate-project-context`
+2. Plan: `bmad-bmm-create-prd` -> `bmad-bmm-create-ux-design` (if UI changes) -> `bmad-bmm-create-architecture` -> `bmad-bmm-create-epics-and-stories`
+3. Readiness check: `bmad-bmm-check-implementation-readiness`
+4. Build cycle: `bmad-bmm-sprint-planning` -> `bmad-bmm-create-story` -> `bmad-bmm-dev-story` -> `bmad-bmm-code-review`
+5. Optional quality/support: `bmad-bmm-qa-automate`, `bmad-bmm-sprint-status`, `bmad-bmm-retrospective`
 
-## Main Endpoints
+Quick path (for small scoped changes):
 
-**User Management**
-- `POST /users` - Create new user
-- `GET /users/:userId` - Get user profile
-- `PATCH /users/:userId` - Update user profile
+1. `bmad-bmm-quick-spec`
+2. `bmad-bmm-quick-dev` or `bmad-bmm-quick-dev-new-preview`
 
-**Room Management**
-- `POST /rooms` - Create new game room
-- `POST /rooms/associations` - Join existing room
+How to keep BMAD artifacts useful:
 
-**Room Notifications (WebSocket)**
-- Connect to room-notifications WebSocket endpoint with `roomId` query parameter to receive real-time character events
+1. Treat `_bmad-output/*` as the source of truth for planning and execution state.
+2. Update affected artifacts when scope or implementation changes.
+3. Keep `docs/` aligned with shipped architecture/runtime behavior so future BMAD runs stay grounded.
 
-**Character Management**
-- `GET /characters?roomId=...` - List characters in a room
-- `POST /characters` - Create character
-- `PATCH /characters/:characterId` - Update character
-- `DELETE /characters/:characterId` - Delete character
+## Documentation
 
-# Testing
+- Project docs index: `docs/index.md`
+- Backend docs: `backend/README.md`
+- Frontend docs: `frontend/README.md`
+- Infrastructure docs: `infrastructure/README.md`
+- BMAD framework/config: `_bmad/`
+- BMAD generated outputs: `_bmad-output/`
 
-## Workspace Coverage
-```bash
-# Run both frontend and backend coverage from repository root
-npm run coverage
-```
+## License
 
-## Backend
-```bash
-cd backend
-npm test              # Run all tests
-npm run test:coverage # Run tests with coverage and enforce >=70% line threshold
-npm run test:watch   # Watch mode
-```
-
-## Frontend
-```bash
-cd frontend
-npm test                # Run unit + dedicated room-route suites
-npm run test:coverage   # Run coverage for the unit suite, then the room-route suite
-npm run test:watch      # Watch the unit suite only
-npm run test:room-route # Run the dedicated Expo Router room-route suite
-```
-
-**Current Coverage (2026-03-13)**
-- Frontend line coverage: **75.31%**
-- Backend line coverage: **78.77%**
-- Backend service area line coverage:
-   - character-service: **76.4%**
-   - room-notifications-service: **78.81%**
-   - room-service: **80.6%**
-   - user-service: **82.5%**
-
-Coverage target status: **Met** (>=70% line coverage for frontend overall, backend overall, and each backend service area).
-**Testing Strategy**: Unit tests for critical paths (HTTP transport, retry logic, cancellation, WebSocket client); hook tests for feature orchestration (useCharacters, useRoomWebSocket)
-
-# Architecture
-
-## Microservices Pattern
-
-The backend uses a clear separation of concerns:
-
-- **Nginx (local) / API Gateway (AWS)**: Single entry point, HTTP + WebSocket routing
-- **User Service**: User profiles and auth
-- **Room Service**: Game session management
-- **Character Service**: Character creation, updates, game state, and event publishing
-- **Room Notifications Service**: WebSocket connection management and real-time broadcast
-
-Communication patterns:
-- HTTP for REST endpoints
-- Service-to-service HTTP calls (room → character)
-- WebSocket for real-time room notifications (AWS API Gateway WebSocket API / local Socket server)
-- Async event publishing via SNS (production) or Redis Pub/Sub (local) from character-service to room-notifications-service
-
-## Frontend Architecture
-
-Layered architecture with clear dependencies:
-
-1. **Transport Layer** (`api/*`): Typed HTTP clients per domain + `RoomWebSocketClient` for real-time events
-2. **Feature Layer** (`hooks/*`): Composable orchestration hooks including `useRoomWebSocket` and `useCharacters`
-3. **State Layer** (`context/*`): Global app state (user profile)
-4. **Route Layer** (`app/*`): Expo Router screen definitions
-5. **Component Layer** (`components/*`): Reusable UI building blocks
-
-# Database Schema
-
-```
-USER (1) ──── (N) CHARACTER
-ROOM_TYPE (1) ──── (N) ROOM
-ROOM (1) ──── (N) CHARACTER
-```
-
-**Tables**:
-- `users`: Player profiles (name, avatar, timestamps)
-- `room_types`: Game type definitions (Munchkin, extensible)
-- `rooms`: Game sessions (type, creation time)
-- `characters`: Player characters in rooms (stats, associations)
-
-# Documentation
-
-- **Architecture**: [docs/descriptions/MunchHelper.md](docs/descriptions/MunchHelper.md)
-- **Backend Services**: [docs/descriptions/MunchHelper/Backend Services.md](docs/descriptions/MunchHelper/Backend%20Services.md)
-- **Frontend Design**: [docs/descriptions/MunchHelper/Frontend.md](docs/descriptions/MunchHelper/Frontend.md)
-- **API Spec**: [docs/openapi/openapi.yaml](docs/openapi/openapi.yaml)
-- **Backend Details**: [backend/README.md](backend/README.md)
-- **Frontend Details**: [frontend/README.md](frontend/README.md)
-- **Infrastructure Details**: [infrastructure/README.md](infrastructure/README.md)
-
-# Contributing
-
-1. Run quality gates before opening a PR:
-   ```bash
-   npm run lint
-   npm run tsc
-   npm run test
-   ```
-
-2. Ensure test coverage in new features
-3. Follow existing code structure and patterns
-4. Update relevant documentation in `docs/`
-
-# License
-
-GNU General Public License v3.0 — see the [LICENSE](LICENSE) file for details.
-
-# Current Status
-
-**Phase**: MVP Development
-- Core backend services: ✅ Complete
-- Room Notifications Service: ✅ Complete (Redis/SNS → WebSocket broadcast)
-- WebSocket integration: ✅ Complete (frontend client + backend Lambda + API Gateway)
-- Frontend screens: ✅ In progress
-- Production deployment: ✅ Live at [helpamunch.click](https://helpamunch.click)
-- Battle system: ⏳ Not yet implemented
-- App store submissions: ⏳ Pending feature completion
-
-# Get Started
-
-```bash
-# Clone repository
-git clone <repo-url>
-cd munch-helper
-
-# Backend development
-cd backend && ./scripts/dev-up.sh
-
-# Frontend development (in another terminal)
-cd frontend && npm ci && npm run start
-
-# Open http://localhost:8080 for the API (Nginx gateway)
-# WebSocket connections via ws://localhost:8080/ws
-# and use `npm run ios` or `npm run android` for mobile
-```
-
-For detailed setup instructions, see:
-- [backend/README.md](backend/README.md)
-- [frontend/README.md](frontend/README.md)
-- [infrastructure/README.md](infrastructure/README.md)
+GNU General Public License v3.0. See `LICENSE`.
