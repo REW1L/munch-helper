@@ -76,12 +76,19 @@ npm run test
 
 CI (`.github/workflows/frontend-infra-cd.yml`) enforces the same checks before web artifact export.
 
+`npm run test` executes both the unit suite and the dedicated Expo Router room-route suite.
+
 ## Testing Strategy
 
+- `npm run test:unit` runs the main frontend unit and hook suites.
+- `npm run test:room-route` runs the dedicated Expo Router route test for `__tests__/app/munchkin/[roomNumber].test.tsx`.
+- `npm run test:watch` watches the unit suite only; rerun `npm run test:room-route` after route-level changes.
 - Unit tests cover transport/resilience behavior in `api/http.test.ts`.
 - Add hook tests next for:
   - `hooks/useUser.ts`
   - `hooks/useCharacters.ts`
+- For Expo Router, keep `app/*` route-only. Do not place test files inside `frontend/app`.
+- Put tests for files in `frontend/app` under `frontend/__tests__`.
 
 Focus on cancellation, retry behavior, and stale response protection.
 

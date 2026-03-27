@@ -58,6 +58,7 @@ describe('useRoomCodeClipboard', () => {
 
     expect(mockSetStringAsync).toHaveBeenCalledWith('ROOM42');
     expect(result.current.buttonLabel).toBe('Copied ✓');
+    expect(result.current.accessibilityLabel).toBe('Copy room code ROOM42');
 
     act(() => {
       vi.advanceTimersByTime(COPIED_LABEL_RESET_MS);
@@ -70,6 +71,12 @@ describe('useRoomCodeClipboard', () => {
     const { result } = renderHook(() => useRoomCodeClipboard('ABCD12'));
 
     expect(result.current.accessibilityLabel).toBe('Copy room code ABCD12');
+  });
+
+  it('uses fallback accessibility label when room code is empty', () => {
+    const { result } = renderHook(() => useRoomCodeClipboard(''));
+
+    expect(result.current.accessibilityLabel).toBe('Copy room code');
   });
 
   it('cleans up reset timer on unmount', async () => {

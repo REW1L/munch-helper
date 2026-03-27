@@ -60,9 +60,7 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
 
   return {
     buttonLabel: isCopied ? 'Copied ✓' : 'Copy',
-    accessibilityLabel: isCopied
-      ? `Copied room code ${roomCode}`
-      : `Copy room code ${roomCode}`,
+    accessibilityLabel: roomCode.length > 0 ? `Copy room code ${roomCode}` : 'Copy room code',
     copyRoomCode,
   };
 }
