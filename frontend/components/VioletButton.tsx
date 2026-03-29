@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { AppTheme } from '@/constants/theme';
 
 type VioletButtonProps = {
   title: string;
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
   violetButton: {
     paddingHorizontal: 10,
     paddingVertical: 10,
-    backgroundColor: '#6E6BD4',
+    backgroundColor: AppTheme.colors.actionSecondary,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',

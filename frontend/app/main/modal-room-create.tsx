@@ -1,4 +1,5 @@
 import React from 'react';
+import { AppTheme } from '@/constants/theme';
 import {
   Modal,
   StyleSheet,
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     alignSelf: 'stretch',
-    backgroundColor: '#A67560',
+    backgroundColor: AppTheme.colors.surfaceWarm,
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'flex-start',

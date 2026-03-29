@@ -1,6 +1,7 @@
 import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
+import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
     height: 85,
     paddingHorizontal: 5,
     paddingVertical: 5,
-    backgroundColor: '#544C4C',
+    backgroundColor: AppTheme.colors.elevated,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

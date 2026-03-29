@@ -1,4 +1,5 @@
 import avatars from '@/constants/avatars';
+import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    backgroundColor: '#A67560',
+    backgroundColor: AppTheme.colors.surfaceWarm,
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 10,

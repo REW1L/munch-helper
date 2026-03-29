@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppTheme } from '@/constants/theme';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface ModalRoomJoinProps {
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   },
   formSection: {
     paddingTop: 10,
-    backgroundColor: '#A67560',
+    backgroundColor: AppTheme.colors.surfaceWarm,
     borderRadius: 5,
     gap: 5,
     paddingHorizontal: 10,
