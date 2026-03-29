@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T17:42:48Z
-last_updated: 2026-03-29T13:28:30
+last_updated: 2026-03-29T10:46:27Z
 project: munch-helper
 project_key: NOKEY
 tracking_system: file-system
@@ -58,7 +58,7 @@ development_status:
 
   epic-3: in-progress
   3-1-apptheme-token-migration: done
-  3-2-room-view-routing-migration: backlog
+  3-2-room-view-routing-migration: done
   3-3-automatic-character-creation-on-room-join: done
   3-4-character-details-view: done
   3-5-room-character-list: done

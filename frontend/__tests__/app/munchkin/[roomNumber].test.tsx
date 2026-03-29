@@ -76,7 +76,7 @@ describe('Munchkin room header', () => {
   });
 
   it('keeps the header copy accessibility label stable and resets copied label after 1500ms', async () => {
-    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]');
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
 
     await act(async () => {
       render(
@@ -128,7 +128,7 @@ describe('Munchkin room header', () => {
 
   it('disables copy button when route roomNumber is missing', async () => {
     mockRoomNumber.current = undefined;
-    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]');
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
 
     await act(async () => {
       render(
