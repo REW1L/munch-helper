@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   logButton: {
     paddingHorizontal: 21,
     paddingVertical: 7,
-    backgroundColor: '#353535',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',

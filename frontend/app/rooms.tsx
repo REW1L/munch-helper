@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { AppTheme } from '@/constants/theme';
 import { useContext, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -222,7 +223,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
     paddingVertical: 5,
-    backgroundColor: '#544C4C',
+    backgroundColor: AppTheme.colors.elevated,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',

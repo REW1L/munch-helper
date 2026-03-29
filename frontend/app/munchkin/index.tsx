@@ -3,6 +3,7 @@ import { useRoomCreate, useRoomJoin } from '@/hooks/UseRoom';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
+import { AppTheme } from '@/constants/theme';
 
 const MunchkinIndexView: React.FC = () => {
   const router = useRouter();
@@ -67,7 +68,7 @@ const MunchkinIndexView: React.FC = () => {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4C4545' }}>
-      <ActivityIndicator size="large" color="#6E6BD4" />
+      <ActivityIndicator size="large" color={AppTheme.colors.actionSecondary} />
       <Text style={{ marginTop: 10, color: '#FFFFFF', fontSize: 16 }}>
         {isLoading ? 'Loading game room...' : errorMessage || 'Unable to connect to room service'}
       </Text>

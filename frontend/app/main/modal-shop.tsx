@@ -1,4 +1,5 @@
 import VioletButton from '@/components/VioletButton';
+import { AppTheme } from '@/constants/theme';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShopModalProps {
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     width: 250,
     minWidth: 250,
     padding: 5,
-    backgroundColor: '#544C4C',
+    backgroundColor: AppTheme.colors.elevated,
     borderRadius: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',

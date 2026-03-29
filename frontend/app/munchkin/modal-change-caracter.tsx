@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { AppTheme } from '@/constants/theme';
 import React, { useState } from 'react';
 import {
   Modal,
@@ -384,7 +385,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    backgroundColor: '#A67560',
+    backgroundColor: AppTheme.colors.surfaceWarm,
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 10,

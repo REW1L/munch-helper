@@ -38,7 +38,11 @@ export const AppTheme = {
     accent: '#D4C26E',
     textPrimary: '#FFFFFF',
     textMuted: '#D9D9D9',
+    textAccentSoft: '#E8D89A',
     danger: '#922525',
+    actionSecondary: '#6E6BD4',
+    surfaceWarm: '#A67560',
+    surfaceSubtle: '#353535',
   },
   spacing: {
     xs: 4,
