@@ -7,10 +7,10 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useContext, useMemo, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import CurrentCharacterFooter from '../../components/munchkin/CurrentCharacterFooter';
-import RoomCharactersList from '../../components/munchkin/RoomCharactersList';
-import ChangeCharacterModal from './modal-change-caracter';
-import CreateCharacterModal from './modal-create-character';
+import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
+import RoomCharactersList from '../../../components/munchkin/RoomCharactersList';
+import ChangeCharacterModal from '../modal-change-caracter';
+import CreateCharacterModal from '../modal-create-character';
 
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
