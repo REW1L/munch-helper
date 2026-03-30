@@ -41,7 +41,7 @@ export const AppTheme = {
     textAccentSoft: '#E8D89A',
     danger: '#922525',
     actionSecondary: '#6E6BD4',
-    surfaceWarm: '#A67560',
+    surfaceWarm: '#8A6150',
     surfaceSubtle: '#353535',
   },
   spacing: {
