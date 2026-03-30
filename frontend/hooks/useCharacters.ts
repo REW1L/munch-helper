@@ -22,6 +22,7 @@ interface UseRoomCharactersResult {
 }
 
 const ENSURE_CHARACTER_COOLDOWN_MS = 5000;
+const LOCAL_UPDATE_SUPPRESSION_WINDOW_MS = 2000;
 
 const getCharactersQueryKey = (roomId: string | undefined): readonly ['characters', string | undefined] => ['characters', roomId];
 
@@ -40,6 +41,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
+  const recentLocalUpdateByCharacterRef = useRef<Map<string, number>>(new Map());
   const [realtimeUpdateSignals, setRealtimeUpdateSignals] = useState<Record<string, number>>({});
 
   // Set up WebSocket connection for real-time updates
@@ -113,6 +115,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       return updateCharacter(characterId, payload);
     },
     onMutate: async ({ characterId, payload }) => {
+      recentLocalUpdateByCharacterRef.current.set(characterId, Date.now());
       const queryKey = getCharactersQueryKey(roomId);
       await queryClient.cancelQueries({ queryKey });
       const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
@@ -168,6 +171,17 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         }
         case 'character_updated': {
           const updatedCharacterId = event.event_body.characterId;
+          const lastLocalUpdateAt = recentLocalUpdateByCharacterRef.current.get(updatedCharacterId);
+          const isLikelyOwnUpdate =
+            typeof lastLocalUpdateAt === 'number' &&
+            Date.now() - lastLocalUpdateAt <= LOCAL_UPDATE_SUPPRESSION_WINDOW_MS;
+
+          if (isLikelyOwnUpdate) {
+            recentLocalUpdateByCharacterRef.current.delete(updatedCharacterId);
+            void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+            break;
+          }
+
           const currentCharacters = queryClient.getQueryData<Character[]>(getCharactersQueryKey(roomId)) ?? [];
           const updatedCharacter = currentCharacters.find((character) => character.id === updatedCharacterId);
 
@@ -195,6 +209,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
   useEffect(() => {
     setRealtimeUpdateSignals({});
+    recentLocalUpdateByCharacterRef.current.clear();
   }, [roomId]);
 
   const create = useCallback(

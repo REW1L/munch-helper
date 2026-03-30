@@ -73,6 +73,7 @@ gpt-5 (Codex)
 ### Completion Notes List
 
 - Added per-character realtime update signal counters in `useRoomCharacters` and emitted signals only for websocket updates targeting non-self characters.
+- Added short-window suppression for locally initiated character updates so websocket echo events from the same client do not trigger false remote-update flashes.
 - Wired realtime signals through the room route and list into `RoomCharacterCard`.
 - Implemented card-local flash logic with normal motion interpolation and reduced-motion immediate toggle behavior.
 - Added tests for websocket signal gating and reduced-motion card signal coverage.

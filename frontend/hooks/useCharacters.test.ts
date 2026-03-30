@@ -193,6 +193,10 @@ describe('useRoomCharacters', () => {
       gender: ['female'],
       class: ['Thief'],
     };
+    const updatedOtherCharacter = {
+      ...otherCharacter,
+      power: 2,
+    };
 
     let listener: ((event: { event: string; event_body: { characterId: string } }) => void) | undefined;
     mockSubscribe.mockImplementation((callback) => {
@@ -200,6 +204,7 @@ describe('useRoomCharacters', () => {
       return () => undefined;
     });
     mockGetCharactersByRoom.mockResolvedValue([selfCharacter, otherCharacter]);
+    mockUpdateCharacter.mockResolvedValue(updatedOtherCharacter);
 
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
@@ -226,6 +231,18 @@ describe('useRoomCharacters', () => {
 
     await waitFor(() => {
       expect(result.current.realtimeUpdateSignals['char-self']).toBeUndefined();
+    });
+
+    await act(async () => {
+      await result.current.update('char-other', { power: 2 });
+    });
+
+    act(() => {
+      listener?.({ event: 'character_updated', event_body: { characterId: 'char-other' } });
+    });
+
+    await waitFor(() => {
+      expect(result.current.realtimeUpdateSignals['char-other']).toBe(1);
     });
   });
 });
