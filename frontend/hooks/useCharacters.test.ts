@@ -11,7 +11,9 @@ import {
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import type { UserProfileInterface } from '@/hooks/useUser';
 
-const mockSubscribe = vi.fn(() => () => undefined);
+const mockSubscribe = vi.fn<(listener: (event: { event: string; event_body: { characterId: string } }) => void) => () => void>(
+  () => () => undefined
+);
 
 vi.mock('@/api/characters', () => ({
   createCharacter: vi.fn(),
@@ -199,7 +201,7 @@ describe('useRoomCharacters', () => {
     };
 
     let listener: ((event: { event: string; event_body: { characterId: string } }) => void) | undefined;
-    mockSubscribe.mockImplementation((callback) => {
+    mockSubscribe.mockImplementation((callback: (event: { event: string; event_body: { characterId: string } }) => void) => {
       listener = callback;
       return () => undefined;
     });
