@@ -10,6 +10,11 @@ vi.mock('expo-clipboard', () => ({
   setStringAsync: mockSetStringAsync,
 }));
 
+vi.mock('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light' },
+  impactAsync: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('react-native-safe-area-context', async () => {
   const ReactRuntime = await import('react');
 
