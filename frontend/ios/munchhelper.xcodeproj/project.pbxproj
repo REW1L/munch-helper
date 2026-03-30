@@ -17,12 +17,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13B07F961A680F5B00A75B9A /* MunchHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MunchHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07F961A680F5B00A75B9A /* munchhelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = munchhelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = munchhelper/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = munchhelper/Info.plist; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = munchhelper/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C7B18B5C72415E9D1FE8F812 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = munchhelper/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C7B18B5C72415E9D1FE8F812 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = munchhelper/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		DE4F30AC8CA825A302AB495A /* Pods-munchhelper.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-munchhelper.release.xcconfig"; path = "Target Support Files/Pods-munchhelper/Pods-munchhelper.release.xcconfig"; sourceTree = "<group>"; };
 		E5F1C0DB3F52B86F0C1EC8AF /* libPods-munchhelper.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-munchhelper.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7AA419C8EC63114ED547A1C /* Pods-munchhelper.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-munchhelper.debug.xcconfig"; path = "Target Support Files/Pods-munchhelper/Pods-munchhelper.debug.xcconfig"; sourceTree = "<group>"; };
@@ -100,7 +100,7 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* MunchHelper.app */,
+				13B07F961A680F5B00A75B9A /* munchhelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -128,6 +128,7 @@
 				E7AA419C8EC63114ED547A1C /* Pods-munchhelper.debug.xcconfig */,
 				DE4F30AC8CA825A302AB495A /* Pods-munchhelper.release.xcconfig */,
 			);
+			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -154,7 +155,7 @@
 			);
 			name = munchhelper;
 			productName = munchhelper;
-			productReference = 13B07F961A680F5B00A75B9A /* MunchHelper.app */;
+			productReference = 13B07F961A680F5B00A75B9A /* munchhelper.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -364,7 +365,7 @@
 				CODE_SIGN_ENTITLEMENTS = munchhelper/munchhelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 3BQY72JE52;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -403,11 +404,9 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = munchhelper/munchhelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = 3BQY72JE52;
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 3BQY72JE52;
 				INFOPLIST_FILE = munchhelper/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -424,7 +423,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = click.helpamunch.mobileapp;
 				PRODUCT_NAME = MunchHelper;
 				PROVISIONING_PROFILE_SPECIFIER = "match AppStore click.helpamunch.mobileapp";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "match AppStore click.helpamunch.mobileapp";
 				SWIFT_OBJC_BRIDGING_HEADER = "munchhelper/munchhelper-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
