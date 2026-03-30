@@ -1,7 +1,4 @@
 .DS_Store
 .tmp
 coverage
-.agents
-.github/skills
-.kiro
 node_modules/
