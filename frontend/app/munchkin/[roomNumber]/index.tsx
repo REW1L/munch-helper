@@ -17,7 +17,7 @@ const MunchkinIndexView: React.FC = () => {
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
   const { userProfile } = useContext(userProfileContext);
-  const { characters, create, update, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
+  const { characters, create, update, realtimeUpdateSignals, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
   const currentCharacter = useMemo(
@@ -78,6 +78,7 @@ const MunchkinIndexView: React.FC = () => {
             isLoading={isLoading}
             errorMessage={errorMessage}
             actionError={actionError}
+            realtimeUpdateSignals={realtimeUpdateSignals}
             onCreateCharacter={() => setCreateCharacterModalVisible(true)}
             onChangePress={handleChangePress}
           />

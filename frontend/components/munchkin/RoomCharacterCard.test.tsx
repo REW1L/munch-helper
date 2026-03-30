@@ -2,8 +2,8 @@ import { Character } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { ScrollView, StyleSheet } from 'react-native';
-import { describe, expect, it, vi } from 'vitest';
+import { AccessibilityInfo, ScrollView, StyleSheet } from 'react-native';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AttributeList from './AttributeList';
 import CurrentCharacterFooter from './CurrentCharacterFooter';
@@ -18,6 +18,11 @@ vi.mock('react-native', async () => {
   return {
     ...actual,
     Image: 'Image',
+    AccessibilityInfo: {
+      ...actual.AccessibilityInfo,
+      isReduceMotionEnabled: vi.fn().mockResolvedValue(false),
+      addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+    },
   };
 });
 
@@ -51,6 +56,11 @@ function getTextNode(renderer: any, text: string) {
 }
 
 describe('RoomCharacterCard', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+  });
+
   it('supports full-card press with accessibility label and hint', () => {
     const onChangePress = vi.fn();
     let renderer: any;
@@ -171,5 +181,27 @@ describe('RoomCharacterCard', () => {
     const [footerScrollView] = footerRenderer.root.findAllByType(ScrollView);
     expect(footerScrollView.props.nestedScrollEnabled).toBe(true);
     expect(footerScrollView.props.showsVerticalScrollIndicator).toBe(false);
+  });
+
+  it('shows reduced-motion realtime border signal when an external update arrives', async () => {
+    vi.useFakeTimers();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+    const onChangePress = vi.fn();
+    const timeoutSpy = vi.spyOn(global, 'setTimeout');
+    let renderer: any;
+
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={onChangePress} realtimeFlashSignal={0} />
+      );
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={onChangePress} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 300);
   });
 });

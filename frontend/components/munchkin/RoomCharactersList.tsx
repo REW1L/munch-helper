@@ -10,6 +10,7 @@ interface RoomCharactersListProps {
   isLoading: boolean;
   errorMessage: string | null;
   actionError: string | null;
+  realtimeUpdateSignals: Record<string, number>;
   onCreateCharacter: () => void;
   onChangePress: (character: RoomCharacter) => void;
 }
@@ -19,6 +20,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
   isLoading,
   errorMessage,
   actionError,
+  realtimeUpdateSignals,
   onCreateCharacter,
   onChangePress,
 }: RoomCharactersListProps) {
@@ -58,7 +60,13 @@ const RoomCharactersList = memo(function RoomCharactersList({
   return (
     <FlatList
       data={characters}
-      renderItem={({ item }) => <RoomCharacterCard character={item} onChangePress={onChangePress} />}
+      renderItem={({ item }) => (
+        <RoomCharacterCard
+          character={item}
+          onChangePress={onChangePress}
+          realtimeFlashSignal={realtimeUpdateSignals[item.id] ?? 0}
+        />
+      )}
       keyExtractor={(item) => item.id}
       style={styles.mainContent}
       contentContainerStyle={styles.mainContentContainer}

@@ -11,6 +11,8 @@ import {
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import type { UserProfileInterface } from '@/hooks/useUser';
 
+const mockSubscribe = vi.fn(() => () => undefined);
+
 vi.mock('@/api/characters', () => ({
   createCharacter: vi.fn(),
   getCharactersByRoom: vi.fn(),
@@ -19,8 +21,8 @@ vi.mock('@/api/characters', () => ({
 
 vi.mock('@/hooks/useRoomWebSocket', () => ({
   useRoomWebSocket: () => ({
-    isConnected: false,
-    subscribe: vi.fn(() => () => undefined),
+    isConnected: true,
+    subscribe: mockSubscribe,
   }),
 }));
 
@@ -53,6 +55,8 @@ describe('useRoomCharacters', () => {
     mockGetCharactersByRoom.mockReset();
     mockCreateCharacter.mockReset();
     mockUpdateCharacter.mockReset();
+    mockSubscribe.mockReset();
+    mockSubscribe.mockImplementation(() => () => undefined);
   });
 
   afterEach(() => {
@@ -160,5 +164,68 @@ describe('useRoomCharacters', () => {
         power: 5,
       })
     );
+  });
+
+  it('raises realtime update signals for other players on websocket character updates', async () => {
+    const selfCharacter = {
+      id: 'char-self',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Hero',
+      avatar: 1,
+      color: '#AA5500',
+      level: 2,
+      power: 3,
+      race: ['Human'],
+      gender: ['male'],
+      class: ['Warrior'],
+    };
+    const otherCharacter = {
+      id: 'char-other',
+      roomId,
+      userId: 'user-2',
+      nickname: 'Rogue',
+      avatar: 2,
+      color: '#0088CC',
+      level: 4,
+      power: 1,
+      race: ['Elf'],
+      gender: ['female'],
+      class: ['Thief'],
+    };
+
+    let listener: ((event: { event: string; event_body: { characterId: string } }) => void) | undefined;
+    mockSubscribe.mockImplementation((callback) => {
+      listener = callback;
+      return () => undefined;
+    });
+    mockGetCharactersByRoom.mockResolvedValue([selfCharacter, otherCharacter]);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+    });
+
+    act(() => {
+      listener?.({ event: 'character_updated', event_body: { characterId: 'char-other' } });
+    });
+
+    await waitFor(() => {
+      expect(result.current.realtimeUpdateSignals['char-other']).toBe(1);
+    });
+
+    act(() => {
+      listener?.({ event: 'character_updated', event_body: { characterId: 'char-self' } });
+    });
+
+    await waitFor(() => {
+      expect(result.current.realtimeUpdateSignals['char-self']).toBeUndefined();
+    });
   });
 });

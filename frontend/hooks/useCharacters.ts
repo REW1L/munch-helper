@@ -9,10 +9,11 @@ import {
 import { useRoomWebSocket } from '@/hooks/useRoomWebSocket';
 import { UserProfileInterface } from '@/hooks/useUser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface UseRoomCharactersResult {
   characters: Character[];
+  realtimeUpdateSignals: Record<string, number>;
   isLoading: boolean;
   errorMessage: string | null;
   refresh: () => Promise<void>;
@@ -39,6 +40,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
+  const [realtimeUpdateSignals, setRealtimeUpdateSignals] = useState<Record<string, number>>({});
 
   // Set up WebSocket connection for real-time updates
   const { isConnected, subscribe } = useRoomWebSocket(
@@ -165,6 +167,17 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
           break;
         }
         case 'character_updated': {
+          const updatedCharacterId = event.event_body.characterId;
+          const currentCharacters = queryClient.getQueryData<Character[]>(getCharactersQueryKey(roomId)) ?? [];
+          const updatedCharacter = currentCharacters.find((character) => character.id === updatedCharacterId);
+
+          if (updatedCharacter && updatedCharacter.userId !== userProfile.id) {
+            setRealtimeUpdateSignals((currentSignals) => ({
+              ...currentSignals,
+              [updatedCharacterId]: (currentSignals[updatedCharacterId] ?? 0) + 1,
+            }));
+          }
+
           // Refetch all characters when one is updated
           void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
           break;
@@ -178,7 +191,11 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     });
 
     return unsubscribe;
-  }, [isConnected, subscribe, roomId, queryClient]);
+  }, [isConnected, queryClient, roomId, subscribe, userProfile.id]);
+
+  useEffect(() => {
+    setRealtimeUpdateSignals({});
+  }, [roomId]);
 
   const create = useCallback(
     async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
@@ -253,12 +270,13 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   return useMemo(
     () => ({
       characters,
+      realtimeUpdateSignals,
       isLoading,
       errorMessage,
       refresh,
       create,
       update,
     }),
-    [characters, create, errorMessage, isLoading, refresh, update]
+    [characters, create, errorMessage, isLoading, realtimeUpdateSignals, refresh, update]
   );
 }
