@@ -1,4 +1,5 @@
 import { Character as RoomCharacter } from '@/api/characters';
+import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -32,14 +33,14 @@ const styles = StyleSheet.create({
   attributeText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: AppTheme.colors.textPrimary,
     letterSpacing: 0.5,
     lineHeight: 16,
   },
   footerAttributeText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: AppTheme.colors.textPrimary,
     letterSpacing: 0.5,
     lineHeight: 16,
   },

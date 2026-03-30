@@ -31,7 +31,11 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
       </View>
 
       <View style={styles.footerAttributes}>
-        <ScrollView>
+        <ScrollView
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.attributesScrollContent}
+        >
           <AttributeList character={character} variant="footer" />
         </ScrollView>
       </View>
@@ -65,9 +69,12 @@ const styles = StyleSheet.create({
   },
   footerNickname: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: AppTheme.colors.textAccentSoft,
     letterSpacing: 0.15,
+    textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   footerStats: {
     flexDirection: 'row',
@@ -75,8 +82,8 @@ const styles = StyleSheet.create({
   },
   footerStatText: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontWeight: '700',
+    color: AppTheme.colors.accent,
     letterSpacing: 0.15,
   },
   footerAttributes: {
@@ -85,9 +92,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.30)',
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: '#000000',
+    borderColor: 'rgba(0, 0, 0, 0.6)',
     height: 64,
     justifyContent: 'center',
+  },
+  attributesScrollContent: {
+    flexGrow: 1,
   },
 });
 
