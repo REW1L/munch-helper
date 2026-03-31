@@ -3,7 +3,7 @@ import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const ATTRIBUTES: Array<'race' | 'gender' | 'class'> = ['race', 'gender', 'class'];
+const ATTRIBUTES: ('race' | 'gender' | 'class')[] = ['race', 'gender', 'class'];
 
 interface AttributeListProps {
   character: RoomCharacter;

@@ -4,13 +4,21 @@ import { userProfileContext } from '@/context/UserContext';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useContext, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
+import QuickEditSheet from '../../../components/munchkin/QuickEditSheet';
 import RoomCharactersList from '../../../components/munchkin/RoomCharactersList';
 import ChangeCharacterModal from '../modal-change-caracter';
 import CreateCharacterModal from '../modal-create-character';
+
+type CharacterStatsOverride = { level: number; power: number };
+
+type UndoState = {
+  characterId: string;
+  previous: CharacterStatsOverride;
+};
 
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
@@ -20,18 +28,133 @@ const MunchkinIndexView: React.FC = () => {
   const { characters, create, update, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
+  const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
+  const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
+  const [quickEditVisible, setQuickEditVisible] = useState(false);
+  const [pendingFullEditOpen, setPendingFullEditOpen] = useState(false);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [undoState, setUndoState] = useState<UndoState | null>(null);
+  const [showUndoToast, setShowUndoToast] = useState(false);
+  const [dangerFlash, setDangerFlash] = useState(false);
+  const undoToastTranslateY = useMemo(() => new Animated.Value(24), []);
+
+  useEffect(() => {
+    if (!showUndoToast) {
+      undoToastTranslateY.setValue(24);
+      return;
+    }
+
+    Animated.spring(undoToastTranslateY, {
+      toValue: 0,
+      useNativeDriver: true,
+      damping: 14,
+      stiffness: 180,
+      mass: 0.9,
+    }).start();
+
+    const timer = setTimeout(() => {
+      setShowUndoToast(false);
+      setUndoState(null);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [showUndoToast, undoToastTranslateY]);
+
+  useEffect(() => {
+    if (!dangerFlash) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setDangerFlash(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [dangerFlash]);
+
+  const selectedCharacter = useMemo(
+    () => characters.find((character) => character.id === selectedCharacterId),
+    [characters, selectedCharacterId]
+  );
+
   const currentCharacter = useMemo(
     () => characters.find((character) => character.userId === userProfile.id),
     [characters, userProfile.id]
   );
-  const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
-  const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState<RoomCharacter | undefined>(undefined);
-  const [actionError, setActionError] = useState<string | null>(null);
 
-  const handleChangePress = useCallback((character: RoomCharacter) => {
-    setSelectedCharacter(character);
+  const handleChangePress = useCallback(
+    (character: RoomCharacter) => {
+      setSelectedCharacterId(character.id);
+
+      if (character.userId === userProfile.id) {
+        setShowUndoToast(false);
+        setUndoState(null);
+        setQuickEditVisible(true);
+        return;
+      }
+
+      setChangeCharacterModalVisible(true);
+    },
+    [userProfile.id]
+  );
+
+  const closeQuickEditSheet = useCallback(() => {
+    setQuickEditVisible(false);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingFullEditOpen || quickEditVisible) {
+      return;
+    }
+
+    setPendingFullEditOpen(false);
     setChangeCharacterModalVisible(true);
+  }, [pendingFullEditOpen, quickEditVisible]);
+
+  const handleQuickEditSave = useCallback(async (stats: CharacterStatsOverride) => {
+    if (!selectedCharacter || !selectedCharacterId) {
+      return;
+    }
+
+    try {
+      setActionError(null);
+      await update(selectedCharacter.id, {
+        level: stats.level,
+        power: stats.power,
+      });
+      setQuickEditVisible(false);
+      setUndoState({
+        characterId: selectedCharacter.id,
+        previous: { level: selectedCharacter.level, power: selectedCharacter.power },
+      });
+      setShowUndoToast(true);
+    } catch (error) {
+      setDangerFlash(true);
+      setActionError(error instanceof Error ? error.message : 'Failed to update character stats');
+      setShowUndoToast(false);
+      setUndoState(null);
+    }
+  }, [selectedCharacter, selectedCharacterId, update]);
+
+  const handleQuickEditUndo = useCallback(() => {
+    if (!undoState) {
+      return;
+    }
+    setShowUndoToast(false);
+    setUndoState(null);
+
+    void update(undoState.characterId, {
+      level: undoState.previous.level,
+      power: undoState.previous.power,
+    }).catch((error) => {
+      setActionError(error instanceof Error ? error.message : 'Failed to undo character stats');
+    });
+  }, [undoState, update]);
+
+  const handleOpenFullEdit = useCallback(() => {
+    setPendingFullEditOpen(true);
+    setQuickEditVisible(false);
   }, []);
 
   const handleCopyRoomCodePress = useCallback(() => {
@@ -42,21 +165,14 @@ const MunchkinIndexView: React.FC = () => {
 
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
-      <SafeAreaView style={{
-        flex: 1,
-        backgroundColor: AppTheme.colors.background,
-      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
+      <SafeAreaView style={styles.safeArea} edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}>
         <View style={styles.container}>
           <Stack.Screen
             options={{
               headerTitle: () => (
                 <View style={styles.headerTitleRow}>
                   <Text style={styles.headerRoomLabel}>Room</Text>
-                  <Text
-                    style={styles.headerRoomCode}
-                    numberOfLines={1}
-                    ellipsizeMode="middle"
-                  >
+                  <Text style={styles.headerRoomCode} numberOfLines={1} ellipsizeMode="middle">
                     {roomCode}
                   </Text>
                   <TouchableOpacity
@@ -82,9 +198,7 @@ const MunchkinIndexView: React.FC = () => {
             onChangePress={handleChangePress}
           />
 
-          {/* Bottom Action Buttons */}
           <View style={styles.actionButtons}>
-            {/* TODO: Not implemented yet */}
             <TouchableOpacity style={[styles.battleButton, { opacity: 0 }]}>
               <Text style={styles.battleButtonText}>Battle</Text>
             </TouchableOpacity>
@@ -93,13 +207,8 @@ const MunchkinIndexView: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Current Character Footer */}
           {currentCharacter && (
-            <CurrentCharacterFooter
-              key={`own-char-${currentCharacter.id}`}
-              character={currentCharacter}
-              onChangePress={handleChangePress}
-            />
+            <CurrentCharacterFooter key={`own-char-${currentCharacter.id}`} character={currentCharacter} onChangePress={handleChangePress} />
           )}
 
           <CreateCharacterModal
@@ -116,7 +225,7 @@ const MunchkinIndexView: React.FC = () => {
                   power: 0,
                   race: character.race,
                   gender: character.gender,
-                  class: character.class
+                  class: character.class,
                 });
                 setCreateCharacterModalVisible(false);
               } catch (error) {
@@ -126,7 +235,7 @@ const MunchkinIndexView: React.FC = () => {
             onCancel={() => setCreateCharacterModalVisible(false)}
           />
 
-          {changeCharacterModalVisible &&
+          {changeCharacterModalVisible && selectedCharacter && (
             <ChangeCharacterModal
               character={selectedCharacter}
               onConfirm={async (character) => {
@@ -140,7 +249,7 @@ const MunchkinIndexView: React.FC = () => {
                     power: character.power,
                     race: character.race,
                     gender: character.gender,
-                    class: character.class
+                    class: character.class,
                   });
                   setChangeCharacterModalVisible(false);
                 } catch (error) {
@@ -149,7 +258,24 @@ const MunchkinIndexView: React.FC = () => {
               }}
               onCancel={() => setChangeCharacterModalVisible(false)}
             />
-          }
+          )}
+
+          <QuickEditSheet
+            visible={quickEditVisible}
+            character={selectedCharacter ?? null}
+            onSave={handleQuickEditSave}
+            onClose={closeQuickEditSheet}
+            onOpenFullEdit={handleOpenFullEdit}
+            hasErrorFlash={dangerFlash}
+          />
+
+          {showUndoToast && undoState && (
+            <Animated.View style={[styles.undoToastWrapper, { transform: [{ translateY: undoToastTranslateY }] }]} pointerEvents="box-none">
+              <Pressable style={styles.undoToast} onPress={handleQuickEditUndo}>
+                <Text style={styles.undoToastText}>Undo</Text>
+              </Pressable>
+            </Animated.View>
+          )}
         </View>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -157,6 +283,10 @@ const MunchkinIndexView: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: AppTheme.colors.background,
+  },
   container: {
     flex: 1,
     backgroundColor: AppTheme.colors.elevated,
@@ -228,6 +358,25 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '400',
     color: AppTheme.colors.textPrimary,
+  },
+  undoToastWrapper: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 96,
+    alignItems: 'center',
+  },
+  undoToast: {
+    paddingHorizontal: AppTheme.spacing.lg,
+    paddingVertical: AppTheme.spacing.sm,
+    borderRadius: AppTheme.radius.pill,
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: AppTheme.colors.accent,
+  },
+  undoToastText: {
+    color: AppTheme.colors.textPrimary,
+    ...AppTheme.typography.labelMd,
   },
 });
 
