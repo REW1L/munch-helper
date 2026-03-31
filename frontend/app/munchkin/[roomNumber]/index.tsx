@@ -5,7 +5,7 @@ import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
 import QuickEditSheet from '../../../components/munchkin/QuickEditSheet';
@@ -31,18 +31,27 @@ const MunchkinIndexView: React.FC = () => {
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [quickEditVisible, setQuickEditVisible] = useState(false);
+  const [pendingFullEditOpen, setPendingFullEditOpen] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [optimisticOverrides, setOptimisticOverrides] = useState<Record<string, CharacterStatsOverride>>({});
-  const [quickEditSnapshot, setQuickEditSnapshot] = useState<{ characterId: string; stats: CharacterStatsOverride } | null>(null);
   const [undoState, setUndoState] = useState<UndoState | null>(null);
   const [showUndoToast, setShowUndoToast] = useState(false);
   const [dangerFlash, setDangerFlash] = useState(false);
+  const undoToastTranslateY = useMemo(() => new Animated.Value(24), []);
 
   useEffect(() => {
     if (!showUndoToast) {
+      undoToastTranslateY.setValue(24);
       return;
     }
+
+    Animated.spring(undoToastTranslateY, {
+      toValue: 0,
+      useNativeDriver: true,
+      damping: 14,
+      stiffness: 180,
+      mass: 0.9,
+    }).start();
 
     const timer = setTimeout(() => {
       setShowUndoToast(false);
@@ -50,7 +59,7 @@ const MunchkinIndexView: React.FC = () => {
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [showUndoToast]);
+  }, [showUndoToast, undoToastTranslateY]);
 
   useEffect(() => {
     if (!dangerFlash) {
@@ -64,31 +73,14 @@ const MunchkinIndexView: React.FC = () => {
     return () => clearTimeout(timer);
   }, [dangerFlash]);
 
-  const displayCharacters = useMemo(
-    () =>
-      characters.map((character) => {
-        const override = optimisticOverrides[character.id];
-        if (!override) {
-          return character;
-        }
-
-        return {
-          ...character,
-          level: override.level,
-          power: override.power,
-        };
-      }),
-    [characters, optimisticOverrides]
-  );
-
   const selectedCharacter = useMemo(
-    () => displayCharacters.find((character) => character.id === selectedCharacterId),
-    [displayCharacters, selectedCharacterId]
+    () => characters.find((character) => character.id === selectedCharacterId),
+    [characters, selectedCharacterId]
   );
 
   const currentCharacter = useMemo(
-    () => displayCharacters.find((character) => character.userId === userProfile.id),
-    [displayCharacters, userProfile.id]
+    () => characters.find((character) => character.userId === userProfile.id),
+    [characters, userProfile.id]
   );
 
   const handleChangePress = useCallback(
@@ -96,10 +88,8 @@ const MunchkinIndexView: React.FC = () => {
       setSelectedCharacterId(character.id);
 
       if (character.userId === userProfile.id) {
-        setQuickEditSnapshot({
-          characterId: character.id,
-          stats: { level: character.level, power: character.power },
-        });
+        setShowUndoToast(false);
+        setUndoState(null);
         setQuickEditVisible(true);
         return;
       }
@@ -109,48 +99,23 @@ const MunchkinIndexView: React.FC = () => {
     [userProfile.id]
   );
 
-  const handleQuickStatsChange = useCallback(
-    (stats: CharacterStatsOverride) => {
-      if (!selectedCharacterId) {
-        return;
-      }
-
-      setOptimisticOverrides((prev) => ({
-        ...prev,
-        [selectedCharacterId]: stats,
-      }));
-    },
-    [selectedCharacterId]
-  );
-
-  const closeQuickEditWithUndo = useCallback(() => {
-    if (!selectedCharacterId || !quickEditSnapshot) {
-      setQuickEditVisible(false);
-      return;
-    }
-
-    const latest = optimisticOverrides[selectedCharacterId] ?? quickEditSnapshot.stats;
-    const changed = latest.level !== quickEditSnapshot.stats.level || latest.power !== quickEditSnapshot.stats.power;
-
+  const closeQuickEditSheet = useCallback(() => {
     setQuickEditVisible(false);
+  }, []);
 
-    if (!changed) {
+  useEffect(() => {
+    if (!pendingFullEditOpen || quickEditVisible) {
       return;
     }
 
-    setUndoState({ characterId: selectedCharacterId, previous: quickEditSnapshot.stats });
-    setShowUndoToast(true);
-  }, [optimisticOverrides, quickEditSnapshot, selectedCharacterId]);
+    setPendingFullEditOpen(false);
+    setChangeCharacterModalVisible(true);
+  }, [pendingFullEditOpen, quickEditVisible]);
 
-  const handleQuickEditSave = useCallback(async () => {
-    if (!selectedCharacter || !selectedCharacterId || !quickEditSnapshot) {
+  const handleQuickEditSave = useCallback(async (stats: CharacterStatsOverride) => {
+    if (!selectedCharacter || !selectedCharacterId) {
       return;
     }
-
-    const stats = optimisticOverrides[selectedCharacterId] ?? {
-      level: selectedCharacter.level,
-      power: selectedCharacter.power,
-    };
 
     try {
       setActionError(null);
@@ -159,40 +124,37 @@ const MunchkinIndexView: React.FC = () => {
         power: stats.power,
       });
       setQuickEditVisible(false);
-      setQuickEditSnapshot(null);
-      setOptimisticOverrides((prev) => {
-        const next = { ...prev };
-        delete next[selectedCharacter.id];
-        return next;
+      setUndoState({
+        characterId: selectedCharacter.id,
+        previous: { level: selectedCharacter.level, power: selectedCharacter.power },
       });
-      setShowUndoToast(false);
-      setUndoState(null);
+      setShowUndoToast(true);
     } catch (error) {
       setDangerFlash(true);
       setActionError(error instanceof Error ? error.message : 'Failed to update character stats');
-      setOptimisticOverrides((prev) => ({
-        ...prev,
-        [selectedCharacter.id]: quickEditSnapshot.stats,
-      }));
+      setShowUndoToast(false);
+      setUndoState(null);
     }
-  }, [optimisticOverrides, quickEditSnapshot, selectedCharacter, selectedCharacterId, update]);
+  }, [selectedCharacter, selectedCharacterId, update]);
 
   const handleQuickEditUndo = useCallback(() => {
     if (!undoState) {
       return;
     }
-
-    setOptimisticOverrides((prev) => ({
-      ...prev,
-      [undoState.characterId]: undoState.previous,
-    }));
     setShowUndoToast(false);
     setUndoState(null);
-  }, [undoState]);
+
+    void update(undoState.characterId, {
+      level: undoState.previous.level,
+      power: undoState.previous.power,
+    }).catch((error) => {
+      setActionError(error instanceof Error ? error.message : 'Failed to undo character stats');
+    });
+  }, [undoState, update]);
 
   const handleOpenFullEdit = useCallback(() => {
+    setPendingFullEditOpen(true);
     setQuickEditVisible(false);
-    setChangeCharacterModalVisible(true);
   }, []);
 
   const handleCopyRoomCodePress = useCallback(() => {
@@ -228,7 +190,7 @@ const MunchkinIndexView: React.FC = () => {
           />
 
           <RoomCharactersList
-            characters={displayCharacters}
+            characters={characters}
             isLoading={isLoading}
             errorMessage={errorMessage}
             actionError={actionError}
@@ -301,19 +263,18 @@ const MunchkinIndexView: React.FC = () => {
           <QuickEditSheet
             visible={quickEditVisible}
             character={selectedCharacter ?? null}
-            onStatsChange={handleQuickStatsChange}
             onSave={handleQuickEditSave}
-            onClose={closeQuickEditWithUndo}
+            onClose={closeQuickEditSheet}
             onOpenFullEdit={handleOpenFullEdit}
             hasErrorFlash={dangerFlash}
           />
 
           {showUndoToast && undoState && (
-            <View style={styles.undoToastWrapper} pointerEvents="box-none">
+            <Animated.View style={[styles.undoToastWrapper, { transform: [{ translateY: undoToastTranslateY }] }]} pointerEvents="box-none">
               <Pressable style={styles.undoToast} onPress={handleQuickEditUndo}>
                 <Text style={styles.undoToastText}>Undo</Text>
               </Pressable>
-            </View>
+            </Animated.View>
           )}
         </View>
       </SafeAreaView>
@@ -402,7 +363,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: AppTheme.spacing.xl,
+    bottom: 96,
     alignItems: 'center',
   },
   undoToast: {

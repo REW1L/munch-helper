@@ -90,15 +90,24 @@ gpt-5 (Codex)
 
 - `cd frontend && npm run tsc`
 - `cd frontend && npm run test:unit -- QuickEditSheet.test.tsx`
+- `cd frontend && npm run test:room-route`
 - `cd frontend && npm run test`
+- `cd frontend && npm run tsc`
+- `cd frontend && npm run test:unit -- QuickEditSheet.test.tsx`
 
 ### Completion Notes List
 
 - Added `QuickEditSheet` as a reusable bottom-sheet modal with 60% height, level/power steppers, 44x44 tap targets, and haptics on every stepper interaction.
 - Wired Room View to route current-player edits to QuickEditSheet while preserving ChangeCharacterModal for other characters.
-- Added optimistic local stat overrides so Room View updates immediately while editing.
-- Added dismiss-with-Undo flow (1500ms toast) and failure rollback with danger border flash.
-- Added focused unit coverage for QuickEditSheet behavior.
+- Moved quick-edit stat drafting into the sheet so Room View only changes after the player taps `Save`.
+- Added undo-after-save feedback above the footer and preserved rollback feedback on save failure.
+- Added focused unit and room-route regression coverage for the corrected quick-edit behavior.
+- Corrected the quick-edit sheet layout so the larger `Edit more…` and `Save` actions sit centered directly beneath the stepper controls.
+- Moved stat draft state into `QuickEditSheet`, so Room View stats stay unchanged until the player taps `Save`.
+- Added drag-down dismissal for the sheet and moved the `Undo` toast above the footer with a slide-in animation so it stays visible.
+- Added a room-route regression test covering the save-only stat update flow.
+- Fixed the quick-edit dismissal flash by preserving the sheet's off-screen translation while the modal fade-out completes.
+- Added a unit regression test covering the close-path translation state so the dismissal flash does not return.
 
 ### File List
 
@@ -107,7 +116,10 @@ gpt-5 (Codex)
 - frontend/app/munchkin/[roomNumber]/index.tsx
 - frontend/components/munchkin/QuickEditSheet.tsx
 - frontend/components/munchkin/QuickEditSheet.test.tsx
+- frontend/__tests__/app/munchkin/[roomNumber].test.tsx
 
 ### Change Log
 
 - 2026-03-30: Created Story 3.7 implementation artifact and implemented QuickEditSheet with optimistic room stat editing flow, Undo dismiss toast, and save-failure rollback feedback.
+- 2026-03-30: Revised Story 3.7 quick-edit behavior so stats stay local until save, the sheet supports drag-down dismissal, the action buttons are larger and centered under the steppers, and the Undo toast renders above the footer.
+- 2026-03-30: Fixed a QuickEditSheet dismissal animation regression where the sheet briefly flashed back on screen during modal close, and added a unit regression test for the close path.
