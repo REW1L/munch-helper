@@ -1,6 +1,5 @@
 import { Picker } from '@react-native-picker/picker';
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
 
 type NativePickerProps = {
   selectedValue: string;
@@ -15,54 +14,6 @@ export default function NativePicker({
   options,
   pickerKey,
 }: NativePickerProps) {
-  if (Platform.OS === 'ios') {
-    const { Host, Picker: SwiftUIPicker, Text: SwiftUIText } = require('@expo/ui/swift-ui');
-    const {
-      aspectRatio,
-      font,
-      foregroundStyle,
-      pickerStyle,
-      tag,
-    } = require('@expo/ui/swift-ui/modifiers');
-
-    return (
-      <Host
-        matchContents={{ vertical: true, horizontal: false }}
-        style={styles.swiftUIHost}
-      >
-        <SwiftUIPicker
-          modifiers={[pickerStyle('menu')]}
-          selection={selectedValue}
-          onSelectionChange={onValueChange}
-        >
-          <SwiftUIText
-            modifiers={[
-              tag('<Select>'),
-              aspectRatio({ contentMode: 'fit', ratio: 1 }),
-              foregroundStyle('#000000'),
-              font({ size: 20 }),
-            ]}
-          >
-            {'<Select>'}
-          </SwiftUIText>
-          {options.map((option) => (
-            <SwiftUIText
-              key={`${pickerKey}-${option}`}
-              modifiers={[
-                tag(option),
-                aspectRatio({ contentMode: 'fit', ratio: 1 }),
-                foregroundStyle('#000000'),
-                font({ size: 20 }),
-              ]}
-            >
-              {option}
-            </SwiftUIText>
-          ))}
-        </SwiftUIPicker>
-      </Host>
-    );
-  }
-
   return (
     <Picker selectedValue={selectedValue} onValueChange={onValueChange}>
       <Picker.Item label="<Select>" value="<Select>" />
@@ -72,11 +23,3 @@ export default function NativePicker({
     </Picker>
   );
 }
-
-const styles = StyleSheet.create({
-  swiftUIHost: {
-    width: '100%',
-    maxHeight: 40,
-    backgroundColor: '#DFDFDF',
-  },
-});
