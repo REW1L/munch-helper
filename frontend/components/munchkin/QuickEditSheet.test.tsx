@@ -16,7 +16,7 @@ const mockAnimatedTiming = vi.hoisted(() =>
   }))
 );
 const mockAnimatedParallel = vi.hoisted(() =>
-  vi.fn((animations: Array<{ start: (callback?: (result: { finished: boolean }) => void) => void }>) => ({
+  vi.fn((animations: { start: (callback?: (result: { finished: boolean }) => void) => void }[]) => ({
     start: (callback?: (result: { finished: boolean }) => void) => {
       animations.forEach((animation) => animation.start());
       callback?.({ finished: true });
