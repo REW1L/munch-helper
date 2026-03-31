@@ -7,14 +7,14 @@ Status: in-progress
 ## Story
 
 As a player,
-I want to see a brief visual flash on a character card when another player updates their stats,
-so that I know the change was made by someone else and not a display glitch.
+I want to see a brief visual flash on a character card when a realtime character update is received in the room,
+so that I can immediately notice that the card data was refreshed.
 
 ## Acceptance Criteria
 
-1. **Given** another player updates their character stats
+1. **Given** a character update is received via the room WebSocket
    **When** the update is received via WebSocket
-   **Then** a border flash animates on that character's card using the character's own colour — transparent → colour → transparent over 300ms
+   **Then** a border flash animates on that character's card using the character's own colour over 700ms, transitioning from the room surface border colour to the character colour and back to the room surface border colour
 
 2. **Given** two or more players update different characters close together
    **When** those updates are received
@@ -22,23 +22,23 @@ so that I know the change was made by someone else and not a display glitch.
 
 3. **Given** reduced motion is enabled on the device
    **When** a realtime update signal should appear
-   **Then** the border colour is applied immediately and removed after 300ms with no interpolation
+   **Then** the border colour is applied immediately using the character colour and restored to the room surface border colour after 700ms with no interpolation
 
 ## Tasks / Subtasks
 
 - [x] Task 1: Add realtime update signal plumbing from WebSocket updates into Room View card props (AC: 1, 2)
   - [x] Extend `useRoomCharacters` to expose per-character realtime signal counters
-  - [x] Increment signal counters only when `character_updated` events target a character not owned by the current user
+  - [x] Increment signal counters when `character_updated` events target any known room character, while still suppressing likely websocket echoes from the same client
   - [x] Pass signal data through `frontend/app/munchkin/[roomNumber]/index.tsx` and `RoomCharactersList`
 
 - [x] Task 2: Implement per-card visual border signal animation behavior (AC: 1, 2, 3)
   - [x] Add a `realtimeFlashSignal` prop to `RoomCharacterCard`
-  - [x] For standard motion mode, animate border color transparent → character color → transparent over 300ms
-  - [x] For reduced-motion mode, toggle border color immediately and clear after 300ms with no interpolation
+  - [x] For standard motion mode, animate border color surface-warm → character color → surface-warm over 700ms
+  - [x] For reduced-motion mode, toggle border color immediately and restore the surface-warm border after 700ms with no interpolation
 
 - [x] Task 3: Add regression tests for realtime signal behavior and signal gating (AC: 1, 2, 3)
-  - [x] Add hook tests covering websocket update signal increment for non-self character updates
-  - [x] Ensure self-character websocket updates do not raise realtime card flash signals
+  - [x] Add hook tests covering websocket update signal increment for room character updates, including the current user's card when not suppressed as a local echo
+  - [x] Ensure locally initiated websocket echo updates are still suppressed from raising duplicate realtime card flash signals
   - [x] Add component-level reduced-motion signal coverage for `RoomCharacterCard`
 
 - [x] Task 4: Run frontend validation after implementation
@@ -50,6 +50,7 @@ so that I know the change was made by someone else and not a display glitch.
 ### Story Foundation
 
 - Epic 3 Story 3.8 requires card-level update cues tied to existing room WebSocket character update events.
+- The current implementation treats any server-driven character refresh in the room as signal-worthy, including the current user's card when the event is not suppressed as a likely local websocket echo.
 - Story should only add update signal affordance and must not alter character edit ownership flow.
 
 ### Architecture Guardrails
@@ -112,3 +113,4 @@ gpt-5 (Codex)
 - 2026-03-30: Applied review fixes by pruning stale local-update suppression markers and adding concurrent flash coverage in `RoomCharacterCard` tests.
 - 2026-03-31: Returned Story 3.8 to development and tuned the realtime card flash to 2000ms with a 4px border.
 - 2026-03-31: Updated Story 3.8 notes to reflect the current repository changes: websocket flashes now include the current user's card, and the card flash styling/tests were retuned to 700ms with a 3px warm-surface border baseline.
+- 2026-03-31: Realigned the story, acceptance criteria, and task contract with the current implementation behavior and test expectations.

@@ -132,16 +132,17 @@ So that I can update my stats mid-game without navigating away from the Room Vie
 ## Story 3.8: Realtime Update Signal on Character Cards `[TODO]`
 
 As a player,
-I want to see a brief visual flash on a character card when another player updates their stats,
-So that I know the change was made by someone else and not a display glitch.
+I want to see a brief visual flash on a character card when a realtime character update is received in the room,
+So that I can immediately notice that the card data was refreshed.
 
 **Acceptance Criteria:**
 
-**Given** another player updates their character stats
+**Given** a character update is received via the room WebSocket
 **When** the update is received via WebSocket
-**Then** a border flash animates on that character's card using the character's own colour — transparent → colour → transparent over 300ms
+**Then** a border flash animates on that character's card using the character's own colour over 700ms, transitioning from the room surface border colour to the character colour and back to the room surface border colour
 **And** multiple cards can flash concurrently without visual conflict
-**And** when reduced motion is enabled, the border colour is applied immediately and removed after 300ms with no interpolation
+**And** when reduced motion is enabled, the border colour is applied immediately using the character colour and restored to the room surface border colour after 700ms with no interpolation
+**And** locally initiated websocket echo updates from the same client are suppressed to avoid duplicate flashes
 
 > **Covers:** UX-DR9
 > **Depends on:** Stories 3.1, 3.6

@@ -14,11 +14,11 @@
 
 ## 12.2 Feedback Patterns
 
-**Optimistic updates:** Stat value updates immediately in the UI on local tap (before server confirmation). `useRealtimeFlash` fires on server confirmation — the flash serves as visual acknowledgement. On server error: revert value quietly with a brief border flash in `danger` color. No toast for errors on stat changes.
+**Optimistic updates:** Stat value updates immediately in the UI on local tap (before server confirmation). `useRealtimeFlash` fires on server-confirmed room updates unless the event is suppressed as a likely websocket echo from the same client — the flash serves as a room-refresh acknowledgement rather than a guaranteed local-save confirmation. On server error: revert value quietly with a brief border flash in `danger` color. No toast for errors on stat changes.
 
 **Haptic confirmation:** `Haptics.ImpactFeedbackStyle.Light` on every stat +/− tap. Fires immediately, before save — confirms the tap was registered. Required, not optional.
 
-**Save confirmation:** No toast. The local optimistic update + realtime flash sequence is the confirmation signal.
+**Save confirmation:** No toast. The local optimistic update is the primary confirmation signal; the realtime flash is supplementary room-awareness feedback when a server-driven update is surfaced back into the room.
 
 **Clipboard copy:** Inline state change on RoomCodeHeader — "Copy" → "Copied ✓" for 1500ms, then resets. No toast.
 
