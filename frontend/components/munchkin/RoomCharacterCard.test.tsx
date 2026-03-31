@@ -2,7 +2,7 @@ import { Character } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { AccessibilityInfo, ScrollView, StyleSheet } from 'react-native';
+import { AccessibilityInfo, Animated, ScrollView, StyleSheet } from 'react-native';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AttributeList from './AttributeList';
@@ -203,5 +203,44 @@ describe('RoomCharacterCard', () => {
     });
 
     expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 300);
+  });
+
+  it('supports concurrent flash animations across multiple cards', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+    const animatedStartSpy = vi.fn();
+    const timingSpy = vi.spyOn(Animated, 'timing').mockImplementation(
+      () =>
+        ({
+          start: animatedStartSpy,
+          stop: vi.fn(),
+          reset: vi.fn(),
+        } as unknown as Animated.CompositeAnimation)
+    );
+
+    const otherCharacter: Character = {
+      ...baseCharacter,
+      id: 'char-2',
+      nickname: 'Balin',
+      color: '#112233',
+    };
+
+    let firstRenderer: any;
+    let secondRenderer: any;
+    await act(async () => {
+      firstRenderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+      secondRenderer = TestRenderer.create(
+        <RoomCharacterCard character={otherCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timingSpy).toHaveBeenCalledTimes(4);
+    expect(animatedStartSpy).toHaveBeenCalledTimes(4);
+
+    act(() => {
+      firstRenderer.unmount();
+      secondRenderer.unmount();
+    });
   });
 });

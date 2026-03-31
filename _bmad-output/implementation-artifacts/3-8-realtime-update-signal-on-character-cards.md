@@ -36,7 +36,7 @@ so that I know the change was made by someone else and not a display glitch.
   - [x] For standard motion mode, animate border color transparent → character color → transparent over 300ms
   - [x] For reduced-motion mode, toggle border color immediately and clear after 300ms with no interpolation
 
-- [x] Task 3: Add regression tests for realtime signal behavior and signal gating (AC: 1, 3)
+- [x] Task 3: Add regression tests for realtime signal behavior and signal gating (AC: 1, 2, 3)
   - [x] Add hook tests covering websocket update signal increment for non-self character updates
   - [x] Ensure self-character websocket updates do not raise realtime card flash signals
   - [x] Add component-level reduced-motion signal coverage for `RoomCharacterCard`
@@ -68,6 +68,8 @@ gpt-5 (Codex)
 
 - `cd frontend && npm run test -- RoomCharacterCard.test.tsx useCharacters.test.ts` (fails because `test:room-route` receives filters that match no room-route specs)
 - `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx useCharacters.test.ts`
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx`
+- `cd frontend && npm run tsc`
 - `cd frontend && npm run lint`
 
 ### Completion Notes List
@@ -77,6 +79,13 @@ gpt-5 (Codex)
 - Wired realtime signals through the room route and list into `RoomCharacterCard`.
 - Implemented card-local flash logic with normal motion interpolation and reduced-motion immediate toggle behavior.
 - Added tests for websocket signal gating and reduced-motion card signal coverage.
+- Added map-pruning for local websocket echo suppression markers to avoid stale suppression entries over long sessions.
+- Added concurrency-focused card test coverage to assert independent flash animation scheduling across multiple cards.
+
+### Review Findings
+
+- [x] [Review][Patch] Add AC2-focused test coverage for concurrent character-card flash handling [`frontend/components/munchkin/RoomCharacterCard.test.tsx:208`]
+- [x] [Review][Patch] Prune stale local-update suppression markers to avoid long-lived stale entries [`frontend/hooks/useCharacters.ts:40`]
 
 ### File List
 
@@ -93,3 +102,4 @@ gpt-5 (Codex)
 
 - 2026-03-30: Created Story 3.8 implementation artifact with full dev context and acceptance criteria mapping.
 - 2026-03-30: Implemented realtime websocket-driven card update signals with reduced-motion support and regression tests.
+- 2026-03-30: Applied review fixes by pruning stale local-update suppression markers and adding concurrent flash coverage in `RoomCharacterCard` tests.

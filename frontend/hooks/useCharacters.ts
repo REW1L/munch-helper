@@ -37,6 +37,14 @@ function isAbortError(error: unknown): boolean {
   );
 }
 
+function pruneExpiredLocalUpdateMarkers(markers: Map<string, number>, now: number): void {
+  markers.forEach((updatedAt, characterId) => {
+    if (now - updatedAt > LOCAL_UPDATE_SUPPRESSION_WINDOW_MS) {
+      markers.delete(characterId);
+    }
+  });
+}
+
 export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
   const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
@@ -106,6 +114,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       });
     },
     onSettled: () => {
+      pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
       void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
     },
   });
@@ -171,6 +180,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         }
         case 'character_updated': {
           const updatedCharacterId = event.event_body.characterId;
+          pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
           const lastLocalUpdateAt = recentLocalUpdateByCharacterRef.current.get(updatedCharacterId);
           const isLikelyOwnUpdate =
             typeof lastLocalUpdateAt === 'number' &&
