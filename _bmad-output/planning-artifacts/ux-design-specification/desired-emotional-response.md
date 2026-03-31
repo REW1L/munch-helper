@@ -23,14 +23,14 @@
 
 - **Confidence over confusion** — Every screen state must be immediately legible. No orphan states, no "what do I do here?" moments.
 - **Trust over skepticism** — Realtime updates should feel reliable enough that players stop verifying the app's state out loud.
-- **Delight over mere satisfaction** — The first time a stat update silently appears from another player should feel like a small magic trick. Not a feature — a moment.
+- **Delight over mere satisfaction** — The first time a room stat update silently appears with a clear, purposeful signal should feel like a small magic trick. Not a feature — a moment.
 - **Belonging over isolation** — Character color and avatar make each player's presence felt, even when they're not the one currently editing.
 
 ## Design Implications
 
 - **Confidence → Clear entry flow** — Room creation/join with immediate character presence. No intermediate "waiting" states without feedback.
 - **Calm control → Low-density Room View** — Characters as scannable cards, not a data table. Level and power prominent; secondary stats secondary.
-- **Trust → Visible update cues** — Brief, non-blocking flash when a character is updated by another player. Subtle but present.
+- **Trust → Visible update cues** — Brief, non-blocking flash when a room character update is surfaced to the client. Subtle but present.
 - **Delight → Realtime feel** — Avoid polling artifacts. Updates should appear smoothly, not jerk in. Animation budget is small but purposeful.
 - **Trust during errors → Honest error states** — Network issues shown clearly with recovery path. Never a blank screen or silent stale state.
 

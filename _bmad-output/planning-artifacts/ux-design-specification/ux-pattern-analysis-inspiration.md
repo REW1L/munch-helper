@@ -36,7 +36,7 @@ Not an aesthetic reference but a behavioral one. The key pattern: when someone e
 - **One-step join confirmation** — Code entry → Room View loads with character already present. No intermediate screen.
 
 **From live collaborative tools:**
-- **Realtime update signal using character color** — When another player's character is updated, a brief color pulse or border flash on that character's card (using the character's own existing color) signals an external change. Zero new design tokens: the character color namespace does double duty as the update attribution signal.
+- **Realtime update signal using character color** — When a room character update is received, a brief border flash on that character's card reuses the character's own existing color against the standard `surfaceWarm` border baseline. Likely websocket echoes from the same client are suppressed so the signal reads as a confirmed room refresh instead of a duplicate local acknowledgement.
 
 ## Anti-Patterns to Avoid
 
@@ -44,7 +44,7 @@ Not an aesthetic reference but a behavioral one. The key pattern: when someone e
 2. **Buried or one-time room code** — The code must be accessible at any point during the session, not only at creation. Players join late; codes get lost in chat.
 3. **Code-only sharing** — Raw code without a one-tap copy or deep link adds friction in the group chat context where paste-to-join is the expected flow.
 4. **Account creation wall** — Requiring registration before joining a room kills Jackbox-style momentum. Anonymous entry is the right default.
-5. **Silent realtime updates** — A stat changing with no visual signal feels like a glitch. Even a 300ms color flash is enough to make the update feel intentional.
+5. **Silent realtime updates** — A stat changing with no visual signal feels like a glitch. Even a short border flash is enough to make the update feel intentional.
 6. **Character list as deep navigation** — Tapping a character should bring up edit controls close to the surface, not navigate away from the Room View entirely.
 
 ## Design Inspiration Strategy

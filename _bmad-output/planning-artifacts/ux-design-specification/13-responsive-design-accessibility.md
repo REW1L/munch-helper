@@ -53,7 +53,7 @@
 ## 13.6 Reduced Motion
 
 Check `useReducedMotion()` from `react-native-reanimated`. When enabled:
-- **`useRealtimeFlash`:** Skip border interpolation — apply border color immediately, remove after 300ms
+- **`useRealtimeFlash`:** Skip border interpolation — apply the character border color immediately, restore `surfaceWarm` after 700ms
 - **`QuickEditSheet`:** Skip spring animation — snap directly to open/closed position
 - No other animations are currently specified in the design
 

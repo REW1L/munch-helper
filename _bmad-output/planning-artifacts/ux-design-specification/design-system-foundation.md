@@ -38,7 +38,7 @@ All new components (battle view, log view, stat controls, room code display) use
 | Token | Value | Role |
 |---|---|---|
 | `actionSecondary` | `#6E6BD4` | Violet — secondary action buttons |
-| `surfaceWarm` | `#A67560` | Warm brown — card-style surfaces |
+| `surfaceWarm` | `#8A6150` | Warm brown — card-style surfaces |
 | `surfaceSubtle` | `#353535` | Dark grey — muted surface (log button) |
 
 Token naming is **role-based, not component-specific** — `surfaceWarm` applies to any warm card surface, not only the character card. This prevents per-component token proliferation as new screens are added.
@@ -47,7 +47,7 @@ Token naming is **role-based, not component-specific** — `surfaceWarm` applies
 
 - **Stat increment controls (+/−):** Large tap targets (min 44×44pt), `Haptics.ImpactFeedbackStyle.Light` on every tap via `expo-haptics` *(required behavior, not optional polish)*, immediate visual feedback, no save confirmation for non-destructive increments.
 - **Room code display:** `AppTheme.colors.accent` (`#D4C26E`) for code text, copy-to-clipboard icon inline via `expo-clipboard`, always visible in Room View header.
-- **Realtime update signal:** Border color interpolation on the updated character card using that character's own color value — fade in → hold 100ms → fade out over 300ms total, via `react-native-reanimated`. Border only (not background) to avoid layout repaints and support concurrent multi-card updates without visual conflict. Scale pulse (`1.0 → 1.03 → 1.0`) deferred to post-launch iteration.
+- **Realtime update signal:** Border color interpolation on the updated character card using that character's own color value against the `surfaceWarm` baseline — `surfaceWarm` → character color → `surfaceWarm` over 700ms. Reduced motion skips interpolation and restores `surfaceWarm` after the same 700ms window. Border only (not background) to avoid layout repaints and support concurrent multi-card updates without visual conflict. Scale pulse (`1.0 → 1.03 → 1.0`) deferred to post-launch iteration.
 - **Battle view sides:** `AppTheme.colors.danger` (`#922525`) for monster side, `AppTheme.colors.accent` (`#D4C26E`) for player side.
 - **Destructive actions (Discard Battle):** `AppTheme.colors.danger` with explicit confirmation step before execution.
 

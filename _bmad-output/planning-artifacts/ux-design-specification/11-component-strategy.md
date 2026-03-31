@@ -86,9 +86,9 @@ No third-party UI library — pure React Native StyleSheet throughout. `AppTheme
 ## 11.5 New Hook
 
 **`useRealtimeFlash(color: string)`**
-- **Purpose:** Animated border highlight on `RoomCharacterCard` when another player updates that character's stats
-- **Behaviour:** Border interpolates from transparent → `color` → transparent over 300ms via `react-native-reanimated`
-- **Trigger:** Called externally when a realtime update arrives for the character's ID
+- **Purpose:** Animated border highlight on `RoomCharacterCard` when a realtime character update is received for that card
+- **Behaviour:** Border interpolates from `surfaceWarm` → `color` → `surfaceWarm` over 700ms; reduced motion applies `color` immediately and restores `surfaceWarm` after 700ms with no interpolation
+- **Trigger:** Called externally when a realtime update arrives for the character's ID, excluding likely websocket echoes from the same client
 - **Returns:** `animatedBorderStyle` — applied directly to card's border style
 - **Constraints:** Border only (not background) — avoids layout repaints and supports concurrent multi-card flashes without visual conflict
 

@@ -95,7 +95,7 @@ So that animations don't cause discomfort during play.
 
 **Given** I have reduced motion enabled on my device
 **When** I use the app
-**Then** `useRealtimeFlash` applies the border colour immediately and removes it after 300ms without interpolation
+**Then** `useRealtimeFlash` applies the border colour immediately and restores the room surface border colour after 700ms without interpolation
 **And** `QuickEditSheet` snaps directly to open/closed position without spring animation
 
 > **Covers:** UX-DR16

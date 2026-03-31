@@ -21,7 +21,7 @@ Built on the existing `AppTheme` (source of truth: `frontend/constants/theme.ts`
 | Token | Value | Role |
 |---|---|---|
 | `actionSecondary` | `#6E6BD4` | Violet — secondary action buttons |
-| `surfaceWarm` | `#A67560` | Warm brown — character card surface |
+| `surfaceWarm` | `#8A6150` | Warm brown — character card surface |
 | `surfaceSubtle` | `#353535` | Dark grey — muted surfaces |
 | `textAccentSoft` | `#E8D89A` | Soft gold — character names on cards and modal header |
 

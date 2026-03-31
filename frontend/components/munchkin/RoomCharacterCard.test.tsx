@@ -1,9 +1,9 @@
 import { Character } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
+import { AccessibilityInfo, Animated, ScrollView, StyleSheet } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
-import { ScrollView, StyleSheet } from 'react-native';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AttributeList from './AttributeList';
 import CurrentCharacterFooter from './CurrentCharacterFooter';
@@ -18,6 +18,11 @@ vi.mock('react-native', async () => {
   return {
     ...actual,
     Image: 'Image',
+    AccessibilityInfo: {
+      ...actual.AccessibilityInfo,
+      isReduceMotionEnabled: vi.fn().mockResolvedValue(false),
+      addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+    },
   };
 });
 
@@ -51,6 +56,11 @@ function getTextNode(renderer: any, text: string) {
 }
 
 describe('RoomCharacterCard', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+  });
+
   it('supports full-card press with accessibility label and hint', () => {
     const onChangePress = vi.fn();
     let renderer: any;
@@ -171,5 +181,119 @@ describe('RoomCharacterCard', () => {
     const [footerScrollView] = footerRenderer.root.findAllByType(ScrollView);
     expect(footerScrollView.props.nestedScrollEnabled).toBe(true);
     expect(footerScrollView.props.showsVerticalScrollIndicator).toBe(false);
+  });
+
+  it('shows reduced-motion realtime border signal when an external update arrives', async () => {
+    vi.useFakeTimers();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+    const onChangePress = vi.fn();
+    const timeoutSpy = vi.spyOn(global, 'setTimeout');
+    let renderer: any;
+
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={onChangePress} realtimeFlashSignal={0} />
+      );
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={onChangePress} realtimeFlashSignal={1} />
+      );
+    });
+
+    const cardContainer = renderer.root.findByType(Animated.View);
+    const flashStyle = StyleSheet.flatten(cardContainer.props.style);
+
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 700);
+    expect(flashStyle.borderWidth).toBe(3);
+  });
+
+  it('waits for reduced-motion preference resolution before processing the first realtime signal', async () => {
+    vi.useFakeTimers();
+    let resolveReducedMotion!: (value: boolean) => void;
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveReducedMotion = resolve;
+        })
+    );
+    const timingSpy = vi.spyOn(Animated, 'timing');
+    const timeoutSpy = vi.spyOn(global, 'setTimeout');
+    let renderer: any;
+
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={0} />
+      );
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timingSpy).not.toHaveBeenCalled();
+    expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 700);
+
+    await act(async () => {
+      resolveReducedMotion(true);
+      await Promise.resolve();
+    });
+
+    expect(timingSpy).not.toHaveBeenCalled();
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 700);
+
+    timingSpy.mockRestore();
+  });
+
+  it('supports concurrent flash animations across multiple cards', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+    const animatedStartSpy = vi.fn();
+    const timingSpy = vi.spyOn(Animated, 'timing').mockImplementation(
+      () =>
+      ({
+        start: animatedStartSpy,
+        stop: vi.fn(),
+        reset: vi.fn(),
+      } as unknown as Animated.CompositeAnimation)
+    );
+
+    const otherCharacter: Character = {
+      ...baseCharacter,
+      id: 'char-2',
+      nickname: 'Balin',
+      color: '#112233',
+    };
+
+    let firstRenderer: any;
+    let secondRenderer: any;
+    await act(async () => {
+      firstRenderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+      secondRenderer = TestRenderer.create(
+        <RoomCharacterCard character={otherCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timingSpy).toHaveBeenCalledTimes(4);
+    expect(animatedStartSpy).toHaveBeenCalledTimes(4);
+    expect(timingSpy).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.objectContaining({ duration: 350 })
+    );
+    expect(timingSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({ duration: 350 })
+    );
+
+    act(() => {
+      firstRenderer.unmount();
+      secondRenderer.unmount();
+    });
   });
 });

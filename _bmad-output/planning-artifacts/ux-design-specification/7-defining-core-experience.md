@@ -32,7 +32,7 @@ Combining established patterns innovatively:
 - **Established**: bottom sheet / modal editor (familiar mobile pattern)
 - **Established**: tap-to-open card interaction
 - **Established**: explicit Save button for intentional edits
-- **Novel twist**: realtime border flash signal on Room View cards (zero new UI tokens — uses character's own color)
+- **Novel twist**: realtime border flash signal on Room View cards (reuses existing character color + `surfaceWarm` border baseline instead of introducing a new UI token)
 - **Novel twist**: full peer edit access with no permission gates — any player edits any character
 
 No user education required. The patterns are immediately legible to any smartphone user.
@@ -53,6 +53,6 @@ Character Modal slides up (bottom sheet). Header shows character name. Controls:
 - Tap outside with unsaved changes → sheet dismisses, brief Undo toast appears at bottom (1500ms). Tap "Undo" to restore sheet state with changes preserved. Toast auto-expires silently if ignored.
 
 **4. Completion**
-User taps Save → modal closes → Room View reflects updated stats → border color flash fires on the updated character card across all connected devices (300ms, character's own color, via `react-native-reanimated`).
+User taps Save → modal closes → Room View reflects updated stats → border color flash fires on the updated character card across all connected devices (700ms, character's own color against the `surfaceWarm` border baseline). Likely websocket echoes from the same client are suppressed to avoid duplicate confirmation flashes.
 
 ---

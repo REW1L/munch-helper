@@ -74,7 +74,7 @@ flowchart TD
     I --> J[Sheet closes]
     J --> K[Room View updates]
     K --> L[Log entry created\npreviousValue → newValue per field]
-    L --> M[Border flash on all devices\n300ms · character color]
+    L --> M[Border flash on all devices\n700ms · character color ↔ surfaceWarm]
     M --> A
     E --> N[Edit more… tapped]
     N --> O[Sheet dismisses first]

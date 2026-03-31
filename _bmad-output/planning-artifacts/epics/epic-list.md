@@ -16,7 +16,7 @@ Players can create a character for a room, view their own character details and 
 **Status:** Existing + Enhanced (prerequisite stories — AppTheme token migration, Room View routing migration — are gates for Epics 5 and 6)
 
 ## Epic 4: Realtime Room Awareness & Recovery
-Players see a shared live view of room state, receive real-time visual signals when other players make changes, and can recover from temporary disconnections or join a session late without losing context.
+Players see a shared live view of room state, receive real-time visual signals when room character updates are surfaced to the client, and can recover from temporary disconnections or join a session late without losing context.
 **FRs covered:** FR10, FR11, FR37, FR38, FR39
 **Status:** Existing + Enhanced
 **Cross-platform exit criteria apply to this epic**

@@ -2,24 +2,119 @@ import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
-import React, { memo } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import AttributeList from './AttributeList';
 
 interface RoomCharacterCardProps {
   character: RoomCharacter;
   onChangePress: (character: RoomCharacter) => void;
+  realtimeFlashSignal?: number;
 }
+
+const REALTIME_FLASH_DURATION_MS = 700;
+const REALTIME_FLASH_BORDER_WIDTH = 3;
 
 const RoomCharacterCard = memo(function RoomCharacterCard({
   character,
   onChangePress,
+  realtimeFlashSignal = 0,
 }: RoomCharacterCardProps) {
   const accessibilityLabel = `${character.nickname}, Level ${character.level}, Power ${character.power}`;
+  const animatedBorderProgress = useRef(new Animated.Value(0)).current;
+  const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
+  const [reducedMotionBorderColor, setReducedMotionBorderColor] = useState(AppTheme.colors.surfaceWarm.toString());
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (isMounted) {
+        setIsReducedMotionEnabled(enabled);
+      }
+    });
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setIsReducedMotionEnabled(enabled);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (realtimeFlashSignal < 1 || isReducedMotionEnabled === null) {
+      return;
+    }
+
+    if (reducedMotionTimeoutRef.current) {
+      clearTimeout(reducedMotionTimeoutRef.current);
+      reducedMotionTimeoutRef.current = null;
+    }
+
+    if (isReducedMotionEnabled) {
+      setReducedMotionBorderColor(character.color);
+      reducedMotionTimeoutRef.current = setTimeout(() => {
+        setReducedMotionBorderColor(AppTheme.colors.surfaceWarm);
+      }, REALTIME_FLASH_DURATION_MS);
+      return;
+    }
+
+    animatedBorderProgress.stopAnimation();
+    animatedBorderProgress.setValue(0);
+    Animated.sequence([
+      Animated.timing(animatedBorderProgress, {
+        toValue: 1,
+        duration: REALTIME_FLASH_DURATION_MS / 2,
+        easing: Easing.sin,
+        useNativeDriver: false,
+      }),
+      Animated.timing(animatedBorderProgress, {
+        toValue: 0,
+        duration: REALTIME_FLASH_DURATION_MS / 2,
+        easing: Easing.sin,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [animatedBorderProgress, character.color, isReducedMotionEnabled, realtimeFlashSignal]);
+
+  useEffect(() => {
+    return () => {
+      if (reducedMotionTimeoutRef.current) {
+        clearTimeout(reducedMotionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const animatedBorderColor = useMemo(
+    () =>
+      animatedBorderProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [AppTheme.colors.surfaceWarm, character.color],
+      }),
+    [animatedBorderProgress, character.color]
+  );
+
+  const flashStyle = isReducedMotionEnabled
+    ? { borderColor: reducedMotionBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH }
+    : { borderColor: animatedBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH };
 
   return (
-    <View style={styles.characterCard}>
+    <Animated.View style={[styles.characterCard, flashStyle]}>
       <Pressable
         style={({ pressed }) => [styles.cardBodyPressable, pressed && styles.cardBodyPressablePressed]}
         onPress={() => onChangePress(character)}
@@ -54,7 +149,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
       </View>
 
       <VioletButton title="Change" onPress={() => onChangePress(character)} />
-    </View>
+    </Animated.View>
   );
 });
 
