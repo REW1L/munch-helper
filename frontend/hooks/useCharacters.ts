@@ -22,12 +22,16 @@ interface UseRoomCharactersResult {
 }
 
 const ENSURE_CHARACTER_COOLDOWN_MS = 5000;
-const LOCAL_UPDATE_SUPPRESSION_WINDOW_MS = 2000;
 
 const getCharactersQueryKey = (roomId: string | undefined): readonly ['characters', string | undefined] => ['characters', roomId];
 
 type CharactersMutationContext = {
   previousCharacters: Character[];
+};
+
+type PendingLocalUpdateMarker = {
+  inFlightCount: number;
+  suppressibleEchoCount: number;
 };
 
 function isAbortError(error: unknown): boolean {
@@ -37,11 +41,52 @@ function isAbortError(error: unknown): boolean {
   );
 }
 
-function pruneExpiredLocalUpdateMarkers(markers: Map<string, number>, now: number): void {
-  markers.forEach((updatedAt, characterId) => {
-    if (now - updatedAt > LOCAL_UPDATE_SUPPRESSION_WINDOW_MS) {
-      markers.delete(characterId);
-    }
+function recordPendingLocalUpdate(markers: Map<string, PendingLocalUpdateMarker>, characterId: string): void {
+  const currentMarker = markers.get(characterId);
+  markers.set(characterId, {
+    inFlightCount: (currentMarker?.inFlightCount ?? 0) + 1,
+    suppressibleEchoCount: (currentMarker?.suppressibleEchoCount ?? 0) + 1,
+  });
+}
+
+function settlePendingLocalUpdate(markers: Map<string, PendingLocalUpdateMarker>, characterId: string): void {
+  const currentMarker = markers.get(characterId);
+
+  if (!currentMarker) {
+    return;
+  }
+
+  const nextInFlightCount = Math.max(0, currentMarker.inFlightCount - 1);
+  const nextSuppressibleEchoCount = Math.min(currentMarker.suppressibleEchoCount, nextInFlightCount);
+
+  if (nextInFlightCount === 0 && nextSuppressibleEchoCount === 0) {
+    markers.delete(characterId);
+    return;
+  }
+
+  markers.set(characterId, {
+    inFlightCount: nextInFlightCount,
+    suppressibleEchoCount: nextSuppressibleEchoCount,
+  });
+}
+
+function consumeSuppressibleEcho(markers: Map<string, PendingLocalUpdateMarker>, characterId: string): void {
+  const currentMarker = markers.get(characterId);
+
+  if (!currentMarker) {
+    return;
+  }
+
+  const nextSuppressibleEchoCount = Math.max(0, currentMarker.suppressibleEchoCount - 1);
+
+  if (currentMarker.inFlightCount === 0 && nextSuppressibleEchoCount === 0) {
+    markers.delete(characterId);
+    return;
+  }
+
+  markers.set(characterId, {
+    inFlightCount: currentMarker.inFlightCount,
+    suppressibleEchoCount: nextSuppressibleEchoCount,
   });
 }
 
@@ -49,7 +94,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
-  const recentLocalUpdateByCharacterRef = useRef<Map<string, number>>(new Map());
+  const recentLocalUpdateByCharacterRef = useRef<Map<string, PendingLocalUpdateMarker>>(new Map());
   const [realtimeUpdateSignals, setRealtimeUpdateSignals] = useState<Record<string, number>>({});
 
   // Set up WebSocket connection for real-time updates
@@ -123,7 +168,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       return updateCharacter(characterId, payload);
     },
     onMutate: async ({ characterId, payload }) => {
-      recentLocalUpdateByCharacterRef.current.set(characterId, Date.now());
+      recordPendingLocalUpdate(recentLocalUpdateByCharacterRef.current, characterId);
       const queryKey = getCharactersQueryKey(roomId);
       await queryClient.cancelQueries({ queryKey });
       const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
@@ -149,18 +194,19 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
       return { previousCharacters };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, variables, context) => {
+      settlePendingLocalUpdate(recentLocalUpdateByCharacterRef.current, variables.characterId);
       if (context) {
         queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
       }
     },
     onSuccess: (updatedCharacter) => {
+      settlePendingLocalUpdate(recentLocalUpdateByCharacterRef.current, updatedCharacter.id);
       queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) =>
         currentCharacters.map((character) => (character.id === updatedCharacter.id ? updatedCharacter : character))
       );
     },
     onSettled: () => {
-      pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
       void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
     },
   });
@@ -180,27 +226,20 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         }
         case 'character_updated': {
           const updatedCharacterId = event.event_body.characterId;
-          pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
           const lastLocalUpdateAt = recentLocalUpdateByCharacterRef.current.get(updatedCharacterId);
           const isLikelyOwnUpdate =
-            typeof lastLocalUpdateAt === 'number' &&
-            Date.now() - lastLocalUpdateAt <= LOCAL_UPDATE_SUPPRESSION_WINDOW_MS;
+            typeof lastLocalUpdateAt?.suppressibleEchoCount === 'number' && lastLocalUpdateAt.suppressibleEchoCount > 0;
 
           if (isLikelyOwnUpdate) {
-            recentLocalUpdateByCharacterRef.current.delete(updatedCharacterId);
+            consumeSuppressibleEcho(recentLocalUpdateByCharacterRef.current, updatedCharacterId);
             void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
             break;
           }
 
-          const currentCharacters = queryClient.getQueryData<Character[]>(getCharactersQueryKey(roomId)) ?? [];
-          const updatedCharacter = currentCharacters.find((character) => character.id === updatedCharacterId);
-
-          if (updatedCharacter) {
-            setRealtimeUpdateSignals((currentSignals) => ({
-              ...currentSignals,
-              [updatedCharacterId]: (currentSignals[updatedCharacterId] ?? 0) + 1,
-            }));
-          }
+          setRealtimeUpdateSignals((currentSignals) => ({
+            ...currentSignals,
+            [updatedCharacterId]: (currentSignals[updatedCharacterId] ?? 0) + 1,
+          }));
 
           // Refetch all characters when one is updated
           void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });

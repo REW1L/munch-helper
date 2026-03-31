@@ -1,6 +1,6 @@
 # Story 3.8: Realtime Update Signal on Character Cards
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -74,6 +74,19 @@ gpt-5 (Codex)
 - `cd frontend && npm run lint`
 - `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx`
 - Repository diff review on 2026-03-31 to capture follow-up implementation changes in Story 3.8 notes
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx useCharacters.test.ts` (review-fix regressions added first; confirmed failing before patch)
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx useCharacters.test.ts` (passes after review-fix patch)
+- `cd frontend && npm run tsc`
+- `cd frontend && npm run lint`
+- `cd frontend && npm test`
+- `cd frontend && npm run test:unit -- useCharacters.test.ts`
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx useCharacters.test.ts`
+- `cd frontend && npm run tsc`
+- `cd frontend && npm run test:unit -- useCharacters.test.ts` (stacked same-character mutation regression)
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx useCharacters.test.ts`
+- `cd frontend && npm run tsc`
+- `cd frontend && npm run lint`
+- `cd frontend && npm test`
 
 ### Completion Notes List
 
@@ -88,11 +101,24 @@ gpt-5 (Codex)
 - Updated websocket signal handling to flash any character card touched by a `character_updated` event, including the current user's card when the update is processed from the room subscription.
 - Retuned the card flash presentation to use a 700ms two-phase animation, a 3px border, and the warm surface border colour as the idle/reduced-motion fallback instead of transparent.
 - Refreshed hook and card tests to match the wider signal scope and the new border timing and styling expectations.
+- Tightened local websocket echo suppression to consume a single pending echo token per local mutation instead of suppressing every update for the character during the full cooldown window.
+- Preserved realtime flash counters even when a `character_updated` event arrives before the target card is present in the room character cache, so the flash still appears after the card loads.
+- Deferred realtime flash handling until reduced-motion preference resolution so the first signal honors the no-interpolation accessibility path.
+- Added regression coverage for conflicting same-character updates, cache-gap signal delivery, and reduced-motion preference resolution before the first flash.
+- Narrowed websocket echo suppression further so it only applies while the matching local character mutation is still in flight, which avoids swallowing later remote updates when no local echo ever arrives.
+- Reworked hook coverage to distinguish in-flight echo suppression from post-settle remote updates on the same character.
+- Split local-update suppression bookkeeping into separate in-flight and suppressible-echo counters so overlapping local edits on the same character each suppress at most one echo without clearing the next mutation's suppression state.
+- Added stacked same-character mutation coverage to verify two overlapping local updates still suppress two distinct echoes before a later remote update flashes normally.
 
 ### Review Findings
 
 - [x] [Review][Patch] Add AC2-focused test coverage for concurrent character-card flash handling [`frontend/components/munchkin/RoomCharacterCard.test.tsx:208`]
 - [x] [Review][Patch] Prune stale local-update suppression markers to avoid long-lived stale entries [`frontend/hooks/useCharacters.ts:40`]
+- [x] [Review][Patch] Narrow local echo suppression so later remote updates to the same character still flash [`frontend/hooks/useCharacters.ts`]
+- [x] [Review][Patch] Preserve realtime signals when update events arrive before the character is present in cache [`frontend/hooks/useCharacters.ts`]
+- [x] [Review][Patch] Wait for reduced-motion preference resolution before handling the first realtime flash [`frontend/components/munchkin/RoomCharacterCard.tsx`]
+- [x] [Review][Patch] Stop suppressing later remote updates when no local websocket echo arrived before the mutation settled [`frontend/hooks/useCharacters.ts`]
+- [x] [Review][Patch] Preserve per-mutation echo suppression when overlapping local updates target the same character [`frontend/hooks/useCharacters.ts`]
 
 ### File List
 
@@ -114,3 +140,6 @@ gpt-5 (Codex)
 - 2026-03-31: Returned Story 3.8 to development and tuned the realtime card flash to 2000ms with a 4px border.
 - 2026-03-31: Updated Story 3.8 notes to reflect the current repository changes: websocket flashes now include the current user's card, and the card flash styling/tests were retuned to 700ms with a 3px warm-surface border baseline.
 - 2026-03-31: Realigned the story, acceptance criteria, and task contract with the current implementation behavior and test expectations.
+- 2026-03-31: Addressed follow-up review findings by narrowing local echo suppression, retaining pending flash signals across cache gaps, and deferring the first flash until reduced-motion preference resolution.
+- 2026-03-31: Tightened local echo suppression again so only in-flight mutations suppress websocket echoes; once the mutation settles, later remote updates to the same character flash normally.
+- 2026-03-31: Fixed overlapping same-character local updates so each in-flight mutation retains its own suppressible websocket echo slot until consumed or settled.

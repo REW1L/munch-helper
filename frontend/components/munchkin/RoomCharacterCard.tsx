@@ -34,7 +34,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   const accessibilityLabel = `${character.nickname}, Level ${character.level}, Power ${character.power}`;
   const animatedBorderProgress = useRef(new Animated.Value(0)).current;
   const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState(false);
+  const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
   const [reducedMotionBorderColor, setReducedMotionBorderColor] = useState(AppTheme.colors.surfaceWarm.toString());
 
   useEffect(() => {
@@ -57,7 +57,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   }, []);
 
   useEffect(() => {
-    if (realtimeFlashSignal < 1) {
+    if (realtimeFlashSignal < 1 || isReducedMotionEnabled === null) {
       return;
     }
 

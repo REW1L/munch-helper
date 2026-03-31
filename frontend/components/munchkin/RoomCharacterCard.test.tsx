@@ -209,6 +209,45 @@ describe('RoomCharacterCard', () => {
     expect(flashStyle.borderWidth).toBe(3);
   });
 
+  it('waits for reduced-motion preference resolution before processing the first realtime signal', async () => {
+    vi.useFakeTimers();
+    let resolveReducedMotion!: (value: boolean) => void;
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveReducedMotion = resolve;
+        })
+    );
+    const timingSpy = vi.spyOn(Animated, 'timing');
+    const timeoutSpy = vi.spyOn(global, 'setTimeout');
+    let renderer: any;
+
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={0} />
+      );
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timingSpy).not.toHaveBeenCalled();
+    expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 700);
+
+    await act(async () => {
+      resolveReducedMotion(true);
+      await Promise.resolve();
+    });
+
+    expect(timingSpy).not.toHaveBeenCalled();
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 700);
+
+    timingSpy.mockRestore();
+  });
+
   it('supports concurrent flash animations across multiple cards', async () => {
     vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
     const animatedStartSpy = vi.fn();
