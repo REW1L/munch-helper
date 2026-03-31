@@ -1,8 +1,8 @@
 import { Character } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
 import { AccessibilityInfo, Animated, ScrollView, StyleSheet } from 'react-native';
+import TestRenderer, { act } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AttributeList from './AttributeList';
@@ -202,7 +202,11 @@ describe('RoomCharacterCard', () => {
       );
     });
 
-    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 300);
+    const cardContainer = renderer.root.findByType(Animated.View);
+    const flashStyle = StyleSheet.flatten(cardContainer.props.style);
+
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 700);
+    expect(flashStyle.borderWidth).toBe(3);
   });
 
   it('supports concurrent flash animations across multiple cards', async () => {
@@ -210,11 +214,11 @@ describe('RoomCharacterCard', () => {
     const animatedStartSpy = vi.fn();
     const timingSpy = vi.spyOn(Animated, 'timing').mockImplementation(
       () =>
-        ({
-          start: animatedStartSpy,
-          stop: vi.fn(),
-          reset: vi.fn(),
-        } as unknown as Animated.CompositeAnimation)
+      ({
+        start: animatedStartSpy,
+        stop: vi.fn(),
+        reset: vi.fn(),
+      } as unknown as Animated.CompositeAnimation)
     );
 
     const otherCharacter: Character = {
@@ -237,6 +241,16 @@ describe('RoomCharacterCard', () => {
 
     expect(timingSpy).toHaveBeenCalledTimes(4);
     expect(animatedStartSpy).toHaveBeenCalledTimes(4);
+    expect(timingSpy).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.objectContaining({ duration: 350 })
+    );
+    expect(timingSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({ duration: 350 })
+    );
 
     act(() => {
       firstRenderer.unmount();

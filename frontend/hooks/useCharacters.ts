@@ -195,7 +195,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
           const currentCharacters = queryClient.getQueryData<Character[]>(getCharactersQueryKey(roomId)) ?? [];
           const updatedCharacter = currentCharacters.find((character) => character.id === updatedCharacterId);
 
-          if (updatedCharacter && updatedCharacter.userId !== userProfile.id) {
+          if (updatedCharacter) {
             setRealtimeUpdateSignals((currentSignals) => ({
               ...currentSignals,
               [updatedCharacterId]: (currentSignals[updatedCharacterId] ?? 0) + 1,

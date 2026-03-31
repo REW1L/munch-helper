@@ -23,6 +23,9 @@ interface RoomCharacterCardProps {
   realtimeFlashSignal?: number;
 }
 
+const REALTIME_FLASH_DURATION_MS = 700;
+const REALTIME_FLASH_BORDER_WIDTH = 3;
+
 const RoomCharacterCard = memo(function RoomCharacterCard({
   character,
   onChangePress,
@@ -32,7 +35,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   const animatedBorderProgress = useRef(new Animated.Value(0)).current;
   const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState(false);
-  const [reducedMotionBorderColor, setReducedMotionBorderColor] = useState('transparent');
+  const [reducedMotionBorderColor, setReducedMotionBorderColor] = useState(AppTheme.colors.surfaceWarm.toString());
 
   useEffect(() => {
     let isMounted = true;
@@ -66,8 +69,8 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     if (isReducedMotionEnabled) {
       setReducedMotionBorderColor(character.color);
       reducedMotionTimeoutRef.current = setTimeout(() => {
-        setReducedMotionBorderColor('transparent');
-      }, 300);
+        setReducedMotionBorderColor(AppTheme.colors.surfaceWarm);
+      }, REALTIME_FLASH_DURATION_MS);
       return;
     }
 
@@ -76,14 +79,14 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     Animated.sequence([
       Animated.timing(animatedBorderProgress, {
         toValue: 1,
-        duration: 150,
-        easing: Easing.linear,
+        duration: REALTIME_FLASH_DURATION_MS / 2,
+        easing: Easing.sin,
         useNativeDriver: false,
       }),
       Animated.timing(animatedBorderProgress, {
         toValue: 0,
-        duration: 150,
-        easing: Easing.linear,
+        duration: REALTIME_FLASH_DURATION_MS / 2,
+        easing: Easing.sin,
         useNativeDriver: false,
       }),
     ]).start();
@@ -101,14 +104,14 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     () =>
       animatedBorderProgress.interpolate({
         inputRange: [0, 1],
-        outputRange: ['transparent', character.color],
+        outputRange: [AppTheme.colors.surfaceWarm, character.color],
       }),
     [animatedBorderProgress, character.color]
   );
 
   const flashStyle = isReducedMotionEnabled
-    ? { borderColor: reducedMotionBorderColor, borderWidth: 2 }
-    : { borderColor: animatedBorderColor, borderWidth: 2 };
+    ? { borderColor: reducedMotionBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH }
+    : { borderColor: animatedBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH };
 
   return (
     <Animated.View style={[styles.characterCard, flashStyle]}>

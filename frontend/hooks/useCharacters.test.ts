@@ -168,7 +168,7 @@ describe('useRoomCharacters', () => {
     );
   });
 
-  it('raises realtime update signals for other players on websocket character updates', async () => {
+  it('raises realtime update signals for websocket character updates, including the current user card', async () => {
     const selfCharacter = {
       id: 'char-self',
       roomId,
@@ -232,7 +232,7 @@ describe('useRoomCharacters', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.realtimeUpdateSignals['char-self']).toBeUndefined();
+      expect(result.current.realtimeUpdateSignals['char-self']).toBe(1);
     });
 
     await act(async () => {

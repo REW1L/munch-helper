@@ -1,6 +1,6 @@
 # Story 3.8: Realtime Update Signal on Character Cards
 
-Status: done
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -71,6 +71,8 @@ gpt-5 (Codex)
 - `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx`
 - `cd frontend && npm run tsc`
 - `cd frontend && npm run lint`
+- `cd frontend && npm run test:unit -- RoomCharacterCard.test.tsx`
+- Repository diff review on 2026-03-31 to capture follow-up implementation changes in Story 3.8 notes
 
 ### Completion Notes List
 
@@ -81,6 +83,10 @@ gpt-5 (Codex)
 - Added tests for websocket signal gating and reduced-motion card signal coverage.
 - Added map-pruning for local websocket echo suppression markers to avoid stale suppression entries over long sessions.
 - Added concurrency-focused card test coverage to assert independent flash animation scheduling across multiple cards.
+- Reopened Story 3.8 for follow-up tuning and increased the realtime flash window to 2 seconds with a 4px flashing border.
+- Updated websocket signal handling to flash any character card touched by a `character_updated` event, including the current user's card when the update is processed from the room subscription.
+- Retuned the card flash presentation to use a 700ms two-phase animation, a 3px border, and the warm surface border colour as the idle/reduced-motion fallback instead of transparent.
+- Refreshed hook and card tests to match the wider signal scope and the new border timing and styling expectations.
 
 ### Review Findings
 
@@ -97,9 +103,12 @@ gpt-5 (Codex)
 - frontend/components/munchkin/RoomCharactersList.tsx
 - frontend/components/munchkin/RoomCharacterCard.tsx
 - frontend/components/munchkin/RoomCharacterCard.test.tsx
+- frontend/tsconfig.json
 
 ### Change Log
 
 - 2026-03-30: Created Story 3.8 implementation artifact with full dev context and acceptance criteria mapping.
 - 2026-03-30: Implemented realtime websocket-driven card update signals with reduced-motion support and regression tests.
 - 2026-03-30: Applied review fixes by pruning stale local-update suppression markers and adding concurrent flash coverage in `RoomCharacterCard` tests.
+- 2026-03-31: Returned Story 3.8 to development and tuned the realtime card flash to 2000ms with a 4px border.
+- 2026-03-31: Updated Story 3.8 notes to reflect the current repository changes: websocket flashes now include the current user's card, and the card flash styling/tests were retuned to 700ms with a 3px warm-surface border baseline.
