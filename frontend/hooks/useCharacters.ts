@@ -114,7 +114,6 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       });
     },
     onSettled: () => {
-      pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
       void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
     },
   });
@@ -161,6 +160,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       );
     },
     onSettled: () => {
+      pruneExpiredLocalUpdateMarkers(recentLocalUpdateByCharacterRef.current, Date.now());
       void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
     },
   });
