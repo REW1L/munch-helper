@@ -6,7 +6,7 @@ if ENV["ANDROID_SIGNING_KEY_PASSWORD"]
   gradle_properties = {
     "android.injected.signing.store.file" => ENV["ANDROID_SIGNING_KEY_PATH"],
     "android.injected.signing.store.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"],
-    "android.injected.signing.key.alias" => "upload-key-alias",
+    "android.injected.signing.key.alias" => ENV["ANDROID_SIGNING_KEY_ALIAS"] || "upload-key-alias",
     "android.injected.signing.key.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"]
   }
 else
@@ -33,16 +33,17 @@ platform :android do
             properties: gradle_properties
         )
     end
-    desc "Deploy a new version to the Google Play Beta track"
-    lane :beta do
-        # Build a release version of the app
-        build()
-
-        # Upload the app to the Play Store
+    desc "Upload the signed release build to the Play Store internal track"
+    lane :deploy do
         upload_to_play_store(
             track: "internal",
             skip_upload_apk: true,
             release_status: "draft"
         )
+    end
+    desc "Build and deploy a new version to the Google Play internal track"
+    lane :beta do
+        build()
+        deploy()
     end
 end
