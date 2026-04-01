@@ -101,7 +101,7 @@ development_status:
   epic-7: in-progress
   7-1-collaborative-release-foundation: done
   7-2-web-availability-pipeline: done
-  7-3-automated-ios-delivery: backlog
+  7-3-automated-ios-delivery: done
   7-4-automated-android-delivery: backlog
   7-5-release-facing-compliance-content: backlog
   7-6-cross-platform-release-readiness-checklist: backlog

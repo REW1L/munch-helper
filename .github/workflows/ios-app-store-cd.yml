@@ -53,6 +53,26 @@ jobs:
           ruby-version: "4.0.1"
           bundler-cache: false
 
+      - name: Validate Required Inputs
+        run: |
+          set -euo pipefail
+          for key in APP_STORE_CONNECT_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APPLE_ID APPLE_CONNECT_TEAM_ID APPLE_DEVELOPER_TEAM_ID MATCH_PASSWORD MATCH_GIT_URL MATCH_GIT_DEPLOY_KEY; do
+            if [ -z "${!key:-}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+        env:
+          APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_CONNECT_TEAM_ID: ${{ secrets.APPLE_CONNECT_TEAM_ID }}
+          APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_DEPLOY_KEY: ${{ secrets.MATCH_GIT_DEPLOY_KEY }}
+
       - name: Install Frontend Dependencies
         run: |
           npm ci
