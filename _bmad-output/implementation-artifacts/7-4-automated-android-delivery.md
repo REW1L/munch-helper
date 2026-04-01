@@ -95,6 +95,11 @@ gpt-5
 - Confirmed Play delivery remains targeted at the `internal` track with `release_status: "draft"`, satisfying the story's requirement for repeatable internal-track delivery.
 - Confirmed the planning epic and sprint tracker were updated in the same implementation commit to mark Story 7.4 as complete.
 
+### Post-Implementation Fix
+
+- **Issue:** After the story was marked done, the Android Play Store CD pipeline failed in production with `"No local metadata, apks, aab, or track to promote were found"`. Root cause: the CI workflow runs `bundle exec fastlane build` and `bundle exec fastlane deploy` as two separate processes. The `gradle` action in the `build` lane stores the AAB output path in the Fastlane lane context (`SharedValues::GRADLE_AAB_OUTPUT_PATH`), but that context is process-local and is lost when a fresh process starts for `fastlane deploy`. With no explicit path provided, `upload_to_play_store` could not locate any artifact.
+- **Fix:** Added `aab: "app/build/outputs/bundle/release/app-release.aab"` to `upload_to_play_store` in the `deploy` lane. This path is the standard Gradle `bundleRelease` output location, making the `deploy` lane self-contained and independent of cross-process lane context.
+
 ### File List
 
 - _bmad-output/implementation-artifacts/7-4-automated-android-delivery.md
@@ -108,3 +113,4 @@ gpt-5
 
 - 2026-04-01: Created the Story 7.4 implementation artifact with status set to `done` based on the existing Android delivery implementation and commit `8c4aa92`.
 - 2026-04-01: Recorded that the completing implementation added runtime support for `ANDROID_SIGNING_KEY_ALIAS`, made Play upload an explicit `deploy` lane, validated `EXPO_PUBLIC_API_URL`, and marked the story complete in the sprint and epic trackers.
+- 2026-04-01: Story returned to development after post-implementation CI failure. Fixed Fastlane `deploy` lane by adding explicit `aab: "app/build/outputs/bundle/release/app-release.aab"` to `upload_to_play_store` so the artifact is located correctly when `deploy` runs as a separate process from `build`. Story re-closed after fix.
