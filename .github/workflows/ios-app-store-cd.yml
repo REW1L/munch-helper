@@ -73,6 +73,7 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_DEPLOY_KEY: ${{ secrets.MATCH_GIT_DEPLOY_KEY }}
+          EXPO_PUBLIC_API_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
 
       - name: Install Frontend Dependencies
         run: |
