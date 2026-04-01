@@ -28,8 +28,10 @@ jobs:
         working-directory: frontend/android
 
     env:
+      ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
       ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
       ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/.tmp/android-upload-key.jks
+      EXPO_PUBLIC_API_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
 
     steps:
       - name: Checkout
@@ -64,7 +66,7 @@ jobs:
       - name: Validate Required Inputs
         run: |
           set -euo pipefail
-          for key in ANDROID_SIGNING_KEY ANDROID_SIGNING_KEY_PASSWORD GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT; do
+          for key in ANDROID_SIGNING_KEY ANDROID_SIGNING_KEY_PASSWORD GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT EXPO_PUBLIC_API_URL; do
             if [ -z "${!key:-}" ]; then
               echo "Missing required secret: $key" >&2
               exit 1
@@ -104,4 +106,4 @@ jobs:
           create_credentials_file: true
 
       - name: Upload Android Build to Play Store
-        run: bundle exec fastlane beta
+        run: bundle exec fastlane deploy

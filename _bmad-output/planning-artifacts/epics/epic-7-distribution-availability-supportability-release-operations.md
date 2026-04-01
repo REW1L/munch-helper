@@ -45,7 +45,7 @@ So that iOS releases are repeatable and do not depend on manual intervention.
 **And** a signed `.ipa` is produced and delivered to TestFlight
 **And** the workflow fails with actionable logs if signing or delivery cannot be completed
 
-## Story 7.4: Automated Android Delivery `[TODO]`
+## Story 7.4: Automated Android Delivery `[DONE]`
 
 As a team,
 I want the Android pipeline to build, sign, and deliver the app to the Play internal track automatically,

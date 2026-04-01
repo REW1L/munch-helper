@@ -23,13 +23,21 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 Build only a release version of the app
 
+### android deploy
+
+```sh
+[bundle exec] fastlane android deploy
+```
+
+Upload the signed release build to the Play Store internal track
+
 ### android beta
 
 ```sh
 [bundle exec] fastlane android beta
 ```
 
-Deploy a new version to the Google Play Beta track
+Build and deploy a new version to the Google Play internal track
 
 ----
 
