@@ -60,6 +60,7 @@ So that iOS releases are repeatable and do not depend on manual intervention.
 
 - All signing material is managed exclusively through Fastlane match; no local certificate state is required.
 - The workflow uses the `iOS` GitHub Actions environment to gate secret access.
+- App Store Connect authentication in the GitHub Actions workflow is handled with the API key tuple (`APP_STORE_CONNECT_KEY`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`); `APPLE_ID`, `APPLE_CONNECT_TEAM_ID`, and `APPLE_DEVELOPER_TEAM_ID` are not wired into the workflow or validated as required inputs for this path.
 - Build artifacts are not retained as GitHub Actions artifacts; TestFlight serves as the durable build store.
 
 ### References
@@ -86,7 +87,8 @@ claude-sonnet-4-5
 
 - Confirmed the existing `ios-app-store-cd.yml` workflow and Fastlane `beta` lane fully satisfy AC 1–3 for signing and upload mechanics.
 - Added `Validate Required Inputs` step to `ios-app-store-cd.yml` before dependency installation to satisfy AC 4, consistent with the Android workflow pattern.
-- The step checks all required secrets/inputs (`APP_STORE_CONNECT_KEY`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APPLE_ID`, `APPLE_CONNECT_TEAM_ID`, `APPLE_DEVELOPER_TEAM_ID`, `MATCH_PASSWORD`, `MATCH_GIT_URL`, `MATCH_GIT_DEPLOY_KEY`, `EXPO_PUBLIC_API_URL`) and exits with a named error on the first missing value.
+- The step now checks the current required secrets/inputs (`APP_STORE_CONNECT_KEY`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `MATCH_PASSWORD`, `MATCH_GIT_URL`, `MATCH_GIT_DEPLOY_KEY`, `EXPO_PUBLIC_API_URL`) and exits with a named error on the first missing value.
+- Current repository state no longer injects or validates `APPLE_ID`, `APPLE_CONNECT_TEAM_ID`, or `APPLE_DEVELOPER_TEAM_ID` in `.github/workflows/ios-app-store-cd.yml`; the workflow uses App Store Connect API key authentication instead.
 - Added `EXPO_PUBLIC_API_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}` to the job-level `env` block. This is required because `frontend/config/runtime.ts` throws `'Missing EXPO_PUBLIC_API_URL in a non-development environment.'` at module-init time in production builds (`__DEV__ = false`), which caused TestFlight builds to crash on startup without this variable baked into the Metro bundle.
 
 ### File List
@@ -99,3 +101,4 @@ claude-sonnet-4-5
 
 - 2026-04-01: Created Story 7.3 implementation artifact and completed the iOS CD pipeline by adding the `Validate Required Inputs` step for actionable failure logs.
 - 2026-04-01: Fixed TestFlight crash-on-startup by adding `EXPO_PUBLIC_API_URL` to the iOS workflow job environment. Without it, `frontend/config/runtime.ts` throws at module init in production (`__DEV__ = false`), crashing the app before any screen renders.
+- 2026-04-01: Updated Story 7.3 notes to match the current workflow: `APPLE_*` variables are no longer passed into or validated by the App Store Connect key-based GitHub Actions path.

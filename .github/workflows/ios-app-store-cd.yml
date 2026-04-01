@@ -30,9 +30,6 @@ jobs:
       APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
       APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       APP_STORE_CONNECT_KEY_PATH: ${{ github.workspace }}/.tmp/app-store-connect-key.p8
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_CONNECT_TEAM_ID: ${{ secrets.APPLE_CONNECT_TEAM_ID }}
-      APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
       EXPO_PUBLIC_API_URL: ${{ vars.API_BASE_URL || secrets.API_BASE_URL }}
@@ -57,7 +54,7 @@ jobs:
       - name: Validate Required Inputs
         run: |
           set -euo pipefail
-          for key in APP_STORE_CONNECT_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APPLE_ID APPLE_CONNECT_TEAM_ID APPLE_DEVELOPER_TEAM_ID MATCH_PASSWORD MATCH_GIT_URL MATCH_GIT_DEPLOY_KEY EXPO_PUBLIC_API_URL; do
+          for key in APP_STORE_CONNECT_KEY APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID MATCH_PASSWORD MATCH_GIT_URL MATCH_GIT_DEPLOY_KEY EXPO_PUBLIC_API_URL; do
             if [ -z "${!key:-}" ]; then
               echo "Missing required secret: $key" >&2
               exit 1
@@ -67,9 +64,6 @@ jobs:
           APP_STORE_CONNECT_KEY: ${{ secrets.APP_STORE_CONNECT_KEY }}
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_CONNECT_TEAM_ID: ${{ secrets.APPLE_CONNECT_TEAM_ID }}
-          APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
           MATCH_GIT_DEPLOY_KEY: ${{ secrets.MATCH_GIT_DEPLOY_KEY }}
