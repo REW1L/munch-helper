@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type Character,
   createCharacter,
+  deleteCharacter,
   getCharactersByRoom,
   updateCharacter,
 } from '@/api/characters';
@@ -18,6 +19,7 @@ const mockSubscribe = vi.fn<(listener: (event: { event: string; event_body: { ch
 
 vi.mock('@/api/characters', () => ({
   createCharacter: vi.fn(),
+  deleteCharacter: vi.fn(),
   getCharactersByRoom: vi.fn(),
   updateCharacter: vi.fn(),
 }));
@@ -31,6 +33,7 @@ vi.mock('@/hooks/useRoomWebSocket', () => ({
 
 const mockGetCharactersByRoom = vi.mocked(getCharactersByRoom);
 const mockCreateCharacter = vi.mocked(createCharacter);
+const mockDeleteCharacter = vi.mocked(deleteCharacter);
 const mockUpdateCharacter = vi.mocked(updateCharacter);
 
 describe('useRoomCharacters', () => {
@@ -57,6 +60,7 @@ describe('useRoomCharacters', () => {
 
     mockGetCharactersByRoom.mockReset();
     mockCreateCharacter.mockReset();
+    mockDeleteCharacter.mockReset();
     mockUpdateCharacter.mockReset();
     mockSubscribe.mockReset();
     mockSubscribe.mockImplementation(() => () => undefined);
@@ -167,6 +171,328 @@ describe('useRoomCharacters', () => {
         power: 5,
       })
     );
+  });
+
+  it('removes characters and keeps query state in sync', async () => {
+    const initialCharacters = [
+      {
+        id: 'char-self',
+        roomId,
+        userId: userProfile.id,
+        nickname: 'Hero',
+        avatar: 1,
+        color: '#AA5500',
+        level: 2,
+        power: 3,
+        race: ['Human'],
+        gender: ['male'],
+        class: ['Warrior'],
+      },
+      {
+        id: 'char-other',
+        roomId,
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        race: ['Elf'],
+        gender: ['female'],
+        class: ['Thief'],
+      },
+    ];
+
+    mockGetCharactersByRoom
+      .mockResolvedValueOnce(initialCharacters)
+      .mockResolvedValue([initialCharacters[0]]);
+    mockDeleteCharacter.mockResolvedValue(undefined);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+    });
+
+    await act(async () => {
+      await result.current.remove('char-other');
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(1);
+      expect(result.current.characters[0]?.id).toBe('char-self');
+    });
+
+    expect(mockDeleteCharacter).toHaveBeenCalledWith('char-other');
+  });
+
+  it('does not auto-recreate the current user character after an intentional self-delete', async () => {
+    const initialCharacters = [
+      {
+        id: 'char-self',
+        roomId,
+        userId: userProfile.id,
+        nickname: 'Hero',
+        avatar: 1,
+        color: '#AA5500',
+        level: 2,
+        power: 3,
+        race: ['Human'],
+        gender: ['male'],
+        class: ['Warrior'],
+      },
+      {
+        id: 'char-other',
+        roomId,
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        race: ['Elf'],
+        gender: ['female'],
+        class: ['Thief'],
+      },
+    ];
+
+    mockGetCharactersByRoom
+      .mockResolvedValueOnce(initialCharacters)
+      .mockResolvedValue([initialCharacters[1]]);
+    mockDeleteCharacter.mockResolvedValue(undefined);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+    });
+
+    await act(async () => {
+      await result.current.remove('char-self');
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(1);
+      expect(result.current.characters[0]?.id).toBe('char-other');
+    });
+
+    await waitFor(() => {
+      expect(mockDeleteCharacter).toHaveBeenCalledWith('char-self');
+    });
+
+    expect(mockCreateCharacter).not.toHaveBeenCalled();
+  });
+
+  it('blocks creating a replacement current-user character while self-delete is still in flight', async () => {
+    const selfCharacter: Character = {
+      id: 'char-self',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Hero',
+      avatar: 1,
+      color: '#AA5500',
+      level: 2,
+      power: 3,
+      race: ['Human'],
+      gender: ['male'],
+      class: ['Warrior'],
+    };
+    const otherCharacter: Character = {
+      id: 'char-other',
+      roomId,
+      userId: 'user-2',
+      nickname: 'Rogue',
+      avatar: 2,
+      color: '#0088CC',
+      level: 4,
+      power: 1,
+      race: ['Elf'],
+      gender: ['female'],
+      class: ['Thief'],
+    };
+    const replacementCharacter: Character = {
+      id: 'char-replacement',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Replacement',
+      avatar: 3,
+      color: '#11AA77',
+      level: 1,
+      power: 0,
+      race: ['Human'],
+      gender: ['female'],
+      class: [],
+    };
+
+    let resolveDelete!: () => void;
+    mockGetCharactersByRoom
+      .mockResolvedValueOnce([selfCharacter, otherCharacter])
+      .mockResolvedValue([otherCharacter]);
+    mockDeleteCharacter.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        })
+    );
+    mockCreateCharacter.mockResolvedValue(replacementCharacter);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+    });
+
+    let pendingDelete!: Promise<void>;
+    await act(async () => {
+      pendingDelete = result.current.remove('char-self');
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isCreateBlocked).toBe(true);
+      expect(result.current.characters.some((character) => character.id === 'char-self')).toBe(false);
+    });
+
+    await expect(
+      result.current.create({
+        userId: userProfile.id,
+        nickname: 'Replacement',
+        avatar: 3,
+        color: '#11AA77',
+        level: 1,
+        power: 0,
+        race: ['Human'],
+        gender: ['female'],
+        class: [],
+      })
+    ).rejects.toThrow('Please wait for character removal to finish before creating a new one');
+    expect(mockCreateCharacter).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveDelete();
+      await pendingDelete;
+    });
+
+    await waitFor(() => {
+      expect(result.current.isCreateBlocked).toBe(false);
+    });
+
+    await act(async () => {
+      await result.current.create({
+        userId: userProfile.id,
+        nickname: 'Replacement',
+        avatar: 3,
+        color: '#11AA77',
+        level: 1,
+        power: 0,
+        race: ['Human'],
+        gender: ['female'],
+        class: [],
+      });
+    });
+
+    expect(mockCreateCharacter).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves newer local mutations when a delete rollback restores the removed character', async () => {
+    const selfCharacter: Character = {
+      id: 'char-self',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Hero',
+      avatar: 1,
+      color: '#AA5500',
+      level: 2,
+      power: 3,
+      race: ['Human'],
+      gender: ['male'],
+      class: ['Warrior'],
+    };
+    const otherCharacter: Character = {
+      id: 'char-other',
+      roomId,
+      userId: 'user-2',
+      nickname: 'Rogue',
+      avatar: 2,
+      color: '#0088CC',
+      level: 4,
+      power: 1,
+      race: ['Elf'],
+      gender: ['female'],
+      class: ['Thief'],
+    };
+
+    let rejectDelete!: (reason?: unknown) => void;
+    mockGetCharactersByRoom.mockResolvedValueOnce([selfCharacter, otherCharacter]);
+    mockDeleteCharacter.mockImplementation(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectDelete = reject;
+        })
+    );
+    mockUpdateCharacter.mockResolvedValue({
+      ...selfCharacter,
+      power: 9,
+    });
+
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+    });
+
+    let pendingDelete: Promise<void> | undefined;
+    await act(async () => {
+      pendingDelete = result.current.remove('char-other').catch(() => undefined);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters.map((character) => character.id)).toEqual(['char-self']);
+    });
+
+    await act(async () => {
+      await result.current.update('char-self', { power: 9 });
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters.find((character) => character.id === 'char-self')?.power).toBe(9);
+    });
+
+    await act(async () => {
+      rejectDelete(new Error('delete failed'));
+      await pendingDelete;
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters).toHaveLength(2);
+      expect(result.current.characters.find((character) => character.id === 'char-self')?.power).toBe(9);
+      expect(result.current.characters.some((character) => character.id === 'char-other')).toBe(true);
+    });
+
+    invalidateQueriesSpy.mockRestore();
   });
 
   it('raises realtime update signals for websocket character updates, including the current user card', async () => {

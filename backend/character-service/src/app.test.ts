@@ -81,7 +81,7 @@ describe('character-service app', () => {
     expect(response.body.message).toContain('color');
   });
 
-  it('deletes character', async () => {
+  it('deletes unassociated character', async () => {
     const model = buildCharacterModel();
     const now = new Date();
     vi.mocked(model.findByIdAndDelete).mockResolvedValue({
@@ -102,6 +102,31 @@ describe('character-service app', () => {
 
     const app = createApp(model);
     const response = await request(app).delete('/characters/c3');
+
+    expect(response.status).toBe(204);
+  });
+
+  it('deletes associated character', async () => {
+    const model = buildCharacterModel();
+    const now = new Date();
+    vi.mocked(model.findByIdAndDelete).mockResolvedValue({
+      id: 'c4',
+      roomId: 'r4',
+      userId: 'u4',
+      name: 'Paladin',
+      avatarId: 5,
+      color: '#ABCDEF',
+      level: 2,
+      power: 3,
+      class: '',
+      race: '',
+      gender: '',
+      createdAt: now,
+      updatedAt: now
+    });
+
+    const app = createApp(model);
+    const response = await request(app).delete('/characters/c4');
 
     expect(response.status).toBe(204);
   });

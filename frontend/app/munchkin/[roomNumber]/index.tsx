@@ -4,7 +4,7 @@ import { userProfileContext } from '@/context/UserContext';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
@@ -25,7 +25,16 @@ const MunchkinIndexView: React.FC = () => {
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
   const { userProfile } = useContext(userProfileContext);
-  const { characters, create, update, realtimeUpdateSignals, isLoading, errorMessage } = useRoomCharacters(roomId, userProfile);
+  const {
+    characters,
+    create,
+    update,
+    remove,
+    realtimeUpdateSignals,
+    isLoading,
+    errorMessage,
+    isCreateBlocked,
+  } = useRoomCharacters(roomId, userProfile);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
@@ -33,11 +42,20 @@ const MunchkinIndexView: React.FC = () => {
   const [quickEditVisible, setQuickEditVisible] = useState(false);
   const [pendingFullEditOpen, setPendingFullEditOpen] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [selectedCharacterSnapshot, setSelectedCharacterSnapshot] = useState<RoomCharacter | null>(null);
+  const [pendingDeleteCharacterId, setPendingDeleteCharacterId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [undoState, setUndoState] = useState<UndoState | null>(null);
   const [showUndoToast, setShowUndoToast] = useState(false);
   const [dangerFlash, setDangerFlash] = useState(false);
   const undoToastTranslateY = useMemo(() => new Animated.Value(24), []);
+  const selectedCharacterIdRef = useRef<string | null>(null);
+
+  const setSelectedCharacterIdAndRef = useCallback((id: string | null) => {
+    selectedCharacterIdRef.current = id;
+    setSelectedCharacterId(id);
+  }, []);
 
   useEffect(() => {
     if (!showUndoToast) {
@@ -82,10 +100,13 @@ const MunchkinIndexView: React.FC = () => {
     () => characters.find((character) => character.userId === userProfile.id),
     [characters, userProfile.id]
   );
+  const modalCharacter = selectedCharacter ?? selectedCharacterSnapshot;
 
   const handleChangePress = useCallback(
     (character: RoomCharacter) => {
-      setSelectedCharacterId(character.id);
+      setSelectedCharacterIdAndRef(character.id);
+      setSelectedCharacterSnapshot(character);
+      setDeleteError(null);
 
       if (character.userId === userProfile.id) {
         setShowUndoToast(false);
@@ -96,7 +117,7 @@ const MunchkinIndexView: React.FC = () => {
 
       setChangeCharacterModalVisible(true);
     },
-    [userProfile.id]
+    [userProfile.id, setSelectedCharacterIdAndRef]
   );
 
   const closeQuickEditSheet = useCallback(() => {
@@ -109,8 +130,35 @@ const MunchkinIndexView: React.FC = () => {
     }
 
     setPendingFullEditOpen(false);
+    setSelectedCharacterSnapshot(selectedCharacter ?? null);
     setChangeCharacterModalVisible(true);
-  }, [pendingFullEditOpen, quickEditVisible]);
+  }, [pendingFullEditOpen, quickEditVisible, selectedCharacter]);
+
+  useEffect(() => {
+    if (!changeCharacterModalVisible || !selectedCharacterId || selectedCharacter) {
+      return;
+    }
+
+    if (!selectedCharacterSnapshot || selectedCharacterSnapshot.id !== selectedCharacterId) {
+      return;
+    }
+
+    if (pendingDeleteCharacterId === selectedCharacterId) {
+      return;
+    }
+
+    setDeleteError(null);
+    setChangeCharacterModalVisible(false);
+    setSelectedCharacterSnapshot(null);
+    setSelectedCharacterIdAndRef(null);
+  }, [
+    changeCharacterModalVisible,
+    pendingDeleteCharacterId,
+    selectedCharacter,
+    selectedCharacterId,
+    selectedCharacterSnapshot,
+    setSelectedCharacterIdAndRef,
+  ]);
 
   const handleQuickEditSave = useCallback(async (stats: CharacterStatsOverride) => {
     if (!selectedCharacter || !selectedCharacterId) {
@@ -153,9 +201,11 @@ const MunchkinIndexView: React.FC = () => {
   }, [undoState, update]);
 
   const handleOpenFullEdit = useCallback(() => {
+    setDeleteError(null);
+    setSelectedCharacterSnapshot(selectedCharacter ?? null);
     setPendingFullEditOpen(true);
     setQuickEditVisible(false);
-  }, []);
+  }, [selectedCharacter]);
 
   const handleCopyRoomCodePress = useCallback(() => {
     void copyRoomCode().catch((error) => {
@@ -195,6 +245,7 @@ const MunchkinIndexView: React.FC = () => {
             errorMessage={errorMessage}
             actionError={actionError}
             realtimeUpdateSignals={realtimeUpdateSignals}
+            isCreateBlocked={isCreateBlocked}
             onCreateCharacter={() => setCreateCharacterModalVisible(true)}
             onChangePress={handleChangePress}
           />
@@ -236,12 +287,14 @@ const MunchkinIndexView: React.FC = () => {
             onCancel={() => setCreateCharacterModalVisible(false)}
           />
 
-          {changeCharacterModalVisible && selectedCharacter && (
+          {changeCharacterModalVisible && modalCharacter && (
             <ChangeCharacterModal
-              character={selectedCharacter}
+              character={modalCharacter}
+              deleteError={deleteError}
               onConfirm={async (character) => {
                 try {
                   setActionError(null);
+                  setDeleteError(null);
                   await update(character.id, {
                     nickname: character.nickname,
                     avatar: character.avatar,
@@ -257,7 +310,34 @@ const MunchkinIndexView: React.FC = () => {
                   setActionError(error instanceof Error ? error.message : 'Failed to update character');
                 }
               }}
-              onCancel={() => setChangeCharacterModalVisible(false)}
+              onDelete={async (characterId) => {
+                setPendingDeleteCharacterId(characterId);
+                try {
+                  setActionError(null);
+                  setDeleteError(null);
+                  await remove(characterId);
+                  if (selectedCharacterIdRef.current !== characterId) {
+                    return;
+                  }
+
+                  setChangeCharacterModalVisible(false);
+                  setSelectedCharacterSnapshot(null);
+                  setSelectedCharacterIdAndRef(null);
+                } catch (error) {
+                  if (selectedCharacterIdRef.current !== characterId) {
+                    return;
+                  }
+
+                  setDeleteError(error instanceof Error ? error.message : 'Failed to delete character');
+                } finally {
+                  setPendingDeleteCharacterId((current) => (current === characterId ? null : current));
+                }
+              }}
+              onCancel={() => {
+                setDeleteError(null);
+                setChangeCharacterModalVisible(false);
+                setSelectedCharacterSnapshot(null);
+              }}
             />
           )}
 

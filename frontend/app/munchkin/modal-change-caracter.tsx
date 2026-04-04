@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { AppTheme } from '@/constants/theme';
-import React, { useState } from 'react';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -31,12 +32,16 @@ interface Character {
 interface ChangeCharacterModalProps {
   character?: Character;
   onConfirm: (character: Character) => void;
+  onDelete: (characterId: string) => Promise<void>;
+  deleteError?: string | null;
   onCancel: () => void;
 }
 
 export default function ChangeCharacterModal({
   character: initialCharacter,
   onConfirm,
+  onDelete,
+  deleteError = null,
   onCancel,
 }: ChangeCharacterModalProps) {
   const [character, setCharacter] = useState<Character>(
@@ -55,9 +60,79 @@ export default function ChangeCharacterModal({
   let [newRace, setNewRace] = useState("<Select>");
   let [newClass, setNewClass] = useState("<Select>");
   const [colorModalVisible, setColorModalVisible] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const pendingDeleteCharacterIdRef = useRef<string | null>(null);
+  const deleteRequestIdRef = useRef(0);
+  const activeDeleteRef = useRef<{ requestId: number; characterId: string } | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!initialCharacter) {
+      return;
+    }
+
+    setCharacter(initialCharacter);
+    setNewRace('<Select>');
+    setNewClass('<Select>');
+    setColorModalVisible(false);
+    setDeleteConfirmVisible(false);
+    setIsDeletePending(false);
+    activeDeleteRef.current = null;
+    pendingDeleteCharacterIdRef.current = null;
+  }, [initialCharacter?.id]);
 
   const handleSave = () => {
+    if (isDeletePending) {
+      return;
+    }
     onConfirm(character);
+  };
+
+  const handleDeleteConfirm = (characterId: string) => {
+    if (isDeletePending) {
+      return;
+    }
+
+    const requestId = deleteRequestIdRef.current + 1;
+    deleteRequestIdRef.current = requestId;
+    activeDeleteRef.current = { requestId, characterId };
+    setIsDeletePending(true);
+    void onDelete(characterId).finally(() => {
+      if (
+        activeDeleteRef.current?.requestId === requestId &&
+        activeDeleteRef.current.characterId === characterId
+      ) {
+        activeDeleteRef.current = null;
+        setIsDeletePending(false);
+      }
+    });
+  };
+
+  const handleDeletePress = () => {
+    pendingDeleteCharacterIdRef.current = character.id;
+    setDeleteConfirmVisible(true);
+  };
+
+  const handleDeleteConfirmAccept = () => {
+    setDeleteConfirmVisible(false);
+    const characterId = pendingDeleteCharacterIdRef.current;
+    if (characterId) {
+      handleDeleteConfirm(characterId);
+    }
+  };
+
+  const handleDeleteConfirmCancel = () => {
+    setDeleteConfirmVisible(false);
+    pendingDeleteCharacterIdRef.current = null;
+  };
+
+  const handleCancel = () => {
+    if (isDeletePending) {
+      return;
+    }
+    onCancel();
   };
 
   const races = ['Human', 'Elf', 'Dwarf', 'Halfling', 'Orc', 'Gnome'];
@@ -80,10 +155,18 @@ export default function ChangeCharacterModal({
     <Modal
       transparent={true}
       animationType="fade"
-      onRequestClose={onCancel}
+      onRequestClose={handleCancel}
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
+          <ConfirmDialog
+            visible={deleteConfirmVisible}
+            title="Delete character?"
+            message="This action cannot be undone."
+            confirmLabel="Delete"
+            onConfirm={handleDeleteConfirmAccept}
+            onCancel={handleDeleteConfirmCancel}
+          />
           <ScrollView
             style={styles.content}
             contentContainerStyle={styles.contentContainer}
@@ -333,22 +416,37 @@ export default function ChangeCharacterModal({
                 </Pressable>
               </Modal>
             </View>
+
+            {deleteError ? (
+              <Text style={styles.deleteErrorText}>{deleteError}</Text>
+            ) : null}
+
+            <TouchableOpacity
+              style={[styles.deleteButton, isDeletePending && styles.deleteButtonDisabled]}
+              onPress={handleDeletePress}
+              activeOpacity={0.8}
+              disabled={isDeletePending}
+            >
+              <Text style={styles.deleteButtonText}>{isDeletePending ? 'Deleting...' : 'Delete'}</Text>
+            </TouchableOpacity>
           </ScrollView>
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, isDeletePending && styles.buttonDisabled]}
               onPress={handleSave}
               activeOpacity={0.7}
+              disabled={isDeletePending}
             >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.button}
-              onPress={onCancel}
+              style={[styles.button, isDeletePending && styles.buttonDisabled]}
+              onPress={handleCancel}
               activeOpacity={0.7}
+              disabled={isDeletePending}
             >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
@@ -653,6 +751,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   buttonText: {
     color: '#CEB464',
     fontSize: 22,
@@ -663,5 +764,29 @@ const styles = StyleSheet.create({
     textShadowColor: '#796834',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
+  },
+  deleteButton: {
+    marginTop: 4,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppTheme.colors.danger,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.7,
+  },
+  deleteErrorText: {
+    color: AppTheme.colors.danger,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    fontFamily: 'Roboto',
+  },
+  deleteButtonText: {
+    color: AppTheme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Roboto',
   },
 });
