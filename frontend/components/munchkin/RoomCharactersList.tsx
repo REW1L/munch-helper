@@ -78,7 +78,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
       ListEmptyComponent={listEmpty}
       ListFooterComponent={
         <View style={styles.createCharacterButtonContainer}>
-          <VioletButton title="Create a character" onPress={onCreateCharacter} disabled={isCreateBlocked} />
+          <VioletButton title="Create a character" onPress={onCreateCharacter} disabled={isCreateBlocked} testID="create-character-button" />
         </View>
       }
       removeClippedSubviews

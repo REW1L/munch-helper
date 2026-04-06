@@ -6,10 +6,11 @@ type VioletButtonProps = {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  testID?: string;
 };
 
-const VioletButton: React.FC<VioletButtonProps> = ({ title, onPress, disabled = false }) => (
-  <TouchableOpacity style={[styles.violetButton, disabled && styles.violetButtonDisabled]} onPress={onPress} disabled={disabled}>
+const VioletButton: React.FC<VioletButtonProps> = ({ title, onPress, disabled = false, testID }) => (
+  <TouchableOpacity style={[styles.violetButton, disabled && styles.violetButtonDisabled]} onPress={onPress} disabled={disabled} testID={testID}>
     <Text style={styles.violetButtonText}>{title}</Text>
   </TouchableOpacity>
 );

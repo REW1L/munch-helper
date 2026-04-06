@@ -114,7 +114,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     : { borderColor: animatedBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH };
 
   return (
-    <Animated.View style={[styles.characterCard, flashStyle]}>
+    <Animated.View style={[styles.characterCard, flashStyle]} testID="character-card">
       <Pressable
         style={({ pressed }) => [styles.cardBodyPressable, pressed && styles.cardBodyPressablePressed]}
         onPress={() => onChangePress(character)}
@@ -129,7 +129,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
           </View>
 
           <View style={styles.characterInfo}>
-            <Text style={styles.characterNickname}>{character.nickname}</Text>
+            <Text style={styles.characterNickname} testID="character-nickname">{character.nickname}</Text>
             <View style={styles.statsRow}>
               <Text style={styles.characterStats}>{character.level} lvl</Text>
               <Text style={styles.characterStats}>{character.power} str</Text>
@@ -148,7 +148,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
         </ScrollView>
       </View>
 
-      <VioletButton title="Change" onPress={() => onChangePress(character)} />
+      <VioletButton title="Change" onPress={() => onChangePress(character)} testID="change-character-button" />
     </Animated.View>
   );
 });

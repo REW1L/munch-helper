@@ -90,6 +90,7 @@ export default function CreateCharacterModal({
                   setCharacter({ ...character, name: text })
                 }
                 placeholderTextColor="#888686"
+                testID="character-name-input"
               />
             </View>
 

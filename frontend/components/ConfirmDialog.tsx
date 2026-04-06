@@ -38,7 +38,7 @@ export default function ConfirmDialog({
       ],
       { cancelable: true, onDismiss: onCancel }
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   if (Platform.OS !== 'web') {
@@ -49,7 +49,7 @@ export default function ConfirmDialog({
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
       {visible && (
         <Pressable style={styles.overlay} onPress={onCancel}>
-          <Pressable style={styles.dialog} onPress={() => {}}>
+          <Pressable style={styles.dialog} onPress={() => { }}>
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.message}>{message}</Text>
             <View style={styles.buttons}>
