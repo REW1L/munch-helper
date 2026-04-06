@@ -5,10 +5,11 @@ import { AppTheme } from '@/constants/theme';
 type VioletButtonProps = {
   title: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-const VioletButton: React.FC<VioletButtonProps> = ({ title, onPress }) => (
-  <TouchableOpacity style={styles.violetButton} onPress={onPress}>
+const VioletButton: React.FC<VioletButtonProps> = ({ title, onPress, disabled = false }) => (
+  <TouchableOpacity style={[styles.violetButton, disabled && styles.violetButtonDisabled]} onPress={onPress} disabled={disabled}>
     <Text style={styles.violetButtonText}>{title}</Text>
   </TouchableOpacity>
 );
@@ -21,6 +22,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  violetButtonDisabled: {
+    opacity: 0.55,
   },
   violetButtonText: {
     fontSize: 16,

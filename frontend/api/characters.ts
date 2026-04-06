@@ -204,3 +204,9 @@ export async function updateCharacter(characterId: string, payload: CharacterUpd
 
   return toFrontendCharacter(updated);
 }
+
+export async function deleteCharacter(characterId: string): Promise<void> {
+  await apiRequest<void>(`/characters/${encodeURIComponent(characterId)}`, {
+    method: 'DELETE',
+  });
+}

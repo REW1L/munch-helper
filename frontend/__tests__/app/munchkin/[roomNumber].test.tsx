@@ -9,6 +9,8 @@ const mockSetStringAsync = vi.hoisted(() => vi.fn());
 const mockRoomNumber = vi.hoisted(() => ({ current: 'ROOM42' as string | string[] | undefined }));
 const mockCreateCharacter = vi.hoisted(() => vi.fn());
 const mockUpdateCharacter = vi.hoisted(() => vi.fn());
+const mockRemoveCharacter = vi.hoisted(() => vi.fn());
+const mockIsCreateBlocked = vi.hoisted(() => ({ current: false }));
 const mockCharactersState = vi.hoisted(() => ({
   current: [] as Character[],
 }));
@@ -51,16 +53,39 @@ vi.mock('@/hooks/useCharacters', () => ({
     characters: mockCharactersState.current,
     create: mockCreateCharacter,
     update: mockUpdateCharacter,
+    remove: mockRemoveCharacter,
+    isCreateBlocked: mockIsCreateBlocked.current,
     isLoading: false,
     errorMessage: null,
   }),
 }));
 
 vi.mock('../../../components/munchkin/RoomCharactersList', () => ({
-  default: ({ characters }: { characters: Character[] }) => (
+  default: ({
+    characters,
+    actionError,
+    isCreateBlocked,
+    onCreateCharacter,
+    onChangePress,
+  }: {
+    characters: Character[];
+    actionError?: string | null;
+    isCreateBlocked: boolean;
+    onCreateCharacter: () => void;
+    onChangePress: (character: Character) => void;
+  }) => (
     <div>
+      {actionError ? <div>{actionError}</div> : null}
+      <button type="button" disabled={isCreateBlocked} onClick={onCreateCharacter}>
+        Create a character
+      </button>
       {characters.map((character) => (
-        <div key={character.id}>{`${character.nickname}: ${character.level} lvl / ${character.power} str`}</div>
+        <div key={character.id}>
+          <div>{`${character.nickname}: ${character.level} lvl / ${character.power} str`}</div>
+          <button type="button" onClick={() => onChangePress(character)}>
+            {`Change ${character.nickname}`}
+          </button>
+        </div>
       ))}
     </div>
   ),
@@ -84,7 +109,45 @@ vi.mock('../../../components/munchkin/CurrentCharacterFooter', () => ({
 }));
 
 vi.mock('../../../app/munchkin/modal-change-caracter', () => ({
-  default: () => null,
+  default: ({
+    character,
+    deleteError,
+    onDelete,
+    onCancel,
+  }: {
+    character?: Character;
+    deleteError?: string | null;
+    onDelete: (characterId: string) => Promise<void>;
+    onCancel: () => void;
+  }) => {
+    const [confirmVisible, setConfirmVisible] = React.useState(false);
+    if (!character) {
+      return null;
+    }
+
+    return (
+      <div>
+        <div>{`Edit ${character.nickname}`}</div>
+        <button type="button" onClick={() => setConfirmVisible(true)}>
+          Delete character
+        </button>
+        {confirmVisible ? (
+          <div>
+            <button type="button" onClick={() => setConfirmVisible(false)}>
+              Cancel delete
+            </button>
+            <button type="button" onClick={() => void onDelete(character.id)}>
+              Confirm delete
+            </button>
+          </div>
+        ) : null}
+        {deleteError ? <div>{deleteError}</div> : null}
+        <button type="button" onClick={onCancel}>
+          Close edit
+        </button>
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../../app/munchkin/modal-create-character', () => ({
@@ -96,16 +159,21 @@ vi.mock('../../../components/munchkin/QuickEditSheet', () => ({
     visible,
     character,
     onSave,
+    onOpenFullEdit,
   }: {
     visible: boolean;
     character: Character | null;
     onSave: (stats: { level: number; power: number }) => Promise<void>;
+    onOpenFullEdit: () => void;
   }) =>
     visible && character ? (
       <div>
         <div>{`Quick edit for ${character.nickname}`}</div>
         <button type="button" onClick={() => void onSave({ level: character.level + 2, power: character.power + 1 })}>
           Save quick edit
+        </button>
+        <button type="button" onClick={onOpenFullEdit}>
+          Open full edit
         </button>
       </div>
     ) : null,
@@ -118,8 +186,11 @@ describe('Munchkin room header', () => {
     mockSetStringAsync.mockResolvedValue(true);
     mockCreateCharacter.mockReset();
     mockUpdateCharacter.mockReset();
+    mockRemoveCharacter.mockReset();
+    mockIsCreateBlocked.current = false;
     mockCreateCharacter.mockResolvedValue(undefined);
     mockUpdateCharacter.mockResolvedValue(undefined);
+    mockRemoveCharacter.mockResolvedValue(undefined);
     mockCharactersState.current = [];
     mockRoomNumber.current = 'ROOM42';
     latestHeaderOptions.current = undefined;
@@ -271,5 +342,408 @@ describe('Munchkin room header', () => {
     });
 
     expect(mockUpdateCharacter).toHaveBeenCalledWith('char-1', { level: 3, power: 1 });
+  });
+
+  it('renders delete actions for own character full edit and requires explicit confirmation', async () => {
+    mockCharactersState.current = [
+      {
+        id: 'char-self',
+        roomId: 'ROOM42',
+        userId: 'user-1',
+        nickname: 'Player One',
+        avatar: 1,
+        color: '#9966FF',
+        level: 1,
+        power: 0,
+        class: [],
+        race: ['Human'],
+        gender: ['male'],
+      },
+    ];
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open quick edit' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open full edit' }));
+    });
+
+    expect(screen.getByText('Edit Player One')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete character' })).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Delete character' }));
+    });
+
+    expect(mockRemoveCharacter).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Cancel delete' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Confirm delete' })).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel delete' }));
+    });
+
+    expect(mockRemoveCharacter).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Confirm delete' })).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Delete character' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+      await Promise.resolve();
+    });
+
+    expect(mockRemoveCharacter).toHaveBeenCalledWith('char-self');
+  });
+
+  it('disables global create while current-user delete is still pending', async () => {
+    mockIsCreateBlocked.current = true;
+    mockCharactersState.current = [
+      {
+        id: 'char-self',
+        roomId: 'ROOM42',
+        userId: 'user-1',
+        nickname: 'Player One',
+        avatar: 1,
+        color: '#9966FF',
+        level: 1,
+        power: 0,
+        class: [],
+        race: ['Human'],
+        gender: ['male'],
+      },
+    ];
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    const createButton = screen.getByRole('button', { name: 'Create a character' });
+    expect(createButton.getAttribute('disabled')).toBe('');
+  });
+
+  it('renders delete actions for other users and shows failure errors after confirmed delete', async () => {
+    mockCharactersState.current = [
+      {
+        id: 'char-other',
+        roomId: 'ROOM42',
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        class: ['Thief'],
+        race: ['Elf'],
+        gender: ['female'],
+      },
+    ];
+    mockRemoveCharacter.mockRejectedValueOnce(new Error('Delete failed'));
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Rogue' }));
+    });
+
+    expect(screen.getByText('Edit Rogue')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete character' })).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Delete character' }));
+    });
+
+    expect(mockRemoveCharacter).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+      await Promise.resolve();
+    });
+
+    expect(mockRemoveCharacter).toHaveBeenCalledWith('char-other');
+    expect(screen.getByText('Edit Rogue')).toBeTruthy();
+    expect(screen.getByText('Delete failed')).toBeTruthy();
+  });
+
+  it('keeps a newer selection open when an earlier delete resolves late', async () => {
+    let resolveDelete!: () => void;
+    mockCharactersState.current = [
+      {
+        id: 'char-first',
+        roomId: 'ROOM42',
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        class: ['Thief'],
+        race: ['Elf'],
+        gender: ['female'],
+      },
+      {
+        id: 'char-second',
+        roomId: 'ROOM42',
+        userId: 'user-3',
+        nickname: 'Mage',
+        avatar: 3,
+        color: '#BB44DD',
+        level: 5,
+        power: 6,
+        class: ['Wizard'],
+        race: ['Human'],
+        gender: ['female'],
+      },
+    ];
+    mockRemoveCharacter.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        })
+    );
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Rogue' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Delete character' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Edit Rogue')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Mage' }));
+    });
+
+    expect(screen.getByText('Edit Mage')).toBeTruthy();
+
+    await act(async () => {
+      resolveDelete();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Edit Mage')).toBeTruthy();
+    expect(screen.queryByText('Edit Rogue')).toBeNull();
+  });
+
+  it('does not surface a late delete failure on a newer selection', async () => {
+    let rejectDelete!: (error?: unknown) => void;
+    mockCharactersState.current = [
+      {
+        id: 'char-first',
+        roomId: 'ROOM42',
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        class: ['Thief'],
+        race: ['Elf'],
+        gender: ['female'],
+      },
+      {
+        id: 'char-second',
+        roomId: 'ROOM42',
+        userId: 'user-3',
+        nickname: 'Mage',
+        avatar: 3,
+        color: '#BB44DD',
+        level: 5,
+        power: 6,
+        class: ['Wizard'],
+        race: ['Human'],
+        gender: ['female'],
+      },
+    ];
+    mockRemoveCharacter.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectDelete = reject;
+        })
+    );
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Rogue' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Delete character' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Edit Rogue')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Mage' }));
+    });
+
+    expect(screen.getByText('Edit Mage')).toBeTruthy();
+
+    await act(async () => {
+      rejectDelete(new Error('Delete failed'));
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText('Edit Mage')).toBeTruthy();
+    expect(screen.queryByText('Delete failed')).toBeNull();
+  });
+
+  it('closes the change modal when the selected character is deleted remotely', async () => {
+    mockCharactersState.current = [
+      {
+        id: 'char-remote',
+        roomId: 'ROOM42',
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        class: ['Thief'],
+        race: ['Elf'],
+        gender: ['female'],
+      },
+    ];
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    const view = render(
+      <userProfileContext.Provider
+        value={{
+          userProfile: {
+            id: 'user-1',
+            nickname: 'Player One',
+            avatar: 1,
+          },
+          setUserProfile: vi.fn(),
+        }}
+      >
+        <MunchkinIndexView />
+      </userProfileContext.Provider>
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Change Rogue' }));
+    });
+
+    expect(screen.getByText('Edit Rogue')).toBeTruthy();
+
+    mockCharactersState.current = [];
+
+    await act(async () => {
+      view.rerender(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.queryByText('Edit Rogue')).toBeNull();
   });
 });
