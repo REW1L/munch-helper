@@ -174,6 +174,30 @@ How to keep BMAD artifacts useful:
 2. Update affected artifacts when scope or implementation changes.
 3. Keep `docs/` aligned with shipped architecture/runtime behavior so future BMAD runs stay grounded.
 
+## Story Project Automation
+
+This repository includes `.github/workflows/story-project-sync.yml` to keep BMAD stories and implementation specs aligned with repository issues and the GitHub Project at `https://github.com/users/REW1L/projects/1`.
+
+Required repository secret:
+
+- `GH_PROJECT_TOKEN`: classic PAT with `repo` and `project` scope. The workflow uses this token for `gh issue` and `gh project` commands because the target project is user-owned.
+
+Current project assumptions:
+
+- Project owner: `REW1L`
+- Project number: `1`
+- Project title: `Munch Helper project`
+- Status field name: `Status`
+- Required status options: `Ready for Dev`, `Review`, `Done`
+
+Supported lifecycle sync:
+
+- A story mentioned in `_bmad-output/planning-artifacts/**` on `main` creates or reuses a matching repository issue and adds it to the project.
+- A story or approved `spec-*.md` file added under `_bmad-output/implementation-artifacts/` creates the issue and project item if missing, then sets project status to `Ready for Dev`.
+- A pull request that touches exactly one tracked implementation artifact and whose artifact status is no longer `ready-for-dev` sets the project status to `Review`.
+- A merged `main` change that moves a tracked implementation artifact status to `done` sets the project status to `Done`.
+- A pull request for a tracked implementation artifact that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
+
 ## Documentation
 
 - Project docs index: `docs/index.md`

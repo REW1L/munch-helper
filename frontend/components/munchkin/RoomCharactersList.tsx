@@ -11,6 +11,7 @@ interface RoomCharactersListProps {
   errorMessage: string | null;
   actionError: string | null;
   realtimeUpdateSignals: Record<string, number>;
+  isCreateBlocked: boolean;
   onCreateCharacter: () => void;
   onChangePress: (character: RoomCharacter) => void;
 }
@@ -21,6 +22,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
   errorMessage,
   actionError,
   realtimeUpdateSignals,
+  isCreateBlocked,
   onCreateCharacter,
   onChangePress,
 }: RoomCharactersListProps) {
@@ -76,7 +78,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
       ListEmptyComponent={listEmpty}
       ListFooterComponent={
         <View style={styles.createCharacterButtonContainer}>
-          <VioletButton title="Create a character" onPress={onCreateCharacter} />
+          <VioletButton title="Create a character" onPress={onCreateCharacter} disabled={isCreateBlocked} />
         </View>
       }
       removeClippedSubviews

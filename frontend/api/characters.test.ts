@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createCharacter, getCharactersByRoom, updateCharacter } from '@/api/characters';
+import { createCharacter, deleteCharacter, getCharactersByRoom, updateCharacter } from '@/api/characters';
 import { apiRequest } from '@/api/http';
 
 vi.mock('@/api/http', () => ({
@@ -137,5 +137,22 @@ describe('characters api', () => {
     });
     expect(response.nickname).toBe('Warrior+');
     expect(response.class).toEqual(['Warrior']);
+  });
+
+  it('deletes character successfully', async () => {
+    mockApiRequest.mockResolvedValueOnce(undefined);
+
+    await deleteCharacter('char/4');
+
+    expect(mockApiRequest).toHaveBeenCalledWith('/characters/char%2F4', {
+      method: 'DELETE',
+    });
+  });
+
+  it('propagates delete errors', async () => {
+    const deleteError = new Error('Delete failed');
+    mockApiRequest.mockRejectedValueOnce(deleteError);
+
+    await expect(deleteCharacter('char-5')).rejects.toThrow('Delete failed');
   });
 });

@@ -3,6 +3,7 @@ import {
   CharacterUpdatePayload,
   CharacterWritePayload,
   createCharacter,
+  deleteCharacter,
   getCharactersByRoom,
   updateCharacter,
 } from '@/api/characters';
@@ -16,9 +17,11 @@ interface UseRoomCharactersResult {
   realtimeUpdateSignals: Record<string, number>;
   isLoading: boolean;
   errorMessage: string | null;
+  isCreateBlocked: boolean;
   refresh: () => Promise<void>;
   create: (payload: Omit<CharacterWritePayload, 'roomId'>) => Promise<Character>;
   update: (characterId: string, payload: CharacterUpdatePayload) => Promise<Character>;
+  remove: (characterId: string) => Promise<void>;
 }
 
 const ENSURE_CHARACTER_COOLDOWN_MS = 5000;
@@ -27,6 +30,9 @@ const getCharactersQueryKey = (roomId: string | undefined): readonly ['character
 
 type CharactersMutationContext = {
   previousCharacters: Character[];
+  deletedCharacter?: Character;
+  deletedCharacterIndex?: number;
+  previousAutoCreateSuppressedForCurrentUser?: boolean;
 };
 
 type PendingLocalUpdateMarker = {
@@ -94,8 +100,11 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const queryClient = useQueryClient();
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
+  const autoCreateSuppressedForCurrentUserRef = useRef(false);
+  const pendingCurrentUserDeleteCountRef = useRef(0);
   const recentLocalUpdateByCharacterRef = useRef<Map<string, PendingLocalUpdateMarker>>(new Map());
   const [realtimeUpdateSignals, setRealtimeUpdateSignals] = useState<Record<string, number>>({});
+  const [isCreateBlocked, setIsCreateBlocked] = useState(false);
 
   // Set up WebSocket connection for real-time updates
   const { isConnected, subscribe } = useRoomWebSocket(
@@ -153,6 +162,10 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       }
     },
     onSuccess: (createdCharacter) => {
+      if (createdCharacter.userId === userProfile.id) {
+        autoCreateSuppressedForCurrentUserRef.current = false;
+      }
+
       queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
         const nonOptimisticCharacters = currentCharacters.filter((character) => !character.id.startsWith('temp-'));
         return [...nonOptimisticCharacters, createdCharacter];
@@ -211,6 +224,74 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     },
   });
 
+  const deleteMutation = useMutation<void, Error, { characterId: string }, CharactersMutationContext>({
+    mutationFn: async ({ characterId }) => {
+      await deleteCharacter(characterId);
+    },
+    onMutate: async ({ characterId }) => {
+      const queryKey = getCharactersQueryKey(roomId);
+      await queryClient.cancelQueries({ queryKey });
+      const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
+      const deletedCharacter = previousCharacters.find((character) => character.id === characterId);
+      const deletedCharacterIndex = previousCharacters.findIndex((character) => character.id === characterId);
+      const previousAutoCreateSuppressedForCurrentUser = autoCreateSuppressedForCurrentUserRef.current;
+
+      if (deletedCharacter?.userId === userProfile.id) {
+        autoCreateSuppressedForCurrentUserRef.current = true;
+        pendingCurrentUserDeleteCountRef.current += 1;
+        setIsCreateBlocked(true);
+      }
+
+      queryClient.setQueryData<Character[]>(queryKey, (currentCharacters = []) =>
+        currentCharacters.filter((character) => character.id !== characterId)
+      );
+
+      return { previousCharacters, deletedCharacter, deletedCharacterIndex, previousAutoCreateSuppressedForCurrentUser };
+    },
+    onError: (_error, _variables, context) => {
+      autoCreateSuppressedForCurrentUserRef.current = context?.previousAutoCreateSuppressedForCurrentUser ?? false;
+
+      if (context?.deletedCharacter) {
+        const deletedCharacter = context.deletedCharacter;
+        queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
+          const alreadyPresent = currentCharacters.some((character) => character.id === deletedCharacter.id);
+
+          if (alreadyPresent) {
+            return currentCharacters;
+          }
+
+          const insertionIndex = (context.deletedCharacterIndex ?? -1) >= 0
+            ? Math.min(context.deletedCharacterIndex!, currentCharacters.length)
+            : currentCharacters.length;
+
+          return [
+            ...currentCharacters.slice(0, insertionIndex),
+            deletedCharacter,
+            ...currentCharacters.slice(insertionIndex),
+          ];
+        });
+        return;
+      }
+
+      if (context?.previousCharacters) {
+        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+      }
+    },
+    onSettled: (_data, _error, _variables, context) => {
+      if (context?.deletedCharacter?.userId === userProfile.id) {
+        pendingCurrentUserDeleteCountRef.current = Math.max(0, pendingCurrentUserDeleteCountRef.current - 1);
+        setIsCreateBlocked(pendingCurrentUserDeleteCountRef.current > 0);
+      } else if (context === undefined) {
+        // onMutate threw — refs may be in an inconsistent state; reset to safe defaults
+        autoCreateSuppressedForCurrentUserRef.current = false;
+        pendingCurrentUserDeleteCountRef.current = 0;
+        setIsCreateBlocked(false);
+      }
+
+      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+    },
+  });
+
   // Subscribe to WebSocket events for real-time character updates
   useEffect(() => {
     if (!isConnected) {
@@ -258,25 +339,43 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
   useEffect(() => {
     setRealtimeUpdateSignals({});
+    autoCreateSuppressedForCurrentUserRef.current = false;
+    pendingCurrentUserDeleteCountRef.current = 0;
     recentLocalUpdateByCharacterRef.current.clear();
+    setIsCreateBlocked(false);
   }, [roomId]);
 
   const create = useCallback(
     async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
+      if (
+        payload.userId === userProfile.id &&
+        pendingCurrentUserDeleteCountRef.current > 0
+      ) {
+        throw new Error('Please wait for character removal to finish before creating a new one');
+      }
+
       return createMutation.mutateAsync(payload);
     },
-    [createMutation]
+    [createMutation, userProfile.id]
   );
 
   const update = useCallback(async (characterId: string, payload: CharacterUpdatePayload) => {
     return updateMutation.mutateAsync({ characterId, payload });
   }, [updateMutation]);
 
+  const remove = useCallback(async (characterId: string) => {
+    await deleteMutation.mutateAsync({ characterId });
+  }, [deleteMutation]);
+
   const characters = charactersQuery.data ?? [];
   const hasCompletedInitialFetch = charactersQuery.isFetchedAfterMount && !charactersQuery.isFetching;
 
   useEffect(() => {
     if (!roomId || !userProfile.id || !hasCompletedInitialFetch) {
+      return;
+    }
+
+    if (autoCreateSuppressedForCurrentUserRef.current) {
       return;
     }
 
@@ -337,10 +436,12 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       realtimeUpdateSignals,
       isLoading,
       errorMessage,
+      isCreateBlocked,
       refresh,
       create,
       update,
+      remove,
     }),
-    [characters, create, errorMessage, isLoading, realtimeUpdateSignals, refresh, update]
+    [characters, create, errorMessage, isCreateBlocked, isLoading, realtimeUpdateSignals, refresh, remove, update]
   );
 }
