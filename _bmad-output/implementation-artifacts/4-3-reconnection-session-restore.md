@@ -108,14 +108,14 @@ export function useReconnectOnForeground(
 ```
 
 **8-second timeout in `useRoomWebSocket`**:
-- Start a `setTimeout` of 8000ms when `isConnecting` transitions to `true`
-- Clear the timer when `isConnected` becomes `true`
+- Start a `setTimeout` of 8000ms from the WebSocket `onclose` / disconnect event (i.e. when the socket drops), **not** from `isConnecting` transitioning to `true` — `isConnecting` only reflects the initial mount connect and is not re-raised on later drops
+- Clear the timer when `isConnected` becomes `true` (successful `onopen`)
 - If timer fires without `isConnected`, set `isTimedOut = true`
-- Reset `isTimedOut` when `reconnect()` is manually called
+- Reset `isTimedOut` and restart the timer when `reconnect()` is manually called
 
 **`reconnect()` callback** added to `useRoomWebSocket` return value:
-- Calls `client.disconnect()` then `client.connect()` to force a fresh connection attempt
-- Resets `reconnectAttempts` counter on the client
+- **Do NOT call `client.disconnect()` before reconnecting.** Calling `disconnect()` sets the client's internal "intentionally closed" flag, which suppresses `attemptReconnect()` on the next `onclose` event. If the manual reconnect itself fails, the auto-backoff would be silently disabled.
+- Instead, call `client.connect()` directly (or introduce a dedicated `client.reconnect()` method that resets the flag and calls connect). Reset `reconnectAttempts` to `0` before calling connect so backoff restarts cleanly.
 - Resets the 8-second timeout
 
 **"Connection lost · Retry" button** in Room View (`[roomNumber]/index.tsx`):
