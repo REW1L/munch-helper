@@ -1,0 +1,376 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+  buildPullRequestOperations,
+  buildPushOperations,
+  extractStoryRefsFromMarkdown,
+  getImplementationArtifactSkipReason,
+  parseImplementationArtifact,
+  parseTrackedImplementationArtifact,
+  parseNameStatus,
+  parseStoryTitle,
+} from "./story-project-sync.mjs";
+
+test("parseStoryTitle extracts the story number and title", () => {
+  assert.deepEqual(parseStoryTitle("Story 3.8: Realtime Update Signal on Character Cards"), {
+    storyNumber: "3.8",
+    title: "Realtime Update Signal on Character Cards",
+    fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+  });
+});
+
+test("extractStoryRefsFromMarkdown strips BMAD status tags from planning headings", () => {
+  const markdown = `
+## Story 3.1: AppTheme Token Migration (technical prerequisite) \`[TODO]\` ⛔ Gate for Epics 5–6
+## Story 3.8: Realtime Update Signal on Character Cards \`[TODO]\`
+`;
+
+  assert.deepEqual(extractStoryRefsFromMarkdown(markdown), [
+    {
+      storyNumber: "3.1",
+      title: "AppTheme Token Migration (technical prerequisite)",
+      fullTitle: "Story 3.1: AppTheme Token Migration (technical prerequisite)",
+    },
+    {
+      storyNumber: "3.8",
+      title: "Realtime Update Signal on Character Cards",
+      fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+    },
+  ]);
+});
+
+test("parseImplementationArtifact extracts title and normalized status", () => {
+  const markdown = `
+# Story 3.10: Character Removal
+
+Status: Ready for Dev
+`;
+
+  assert.deepEqual(parseImplementationArtifact(markdown), {
+    storyNumber: "3.10",
+    title: "Character Removal",
+    fullTitle: "Story 3.10: Character Removal",
+    status: "ready-for-dev",
+  });
+});
+
+test("parseNameStatus handles rename records", () => {
+  assert.deepEqual(parseNameStatus("R100\told.md\tnew.md\n"), [
+    {
+      status: "R",
+      previousPath: "old.md",
+      path: "new.md",
+    },
+  ]);
+});
+
+test("getImplementationArtifactSkipReason still excludes only control files", () => {
+  assert.equal(
+    getImplementationArtifactSkipReason("_bmad-output/implementation-artifacts/spec-wip.md"),
+    "the BMAD work-in-progress spec file"
+  );
+});
+
+test("parseTrackedImplementationArtifact extracts title and status from spec frontmatter", () => {
+  const markdown = `---
+title: 'Story Project Status Sync'
+status: 'done'
+---
+
+## Intent
+`;
+
+  assert.deepEqual(parseTrackedImplementationArtifact(markdown), {
+    kind: "spec",
+    identityKey: "spec:story project status sync",
+    storyNumber: null,
+    title: "Story Project Status Sync",
+    fullTitle: "Story Project Status Sync",
+    queryTitle: "Story Project Status Sync",
+    status: "done",
+    filePath: "",
+  });
+});
+
+test("buildPushOperations plans issue creation and ready-for-dev on artifact add", () => {
+  const changedFiles = [
+    {
+      status: "A",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      `
+# Story 3.8: Realtime Update Signal on Character Cards
+
+Status: ready-for-dev
+`,
+    ],
+  ]);
+
+  const operations = buildPushOperations({
+    changedFiles,
+    payload: { before: "abc123" },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+    loadPrevious: () => null,
+  });
+
+  assert.deepEqual(operations, [
+    {
+      kind: "story",
+      identityKey: "story:3.8",
+      storyNumber: "3.8",
+      title: "Realtime Update Signal on Character Cards",
+      fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+      queryTitle: "Story 3.8*",
+      sourcePaths: [
+        "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      ],
+      ensureIssue: true,
+      ensureProjectItem: true,
+      targetStatus: "ready-for-dev",
+      onlyIfCurrentStatus: null,
+    },
+  ]);
+});
+
+test("buildPushOperations upgrades to done when the artifact status changes to done", () => {
+  const changedFiles = [
+    {
+      status: "M",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      `
+# Story 3.8: Realtime Update Signal on Character Cards
+
+Status: done
+`,
+    ],
+  ]);
+
+  const previousFiles = new Map([
+    [
+      "abc123:_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      `
+# Story 3.8: Realtime Update Signal on Character Cards
+
+Status: in-review
+`,
+    ],
+  ]);
+
+  const operations = buildPushOperations({
+    changedFiles,
+    payload: { before: "abc123" },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+    loadPrevious: (revision, filePath) => previousFiles.get(`${revision}:${filePath}`) ?? null,
+  });
+
+  assert.equal(operations[0].targetStatus, "done");
+});
+
+test("buildPullRequestOperations plans review when one implementation artifact is active", () => {
+  const changedFiles = [
+    {
+      status: "M",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      `
+# Story 3.8: Realtime Update Signal on Character Cards
+
+Status: in-progress
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "opened", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+  });
+
+  assert.equal(operations[0].targetStatus, "review");
+});
+
+test("buildPullRequestOperations plans ready-for-dev only for unmerged closes", () => {
+  const changedFiles = [
+    {
+      status: "M",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+      `
+# Story 3.8: Realtime Update Signal on Character Cards
+
+Status: in-progress
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "closed", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+  });
+
+  assert.deepEqual(operations[0], {
+    kind: "story",
+    identityKey: "story:3.8",
+    storyNumber: "3.8",
+    title: "Realtime Update Signal on Character Cards",
+    fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+    queryTitle: "Story 3.8*",
+    sourcePaths: [
+      "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
+    ],
+    ensureIssue: true,
+    ensureProjectItem: true,
+    targetStatus: "ready-for-dev",
+    onlyIfCurrentStatus: "review",
+  });
+});
+
+test("buildPullRequestOperations tracks spec artifacts in implementation-artifacts", () => {
+  const changedFiles = [
+    {
+      status: "A",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+      `---
+title: 'Story Project Status Sync'
+status: 'in-progress'
+---
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "opened", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+  });
+
+  assert.deepEqual(operations[0], {
+    kind: "spec",
+    identityKey: "spec:story project status sync",
+    storyNumber: null,
+    title: "Story Project Status Sync",
+    fullTitle: "Story Project Status Sync",
+    queryTitle: "Story Project Status Sync",
+    sourcePaths: ["_bmad-output/implementation-artifacts/spec-story-project-status-sync.md"],
+    ensureIssue: true,
+    ensureProjectItem: true,
+    targetStatus: "review",
+    onlyIfCurrentStatus: null,
+  });
+});
+
+test("buildPullRequestOperations handles the current mixed PR shape with one tracked spec artifact", () => {
+  const changedFiles = [
+    {
+      status: "A",
+      previousPath: null,
+      path: ".github/workflows/story-project-sync.yml",
+    },
+    {
+      status: "M",
+      previousPath: null,
+      path: "README.md",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "scripts/story-project-sync.mjs",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "scripts/story-project-sync.test.mjs",
+    },
+  ];
+
+  const diagnostics = [];
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+      `---
+title: 'Story Project Status Sync'
+status: 'in-review'
+---
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "opened", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+    diagnostics,
+  });
+
+  assert.deepEqual(operations, [
+    {
+      kind: "spec",
+      identityKey: "spec:story project status sync",
+      storyNumber: null,
+      title: "Story Project Status Sync",
+      fullTitle: "Story Project Status Sync",
+      queryTitle: "Story Project Status Sync",
+      sourcePaths: ["_bmad-output/implementation-artifacts/spec-story-project-status-sync.md"],
+      ensureIssue: true,
+      ensureProjectItem: true,
+      targetStatus: "review",
+      onlyIfCurrentStatus: null,
+    },
+  ]);
+
+  assert.ok(
+    diagnostics.some((entry) =>
+      entry.includes("Pull request file .github/workflows/story-project-sync.yml is excluded")
+    )
+  );
+  assert.ok(
+    diagnostics.some((entry) => entry.includes("Pull request file README.md is excluded"))
+  );
+  assert.ok(
+    diagnostics.every(
+      (entry) =>
+        !entry.includes(
+          "Pull request file _bmad-output/implementation-artifacts/spec-story-project-status-sync.md is excluded"
+        )
+    )
+  );
+});
