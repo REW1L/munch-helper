@@ -292,3 +292,85 @@ status: 'in-progress'
     onlyIfCurrentStatus: null,
   });
 });
+
+test("buildPullRequestOperations handles the current mixed PR shape with one tracked spec artifact", () => {
+  const changedFiles = [
+    {
+      status: "A",
+      previousPath: null,
+      path: ".github/workflows/story-project-sync.yml",
+    },
+    {
+      status: "M",
+      previousPath: null,
+      path: "README.md",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "scripts/story-project-sync.mjs",
+    },
+    {
+      status: "A",
+      previousPath: null,
+      path: "scripts/story-project-sync.test.mjs",
+    },
+  ];
+
+  const diagnostics = [];
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+      `---
+title: 'Story Project Status Sync'
+status: 'in-review'
+---
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "opened", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+    diagnostics,
+  });
+
+  assert.deepEqual(operations, [
+    {
+      kind: "spec",
+      identityKey: "spec:story project status sync",
+      storyNumber: null,
+      title: "Story Project Status Sync",
+      fullTitle: "Story Project Status Sync",
+      queryTitle: "Story Project Status Sync",
+      sourcePaths: ["_bmad-output/implementation-artifacts/spec-story-project-status-sync.md"],
+      ensureIssue: true,
+      ensureProjectItem: true,
+      targetStatus: "review",
+      onlyIfCurrentStatus: null,
+    },
+  ]);
+
+  assert.ok(
+    diagnostics.some((entry) =>
+      entry.includes("Pull request file .github/workflows/story-project-sync.yml is excluded")
+    )
+  );
+  assert.ok(
+    diagnostics.some((entry) => entry.includes("Pull request file README.md is excluded"))
+  );
+  assert.ok(
+    diagnostics.every(
+      (entry) =>
+        !entry.includes(
+          "Pull request file _bmad-output/implementation-artifacts/spec-story-project-status-sync.md is excluded"
+        )
+    )
+  );
+});
