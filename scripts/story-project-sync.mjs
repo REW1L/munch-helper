@@ -25,6 +25,14 @@ const DEFAULT_CONFIG = {
   issueLabel: process.env.STORY_ISSUE_LABEL ?? "",
 };
 
+function logInfo(message) {
+  console.log(`[story-project-sync] ${message}`);
+}
+
+function logSkip(diagnostics, message) {
+  diagnostics.push(message);
+}
+
 function shellQuote(value) {
   if (/^[A-Za-z0-9_./:-]+$/.test(value)) {
     return value;
@@ -275,7 +283,13 @@ function getChangedFilesForPullRequest(payload) {
   return parseNameStatus(gitCommand(["diff", "--name-status", baseSha, headSha]));
 }
 
-export function buildPushOperations({ changedFiles, payload, loadCurrent, loadPrevious }) {
+export function buildPushOperations({
+  changedFiles,
+  payload,
+  loadCurrent,
+  loadPrevious,
+  diagnostics = [],
+}) {
   const operations = new Map();
   const beforeSha = payload.before ?? ZERO_SHA;
 
@@ -283,6 +297,12 @@ export function buildPushOperations({ changedFiles, payload, loadCurrent, loadPr
     if (isPlanningArtifact(changedFile.path) && changedFile.status !== "D") {
       const markdown = loadCurrent(changedFile.path);
       const stories = markdown ? extractStoryRefsFromMarkdown(markdown) : [];
+
+      if (!markdown) {
+        logSkip(diagnostics, `Planning artifact ${changedFile.path} could not be read from the checkout.`);
+      } else if (stories.length === 0) {
+        logSkip(diagnostics, `Planning artifact ${changedFile.path} changed but no story headings were found.`);
+      }
 
       for (const story of stories) {
         mergeStoryAction(operations, story, {
@@ -294,12 +314,22 @@ export function buildPushOperations({ changedFiles, payload, loadCurrent, loadPr
     }
 
     if (!isImplementationArtifact(changedFile.path) || changedFile.status === "D") {
+      if (changedFile.status !== "D") {
+        logSkip(
+          diagnostics,
+          `Changed file ${changedFile.path} does not qualify as a tracked implementation artifact.`
+        );
+      }
       continue;
     }
 
     const currentMarkdown = loadCurrent(changedFile.path);
     const currentStory = currentMarkdown ? parseImplementationArtifact(currentMarkdown) : null;
     if (!currentStory) {
+      logSkip(
+        diagnostics,
+        `Implementation artifact ${changedFile.path} changed but its story heading or status could not be parsed.`
+      );
       continue;
     }
 
@@ -324,6 +354,11 @@ export function buildPushOperations({ changedFiles, payload, loadCurrent, loadPr
         targetStatus: "done",
         sourcePaths: [changedFile.path],
       });
+    } else if (changedFile.status !== "A") {
+      logSkip(
+        diagnostics,
+        `Implementation artifact ${changedFile.path} did not trigger a lifecycle change (status ${previousStatus ?? "unknown"} -> ${currentStory.status ?? "unknown"}).`
+      );
     }
   }
 
@@ -333,12 +368,16 @@ export function buildPushOperations({ changedFiles, payload, loadCurrent, loadPr
   }));
 }
 
-export function buildPullRequestOperations({ changedFiles, payload, loadCurrent }) {
+export function buildPullRequestOperations({ changedFiles, payload, loadCurrent, diagnostics = [] }) {
   const actionableFiles = changedFiles.filter(
     (changedFile) => changedFile.status !== "D" && isImplementationArtifact(changedFile.path)
   );
 
   if (actionableFiles.length !== 1) {
+    logSkip(
+      diagnostics,
+      `Pull request event requires exactly one changed implementation artifact, found ${actionableFiles.length}.`
+    );
     return [];
   }
 
@@ -347,12 +386,20 @@ export function buildPullRequestOperations({ changedFiles, payload, loadCurrent 
   const story = markdown ? parseImplementationArtifact(markdown) : null;
 
   if (!story) {
+    logSkip(
+      diagnostics,
+      `Pull request artifact ${changedFile.path} could not be parsed into a story title and status.`
+    );
     return [];
   }
 
   const action = payload.action;
   if (action === "opened" || action === "reopened") {
     if (story.status === "ready-for-dev") {
+      logSkip(
+        diagnostics,
+        `Pull request action ${action} ignored because ${changedFile.path} is still ready-for-dev.`
+      );
       return [];
     }
 
@@ -385,18 +432,31 @@ export function buildPullRequestOperations({ changedFiles, payload, loadCurrent 
     ];
   }
 
+  logSkip(
+    diagnostics,
+    `Pull request action ${action} with merged=${String(payload.pull_request?.merged)} does not trigger a lifecycle update.`
+  );
+
   return [];
 }
 
-export function buildOperations({ eventName, payload, changedFiles, loadCurrent, loadPrevious }) {
+export function buildOperations({
+  eventName,
+  payload,
+  changedFiles,
+  loadCurrent,
+  loadPrevious,
+  diagnostics = [],
+}) {
   if (eventName === "push") {
-    return buildPushOperations({ changedFiles, payload, loadCurrent, loadPrevious });
+    return buildPushOperations({ changedFiles, payload, loadCurrent, loadPrevious, diagnostics });
   }
 
   if (eventName === "pull_request") {
-    return buildPullRequestOperations({ changedFiles, payload, loadCurrent });
+    return buildPullRequestOperations({ changedFiles, payload, loadCurrent, diagnostics });
   }
 
+  logSkip(diagnostics, `Event ${eventName} is not supported by this script.`);
   return [];
 }
 
@@ -748,6 +808,12 @@ function main() {
       : eventName === "pull_request"
         ? getChangedFilesForPullRequest(payload)
         : [];
+  const diagnostics = [];
+
+  logInfo(`Processing ${eventName} event with ${changedFiles.length} changed file(s).`);
+  for (const changedFile of changedFiles) {
+    logInfo(`Changed file: ${changedFile.status} ${changedFile.path}`);
+  }
 
   const operations = buildOperations({
     eventName,
@@ -755,11 +821,21 @@ function main() {
     changedFiles,
     loadCurrent: loadCurrentFile,
     loadPrevious: loadFileAtRevision,
+    diagnostics,
   });
 
   if (operations.length === 0) {
-    console.log("No story lifecycle operations detected.");
+    logInfo("No story lifecycle operations detected.");
+    for (const diagnostic of diagnostics) {
+      logInfo(`Reason: ${diagnostic}`);
+    }
     return;
+  }
+
+  for (const operation of operations) {
+    logInfo(
+      `Planned story operation for ${operation.fullTitle}: issue=${operation.ensureIssue}, projectItem=${operation.ensureProjectItem}, targetStatus=${operation.targetStatus ?? "none"}`
+    );
   }
 
   const commandPlan = [];
