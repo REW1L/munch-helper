@@ -1,0 +1,65 @@
+name: Story Project Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "_bmad-output/planning-artifacts/**"
+      - "_bmad-output/implementation-artifacts/**"
+      - "scripts/story-project-sync.mjs"
+      - ".github/workflows/story-project-sync.yml"
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - closed
+    paths:
+      - "_bmad-output/implementation-artifacts/**"
+      - "scripts/story-project-sync.mjs"
+      - ".github/workflows/story-project-sync.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: story-project-sync-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  sync_story_project:
+    name: Sync Story Project
+    runs-on: ubuntu-latest
+
+    env:
+      GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+      PROJECT_OWNER: REW1L
+      PROJECT_NUMBER: "1"
+      PROJECT_TITLE: Munch Helper project
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate Required Inputs
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing required secret: GH_PROJECT_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Verify GitHub CLI Auth
+        run: gh auth status
+
+      - name: Sync Story Issues and Project Status
+        run: node scripts/story-project-sync.mjs
