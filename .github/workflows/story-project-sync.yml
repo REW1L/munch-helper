@@ -10,10 +10,6 @@ on:
       - "scripts/story-project-sync.mjs"
       - ".github/workflows/story-project-sync.yml"
   pull_request:
-    types:
-      - opened
-      - reopened
-      - closed
     paths:
       - "_bmad-output/implementation-artifacts/**"
       - "scripts/story-project-sync.mjs"
