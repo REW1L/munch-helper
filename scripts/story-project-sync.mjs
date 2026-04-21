@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const STORY_HEADING_REGEX = /^#{1,6}\s+Story\s+(\d+\.\d+):\s*(.+?)\s*$/gim;
 const STORY_TITLE_REGEX = /^Story\s+(\d+\.\d+):\s*(.+)$/i;
 const STATUS_LINE_REGEX = /^Status:\s*(.+?)\s*$/im;
+const FRONTMATTER_REGEX = /^---\s*\n([\s\S]*?)\n---\s*/;
 const IMPLEMENTATION_DIR = "_bmad-output/implementation-artifacts/";
 const PLANNING_DIR = "_bmad-output/planning-artifacts/";
 const ZERO_SHA = "0000000000000000000000000000000000000000";
@@ -144,17 +145,73 @@ export function parseImplementationArtifact(markdown) {
   };
 }
 
+function parseFrontmatterValue(frontmatter, key) {
+  const match = frontmatter.match(new RegExp(`^${key}:\\s*['"]?(.+?)['"]?\\s*$`, "im"));
+  return match ? normalizeWhitespace(match[1]) : null;
+}
+
+export function parseTrackedImplementationArtifact(markdown, filePath = "") {
+  const storyArtifact = parseImplementationArtifact(markdown);
+  if (storyArtifact) {
+    return {
+      kind: "story",
+      identityKey: `story:${storyArtifact.storyNumber}`,
+      queryTitle: `Story ${storyArtifact.storyNumber}*`,
+      ...storyArtifact,
+    };
+  }
+
+  const frontmatterMatch = markdown.match(FRONTMATTER_REGEX);
+  if (!frontmatterMatch) {
+    return null;
+  }
+
+  const title = parseFrontmatterValue(frontmatterMatch[1], "title");
+  const status = parseFrontmatterValue(frontmatterMatch[1], "status");
+
+  if (!title) {
+    return null;
+  }
+
+  return {
+    kind: "spec",
+    identityKey: `spec:${title.toLowerCase()}`,
+    storyNumber: null,
+    title,
+    fullTitle: title,
+    queryTitle: title,
+    status: status ? normalizeStoryStatus(status) : null,
+    filePath,
+  };
+}
+
 export function isPlanningArtifact(filePath) {
   return filePath.startsWith(PLANNING_DIR) && filePath.endsWith(".md");
 }
 
-export function isImplementationArtifact(filePath) {
-  if (!filePath.startsWith(IMPLEMENTATION_DIR) || !filePath.endsWith(".md")) {
-    return false;
+export function getImplementationArtifactSkipReason(filePath) {
+  if (!filePath.startsWith(IMPLEMENTATION_DIR)) {
+    return "outside the implementation-artifacts directory";
+  }
+
+  if (!filePath.endsWith(".md")) {
+    return "not a markdown artifact";
   }
 
   const basename = path.basename(filePath);
-  return basename !== "spec-wip.md" && basename !== "deferred-work.md" && !basename.startsWith("spec-");
+  if (basename === "spec-wip.md") {
+    return "the BMAD work-in-progress spec file";
+  }
+
+  if (basename === "deferred-work.md") {
+    return "the BMAD deferred-work control file";
+  }
+
+  return null;
+}
+
+export function isImplementationArtifact(filePath) {
+  return getImplementationArtifactSkipReason(filePath) === null;
 }
 
 export function parseNameStatusLine(line) {
@@ -202,15 +259,18 @@ function choosePreferredTitle(currentTitle, nextTitle) {
   return nextTitle.length >= currentTitle.length ? nextTitle : currentTitle;
 }
 
-function mergeStoryAction(store, story, partialAction) {
-  if (!story) {
+function mergeTrackedAction(store, artifact, partialAction) {
+  if (!artifact) {
     return;
   }
 
-  const existing = store.get(story.storyNumber) ?? {
-    storyNumber: story.storyNumber,
-    title: story.title,
-    fullTitle: story.fullTitle,
+  const existing = store.get(artifact.identityKey) ?? {
+    kind: artifact.kind,
+    identityKey: artifact.identityKey,
+    storyNumber: artifact.storyNumber,
+    title: artifact.title,
+    fullTitle: artifact.fullTitle,
+    queryTitle: artifact.queryTitle,
     sourcePaths: new Set(),
     ensureIssue: false,
     ensureProjectItem: false,
@@ -218,8 +278,11 @@ function mergeStoryAction(store, story, partialAction) {
     onlyIfCurrentStatus: null,
   };
 
-  existing.title = choosePreferredTitle(existing.title, story.title);
-  existing.fullTitle = `Story ${story.storyNumber}: ${existing.title}`;
+  existing.title = choosePreferredTitle(existing.title, artifact.title);
+  existing.fullTitle = artifact.storyNumber
+    ? `Story ${artifact.storyNumber}: ${existing.title}`
+    : existing.title;
+  existing.queryTitle = artifact.queryTitle ?? existing.fullTitle;
   existing.ensureIssue ||= Boolean(partialAction.ensureIssue);
   existing.ensureProjectItem ||= Boolean(partialAction.ensureProjectItem);
 
@@ -238,7 +301,7 @@ function mergeStoryAction(store, story, partialAction) {
     existing.sourcePaths.add(sourcePath);
   }
 
-  store.set(story.storyNumber, existing);
+  store.set(artifact.identityKey, existing);
 }
 
 function loadFileAtRevision(revision, filePath) {
@@ -305,7 +368,12 @@ export function buildPushOperations({
       }
 
       for (const story of stories) {
-        mergeStoryAction(operations, story, {
+        mergeTrackedAction(operations, {
+          kind: "story",
+          identityKey: `story:${story.storyNumber}`,
+          queryTitle: `Story ${story.storyNumber}*`,
+          ...story,
+        }, {
           ensureIssue: true,
           ensureProjectItem: true,
           sourcePaths: [changedFile.path],
@@ -315,26 +383,29 @@ export function buildPushOperations({
 
     if (!isImplementationArtifact(changedFile.path) || changedFile.status === "D") {
       if (changedFile.status !== "D") {
+        const skipReason = getImplementationArtifactSkipReason(changedFile.path);
         logSkip(
           diagnostics,
-          `Changed file ${changedFile.path} does not qualify as a tracked implementation artifact.`
+          `Changed file ${changedFile.path} does not qualify as a tracked implementation artifact${skipReason ? `: ${skipReason}.` : "."}`
         );
       }
       continue;
     }
 
     const currentMarkdown = loadCurrent(changedFile.path);
-    const currentStory = currentMarkdown ? parseImplementationArtifact(currentMarkdown) : null;
-    if (!currentStory) {
+    const currentArtifact = currentMarkdown
+      ? parseTrackedImplementationArtifact(currentMarkdown, changedFile.path)
+      : null;
+    if (!currentArtifact) {
       logSkip(
         diagnostics,
-        `Implementation artifact ${changedFile.path} changed but its story heading or status could not be parsed.`
+        `Implementation artifact ${changedFile.path} changed but its title or status could not be parsed.`
       );
       continue;
     }
 
     if (changedFile.status === "A") {
-      mergeStoryAction(operations, currentStory, {
+      mergeTrackedAction(operations, currentArtifact, {
         ensureIssue: true,
         ensureProjectItem: true,
         targetStatus: "ready-for-dev",
@@ -344,11 +415,13 @@ export function buildPushOperations({
 
     const previousPath = changedFile.previousPath ?? changedFile.path;
     const previousMarkdown = loadPrevious(beforeSha, previousPath);
-    const previousStory = previousMarkdown ? parseImplementationArtifact(previousMarkdown) : null;
-    const previousStatus = previousStory?.status ?? null;
+    const previousArtifact = previousMarkdown
+      ? parseTrackedImplementationArtifact(previousMarkdown, previousPath)
+      : null;
+    const previousStatus = previousArtifact?.status ?? null;
 
-    if (currentStory.status === "done" && previousStatus !== "done") {
-      mergeStoryAction(operations, currentStory, {
+    if (currentArtifact.status === "done" && previousStatus !== "done") {
+      mergeTrackedAction(operations, currentArtifact, {
         ensureIssue: true,
         ensureProjectItem: true,
         targetStatus: "done",
@@ -357,7 +430,7 @@ export function buildPushOperations({
     } else if (changedFile.status !== "A") {
       logSkip(
         diagnostics,
-        `Implementation artifact ${changedFile.path} did not trigger a lifecycle change (status ${previousStatus ?? "unknown"} -> ${currentStory.status ?? "unknown"}).`
+        `Implementation artifact ${changedFile.path} did not trigger a lifecycle change (status ${previousStatus ?? "unknown"} -> ${currentArtifact.status ?? "unknown"}).`
       );
     }
   }
@@ -369,33 +442,48 @@ export function buildPushOperations({
 }
 
 export function buildPullRequestOperations({ changedFiles, payload, loadCurrent, diagnostics = [] }) {
-  const actionableFiles = changedFiles.filter(
-    (changedFile) => changedFile.status !== "D" && isImplementationArtifact(changedFile.path)
-  );
+  const actionableFiles = [];
+
+  for (const changedFile of changedFiles) {
+    if (changedFile.status === "D") {
+      continue;
+    }
+
+    if (!isImplementationArtifact(changedFile.path)) {
+      const skipReason = getImplementationArtifactSkipReason(changedFile.path);
+      logSkip(
+        diagnostics,
+        `Pull request file ${changedFile.path} is excluded from implementation-artifact review transitions${skipReason ? `: ${skipReason}.` : "."}`
+      );
+      continue;
+    }
+
+    actionableFiles.push(changedFile);
+  }
 
   if (actionableFiles.length !== 1) {
     logSkip(
       diagnostics,
-      `Pull request event requires exactly one changed implementation artifact, found ${actionableFiles.length}.`
+      `Pull request event requires exactly one changed tracked implementation artifact, found ${actionableFiles.length}.`
     );
     return [];
   }
 
   const changedFile = actionableFiles[0];
   const markdown = loadCurrent(changedFile.path);
-  const story = markdown ? parseImplementationArtifact(markdown) : null;
+  const artifact = markdown ? parseTrackedImplementationArtifact(markdown, changedFile.path) : null;
 
-  if (!story) {
+  if (!artifact) {
     logSkip(
       diagnostics,
-      `Pull request artifact ${changedFile.path} could not be parsed into a story title and status.`
+      `Pull request artifact ${changedFile.path} could not be parsed into a title and status.`
     );
     return [];
   }
 
   const action = payload.action;
   if (action === "opened" || action === "reopened") {
-    if (story.status === "ready-for-dev") {
+    if (artifact.status === "ready-for-dev") {
       logSkip(
         diagnostics,
         `Pull request action ${action} ignored because ${changedFile.path} is still ready-for-dev.`
@@ -405,9 +493,12 @@ export function buildPullRequestOperations({ changedFiles, payload, loadCurrent,
 
     return [
       {
-        storyNumber: story.storyNumber,
-        title: story.title,
-        fullTitle: story.fullTitle,
+        kind: artifact.kind,
+        identityKey: artifact.identityKey,
+        storyNumber: artifact.storyNumber,
+        title: artifact.title,
+        fullTitle: artifact.fullTitle,
+        queryTitle: artifact.queryTitle,
         sourcePaths: [changedFile.path],
         ensureIssue: true,
         ensureProjectItem: true,
@@ -420,9 +511,12 @@ export function buildPullRequestOperations({ changedFiles, payload, loadCurrent,
   if (action === "closed" && payload.pull_request?.merged === false) {
     return [
       {
-        storyNumber: story.storyNumber,
-        title: story.title,
-        fullTitle: story.fullTitle,
+        kind: artifact.kind,
+        identityKey: artifact.identityKey,
+        storyNumber: artifact.storyNumber,
+        title: artifact.title,
+        fullTitle: artifact.fullTitle,
+        queryTitle: artifact.queryTitle,
         sourcePaths: [changedFile.path],
         ensureIssue: true,
         ensureProjectItem: true,
@@ -482,6 +576,14 @@ function findIssueByStoryNumber(issues, storyNumber) {
   }) ?? null;
 }
 
+function findIssueForArtifact(issues, operation) {
+  if (operation.storyNumber) {
+    return findIssueByStoryNumber(issues, operation.storyNumber);
+  }
+
+  return issues.find((issue) => issue.title === operation.fullTitle) ?? null;
+}
+
 function chooseProjectItem(items, storyNumber, fullTitle) {
   const exactTitle = items.find((item) => item.title === fullTitle);
   if (exactTitle) {
@@ -494,7 +596,7 @@ function chooseProjectItem(items, storyNumber, fullTitle) {
 }
 
 function getProjectItemQuery(operation, currentStatus = null) {
-  const query = [`is:issue`, `title:"Story ${operation.storyNumber}*"`];
+  const query = [`is:issue`, `title:"${operation.queryTitle}"`];
   if (currentStatus) {
     query.push(`status:"${projectStatusLabel(currentStatus)}"`);
   }
@@ -650,8 +752,16 @@ function recordCommand(plan, argv) {
   plan.push(formatCommand(argv));
 }
 
+function dryRunIssueSlug(operation) {
+  if (operation.storyNumber) {
+    return `STORY-${operation.storyNumber.replace(/\./g, "-")}`;
+  }
+
+  return encodeURIComponent(operation.fullTitle.toLowerCase().replace(/\s+/g, "-"));
+}
+
 function ensureIssue(config, issues, operation, dryRun, commandPlan) {
-  let issue = findIssueByStoryNumber(issues, operation.storyNumber);
+  let issue = findIssueForArtifact(issues, operation);
 
   if (issue && issue.title !== operation.fullTitle) {
     const editArgs = [
@@ -695,9 +805,7 @@ function ensureIssue(config, issues, operation, dryRun, commandPlan) {
     issue = {
       number: Number.NaN,
       title: operation.fullTitle,
-      url:
-        issueUrl ||
-        `https://github.com/${config.repo}/issues/STORY-${operation.storyNumber.replace(/\./g, "-")}`,
+      url: issueUrl || `https://github.com/${config.repo}/issues/${dryRunIssueSlug(operation)}`,
       state: "OPEN",
     };
   }
@@ -731,7 +839,7 @@ function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
 
   if (dryRun && !projectItem) {
     projectItem = {
-      id: `item-${operation.storyNumber.replace(/\./g, "-")}`,
+      id: `item-${dryRunIssueSlug(operation)}`,
       title: operation.fullTitle,
     };
   }
@@ -834,7 +942,7 @@ function main() {
 
   for (const operation of operations) {
     logInfo(
-      `Planned story operation for ${operation.fullTitle}: issue=${operation.ensureIssue}, projectItem=${operation.ensureProjectItem}, targetStatus=${operation.targetStatus ?? "none"}`
+      `Planned tracked-artifact operation for ${operation.fullTitle}: issue=${operation.ensureIssue}, projectItem=${operation.ensureProjectItem}, targetStatus=${operation.targetStatus ?? "none"}`
     );
   }
 

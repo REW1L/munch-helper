@@ -176,7 +176,7 @@ How to keep BMAD artifacts useful:
 
 ## Story Project Automation
 
-This repository includes `.github/workflows/story-project-sync.yml` to keep BMAD stories aligned with repository issues and the GitHub Project at `https://github.com/users/REW1L/projects/1`.
+This repository includes `.github/workflows/story-project-sync.yml` to keep BMAD stories and implementation specs aligned with repository issues and the GitHub Project at `https://github.com/users/REW1L/projects/1`.
 
 Required repository secret:
 
@@ -193,10 +193,10 @@ Current project assumptions:
 Supported lifecycle sync:
 
 - A story mentioned in `_bmad-output/planning-artifacts/**` on `main` creates or reuses a matching repository issue and adds it to the project.
-- A story file added under `_bmad-output/implementation-artifacts/` creates the issue and project item if missing, then sets project status to `Ready for Dev`.
-- A pull request that touches exactly one story implementation artifact and whose artifact status is no longer `ready-for-dev` sets the project status to `Review`.
-- A merged `main` change that moves an implementation artifact status to `done` sets the project status to `Done`.
-- A pull request for a story that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
+- A story or approved `spec-*.md` file added under `_bmad-output/implementation-artifacts/` creates the issue and project item if missing, then sets project status to `Ready for Dev`.
+- A pull request that touches exactly one tracked implementation artifact and whose artifact status is no longer `ready-for-dev` sets the project status to `Review`.
+- A merged `main` change that moves a tracked implementation artifact status to `done` sets the project status to `Done`.
+- A pull request for a tracked implementation artifact that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
 
 ## Documentation
 

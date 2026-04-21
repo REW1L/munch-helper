@@ -5,7 +5,9 @@ import {
   buildPullRequestOperations,
   buildPushOperations,
   extractStoryRefsFromMarkdown,
+  getImplementationArtifactSkipReason,
   parseImplementationArtifact,
+  parseTrackedImplementationArtifact,
   parseNameStatus,
   parseStoryTitle,
 } from "./story-project-sync.mjs";
@@ -63,6 +65,34 @@ test("parseNameStatus handles rename records", () => {
   ]);
 });
 
+test("getImplementationArtifactSkipReason still excludes only control files", () => {
+  assert.equal(
+    getImplementationArtifactSkipReason("_bmad-output/implementation-artifacts/spec-wip.md"),
+    "the BMAD work-in-progress spec file"
+  );
+});
+
+test("parseTrackedImplementationArtifact extracts title and status from spec frontmatter", () => {
+  const markdown = `---
+title: 'Story Project Status Sync'
+status: 'done'
+---
+
+## Intent
+`;
+
+  assert.deepEqual(parseTrackedImplementationArtifact(markdown), {
+    kind: "spec",
+    identityKey: "spec:story project status sync",
+    storyNumber: null,
+    title: "Story Project Status Sync",
+    fullTitle: "Story Project Status Sync",
+    queryTitle: "Story Project Status Sync",
+    status: "done",
+    filePath: "",
+  });
+});
+
 test("buildPushOperations plans issue creation and ready-for-dev on artifact add", () => {
   const changedFiles = [
     {
@@ -92,9 +122,12 @@ Status: ready-for-dev
 
   assert.deepEqual(operations, [
     {
+      kind: "story",
+      identityKey: "story:3.8",
       storyNumber: "3.8",
       title: "Realtime Update Signal on Character Cards",
       fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+      queryTitle: "Story 3.8*",
       sourcePaths: [
         "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
       ],
@@ -203,9 +236,12 @@ Status: in-progress
   });
 
   assert.deepEqual(operations[0], {
+    kind: "story",
+    identityKey: "story:3.8",
     storyNumber: "3.8",
     title: "Realtime Update Signal on Character Cards",
     fullTitle: "Story 3.8: Realtime Update Signal on Character Cards",
+    queryTitle: "Story 3.8*",
     sourcePaths: [
       "_bmad-output/implementation-artifacts/3-8-realtime-update-signal-on-character-cards.md",
     ],
@@ -213,5 +249,46 @@ Status: in-progress
     ensureProjectItem: true,
     targetStatus: "ready-for-dev",
     onlyIfCurrentStatus: "review",
+  });
+});
+
+test("buildPullRequestOperations tracks spec artifacts in implementation-artifacts", () => {
+  const changedFiles = [
+    {
+      status: "A",
+      previousPath: null,
+      path: "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+    },
+  ];
+
+  const currentFiles = new Map([
+    [
+      "_bmad-output/implementation-artifacts/spec-story-project-status-sync.md",
+      `---
+title: 'Story Project Status Sync'
+status: 'in-progress'
+---
+`,
+    ],
+  ]);
+
+  const operations = buildPullRequestOperations({
+    changedFiles,
+    payload: { action: "opened", pull_request: { merged: false } },
+    loadCurrent: (filePath) => currentFiles.get(filePath) ?? null,
+  });
+
+  assert.deepEqual(operations[0], {
+    kind: "spec",
+    identityKey: "spec:story project status sync",
+    storyNumber: null,
+    title: "Story Project Status Sync",
+    fullTitle: "Story Project Status Sync",
+    queryTitle: "Story Project Status Sync",
+    sourcePaths: ["_bmad-output/implementation-artifacts/spec-story-project-status-sync.md"],
+    ensureIssue: true,
+    ensureProjectItem: true,
+    targetStatus: "review",
+    onlyIfCurrentStatus: null,
   });
 });
