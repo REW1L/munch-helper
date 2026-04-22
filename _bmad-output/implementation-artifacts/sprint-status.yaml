@@ -72,7 +72,7 @@ development_status:
   epic-4: in-progress
   4-1-live-room-state-synchronisation: done
   4-2-graceful-room-exit: done
-  4-3-reconnection-session-restore: backlog
+  4-3-reconnection-session-restore: ready-for-dev
   4-4-reconnecting-banner: backlog
   4-5-late-join-context-awareness: backlog
   4-6-reduced-motion-support: backlog
