@@ -9,6 +9,26 @@ import avatars from '@/constants/avatars';
 
 const USER_STORAGE_KEY = 'user';
 
+// App Store screenshot automation injects a deterministic profile so Maestro
+// captures named users instead of random "Player XXXXX" placeholders.
+const SCREENSHOT_PROFILE_NAME = process.env.EXPO_PUBLIC_SCREENSHOT_PROFILE_NAME?.trim() || '';
+const SCREENSHOT_PROFILE_AVATAR_RAW = process.env.EXPO_PUBLIC_SCREENSHOT_PROFILE_AVATAR;
+
+const resolveScreenshotAvatar = (): number | null => {
+  if (typeof SCREENSHOT_PROFILE_AVATAR_RAW !== 'string' || SCREENSHOT_PROFILE_AVATAR_RAW.trim().length === 0) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(SCREENSHOT_PROFILE_AVATAR_RAW, 10);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed >= avatars.length) {
+    return null;
+  }
+
+  return parsed;
+};
+
+const SCREENSHOT_PROFILE_AVATAR = resolveScreenshotAvatar();
+
 // Generate a random URL-safe string
 const generateRandomNicknamePostfix = (length: number = 6): string => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -37,6 +57,16 @@ const StoredUserProfileSchema = z.object({
 });
 
 function generateDefaultUserProfile(): UserProfileInterface {
+  if (SCREENSHOT_PROFILE_NAME) {
+    // Keep this branch for screenshot generation flows driven by
+    // scripts/capture-app-store-screenshots.mjs.
+    return {
+      id: '',
+      nickname: SCREENSHOT_PROFILE_NAME,
+      avatar: SCREENSHOT_PROFILE_AVATAR ?? 0,
+    };
+  }
+
   const randomPostfix = generateRandomNicknamePostfix();
   return {
     id: '',

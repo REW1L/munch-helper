@@ -163,7 +163,7 @@ describe('ChangeCharacterModal', () => {
     });
 
     const pressDeleteAndConfirm = async () => {
-      const deleteButton = findButtonByLabel(renderer!, 'Delete');
+      const deleteButton = findButtonByLabel(renderer!, 'Delete Character');
       expect(deleteButton).toBeTruthy();
 
       await act(async () => {
@@ -205,7 +205,7 @@ describe('ChangeCharacterModal', () => {
 
     const deletingLabelStillVisible = renderer!.root
       .findAllByType(Text)
-      .some((textNode: any) => textNode.props.children === 'Deleting...');
+      .some((textNode: any) => textNode.props.children === 'Deleting Character...');
     expect(deletingLabelStillVisible).toBe(true);
 
     await act(async () => {
@@ -215,7 +215,7 @@ describe('ChangeCharacterModal', () => {
 
     const deleteLabelVisible = renderer!.root
       .findAllByType(Text)
-      .some((textNode: any) => textNode.props.children === 'Delete');
+      .some((textNode: any) => textNode.props.children === 'Delete Character');
     expect(deleteLabelVisible).toBe(true);
   });
 
@@ -255,7 +255,7 @@ describe('ChangeCharacterModal', () => {
     });
 
     await act(async () => {
-      findButtonByLabel(renderer!, 'Delete')!.props.onPress();
+      findButtonByLabel(renderer!, 'Delete Character')!.props.onPress();
     });
 
     // Confirm via ConfirmDialog
@@ -316,7 +316,7 @@ describe('ChangeCharacterModal', () => {
     });
 
     await act(async () => {
-      findButtonByLabel(renderer!, 'Delete')!.props.onPress();
+      findButtonByLabel(renderer!, 'Delete Character')!.props.onPress();
     });
 
     // Confirm via ConfirmDialog
