@@ -1,5 +1,5 @@
-import { Image } from 'expo-image';
 import { AppTheme } from '@/constants/theme';
+import { Image } from 'expo-image';
 import { useContext, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -22,10 +22,10 @@ export default function Home() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{
-        flex: 1,
-        backgroundColor: "#121212", // Dark theme background
-      }} edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}>
+      <SafeAreaView
+        style={{ flex: 1 }}
+        edges={Platform.OS === "ios" ? [] : ["top", "bottom", "left", "right"]}
+      >
         <View style={styles.container}>
           {/* Status Bar */}
           <Stack.Screen options={{ title: 'Games' }} />

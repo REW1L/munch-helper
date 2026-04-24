@@ -1,6 +1,6 @@
-import React from 'react';
-import { router, Stack } from 'expo-router';
 import { Image } from 'expo-image';
+import { router, Stack } from 'expo-router';
+import React from 'react';
 import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -28,11 +28,8 @@ export default function LandingPage() {
   return (
     <SafeAreaProvider>
       <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: '#121212',
-        }}
-        edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}
+        style={{ flex: 1 }}
+        edges={Platform.OS === 'ios' ? ['top'] : ['top', 'bottom', 'left', 'right']}
       >
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
