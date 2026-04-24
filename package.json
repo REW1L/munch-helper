@@ -5,6 +5,7 @@
   "scripts": {
     "screenshots:seed": "node scripts/seed-app-store-room.mjs",
     "screenshots:app-store": "node scripts/capture-app-store-screenshots.mjs",
+    "screenshots:google-play": "node scripts/capture-google-play-screenshots.mjs",
     "coverage:frontend": "npm --prefix frontend run test:coverage",
     "coverage:backend": "npm --prefix backend run test:coverage",
     "coverage": "npm run coverage:frontend && npm run coverage:backend && node scripts/coverage-combined.mjs"
