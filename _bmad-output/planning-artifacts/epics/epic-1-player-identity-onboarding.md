@@ -14,15 +14,17 @@ So that I immediately understand the app's purpose and know how to proceed.
 **When** the landing screen loads
 **Then** I see the app name, a short description of its purpose, and a prominent "Rooms" button
 **And** Privacy and Support links are accessible from the landing screen
-**And** an App Store (iOS) link is accessible at the bottom of the landing screen, appears as a standard store link, and opens `https://apps.apple.com/us/app/munch-helper/id6760627502`
-**And** a Google Play (Android) link is visible at the bottom of the landing screen as a standard store link style, is disabled for now, and includes a visible `soon` label
+**And** on web, an App Store (iOS) link is accessible at the bottom of the landing screen, appears as a standard store link, and opens `https://apps.apple.com/us/app/munch-helper/id6760627502`
+**And** on web, a Google Play (Android) link is visible at the bottom of the landing screen as a standard store link style, is disabled for now, and includes a visible `soon` label
+**And** on iOS and Android, store badges are not shown on the landing screen
 **And** tapping "Rooms" navigates me to the rooms view
 
-**Implementation Sync (2026-03-27):**
-- Store links implemented with official App Store and Google Play badge assets.
-- App Store and Google Play badges are rendered on the same bottom row, with no extra button chrome around the images.
+**Implementation Sync (2026-04-24):**
+- Store links are implemented with official App Store and Google Play badge assets on web only.
+- App Store and Google Play badges are rendered on the same bottom row on web, with no extra button chrome around the images.
 - Google Play remains disabled and shows `soon` above the badge.
 - Badge sizing is fixed (non-responsive) with a 40px minimum/actual height, per implementation constraints.
+- Native mobile builds hide the store badges to avoid distracting users who already installed the app.
 
 ## Story 1.2: Automatic Player Identity Creation `[DONE]`
 

@@ -1,6 +1,6 @@
-import React from 'react';
-import { router, Stack } from 'expo-router';
 import { Image } from 'expo-image';
+import { router, Stack } from 'expo-router';
+import React from 'react';
 import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,8 @@ const STORE_LINKS = {
 } as const;
 
 export default function LandingPage() {
+  const showStoreLinks = Platform.OS === 'web';
+
   const openAppStore = async () => {
     try {
       const canOpen = await Linking.canOpenURL(STORE_LINKS.ios);
@@ -26,11 +28,8 @@ export default function LandingPage() {
   return (
     <SafeAreaProvider>
       <SafeAreaView
-        style={{
-          flex: 1,
-          backgroundColor: '#121212',
-        }}
-        edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}
+        style={{ flex: 1 }}
+        edges={Platform.OS === 'ios' ? ['top'] : ['top', 'bottom', 'left', 'right']}
       >
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
@@ -56,30 +55,32 @@ export default function LandingPage() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.storeLinksSection}>
-            <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel="App Store">
-              <Image
-                source={require('../assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg')}
-                style={styles.appStoreBadge}
-                contentFit="contain"
-                accessibilityLabel="App Store badge"
-              />
-            </TouchableOpacity>
+          {showStoreLinks ? (
+            <View style={styles.storeLinksSection}>
+              <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel="App Store">
+                <Image
+                  source={require('../assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg')}
+                  style={styles.appStoreBadge}
+                  contentFit="contain"
+                  accessibilityLabel="App Store badge"
+                />
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.storeLinkButton, styles.disabledStoreLinkButton]}
-              disabled
-              accessibilityLabel="Google Play"
-            >
-              <Text style={styles.playSoonNote}>soon</Text>
-              <Image
-                source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
-                style={styles.playStoreBadge}
-                contentFit="contain"
-                accessibilityLabel="Google Play badge"
-              />
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[styles.storeLinkButton, styles.disabledStoreLinkButton]}
+                disabled
+                accessibilityLabel="Google Play"
+              >
+                <Text style={styles.playSoonNote}>soon</Text>
+                <Image
+                  source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
+                  style={styles.playStoreBadge}
+                  contentFit="contain"
+                  accessibilityLabel="Google Play badge"
+                />
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
       </SafeAreaView>
     </SafeAreaProvider>
