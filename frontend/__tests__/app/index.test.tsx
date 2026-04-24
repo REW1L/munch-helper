@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockNavigate = vi.hoisted(() => vi.fn());
 const mockOpenURL = vi.hoisted(() => vi.fn());
 const mockCanOpenURL = vi.hoisted(() => vi.fn());
+const mockPlatformOS = vi.hoisted(() => ({ value: 'web' }));
 
 vi.mock('expo-router', () => ({
   Stack: {
@@ -51,6 +52,12 @@ vi.mock('react-native', async () => {
 
   return {
     ...actual,
+    Platform: {
+      ...actual.Platform,
+      get OS() {
+        return mockPlatformOS.value;
+      },
+    },
     Linking: {
       ...actual.Linking,
       openURL: mockOpenURL,
@@ -61,6 +68,8 @@ vi.mock('react-native', async () => {
 
 describe('Landing route', () => {
   beforeEach(() => {
+    vi.resetModules();
+    mockPlatformOS.value = 'web';
     mockNavigate.mockReset();
     mockOpenURL.mockReset();
     mockOpenURL.mockResolvedValue(undefined);
@@ -128,6 +137,19 @@ describe('Landing route', () => {
 
     expect(mockOpenURL).not.toHaveBeenCalled();
     expect(mockCanOpenURL).not.toHaveBeenCalled();
+  });
+
+  it('hides store links on native platforms', async () => {
+    mockPlatformOS.value = 'ios';
+    const { default: LandingPage } = await import('../../app/index');
+
+    await act(async () => {
+      render(<LandingPage />);
+    });
+
+    expect(screen.queryByLabelText('App Store')).toBeNull();
+    expect(screen.queryByLabelText('Google Play')).toBeNull();
+    expect(screen.queryByText('soon')).toBeNull();
   });
 
   it('navigates to /rooms when Rooms is tapped', async () => {
