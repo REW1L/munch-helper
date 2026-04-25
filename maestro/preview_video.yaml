@@ -1,0 +1,81 @@
+appId: click.helpamunch.mobileapp
+---
+# ── Launch app ────────────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Rooms"
+    timeout: 20000
+- tapOn: "Rooms"
+- extendedWaitUntil:
+    visible: "Munch ⚔️"
+    timeout: 15000
+
+# ── Create a room ─────────────────────────────────────────────────────
+- tapOn: "Create"
+- extendedWaitUntil:
+    visible: "Create a room for Munchkin?"
+    timeout: 10000
+- tapOn:
+    id: "yep-button"
+- extendedWaitUntil:
+    visible: "Create a character"
+    timeout: 20000
+- waitForAnimationToEnd
+
+# ── Go back to rooms home ─────────────────────────────────────────────
+- tapOn: "Games"
+- extendedWaitUntil:
+    visible: "Munch ⚔️"
+    timeout: 10000
+
+# ── Join the seeded room ──────────────────────────────────────────────
+- tapOn: "Join"
+- extendedWaitUntil:
+    visible: "Join a room for Munchkin?"
+    timeout: 10000
+- tapOn: "Enter the room name"
+- inputText: ${ROOM_ID}
+- tapOn: "Join"
+- extendedWaitUntil:
+    visible: "Rune Rider"
+    timeout: 20000
+- waitForAnimationToEnd
+
+# ── Stat changes — Captain Rowan's own Change button in footer ───────
+- extendedWaitUntil:
+    visible: "Captain Rowan"
+    timeout: 10000
+- tapOn:
+    text: "Change"
+    index: 5
+- extendedWaitUntil:
+    visible: "Save"
+    timeout: 10000
+
+# Bump Level up 2 times (first + button on screen = Level)
+- tapOn:
+    text: "+"
+    index: 0
+- tapOn:
+    text: "+"
+    index: 0
+
+# Bump Power up 3 times (second + button on screen = Power)
+- tapOn:
+    text: "+"
+    index: 1
+- tapOn:
+    text: "+"
+    index: 1
+- tapOn:
+    text: "+"
+    index: 1
+
+# Save and hold on the room view for 10 s so background updates are visible
+- tapOn: "Save"
+- extendedWaitUntil:
+    notVisible: "Save"
+    timeout: 5000
+- runScript:
+    file: sleep10s.js
