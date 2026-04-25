@@ -415,3 +415,39 @@ swift scripts/create-google-play-feature-graphic.swift
 ```
 
 This creates a fresh seeded room and overwrites the PNG files in `screenshots/`.
+
+## App Store preview redesign images
+
+The redesigned App Store previews (retouched top area, larger centered description copy) are generated from the base iPhone 6.9 screenshots by:
+
+- `scripts/generate-app-store-preview-redesign.py`
+
+### Prerequisites
+
+Use the local Python virtual environment and Pillow:
+
+```bash
+python3 -m venv .venv
+./.venv/bin/pip install Pillow
+```
+
+### Generate redesigned previews
+
+From the repository root run:
+
+```bash
+./.venv/bin/python scripts/generate-app-store-preview-redesign.py
+```
+
+The script reads from:
+
+- `screenshots/iphone69`
+
+And writes the redesigned files to:
+
+- `screenshots/iphone69_appstore_redesign_v5/01-rooms-home-preview-v5.png`
+- `screenshots/iphone69_appstore_redesign_v5/02-join-room-preview-v5.png`
+- `screenshots/iphone69_appstore_redesign_v5/03-room-view-preview-v5.png`
+- `screenshots/iphone69_appstore_redesign_v5/04-character-details-preview-v5.png`
+
+Each output image is preserved at `1320x2868`.
