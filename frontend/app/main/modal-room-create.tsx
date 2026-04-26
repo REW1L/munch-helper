@@ -39,6 +39,7 @@ export default function RoomCreateModal({
               style={styles.button}
               onPress={onConfirm}
               activeOpacity={0.7}
+              testID="yep-button"
             >
               <Text style={styles.buttonText}>YEP</Text>
             </TouchableOpacity>
@@ -47,6 +48,7 @@ export default function RoomCreateModal({
               style={styles.button}
               onPress={onCancel}
               activeOpacity={0.7}
+              testID="no-button"
             >
               <Text style={styles.buttonText}>NO</Text>
             </TouchableOpacity>

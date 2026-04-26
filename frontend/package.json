@@ -15,7 +15,11 @@
     "test:unit": "vitest run",
     "test:room-route": "vitest run -c vitest.room-route.config.ts",
     "test:coverage": "vitest run --coverage && npm run test:room-route",
-    "test:watch": "vitest --exclude \"__tests__/app/**/*.test.{ts,tsx}\""
+    "test:watch": "vitest --exclude \"__tests__/app/**/*.test.{ts,tsx}\"",
+    "maestro": "maestro test ../maestro/character_removal.yaml",
+    "maestro:all": "maestro test ../maestro/",
+    "maestro:record": "maestro record --local ../maestro/character_removal.yaml ../maestro-recordings/character_removal.mp4",
+    "maestro:all:record": "maestro record --local ../maestro/ ../maestro-recordings/all_flows.mp4"
   },
   "dependencies": {
     "@expo/ui": "~55.0.0",

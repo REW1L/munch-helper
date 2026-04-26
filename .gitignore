@@ -2,3 +2,5 @@
 .tmp
 coverage
 node_modules/
+screenshots/
+videos/

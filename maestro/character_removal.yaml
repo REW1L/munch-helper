@@ -1,0 +1,46 @@
+appId: click.helpamunch.mobileapp
+# url: "http://localhost:8081"
+---
+- launchApp
+- tapOn: "Rooms"
+- tapOn: "Create"
+- tapOn:
+      id: "yep-button"
+- extendedWaitUntil:
+      visible: "Create a character"
+      timeout: 10000
+- tapOn: "Create a character"
+- assertVisible:
+      text: "Create"
+- tapOn:
+      id: "character-name-input"
+- eraseText
+- tapOn:
+      id: "character-name-input"
+- eraseText
+- inputText: "CharDelete"
+- tapOn: "New Character"
+- tapOn: "Create"
+- extendedWaitUntil:
+      visible:
+          text: "CharDelete"
+      timeout: 10000
+- tapOn: "CharDelete"
+- assertVisible:
+      text: "Edit more…"
+- tapOn: "Edit more…"
+- scroll
+- assertVisible:
+      text: "Delete Character"
+- tapOn: "Delete Character"
+- assertVisible:
+      text: "Delete character?"
+- assertVisible:
+      text: "This action cannot be undone."
+- tapOn: "Delete"
+- assertNotVisible:
+      text: "Delete character?"
+- assertNotVisible:
+      id: delete-character-button
+- assertNotVisible:
+      text: "CharDelete"

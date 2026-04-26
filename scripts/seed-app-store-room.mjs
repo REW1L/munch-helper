@@ -1,0 +1,262 @@
+const API_BASE_URL = (process.env.API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
+
+const cast = [
+  {
+    name: 'Rune Rider',
+    avatarId: 0,
+    color: '#C95B4F',
+    level: 8,
+    power: 19,
+    class: ['Warrior'],
+    race: ['Human'],
+    gender: ['male'],
+  },
+  {
+    name: 'Bardic Bryn',
+    avatarId: 3,
+    color: '#4D7BD8',
+    level: 6,
+    power: 14,
+    class: ['Bard'],
+    race: ['Elf'],
+    gender: ['female'],
+  },
+  {
+    name: 'Hexley Fox',
+    avatarId: 7,
+    color: '#4BA06B',
+    level: 9,
+    power: 21,
+    class: ['Wizard'],
+    race: ['Gnome'],
+    gender: ['male'],
+  },
+  {
+    name: 'Thorn Vale',
+    avatarId: 5,
+    color: '#A56CC1',
+    level: 7,
+    power: 16,
+    class: ['Ranger'],
+    race: ['Halfling'],
+    gender: ['female'],
+  },
+  {
+    name: 'Gilda Storm',
+    avatarId: 9,
+    color: '#D58B3E',
+    level: 5,
+    power: 12,
+    class: ['Cleric'],
+    race: ['Dwarf'],
+    gender: ['female'],
+  },
+  {
+    name: 'Moss Quill',
+    avatarId: 1,
+    color: '#6B9A57',
+    level: 4,
+    power: 11,
+    class: ['Thief'],
+    race: ['Human'],
+    gender: ['male'],
+  },
+  {
+    name: 'Iris Flint',
+    avatarId: 2,
+    color: '#B85F7A',
+    level: 8,
+    power: 18,
+    class: ['Wizard'],
+    race: ['Elf'],
+    gender: ['female'],
+  },
+  {
+    name: 'Torin Pike',
+    avatarId: 4,
+    color: '#4F88A8',
+    level: 6,
+    power: 15,
+    class: ['Warrior'],
+    race: ['Dwarf'],
+    gender: ['male'],
+  },
+  {
+    name: 'Selka Rune',
+    avatarId: 6,
+    color: '#8C6AD1',
+    level: 7,
+    power: 17,
+    class: ['Bard'],
+    race: ['Gnome'],
+    gender: ['female'],
+  },
+  {
+    name: 'Doran Vale',
+    avatarId: 8,
+    color: '#A76B45',
+    level: 9,
+    power: 20,
+    class: ['Ranger'],
+    race: ['Halfling'],
+    gender: ['male'],
+  },
+  {
+    name: 'Lyra March',
+    avatarId: 0,
+    color: '#D16A5E',
+    level: 3,
+    power: 9,
+    class: ['Cleric'],
+    race: ['Human'],
+    gender: ['female'],
+  },
+  {
+    name: 'Fen Ember',
+    avatarId: 3,
+    color: '#4C7CC8',
+    level: 10,
+    power: 23,
+    class: ['Wizard'],
+    race: ['Orc'],
+    gender: ['male'],
+  },
+  {
+    name: 'Rook Tallow',
+    avatarId: 5,
+    color: '#7B8E4A',
+    level: 5,
+    power: 13,
+    class: ['Thief'],
+    race: ['Human'],
+    gender: ['male'],
+  },
+  {
+    name: 'Cinder Vale',
+    avatarId: 7,
+    color: '#C06C3F',
+    level: 8,
+    power: 19,
+    class: ['Warrior'],
+    race: ['Elf'],
+    gender: ['female'],
+  },
+];
+
+async function requestJson(path, init = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`${init.method || 'GET'} ${path} failed with ${response.status}: ${body}`);
+  }
+
+  return response.json();
+}
+
+async function createUser(member) {
+  return requestJson('/users', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: member.name,
+      avatarId: member.avatarId,
+    }),
+  });
+}
+
+async function updateCharacter(characterId, member) {
+  return requestJson(`/characters/${encodeURIComponent(characterId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      name: member.name,
+      avatarId: member.avatarId,
+      color: member.color,
+      level: member.level,
+      power: member.power,
+      class: JSON.stringify(member.class),
+      race: JSON.stringify(member.race),
+      gender: JSON.stringify(member.gender),
+    }),
+  });
+}
+
+async function seedRoom() {
+  const [owner, ...joiners] = cast;
+  const ownerUser = await createUser(owner);
+  const createdRoom = await requestJson('/rooms', {
+    method: 'POST',
+    body: JSON.stringify({
+      roomTypeId: 'munchkin',
+      userId: ownerUser.id,
+      userName: owner.name,
+      avatarId: owner.avatarId,
+    }),
+  });
+
+  const seededMembers = [
+    {
+      role: 'owner',
+      userId: ownerUser.id,
+      characterId: createdRoom.characterId,
+      ...owner,
+    },
+  ];
+
+  for (const joiner of joiners) {
+    const joinerUser = await createUser(joiner);
+    const joinedRoom = await requestJson('/rooms/associations', {
+      method: 'POST',
+      body: JSON.stringify({
+        roomId: createdRoom.roomId,
+        userId: joinerUser.id,
+        userName: joiner.name,
+        avatarId: joiner.avatarId,
+      }),
+    });
+
+    seededMembers.push({
+      role: 'guest',
+      userId: joinerUser.id,
+      characterId: joinedRoom.characterId,
+      ...joiner,
+    });
+  }
+
+  const characters = [];
+  for (const member of seededMembers) {
+    const updatedCharacter = await updateCharacter(member.characterId, member);
+    characters.push({
+      id: updatedCharacter.id,
+      userId: member.userId,
+      name: updatedCharacter.name,
+      avatarId: updatedCharacter.avatarId,
+      color: updatedCharacter.color,
+      level: updatedCharacter.level,
+      power: updatedCharacter.power,
+    });
+  }
+
+  return {
+    roomId: createdRoom.roomId,
+    seededUsers: seededMembers.map((member) => ({
+      id: member.userId,
+      name: member.name,
+      avatarId: member.avatarId,
+    })),
+    characters,
+  };
+}
+
+try {
+  const result = await seedRoom();
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+}

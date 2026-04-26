@@ -1,6 +1,6 @@
-import { Image } from 'expo-image';
-import { AppTheme } from '@/constants/theme';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { AppTheme } from '@/constants/theme';
+import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
@@ -157,7 +157,7 @@ export default function ChangeCharacterModal({
       animationType="fade"
       onRequestClose={handleCancel}
     >
-      <View style={styles.overlay}>
+      <View style={styles.overlay} testID="change-character-modal">
         <View style={styles.container}>
           <ConfirmDialog
             visible={deleteConfirmVisible}
@@ -426,8 +426,9 @@ export default function ChangeCharacterModal({
               onPress={handleDeletePress}
               activeOpacity={0.8}
               disabled={isDeletePending}
+              testID="delete-character-button"
             >
-              <Text style={styles.deleteButtonText}>{isDeletePending ? 'Deleting...' : 'Delete'}</Text>
+              <Text style={styles.deleteButtonText}>{isDeletePending ? 'Deleting Character...' : 'Delete Character'}</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -438,6 +439,7 @@ export default function ChangeCharacterModal({
               onPress={handleSave}
               activeOpacity={0.7}
               disabled={isDeletePending}
+              testID="save-character-button"
             >
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
@@ -447,6 +449,7 @@ export default function ChangeCharacterModal({
               onPress={handleCancel}
               activeOpacity={0.7}
               disabled={isDeletePending}
+              testID="cancel-character-button"
             >
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
