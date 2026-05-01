@@ -2,7 +2,7 @@
 title: 'Move Fastlane out of ephemeral native folders'
 type: 'refactor'
 created: '2026-05-01'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'ef68ada20872116e0a62d35ea78f7074279acf8a'
 context:
   - 'frontend/.gitignore'
@@ -133,3 +133,4 @@ upload_to_play_store(aab: File.join(FRONTEND_DIR, "android", "app", "build", "ou
   - Xcode project names are `MunchHelper` (PascalCase), not `munchhelper` — `expo prebuild --clean` regenerates with the new casing.
   - `cocoapods` gem added to `Gemfile` (required by the `cocoapods` fastlane action).
   - `upload_to_testflight` restored (was temporarily commented out during local testing).
+- **2026-05-01T20:41Z**: Merged to main. PR #39 (`d409c1e`) delivered the full refactor. PR #40 (`0e7f645`) fixed workflow env vars and uncommented iOS fastlane lines. All acceptance criteria met. Status → done.
