@@ -19,7 +19,8 @@
     "maestro": "maestro test ../maestro/character_removal.yaml",
     "maestro:all": "maestro test ../maestro/",
     "maestro:record": "maestro record --local ../maestro/character_removal.yaml ../maestro-recordings/character_removal.mp4",
-    "maestro:all:record": "maestro record --local ../maestro/ ../maestro-recordings/all_flows.mp4"
+    "maestro:all:record": "maestro record --local ../maestro/ ../maestro-recordings/all_flows.mp4",
+    "prebuild:clean": "node ./scripts/prebuild-clean.mjs"
   },
   "dependencies": {
     "@expo/ui": "~55.0.0",

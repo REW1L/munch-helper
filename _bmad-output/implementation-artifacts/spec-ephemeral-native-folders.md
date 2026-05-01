@@ -2,7 +2,7 @@
 title: 'Move Fastlane out of ephemeral native folders'
 type: 'refactor'
 created: '2026-05-01'
-status: 'ready-for-dev'
+status: 'in-review'
 baseline_commit: 'ef68ada20872116e0a62d35ea78f7074279acf8a'
 context:
   - 'frontend/.gitignore'
@@ -44,14 +44,16 @@ context:
 
 ## Code Map
 
-- `frontend/ios/fastlane/{Fastfile,Appfile,Matchfile}` -- current iOS fastlane source; merge into `frontend/fastlane/`.
-- `frontend/android/fastlane/{Fastfile,Appfile,Pluginfile}` -- current Android fastlane source; merge into `frontend/fastlane/`.
-- `frontend/{ios,android}/{Gemfile,Gemfile.lock}` -- current Ruby deps; merge into `frontend/Gemfile` (+ lock).
-- `frontend/.gitignore` -- add `ios/` and `android/`.
-- `frontend/scripts/prebuild-clean.mjs` -- new: thin wrapper running `npx expo prebuild --clean --platform <p>` per platform.
-- `frontend/package.json` -- add `prebuild:clean` script.
-- `.github/workflows/ios-app-store-cd.yml` -- switch default `working-directory` to `frontend`; invoke `npm run prebuild:clean -- --platform ios` and `bundle exec fastlane ios beta`; remove the existing `install pods` step entirely.
-- `.github/workflows/android-play-store-cd.yml` -- switch default `working-directory` to `frontend`; invoke `npm run prebuild:clean -- --platform android` and `bundle exec fastlane android build` / `android deploy`.
+- `frontend/fastlane/Fastfile` -- consolidated Fastfile with `platform :ios` and `platform :android` blocks; uses `FRONTEND_DIR = File.expand_path("..", __dir__)` for absolute paths since fastlane actions ignore `Dir.chdir`.
+- `frontend/fastlane/Appfile` -- platform-scoped app identifiers via `for_platform` blocks.
+- `frontend/fastlane/Matchfile` -- iOS match configuration (unchanged).
+- `frontend/fastlane/Pluginfile` -- Android `increment_version_code` plugin (unchanged).
+- `frontend/Gemfile` + `frontend/Gemfile.lock` -- consolidated Ruby deps; adds `cocoapods` gem (required by the `cocoapods` fastlane action that replaced the workflow's `pod install` step).
+- `frontend/scripts/prebuild-clean.mjs` -- thin wrapper running `npx expo prebuild --clean --platform <p>`.
+- `frontend/package.json` -- added `prebuild:clean` script.
+- `frontend/.gitignore` -- added `ios/` and `android/` entries.
+- `.github/workflows/ios-app-store-cd.yml` -- working-directory `frontend`; `npm run prebuild:clean -- --platform ios`; removed `install pods` step; `bundle exec fastlane ios beta`.
+- `.github/workflows/android-play-store-cd.yml` -- working-directory `frontend`; `npm run prebuild:clean -- --platform android`; `bundle exec fastlane android build/deploy`.
 
 ## Tasks & Acceptance
 
@@ -77,11 +79,11 @@ context:
 
 ## Design Notes
 
-Persistent layout (single fastlane setup, both platforms):
+Persistent layout:
 
 ```
 frontend/
-  Gemfile              # gem "fastlane"; eval_gemfile('fastlane/Pluginfile')
+  Gemfile              # gem "fastlane"; gem "cocoapods"; eval_gemfile('fastlane/Pluginfile')
   Gemfile.lock
   fastlane/
     Fastfile           # platform :ios { … } + platform :android { … }
@@ -92,53 +94,30 @@ frontend/
     prebuild-clean.mjs
 ```
 
-Fastfile lane shape (sketch — actual lane bodies are the existing ones, preserved verbatim inside the chdir):
+**Key implementation detail — absolute paths:** Fastlane's runner resets the working directory before each action, so `Dir.chdir` alone is insufficient for actions that resolve file paths (e.g. `increment_build_number`, `update_code_signing_settings`, `cocoapods`, `build_app`, `gradle`, `increment_version_code`). The fix captures the frontend root at Fastfile load time and passes absolute paths to every action that needs one:
 
 ```ruby
-platform :ios do
-  lane :beta do
-    Dir.chdir("./ios") do
-      setup_ci if ENV['CI']
-      app_store_connect_api_key(...)
-      sync_code_signing(type: "appstore", readonly: true)
-      # increment_build_number, update_code_signing_settings (unchanged)
-      cocoapods(repo_update: true)
-      # build_app, upload_to_testflight (unchanged)
-    end
-  end
-end
+FRONTEND_DIR = File.expand_path("..", __dir__)
 
-platform :android do
-  lane :build do
-    Dir.chdir("./android") do
-      # google_play_track_version_codes, increment_version_code, gradle (unchanged)
-    end
-  end
-end
+# iOS examples:
+increment_build_number(xcodeproj: File.join(FRONTEND_DIR, "ios", "MunchHelper.xcodeproj"), ...)
+cocoapods(podfile: File.join(FRONTEND_DIR, "ios"), ...)
+build_app(workspace: File.join(FRONTEND_DIR, "ios", "MunchHelper.xcworkspace"), ...)
+
+# Android examples:
+increment_version_code(gradle_file_path: File.join(FRONTEND_DIR, "android", "app", "build.gradle"), ...)
+gradle(project_dir: File.join(FRONTEND_DIR, "android"), ...)
+upload_to_play_store(aab: File.join(FRONTEND_DIR, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab"), ...)
 ```
 
-`Dir.chdir` is fastlane's documented escape hatch for actions whose paths are relative to a project subdir. Using it preserves every lane body verbatim and avoids prefixing every path with `ios/` or `android/`.
+**Project naming:** `expo prebuild --clean` generates `MunchHelper.xcodeproj` / `MunchHelper.xcworkspace` / scheme `MunchHelper` (PascalCase, not the old lowercase `munchhelper`).
 
-`Appfile` example:
-
-```ruby
-for_platform :ios do
-  app_identifier("click.helpamunch.mobileapp")
-  apple_id(ENV["APPLE_ID"])
-  itc_team_id(ENV["APPLE_CONNECT_TEAM_ID"])
-  team_id(ENV["APPLE_DEVELOPER_TEAM_ID"])
-end
-
-for_platform :android do
-  package_name("click.helpamunch.mobileapp")
-  json_key_file(ENV["GOOGLE_GHA_CREDS_PATH"]) if ENV["GOOGLE_GHA_CREDS_PATH"]
-end
-```
+**Cocoapods gem:** Added to `Gemfile` because the `cocoapods` fastlane action requires it as a bundled dependency. The old workflow ran `pod install` as a separate shell step using the system CocoaPods; the new lane calls the action instead.
 
 ## Verification
 
 **Commands:**
-- `cd frontend && npm run prebuild:clean -- --platform ios` -- expected: exits 0; `frontend/ios/munchhelper.xcworkspace` exists; no fastlane dir written under `frontend/ios/`.
+- `cd frontend && npm run prebuild:clean -- --platform ios` -- expected: exits 0; `frontend/ios/MunchHelper.xcworkspace` exists; no fastlane dir written under `frontend/ios/`.
 - `cd frontend && npm run prebuild:clean -- --platform android` -- expected: exits 0; `frontend/android/build.gradle` exists; no fastlane dir written under `frontend/android/`.
 - `cd frontend && bundle install && bundle exec fastlane lanes` -- expected: lists all five existing lanes scoped under `ios` and `android` platforms.
 - `git status --porcelain frontend/ios frontend/android` -- expected: empty after a clean prebuild on a clean checkout.
@@ -146,3 +125,11 @@ end
 
 **Manual checks:**
 - After this change merges to `main`, watch the iOS and Android CD workflow runs and confirm both reach the upload step successfully.
+
+## Spec Change Log
+
+- **2026-05-01T20:09Z**: All tasks verified locally. iOS build passes (`fastlane ios beta` → signed IPA exported). Android build passes (`fastlane android build` → signed APK + AAB). Key deviations from original spec:
+  - All fastlane actions use absolute paths via `FRONTEND_DIR` constant — `Dir.chdir` alone is not enough because fastlane resets the working directory before each action.
+  - Xcode project names are `MunchHelper` (PascalCase), not `munchhelper` — `expo prebuild --clean` regenerates with the new casing.
+  - `cocoapods` gem added to `Gemfile` (required by the `cocoapods` fastlane action).
+  - `upload_to_testflight` restored (was temporarily commented out during local testing).

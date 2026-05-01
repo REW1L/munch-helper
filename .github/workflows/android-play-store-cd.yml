@@ -25,7 +25,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: frontend/android
+        working-directory: frontend
 
     env:
       ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
@@ -81,8 +81,7 @@ jobs:
       - name: Install Frontend Dependencies
         run: |
           npm ci
-          npx -y expo prebuild --platform android
-        working-directory: frontend
+          npm run prebuild:clean -- --platform android
 
       - name: Install Fastlane Dependencies
         run: bundle install --jobs 4 --retry 3
@@ -107,3 +106,4 @@ jobs:
 
       - name: Upload Android Build to Play Store
         run: bundle exec fastlane deploy
+n: bundle exec fastlane android deploy

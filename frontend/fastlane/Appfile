@@ -1,0 +1,14 @@
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile
+
+for_platform :ios do
+  app_identifier("click.helpamunch.mobileapp")
+  apple_id(ENV["APPLE_ID"])
+  itc_team_id(ENV["APPLE_CONNECT_TEAM_ID"])
+  team_id(ENV["APPLE_DEVELOPER_TEAM_ID"])
+end
+
+for_platform :android do
+  package_name("click.helpamunch.mobileapp")
+  json_key_file(ENV["GOOGLE_GHA_CREDS_PATH"]) if ENV["GOOGLE_GHA_CREDS_PATH"]
+end

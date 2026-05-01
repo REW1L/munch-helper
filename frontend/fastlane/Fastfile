@@ -1,0 +1,138 @@
+default_platform(:ios)
+
+# Store the frontend directory path at load time
+FRONTEND_DIR = File.expand_path("..", __dir__)
+
+gradle_properties = {}
+if ENV["ANDROID_SIGNING_KEY_PASSWORD"]
+  gradle_properties = {
+    "android.injected.signing.store.file" => ENV["ANDROID_SIGNING_KEY_PATH"],
+    "android.injected.signing.store.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"],
+    "android.injected.signing.key.alias" => ENV["ANDROID_SIGNING_KEY_ALIAS"] || "upload-key-alias",
+    "android.injected.signing.key.password" => ENV["ANDROID_SIGNING_KEY_PASSWORD"]
+  }
+else
+  UI.error("Android signing key password not found in environment variables. Please set ANDROID_SIGNING_KEY_PASSWORD to the password of your signing key.") if ENV["CI"]
+end
+
+platform :ios do
+    lane :certs_update do
+        Dir.chdir(File.join(FRONTEND_DIR, "ios")) do
+            setup_ci if ENV['CI']
+            # Retrieve the api key from key file
+            app_store_connect_api_key(
+                  key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+                  issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+                  key_filepath: ENV["APP_STORE_CONNECT_KEY_PATH"],
+                  duration: 1000,
+                  in_house: false
+            )
+            sync_code_signing(readonly: false)
+        end
+    end
+
+    desc "Push a new beta build to TestFlight"
+    lane :beta do
+        Dir.chdir(File.join(FRONTEND_DIR, "ios")) do
+            setup_ci if ENV['CI']
+            # Retrieve the api key from key file
+            app_store_connect_api_key(
+                key_id: ENV["APP_STORE_CONNECT_KEY_ID"],
+                issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"],
+                key_filepath: ENV["APP_STORE_CONNECT_KEY_PATH"],
+                duration: 1000,
+                in_house: false
+            )
+
+            sync_code_signing(
+                type: "appstore",
+                readonly: true
+            )
+
+            # Get latest build number
+            previous_build_number = latest_testflight_build_number()
+
+            # Increment build number
+            increment_build_number(
+                xcodeproj: File.join(FRONTEND_DIR, "ios", "MunchHelper.xcodeproj"),
+                build_number: previous_build_number + 1
+            )
+
+            # Disable automatic code signing, so the signing certificate on the filesystem can be used
+            update_code_signing_settings(
+                use_automatic_signing: false,
+                path: File.join(FRONTEND_DIR, "ios", "MunchHelper.xcodeproj"),
+                targets: ["MunchHelper"],
+                bundle_identifier: "click.helpamunch.mobileapp",
+                code_sign_identity: "Apple Distribution",
+                profile_name: "match AppStore click.helpamunch.mobileapp"
+            )
+
+            cocoapods(
+                podfile: File.join(FRONTEND_DIR, "ios"),
+                repo_update: true
+            )
+
+            # Build the iOS app
+            build_app(
+                workspace: File.join(FRONTEND_DIR, "ios", "MunchHelper.xcworkspace"),
+                scheme: "MunchHelper",
+                configuration: "Release",
+                skip_profile_detection: true,
+                export_method: "app-store",
+                export_options: {
+                    signingStyle: "manual",
+                    provisioningProfiles: {
+                        "click.helpamunch.mobileapp" => "match AppStore click.helpamunch.mobileapp"
+                    }
+                },
+                codesigning_identity: "Apple Distribution"
+            )
+
+            # Upload app to TestFlight, skipping waiting for build processing to reduce CI credit waste
+            upload_to_testflight(
+                skip_waiting_for_build_processing: true
+            )
+        end
+    end
+end
+
+platform :android do
+    desc "Build only a release version of the app"
+    lane :build do
+        Dir.chdir(File.join(FRONTEND_DIR, "android")) do
+            # Grab the latest build number from the Play Store
+            previous_build_number = google_play_track_version_codes(
+                track: "internal"
+            )[0]
+
+            # Increment the build number
+            increment_version_code(
+                gradle_file_path: File.join(FRONTEND_DIR, "android", "app", "build.gradle"),
+                version_code: previous_build_number + 1
+            )
+            gradle(
+                project_dir: File.join(FRONTEND_DIR, "android"),
+                task: "assembleRelease bundleRelease",
+                print_command: false,
+                properties: gradle_properties
+            )
+        end
+    end
+    desc "Upload the signed release build to the Play Store internal track"
+    lane :deploy do
+        Dir.chdir(File.join(FRONTEND_DIR, "android")) do
+            upload_to_play_store(
+                track: "internal",
+                aab: File.join(FRONTEND_DIR, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab"),
+                skip_upload_apk: true,
+                release_status: "draft"
+            )
+        end
+    end
+    desc "Build and deploy a new version to the Google Play internal track"
+    lane :beta do
+        build()
+        deploy()
+    end
+end
