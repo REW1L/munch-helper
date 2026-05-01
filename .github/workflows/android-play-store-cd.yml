@@ -105,5 +105,4 @@ jobs:
           create_credentials_file: true
 
       - name: Upload Android Build to Play Store
-        run: bundle exec fastlane deploy
-n: bundle exec fastlane android deploy
+        run: bundle exec fastlane android deploy
