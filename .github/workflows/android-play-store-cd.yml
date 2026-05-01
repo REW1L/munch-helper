@@ -95,7 +95,7 @@ jobs:
           ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
 
       - name: Build Android Release
-        run: bundle exec fastlane build
+        run: bundle exec fastlane android build
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
