@@ -65,7 +65,8 @@ platform :ios do
                 targets: ["MunchHelper"],
                 bundle_identifier: "click.helpamunch.mobileapp",
                 code_sign_identity: "Apple Distribution",
-                profile_name: "match AppStore click.helpamunch.mobileapp"
+                profile_name: "match AppStore click.helpamunch.mobileapp",
+                team_id: ENV["APPLE_DEVELOPER_TEAM_ID"]
             )
 
             cocoapods(
