@@ -198,6 +198,70 @@ Supported lifecycle sync:
 - A merged `main` change that moves a tracked implementation artifact status to `done` sets the project status to `Done`.
 - A pull request for a tracked implementation artifact that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
 
+## Auto-implementation Orchestrator
+
+When `story-project-sync` transitions a project item to **Ready for Dev**, it posts a deterministic marker comment on the associated issue. The `.github/workflows/ready-for-dev-orchestrator.yml` workflow fires on that comment and automatically attempts implementation using available coding-assistant CLIs.
+
+### Required secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `ANTHROPIC_API_KEY` | Claude CLI (`claude`) |
+| `OPENAI_API_KEY` or `CODEX_API_KEY` | Codex CLI (`codex`) |
+| `COPILOT_GITHUB_TOKEN` | GitHub Copilot CLI — must be a PAT with **Copilot Requests** scope; do **not** reuse `GITHUB_TOKEN` |
+| `KIRO_API_KEY` | Kiro CLI (`kiro-cli`) |
+
+Any CLI whose secret is absent is silently skipped during pre-flight; the cascade continues with the remaining CLIs.
+
+### Cascade behaviour
+
+Agents are invoked in a configurable order (default: `claude → codex → copilot → kiro-cli`) with a per-agent timeout (default: 30 min). After each invocation the orchestrator reads the spec file's `status:` frontmatter field. When it sees `in-review`, it:
+
+1. Commits all workspace changes to `auto-dev/issue-<n>`
+2. Pushes the branch
+3. Opens a PR with body `Closes #<n>`
+
+`story-project-sync` then advances the project board from **Ready for Dev** to **Review** when the PR is opened.
+
+If all CLIs are exhausted without reaching `in-review`, the workflow pushes partial work (if any) and exits non-zero. The operator can re-run the workflow to resume from the existing branch.
+
+### Trigger methods
+
+**Automatic** — `story-project-sync` posts the marker comment on every `Ready for Dev` transition. The orchestrator fires automatically.
+
+**Manual** — run the workflow from the CLI:
+
+```bash
+gh workflow run ready-for-dev-orchestrator.yml -f issue_number=42
+```
+
+You can also override the agent order:
+
+```bash
+gh workflow run ready-for-dev-orchestrator.yml \
+  -f issue_number=42 \
+  -f agent_order=claude,codex
+```
+
+### Marker-comment contract
+
+Any process with write access can trigger the orchestrator by posting a comment with this exact shape:
+
+```
+🚀 **Status moved to Ready for Dev** — auto-implementation orchestrator queued.
+
+<!-- auto-dev:trigger v1 -->
+```json
+{"version": 1, "issue_number": 42, "spec_file": "_bmad-output/implementation-artifacts/3-1-apptheme-token-migration.md"}
+```
+```
+
+The orchestrator's job-level `if` accepts only comments authored by `REW1L` or `github-actions[bot]`, so external commenters cannot trigger CLI runs.
+
+### Run-log artifact
+
+Each run uploads a `agent-logs-issue-<n>` artifact containing one log file per CLI invocation (`agent-<name>.log`). Download it from the **Actions** tab to inspect the raw output from each coding assistant.
+
 ## Documentation
 
 - Project docs index: `docs/index.md`

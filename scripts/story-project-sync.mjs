@@ -93,6 +93,49 @@ function normalizeStoryStatus(rawStatus) {
     .replace(/[_\s]+/g, "-");
 }
 
+export function deriveSpecFileSlug(storyNumber, title) {
+  const numSlug = storyNumber.replace(".", "-");
+  const titleSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${numSlug}-${titleSlug}`;
+}
+
+export function buildMarkerCommentBody(issueNumber, specFile) {
+  return [
+    "🚀 **Status moved to Ready for Dev** — auto-implementation orchestrator queued.",
+    "",
+    "<!-- auto-dev:trigger v1 -->",
+    "```json",
+    JSON.stringify({ version: 1, issue_number: issueNumber, spec_file: specFile }),
+    "```",
+  ].join("\n");
+}
+
+export function shouldSkipMarkerPost(recentComments, specFile) {
+  if (!recentComments.length) {
+    return false;
+  }
+
+  const mostRecent = recentComments[recentComments.length - 1];
+  if (!mostRecent?.body?.includes("<!-- auto-dev:trigger v1 -->")) {
+    return false;
+  }
+
+  const jsonMatch = mostRecent.body.match(/```json\r?\n(\{[\s\S]*?\})\r?\n```/);
+  if (!jsonMatch) {
+    return false;
+  }
+
+  try {
+    const payload = JSON.parse(jsonMatch[1]);
+    return payload.version === 1 && payload.spec_file === specFile;
+  } catch {
+    return false;
+  }
+}
+
 export function parseStoryTitle(title) {
   const match = title.match(STORY_TITLE_REGEX);
   if (!match) {
@@ -576,7 +619,7 @@ function findIssueByStoryNumber(issues, storyNumber) {
   }) ?? null;
 }
 
-function findIssueForArtifact(issues, operation) {
+export function findIssueForArtifact(issues, operation) {
   if (operation.storyNumber) {
     return findIssueByStoryNumber(issues, operation.storyNumber);
   }
@@ -604,7 +647,7 @@ function getProjectItemQuery(operation, currentStatus = null) {
   return query.join(" ");
 }
 
-function loadProjectMetadata(config, dryRun) {
+export function loadProjectMetadata(config, dryRun) {
   if (dryRun) {
     return {
       projectId: `project-${config.projectNumber}`,
@@ -873,6 +916,52 @@ function updateProjectStatus(config, metadata, projectItem, normalizedStatus, dr
   ghCommand(editArgs, { dryRun });
 }
 
+export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPlan, { ghExec = ghCommand } = {}) {
+  const issueNumber = issue.number;
+  const postArgs = [
+    "issue",
+    "comment",
+    Number.isNaN(issueNumber) ? "0" : String(issueNumber),
+    "--repo",
+    config.repo,
+    "--body-file",
+    "-",
+  ];
+
+  if (dryRun) {
+    recordCommand(commandPlan, ["gh", ...postArgs]);
+    return;
+  }
+
+  try {
+    const commentsOutput = ghExec([
+      "issue",
+      "view",
+      String(issueNumber),
+      "--repo",
+      config.repo,
+      "--json",
+      "comments",
+    ]);
+    const { comments: allComments } = parseJsonOutput(commentsOutput, { comments: [] });
+    const recentComments = (Array.isArray(allComments) ? allComments : []).slice(-5);
+
+    if (shouldSkipMarkerPost(recentComments, specFile)) {
+      logInfo(`Skipping marker comment on issue #${issueNumber}: identical v1 marker already present.`);
+      return;
+    }
+
+    const body = buildMarkerCommentBody(issueNumber, specFile);
+    recordCommand(commandPlan, ["gh", ...postArgs]);
+    ghExec(postArgs, { stdin: body });
+    logInfo(`Posted ready-for-dev marker comment on issue #${issueNumber}.`);
+  } catch (error) {
+    logInfo(
+      `Warning: failed to post ready-for-dev marker on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
 function parseArgs(argv) {
   return {
     dryRun: argv.includes("--dry-run"),
@@ -979,6 +1068,10 @@ function main() {
         args.dryRun,
         commandPlan
       );
+
+      if (operation.targetStatus === "ready-for-dev" && operation.sourcePaths.length > 0) {
+        postReadyForDevMarker(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
+      }
     }
   }
 
