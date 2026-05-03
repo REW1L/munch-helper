@@ -398,27 +398,32 @@ function checkoutOrCreateBranch(branchName, dryRun, commandPlan) {
 
 function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
   const logFile = path.join(logDir, `agent-${name}.log`);
-  const timeoutSecs = String(timeoutMinutes * 60);
+  const timeoutMs = timeoutMinutes * 60 * 1000;
   const cliArgs = [...config.args, prompt];
   const env = { ...process.env, ...config.env };
 
-  logInfo(`Running ${name}: timeout ${timeoutSecs}s ${config.cmd} ${cliArgs.join(" ")}`);
+  logInfo(`Running ${name}: timeout ${timeoutMinutes}m ${config.cmd} ${cliArgs.join(" ")}`);
 
-  const result = spawnSync("timeout", [timeoutSecs, config.cmd, ...cliArgs], {
+  const result = spawnSync(config.cmd, cliArgs, {
     encoding: "utf8",
     env,
+    timeout: timeoutMs,
     maxBuffer: 50 * 1024 * 1024,
+    killSignal: "SIGTERM",
     shell: false,
   });
 
   const combined = (result.stdout ?? "") + (result.stderr ?? "");
   fs.writeFileSync(logFile, combined, "utf8");
 
+  const timedOut =
+    result.signal === "SIGTERM" || (result.error != null && result.error.code === "ETIMEDOUT");
+
   return {
     exitStatus: result.status,
     stdout: result.stdout ?? "",
     stderr: result.stderr ?? "",
-    timedOut: result.status === 124,
+    timedOut,
     logFile,
   };
 }
@@ -586,12 +591,7 @@ function main() {
       const config = CLI_CONFIGS[name];
       if (!config) continue;
       const cliArgs = [...config.args, prompt];
-      recordCommand(commandPlan, [
-        "timeout",
-        `${args.timeout}m`,
-        config.cmd,
-        ...cliArgs,
-      ]);
+      recordCommand(commandPlan, [config.cmd, ...cliArgs]);
     }
 
     // Emit planned commit/push/PR for illustration

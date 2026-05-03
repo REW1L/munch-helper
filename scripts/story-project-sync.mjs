@@ -918,18 +918,16 @@ function updateProjectStatus(config, metadata, projectItem, normalizedStatus, dr
 
 export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPlan, { ghExec = ghCommand } = {}) {
   const issueNumber = issue.number;
-  const postArgs = [
-    "issue",
-    "comment",
-    Number.isNaN(issueNumber) ? "0" : String(issueNumber),
-    "--repo",
-    config.repo,
-    "--body-file",
-    "-",
-  ];
 
   if (dryRun) {
+    const numStr = Number.isFinite(issueNumber) ? String(issueNumber) : "<n>";
+    const postArgs = ["issue", "comment", numStr, "--repo", config.repo, "--body-file", "-"];
     recordCommand(commandPlan, ["gh", ...postArgs]);
+    return;
+  }
+
+  if (!Number.isFinite(issueNumber)) {
+    logInfo("Warning: skipping marker post — issue number is not a valid finite number.");
     return;
   }
 
@@ -951,6 +949,7 @@ export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPl
       return;
     }
 
+    const postArgs = ["issue", "comment", String(issueNumber), "--repo", config.repo, "--body-file", "-"];
     const body = buildMarkerCommentBody(issueNumber, specFile);
     recordCommand(commandPlan, ["gh", ...postArgs]);
     ghExec(postArgs, { stdin: body });
