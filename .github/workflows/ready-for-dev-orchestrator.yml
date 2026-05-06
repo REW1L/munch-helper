@@ -1,0 +1,129 @@
+name: Ready for Dev Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to implement"
+        required: true
+        type: number
+      agent_order:
+        description: "Comma-separated CLI order"
+        required: false
+        default: "claude,codex,copilot,kiro-cli"
+        type: string
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: auto-dev-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  orchestrate:
+    name: Auto-implement issue
+    runs-on: ubuntu-latest
+
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.issue.pull_request == null &&
+        contains(github.event.comment.body, '<!-- auto-dev:trigger v1 -->') &&
+        (
+          github.event.comment.user.login == 'REW1L' ||
+          github.event.comment.user.login == 'github-actions[bot]'
+        )
+      )
+
+    env:
+      GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CODEX_API_KEY: ${{ secrets.CODEX_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+      KIRO_API_KEY: ${{ secrets.KIRO_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install available CLIs
+        run: |
+          set -euo pipefail
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "Installing claude..." && npm install -g @anthropic-ai/claude-code || echo "claude install failed"
+          fi
+          if [ -n "${OPENAI_API_KEY:-}" ] || [ -n "${CODEX_API_KEY:-}" ]; then
+            echo "Installing codex..." && npm install -g @openai/codex || echo "codex install failed"
+          fi
+          if [ -n "${COPILOT_GITHUB_TOKEN:-}" ]; then
+            echo "Installing copilot..." && npm install -g @githubnext/github-copilot-cli || echo "copilot install failed"
+          fi
+          if [ -n "${KIRO_API_KEY:-}" ]; then
+            echo "Installing kiro-cli..." && npm install -g kiro-cli || echo "kiro-cli install failed"
+          fi
+
+      - name: Extract spec_file from marker payload (comment trigger only)
+        id: marker
+        if: github.event_name == 'issue_comment'
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          SPEC_FILE=$(node -e "
+            const body = process.env.COMMENT_BODY;
+            const match = body.match(/\`\`\`json\r?\n(\{[\s\S]*?\})\r?\n\`\`\`/);
+            if (match) {
+              try {
+                const p = JSON.parse(match[1]);
+                if (p.version === 1 && typeof p.spec_file === 'string') {
+                  process.stdout.write(p.spec_file);
+                }
+              } catch {}
+            }
+          " || true)
+          echo "spec_file=${SPEC_FILE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run orchestrator
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+          AGENT_ORDER: ${{ inputs.agent_order || 'claude,codex,copilot,kiro-cli' }}
+          SPEC_FILE: ${{ steps.marker.outputs.spec_file || '' }}
+        run: |
+          set -euo pipefail
+          SPEC_FILE_ARG=()
+          if [ -n "${SPEC_FILE:-}" ]; then
+            SPEC_FILE_ARG=(--spec-file "${SPEC_FILE}")
+          fi
+          node scripts/ready-for-dev-orchestrator.mjs \
+            --issue "${ISSUE_NUMBER}" \
+            --order "${AGENT_ORDER}" \
+            --timeout 30 \
+            "${SPEC_FILE_ARG[@]+"${SPEC_FILE_ARG[@]}"}"
+
+      - name: Upload agent logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-logs-issue-${{ github.event.issue.number || inputs.issue_number }}
+          path: agent-logs/
+          if-no-files-found: ignore
