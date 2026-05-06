@@ -172,9 +172,9 @@ function makeStatusReader(statusByCall) {
   return () => statusByCall[callIndex++] ?? null;
 }
 
-test("cascade succeeds at position 1 when first CLI flips to in-review", () => {
+test("cascade succeeds at position 1 when first CLI flips to in-review", async () => {
   const calls = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",
@@ -192,9 +192,9 @@ test("cascade succeeds at position 1 when first CLI flips to in-review", () => {
   assert.equal(result.agentLogs.length, 1);
 });
 
-test("cascade succeeds at position 2 when second CLI flips to in-review", () => {
+test("cascade succeeds at position 2 when second CLI flips to in-review", async () => {
   const calls = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",
@@ -211,9 +211,9 @@ test("cascade succeeds at position 2 when second CLI flips to in-review", () => 
   assert.equal(calls.length, 2);
 });
 
-test("cascade succeeds at position 3 when third CLI flips to in-review", () => {
+test("cascade succeeds at position 3 when third CLI flips to in-review", async () => {
   const calls = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",
@@ -230,9 +230,9 @@ test("cascade succeeds at position 3 when third CLI flips to in-review", () => {
   assert.equal(calls.length, 3);
 });
 
-test("cascade succeeds at position 4 when fourth CLI flips to in-review", () => {
+test("cascade succeeds at position 4 when fourth CLI flips to in-review", async () => {
   const calls = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",
@@ -249,9 +249,9 @@ test("cascade succeeds at position 4 when fourth CLI flips to in-review", () => 
   assert.equal(calls.length, 4);
 });
 
-test("cascade fails when all four CLIs run and none reaches in-review", () => {
+test("cascade fails when all four CLIs run and none reaches in-review", async () => {
   const calls = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",
@@ -269,9 +269,9 @@ test("cascade fails when all four CLIs run and none reaches in-review", () => {
   assert.equal(result.agentLogs.length, 4);
 });
 
-test("cascade detects quota signal and logs it but continues", () => {
+test("cascade detects quota signal and logs it but continues", async () => {
   const logMessages = [];
-  const result = runCascade({
+  const result = await runCascade({
     cliNames: ["claude", "codex"],
     prompt: "bmad-dev-story implement 'Test'",
     specFilePath: "spec.md",

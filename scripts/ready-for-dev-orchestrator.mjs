@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,10 +32,7 @@ const CLI_CONFIGS = {
     args: [
       "exec",
       "--json",
-      "--ask-for-approval",
-      "never",
-      "--sandbox",
-      "workspace-write",
+      "--dangerously-bypass-approvals-and-sandbox",
       "--skip-git-repo-check",
     ],
     env: {},
@@ -43,7 +40,8 @@ const CLI_CONFIGS = {
   },
   copilot: {
     cmd: "copilot",
-    args: ["-p", "--no-ask-user", "--allow-all-tools"],
+    // --prompt/-p must be last: it consumes the next arg as prompt text
+    args: ["--no-ask-user", "--allow-all-tools", "-p"],
     env: {},
     authEnv: ["COPILOT_GITHUB_TOKEN"],
   },
@@ -127,7 +125,7 @@ export function extractMarkerPayload(commentBody) {
  * `onReadStatus(specFilePath) => string|null` so the function is testable
  * without spawning real processes.
  */
-export function runCascade({
+export async function runCascade({
   cliNames,
   prompt,
   specFilePath,
@@ -138,12 +136,16 @@ export function runCascade({
   const agentLogs = [];
 
   for (const name of cliNames) {
-    const result = onRunCLI(name);
+    const result = await onRunCLI(name);
     agentLogs.push({ cli: name, logFile: result.logFile ?? null });
 
     const combined = (result.stdout ?? "") + (result.stderr ?? "");
     if (QUOTA_SIGNAL_REGEX.test(combined)) {
       onLogInfo(`[${name}] Quota signal detected in output (informational, not stopping cascade).`);
+    }
+
+    if (result.timedOut) {
+      onLogInfo(`[${name}] CLI timed out before completing — treating as non-success.`);
     }
 
     const status = onReadStatus(specFilePath);
@@ -404,28 +406,57 @@ function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
 
   logInfo(`Running ${name}: timeout ${timeoutMinutes}m ${config.cmd} ${cliArgs.join(" ")}`);
 
-  const result = spawnSync(config.cmd, cliArgs, {
-    encoding: "utf8",
-    env,
-    timeout: timeoutMs,
-    maxBuffer: 50 * 1024 * 1024,
-    killSignal: "SIGTERM",
-    shell: false,
+  return new Promise((resolve) => {
+    const logStream = fs.createWriteStream(logFile);
+    let stdoutBuf = "";
+    let stderrBuf = "";
+    let timedOut = false;
+
+    const child = spawn(config.cmd, cliArgs, { env, shell: false });
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+    }, timeoutMs);
+
+    child.stdout?.on("data", (chunk) => {
+      const str = chunk.toString();
+      stdoutBuf += str;
+      process.stdout.write(str);
+      logStream.write(str);
+    });
+
+    child.stderr?.on("data", (chunk) => {
+      const str = chunk.toString();
+      stderrBuf += str;
+      process.stderr.write(str);
+      logStream.write(str);
+    });
+
+    child.on("error", (err) => {
+      clearTimeout(timer);
+      logStream.close();
+      resolve({
+        exitStatus: null,
+        stdout: stdoutBuf,
+        stderr: stderrBuf + "\n" + err.message,
+        timedOut: false,
+        logFile,
+      });
+    });
+
+    child.on("close", (code, signal) => {
+      clearTimeout(timer);
+      logStream.close();
+      resolve({
+        exitStatus: code,
+        stdout: stdoutBuf,
+        stderr: stderrBuf,
+        timedOut: timedOut || signal === "SIGTERM",
+        logFile,
+      });
+    });
   });
-
-  const combined = (result.stdout ?? "") + (result.stderr ?? "");
-  fs.writeFileSync(logFile, combined, "utf8");
-
-  const timedOut =
-    result.signal === "SIGTERM" || (result.error != null && result.error.code === "ETIMEDOUT");
-
-  return {
-    exitStatus: result.status,
-    stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
-    timedOut,
-    logFile,
-  };
 }
 
 function hasUncommittedChanges() {
@@ -512,22 +543,25 @@ function openOrUpdatePR(issueTitle, issueNumber, branchName, dryRun, commandPlan
     const url = ghCommand(createArgs);
     logInfo(`PR opened: ${url}`);
   } catch (error) {
-    // PR likely already exists — update the branch via force-push
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const prAlreadyExists = /already exists/i.test(errMsg);
     logInfo(
-      `PR creation failed (may already exist): ${error instanceof Error ? error.message : String(error)}. Attempting branch update.`
+      `PR creation failed (${prAlreadyExists ? "PR already exists" : "unexpected error"}): ${errMsg}. ${prAlreadyExists ? "Attempting branch update." : "Skipping branch update."}`
     );
-    try {
-      gitCommand(["push", "--force-with-lease", "origin", branchName]);
-      logInfo(`Branch ${branchName} updated on existing PR.`);
-    } catch (pushError) {
-      logInfo(
-        `Warning: branch update failed: ${pushError instanceof Error ? pushError.message : String(pushError)}`
-      );
+    if (prAlreadyExists) {
+      try {
+        gitCommand(["push", "--force-with-lease", "origin", branchName]);
+        logInfo(`Branch ${branchName} updated on existing PR.`);
+      } catch (pushError) {
+        logInfo(
+          `Warning: branch update failed: ${pushError instanceof Error ? pushError.message : String(pushError)}`
+        );
+      }
     }
   }
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2));
 
   if (args.help) {
@@ -550,9 +584,11 @@ function main() {
   }
 
   // Resolve spec file
+  let cachedIssueTitle = null;
   let specFile = args.specFile ?? null;
   if (!specFile) {
     const issueTitle = resolveIssueTitle(issueNumber, args.dryRun);
+    cachedIssueTitle = issueTitle;
     if (!args.dryRun) {
       const derived = deriveSpecFilePath(issueTitle);
       specFile = findSpecFileOnDisk(derived);
@@ -581,8 +617,8 @@ function main() {
     );
   }
 
-  // Resolve issue title for the prompt
-  const issueTitle = resolveIssueTitle(issueNumber, args.dryRun);
+  // Resolve issue title for the prompt (reuse cached value if resolved above)
+  const issueTitle = cachedIssueTitle ?? resolveIssueTitle(issueNumber, args.dryRun);
   const prompt = `bmad-dev-story implement '${issueTitle}'`;
 
   if (args.dryRun) {
@@ -658,10 +694,8 @@ const isEntryPoint =
   process.argv[1] && path.resolve(process.argv[1]) === __filename;
 
 if (isEntryPoint) {
-  try {
-    main();
-  } catch (error) {
+  main().catch((error) => {
     console.error(`[ready-for-dev-orchestrator] ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
-  }
+  });
 }
