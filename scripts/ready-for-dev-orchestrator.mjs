@@ -408,15 +408,39 @@ function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
 
   return new Promise((resolve) => {
     const logStream = fs.createWriteStream(logFile);
+    logStream.on("error", () => {});
     let stdoutBuf = "";
     let stderrBuf = "";
     let timedOut = false;
+    let settled = false;
 
-    const child = spawn(config.cmd, cliArgs, { env, shell: false });
+    function finish(result) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      logStream.end(() => resolve(result));
+    }
+
+    const child = spawn(config.cmd, cliArgs, { env, shell: false, detached: true });
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill("SIGTERM");
+      if (child.pid != null) {
+        try {
+          process.kill(-child.pid, "SIGTERM");
+        } catch {
+          child.kill("SIGTERM");
+        }
+        setTimeout(() => {
+          if (!settled && child.pid != null) {
+            try {
+              process.kill(-child.pid, "SIGKILL");
+            } catch {
+              child.kill("SIGKILL");
+            }
+          }
+        }, 10_000);
+      }
     }, timeoutMs);
 
     child.stdout?.on("data", (chunk) => {
@@ -434,25 +458,21 @@ function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
     });
 
     child.on("error", (err) => {
-      clearTimeout(timer);
-      logStream.close();
-      resolve({
+      finish({
         exitStatus: null,
         stdout: stdoutBuf,
         stderr: stderrBuf + "\n" + err.message,
-        timedOut: false,
+        timedOut,
         logFile,
       });
     });
 
-    child.on("close", (code, signal) => {
-      clearTimeout(timer);
-      logStream.close();
-      resolve({
+    child.on("close", (code) => {
+      finish({
         exitStatus: code,
         stdout: stdoutBuf,
         stderr: stderrBuf,
-        timedOut: timedOut || signal === "SIGTERM",
+        timedOut,
         logFile,
       });
     });
@@ -660,7 +680,7 @@ async function main() {
 
   // Run cascade
   const agentNames = [];
-  const cascadeResult = runCascade({
+  const cascadeResult = await runCascade({
     cliNames: availableCLIs,
     prompt,
     specFilePath: specFile,
