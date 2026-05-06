@@ -215,7 +215,7 @@ Any CLI whose secret is absent is silently skipped during pre-flight; the cascad
 
 ### Cascade behaviour
 
-Agents are invoked in a configurable order (default: `claude → codex → copilot → kiro-cli`) with a per-agent timeout (default: 30 min). After each invocation the orchestrator reads the spec file's `status:` frontmatter field. When it sees `in-review`, it:
+Agents are invoked in a configurable order (default: `claude → codex → copilot → kiro-cli`) with a per-agent timeout (default: 30 min). After each invocation the orchestrator reads the spec file's `status:` frontmatter field. When it sees either `review` or `in-review`, it:
 
 1. Commits all workspace changes to `auto-dev/issue-<n>`
 2. Pushes the branch
@@ -223,7 +223,7 @@ Agents are invoked in a configurable order (default: `claude → codex → copil
 
 `story-project-sync` then advances the project board from **Ready for Dev** to **Review** when the PR is opened.
 
-If all CLIs are exhausted without reaching `in-review`, the workflow pushes partial work (if any) and exits non-zero. The operator can re-run the workflow to resume from the existing branch.
+If all CLIs are exhausted without reaching `review` or `in-review`, the workflow pushes partial work (if any) and exits non-zero. The operator can re-run the workflow to resume from the existing branch.
 
 ### Trigger methods
 

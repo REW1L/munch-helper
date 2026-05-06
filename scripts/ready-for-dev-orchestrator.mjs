@@ -18,6 +18,7 @@ export const QUOTA_SIGNAL_REGEX =
 
 const MARKER_TRIGGER = "<!-- auto-dev:trigger v1 -->";
 const MARKER_JSON_REGEX = /```json\r?\n(\{[\s\S]*?\})\r?\n```/;
+const SUCCESS_SPEC_STATUSES = new Set(["review", "in-review"]);
 
 /** Per-CLI invocation configuration. */
 const CLI_CONFIGS = {
@@ -78,8 +79,8 @@ export function deriveSpecFilePath(issueTitle) {
 
 /**
  * Parse the `status:` value from a spec file's content.
- * Handles YAML frontmatter (`status: 'review'`) and
- * story-style status lines (`Status: review`).
+ * Handles YAML frontmatter (`status: 'review'`) and story-style status lines
+ * (`Status: review`), normalizing values through story-project-sync parsing.
  */
 export function parseSpecStatus(content) {
   const artifact = parseTrackedImplementationArtifact(content, "");
@@ -150,7 +151,7 @@ export async function runCascade({
     const status = onReadStatus(specFilePath);
     onLogInfo(`[${name}] Spec status after run: ${status ?? "unknown"}.`);
 
-    if (status === "review") {
+    if (SUCCESS_SPEC_STATUSES.has(status)) {
       return { success: true, agentLogs, winnerCli: name };
     }
   }
@@ -700,11 +701,11 @@ async function main() {
   });
 
   if (cascadeResult.success) {
-    logInfo(`✅ ${cascadeResult.winnerCli} reached review. Committing and opening PR.`);
+    logInfo(`${cascadeResult.winnerCli} reached a successful review status. Committing and opening PR.`);
     commitAndPush(branchName, agentNames, issueNumber, false, commandPlan);
     openOrUpdatePR(issueTitle, issueNumber, branchName, false, commandPlan);
   } else {
-    logInfo("❌ All CLIs exhausted without reaching review status.");
+    logInfo("All CLIs exhausted without reaching a successful review status.");
     pushPartialIfChanged(branchName, agentNames, issueNumber);
     process.exit(1);
   }
