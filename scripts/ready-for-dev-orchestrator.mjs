@@ -18,7 +18,7 @@ export const QUOTA_SIGNAL_REGEX =
 
 const MARKER_TRIGGER = "<!-- auto-dev:trigger v1 -->";
 const MARKER_JSON_REGEX = /```json\r?\n(\{[\s\S]*?\})\r?\n```/;
-const SUCCESS_SPEC_STATUSES = new Set(["review", "in-review"]);
+const SUCCESS_SPEC_STATUSES = new Set(["review", "in-review", "done"]);
 
 /** Per-CLI invocation configuration. */
 const CLI_CONFIGS = {

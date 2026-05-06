@@ -60,6 +60,11 @@ test("parseSpecStatus reads in-review YAML frontmatter status field", () => {
   assert.equal(parseSpecStatus(content), "in-review");
 });
 
+test("parseSpecStatus reads done YAML frontmatter status field", () => {
+  const content = `---\ntitle: 'Ready For Dev Orchestrator'\nstatus: 'done'\n---\n\n## Intent\n`;
+  assert.equal(parseSpecStatus(content), "done");
+});
+
 test("parseSpecStatus normalises status to kebab-case", () => {
   const content = `# Story 3.1: Foo\n\nStatus: Ready for Dev\n`;
   assert.equal(parseSpecStatus(content), "ready-for-dev");
@@ -208,6 +213,25 @@ test("cascade succeeds when a CLI flips to in-review", async () => {
       return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
     },
     onReadStatus: makeStatusReader(["in-review"]),
+    onLogInfo: () => { },
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.winnerCli, "claude");
+  assert.equal(calls.length, 1);
+});
+
+test("cascade succeeds when a CLI flips to done", async () => {
+  const calls = [];
+  const result = await runCascade({
+    cliNames: ["claude", "codex"],
+    prompt: "bmad-dev-story implement 'Test'",
+    specFilePath: "spec.md",
+    onRunCLI: (name) => {
+      calls.push(name);
+      return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
+    },
+    onReadStatus: makeStatusReader(["done"]),
     onLogInfo: () => { },
   });
 
