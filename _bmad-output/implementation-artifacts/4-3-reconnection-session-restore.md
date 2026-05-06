@@ -161,7 +161,7 @@ frontend/app/munchkin/[roomNumber]/index.tsx     ADD useReconnectOnForeground ca
 
 ### Agent Model Used
 
-claude-sonnet-4-5
+claude-sonnet-4-5-latest
 
 ### Debug Log References
 
