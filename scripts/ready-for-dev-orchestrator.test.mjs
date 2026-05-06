@@ -1,5 +1,5 @@
-import test from "node:test";
 import assert from "node:assert/strict";
+import test from "node:test";
 
 import {
   deriveSpecFilePath,
@@ -46,13 +46,13 @@ test("deriveSpecFilePath maps Ready For Dev Orchestrator spec title", () => {
 // ---------------------------------------------------------------------------
 
 test("parseSpecStatus reads story-style Status line", () => {
-  const content = `# Story 3.8: Realtime Update Signal on Character Cards\n\nStatus: in-review\n`;
-  assert.equal(parseSpecStatus(content), "in-review");
+  const content = `# Story 3.8: Realtime Update Signal on Character Cards\n\nStatus: review\n`;
+  assert.equal(parseSpecStatus(content), "review");
 });
 
 test("parseSpecStatus reads YAML frontmatter status field", () => {
-  const content = `---\ntitle: 'Ready For Dev Orchestrator'\nstatus: 'in-review'\n---\n\n## Intent\n`;
-  assert.equal(parseSpecStatus(content), "in-review");
+  const content = `---\ntitle: 'Ready For Dev Orchestrator'\nstatus: 'review'\n---\n\n## Intent\n`;
+  assert.equal(parseSpecStatus(content), "review");
 });
 
 test("parseSpecStatus normalises status to kebab-case", () => {
@@ -172,7 +172,7 @@ function makeStatusReader(statusByCall) {
   return () => statusByCall[callIndex++] ?? null;
 }
 
-test("cascade succeeds at position 1 when first CLI flips to in-review", async () => {
+test("cascade succeeds at position 1 when first CLI flips to review", async () => {
   const calls = [];
   const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
@@ -182,8 +182,8 @@ test("cascade succeeds at position 1 when first CLI flips to in-review", async (
       calls.push(name);
       return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
     },
-    onReadStatus: makeStatusReader(["in-review"]),
-    onLogInfo: () => {},
+    onReadStatus: makeStatusReader(["review"]),
+    onLogInfo: () => { },
   });
 
   assert.equal(result.success, true);
@@ -192,7 +192,7 @@ test("cascade succeeds at position 1 when first CLI flips to in-review", async (
   assert.equal(result.agentLogs.length, 1);
 });
 
-test("cascade succeeds at position 2 when second CLI flips to in-review", async () => {
+test("cascade succeeds at position 2 when second CLI flips to review", async () => {
   const calls = [];
   const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
@@ -202,8 +202,8 @@ test("cascade succeeds at position 2 when second CLI flips to in-review", async 
       calls.push(name);
       return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
     },
-    onReadStatus: makeStatusReader(["ready-for-dev", "in-review"]),
-    onLogInfo: () => {},
+    onReadStatus: makeStatusReader(["ready-for-dev", "review"]),
+    onLogInfo: () => { },
   });
 
   assert.equal(result.success, true);
@@ -211,7 +211,7 @@ test("cascade succeeds at position 2 when second CLI flips to in-review", async 
   assert.equal(calls.length, 2);
 });
 
-test("cascade succeeds at position 3 when third CLI flips to in-review", async () => {
+test("cascade succeeds at position 3 when third CLI flips to review", async () => {
   const calls = [];
   const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
@@ -221,8 +221,8 @@ test("cascade succeeds at position 3 when third CLI flips to in-review", async (
       calls.push(name);
       return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
     },
-    onReadStatus: makeStatusReader(["ready-for-dev", "ready-for-dev", "in-review"]),
-    onLogInfo: () => {},
+    onReadStatus: makeStatusReader(["ready-for-dev", "ready-for-dev", "review"]),
+    onLogInfo: () => { },
   });
 
   assert.equal(result.success, true);
@@ -230,7 +230,7 @@ test("cascade succeeds at position 3 when third CLI flips to in-review", async (
   assert.equal(calls.length, 3);
 });
 
-test("cascade succeeds at position 4 when fourth CLI flips to in-review", async () => {
+test("cascade succeeds at position 4 when fourth CLI flips to review", async () => {
   const calls = [];
   const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
@@ -240,8 +240,8 @@ test("cascade succeeds at position 4 when fourth CLI flips to in-review", async 
       calls.push(name);
       return { stdout: "", stderr: "", exitStatus: 0, logFile: `agent-${name}.log` };
     },
-    onReadStatus: makeStatusReader(["ready-for-dev", "ready-for-dev", "ready-for-dev", "in-review"]),
-    onLogInfo: () => {},
+    onReadStatus: makeStatusReader(["ready-for-dev", "ready-for-dev", "ready-for-dev", "review"]),
+    onLogInfo: () => { },
   });
 
   assert.equal(result.success, true);
@@ -249,7 +249,7 @@ test("cascade succeeds at position 4 when fourth CLI flips to in-review", async 
   assert.equal(calls.length, 4);
 });
 
-test("cascade fails when all four CLIs run and none reaches in-review", async () => {
+test("cascade fails when all four CLIs run and none reaches review", async () => {
   const calls = [];
   const result = await runCascade({
     cliNames: ["claude", "codex", "copilot", "kiro-cli"],
@@ -260,7 +260,7 @@ test("cascade fails when all four CLIs run and none reaches in-review", async ()
       return { stdout: "", stderr: "", exitStatus: 1, logFile: `agent-${name}.log` };
     },
     onReadStatus: makeStatusReader(["ready-for-dev", "ready-for-dev", "ready-for-dev", "ready-for-dev"]),
-    onLogInfo: () => {},
+    onLogInfo: () => { },
   });
 
   assert.equal(result.success, false);
@@ -281,7 +281,7 @@ test("cascade detects quota signal and logs it but continues", async () => {
       exitStatus: name === "claude" ? 1 : 0,
       logFile: `agent-${name}.log`,
     }),
-    onReadStatus: makeStatusReader(["ready-for-dev", "in-review"]),
+    onReadStatus: makeStatusReader(["ready-for-dev", "review"]),
     onLogInfo: (msg) => logMessages.push(msg),
   });
 

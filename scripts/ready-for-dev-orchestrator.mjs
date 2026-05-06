@@ -23,15 +23,14 @@ const MARKER_JSON_REGEX = /```json\r?\n(\{[\s\S]*?\})\r?\n```/;
 const CLI_CONFIGS = {
   claude: {
     cmd: "claude",
-    args: ["-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages"],
+    args: ["-p", "--verbose"],
     env: { CLAUDE_CODE_MAX_RETRIES: "2" },
-    authEnv: ["ANTHROPIC_API_KEY"],
+    authEnv: ["ANTHROPIC_API_KEYS"],
   },
   codex: {
     cmd: "codex",
     args: [
       "exec",
-      "--json",
       "--dangerously-bypass-approvals-and-sandbox",
       "--skip-git-repo-check",
     ],
@@ -79,8 +78,8 @@ export function deriveSpecFilePath(issueTitle) {
 
 /**
  * Parse the `status:` value from a spec file's content.
- * Handles YAML frontmatter (`status: 'in-review'`) and
- * story-style status lines (`Status: in-review`).
+ * Handles YAML frontmatter (`status: 'review'`) and
+ * story-style status lines (`Status: review`).
  */
 export function parseSpecStatus(content) {
   const artifact = parseTrackedImplementationArtifact(content, "");
@@ -151,7 +150,7 @@ export async function runCascade({
     const status = onReadStatus(specFilePath);
     onLogInfo(`[${name}] Spec status after run: ${status ?? "unknown"}.`);
 
-    if (status === "in-review") {
+    if (status === "review") {
       return { success: true, agentLogs, winnerCli: name };
     }
   }
@@ -404,11 +403,11 @@ function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
   const cliArgs = [...config.args, prompt];
   const env = { ...process.env, ...config.env };
 
-  logInfo(`Running ${name}: timeout ${timeoutMinutes}m ${config.cmd} ${cliArgs.join(" ")}`);
+  logInfo(`Running ${name}: timeout ${timeoutMinutes}m ${config.cmd} ${cliArgs.map((arg) => `"${arg}"`).join(" ")}`);
 
   return new Promise((resolve) => {
     const logStream = fs.createWriteStream(logFile);
-    logStream.on("error", () => {});
+    logStream.on("error", () => { });
     let stdoutBuf = "";
     let stderrBuf = "";
     let timedOut = false;
@@ -422,6 +421,7 @@ function runCLIWithTimeout(name, config, prompt, timeoutMinutes, logDir) {
     }
 
     const child = spawn(config.cmd, cliArgs, { env, shell: false, detached: true });
+    child.stdin.end(); // In case the CLI expects input, send an empty line
 
     const timer = setTimeout(() => {
       timedOut = true;
@@ -615,7 +615,7 @@ async function main() {
       if (!specFile) {
         throw new Error(
           `No spec file matched for issue #${issueNumber} (derived: ${derived}). ` +
-            `Ensure the issue title matches a file in ${IMPLEMENTATION_DIR}.`
+          `Ensure the issue title matches a file in ${IMPLEMENTATION_DIR}.`
         );
       }
       logInfo(`Resolved spec file: ${specFile}`);
@@ -633,7 +633,7 @@ async function main() {
   if (!args.dryRun && availableCLIs.length === 0) {
     throw new Error(
       "No CLIs available after pre-flight check. " +
-        "Ensure at least one CLI is installed and its auth environment variable is set."
+      "Ensure at least one CLI is installed and its auth environment variable is set."
     );
   }
 
@@ -700,11 +700,11 @@ async function main() {
   });
 
   if (cascadeResult.success) {
-    logInfo(`✅ ${cascadeResult.winnerCli} reached in-review. Committing and opening PR.`);
+    logInfo(`✅ ${cascadeResult.winnerCli} reached review. Committing and opening PR.`);
     commitAndPush(branchName, agentNames, issueNumber, false, commandPlan);
     openOrUpdatePR(issueTitle, issueNumber, branchName, false, commandPlan);
   } else {
-    logInfo("❌ All CLIs exhausted without reaching in-review status.");
+    logInfo("❌ All CLIs exhausted without reaching review status.");
     pushPartialIfChanged(branchName, agentNames, issueNumber);
     process.exit(1);
   }
