@@ -10,7 +10,16 @@ const mockRoomNumber = vi.hoisted(() => ({ current: 'ROOM42' as string | string[
 const mockCreateCharacter = vi.hoisted(() => vi.fn());
 const mockUpdateCharacter = vi.hoisted(() => vi.fn());
 const mockRemoveCharacter = vi.hoisted(() => vi.fn());
+const mockRefreshCharacters = vi.hoisted(() => vi.fn());
+const mockReconnect = vi.hoisted(() => vi.fn());
+const mockUseReconnectOnForeground = vi.hoisted(() => vi.fn());
 const mockIsCreateBlocked = vi.hoisted(() => ({ current: false }));
+const mockConnectionState = vi.hoisted(() => ({
+  current: {
+    isConnected: true,
+    isTimedOut: false,
+  },
+}));
 const mockCharactersState = vi.hoisted(() => ({
   current: [] as Character[],
 }));
@@ -54,10 +63,18 @@ vi.mock('@/hooks/useCharacters', () => ({
     create: mockCreateCharacter,
     update: mockUpdateCharacter,
     remove: mockRemoveCharacter,
+    refresh: mockRefreshCharacters,
+    reconnect: mockReconnect,
+    isConnected: mockConnectionState.current.isConnected,
+    isTimedOut: mockConnectionState.current.isTimedOut,
     isCreateBlocked: mockIsCreateBlocked.current,
     isLoading: false,
     errorMessage: null,
   }),
+}));
+
+vi.mock('@/hooks/useReconnectOnForeground', () => ({
+  useReconnectOnForeground: mockUseReconnectOnForeground,
 }));
 
 vi.mock('../../../components/munchkin/RoomCharactersList', () => ({
@@ -187,10 +204,19 @@ describe('Munchkin room header', () => {
     mockCreateCharacter.mockReset();
     mockUpdateCharacter.mockReset();
     mockRemoveCharacter.mockReset();
+    mockRefreshCharacters.mockReset();
+    mockReconnect.mockReset();
+    mockUseReconnectOnForeground.mockReset();
     mockIsCreateBlocked.current = false;
+    mockConnectionState.current = {
+      isConnected: true,
+      isTimedOut: false,
+    };
     mockCreateCharacter.mockResolvedValue(undefined);
     mockUpdateCharacter.mockResolvedValue(undefined);
     mockRemoveCharacter.mockResolvedValue(undefined);
+    mockRefreshCharacters.mockResolvedValue(undefined);
+    mockReconnect.mockResolvedValue(undefined);
     mockCharactersState.current = [];
     mockRoomNumber.current = 'ROOM42';
     latestHeaderOptions.current = undefined;
@@ -683,6 +709,65 @@ describe('Munchkin room header', () => {
 
     expect(screen.getByText('Edit Mage')).toBeTruthy();
     expect(screen.queryByText('Delete failed')).toBeNull();
+  });
+
+  it('renders connection retry action after reconnect timeout and refreshes after retry', async () => {
+    mockConnectionState.current = {
+      isConnected: false,
+      isTimedOut: true,
+    };
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    const retryButton = screen.getByRole('button', { name: 'Connection lost. Tap to retry' });
+    expect(screen.getByText('Connection lost · Retry')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.click(retryButton);
+      await Promise.resolve();
+    });
+
+    expect(mockReconnect).toHaveBeenCalledTimes(1);
+    expect(mockRefreshCharacters).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips foreground reconnect registration while already connected', async () => {
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(mockUseReconnectOnForeground).toHaveBeenCalledWith(false, expect.any(Function));
   });
 
   it('closes the change modal when the selected character is deleted remotely', async () => {

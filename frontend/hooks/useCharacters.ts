@@ -18,7 +18,10 @@ interface UseRoomCharactersResult {
   isLoading: boolean;
   errorMessage: string | null;
   isCreateBlocked: boolean;
+  isConnected: boolean;
+  isTimedOut: boolean;
   refresh: () => Promise<void>;
+  reconnect: () => Promise<void>;
   create: (payload: Omit<CharacterWritePayload, 'roomId'>) => Promise<Character>;
   update: (characterId: string, payload: CharacterUpdatePayload) => Promise<Character>;
   remove: (characterId: string) => Promise<void>;
@@ -107,7 +110,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const [isCreateBlocked, setIsCreateBlocked] = useState(false);
 
   // Set up WebSocket connection for real-time updates
-  const { isConnected, subscribe } = useRoomWebSocket(
+  const { isConnected, isTimedOut, reconnect, subscribe } = useRoomWebSocket(
     roomId,
     userProfile.id,
     Boolean(roomId && userProfile.id)
@@ -164,6 +167,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     onSuccess: (createdCharacter) => {
       if (createdCharacter.userId === userProfile.id) {
         autoCreateSuppressedForCurrentUserRef.current = false;
+        lastEnsureAttemptAtRef.current = Date.now();
       }
 
       queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
@@ -437,11 +441,14 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       isLoading,
       errorMessage,
       isCreateBlocked,
+      isConnected,
+      isTimedOut,
       refresh,
+      reconnect,
       create,
       update,
       remove,
     }),
-    [characters, create, errorMessage, isCreateBlocked, isLoading, realtimeUpdateSignals, refresh, remove, update]
+    [characters, create, errorMessage, isConnected, isCreateBlocked, isLoading, isTimedOut, realtimeUpdateSignals, reconnect, refresh, remove, update]
   );
 }

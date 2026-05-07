@@ -13,6 +13,8 @@ export interface WebSocketOptions {
   reconnectDelay?: number;
   maxReconnectAttempts?: number;
   heartbeatInterval?: number;
+  onOpen?: () => void;
+  onClose?: () => void;
 }
 
 export class RoomWebSocketClient {
@@ -25,6 +27,8 @@ export class RoomWebSocketClient {
   private reconnectDelay: number;
   private maxReconnectAttempts: number;
   private heartbeatInterval: number;
+  private onOpen?: () => void;
+  private onClose?: () => void;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -38,6 +42,8 @@ export class RoomWebSocketClient {
     this.reconnectDelay = options.reconnectDelay ?? 3000;
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? 5;
     this.heartbeatInterval = options.heartbeatInterval ?? 30000;
+    this.onOpen = options.onOpen;
+    this.onClose = options.onClose;
   }
 
   connect(): Promise<void> {
@@ -58,6 +64,7 @@ export class RoomWebSocketClient {
           this.isIntentionallyClosed = false;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
+          this.onOpen?.();
           resolve();
         };
 
@@ -82,6 +89,7 @@ export class RoomWebSocketClient {
           console.log(`[WebSocket] Disconnected from room ${this.roomId}`);
           this.stopHeartbeat();
           if (!this.isIntentionallyClosed) {
+            this.onClose?.();
             this.attemptReconnect();
           }
         };
@@ -102,6 +110,16 @@ export class RoomWebSocketClient {
       this.ws.close();
       this.ws = null;
     }
+  }
+
+  reconnect(): Promise<void> {
+    this.isIntentionallyClosed = false;
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    return this.connect();
   }
 
   subscribe(listener: (event: CharacterNotificationEvent) => void): () => void {

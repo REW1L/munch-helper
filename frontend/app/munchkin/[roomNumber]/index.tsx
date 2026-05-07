@@ -2,6 +2,7 @@ import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import { useReconnectOnForeground } from '@/hooks/useReconnectOnForeground';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -34,6 +35,10 @@ const MunchkinIndexView: React.FC = () => {
     isLoading,
     errorMessage,
     isCreateBlocked,
+    isConnected,
+    isTimedOut,
+    refresh,
+    reconnect,
   } = useRoomCharacters(roomId, userProfile);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
@@ -213,6 +218,13 @@ const MunchkinIndexView: React.FC = () => {
     });
   }, [copyRoomCode]);
 
+  const handleReconnect = useCallback(async () => {
+    await reconnect();
+    await refresh();
+  }, [reconnect, refresh]);
+
+  useReconnectOnForeground(Boolean(roomId && userProfile.id && !isConnected), handleReconnect);
+
   return (
     <SafeAreaProvider key={`room-${roomNumber}`}>
       <SafeAreaView style={styles.safeArea} edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}>
@@ -238,6 +250,19 @@ const MunchkinIndexView: React.FC = () => {
               ),
             }}
           />
+
+          {isTimedOut && !isConnected && (
+            <Pressable
+              accessibilityLabel="Connection lost. Tap to retry"
+              accessibilityRole="button"
+              onPress={() => {
+                void handleReconnect();
+              }}
+              style={styles.connectionRetryButton}
+            >
+              <Text style={styles.connectionRetryButtonText}>Connection lost · Retry</Text>
+            </Pressable>
+          )}
 
           <RoomCharactersList
             characters={characters}
@@ -439,6 +464,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '400',
     color: AppTheme.colors.textPrimary,
+  },
+  connectionRetryButton: {
+    alignSelf: 'center',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.pill,
+    marginHorizontal: AppTheme.spacing.md,
+    marginTop: AppTheme.spacing.sm,
+    paddingHorizontal: AppTheme.spacing.lg,
+    paddingVertical: AppTheme.spacing.sm,
+  },
+  connectionRetryButtonText: {
+    color: AppTheme.colors.textMuted,
+    ...AppTheme.typography.labelMd,
   },
   undoToastWrapper: {
     position: 'absolute',
