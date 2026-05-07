@@ -77,7 +77,7 @@ jobs:
             echo "Installing codex..." && npm install -g @openai/codex || echo "codex install failed"
           fi
           if [ -n "${COPILOT_GITHUB_TOKEN:-}" ]; then
-            echo "Installing copilot..." && npm install -g @githubnext/github-copilot-cli || echo "copilot install failed"
+            echo "Installing GitHub Copilot CLI..." && npm install -g @githubnext/github-copilot-cli || echo "GitHub Copilot CLI install failed"
           fi
           if [ -n "${KIRO_API_KEY:-}" ]; then
             echo "Installing kiro-cli..." && npm install -g kiro-cli || echo "kiro-cli install failed"

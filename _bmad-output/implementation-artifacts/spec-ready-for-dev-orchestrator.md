@@ -2,7 +2,7 @@
 title: 'Ready For Dev Orchestrator'
 type: 'feature'
 created: '2026-05-02'
-status: 'in-review'
+status: 'done'
 baseline_commit: '1909673d0a6ab50cf57c9b4f3569123c7c92d759'
 context:
   - '_bmad-output/project-context.md'
@@ -53,9 +53,9 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [x] `scripts/ready-for-dev-orchestrator.mjs` -- Implement orchestration. Inputs: `--issue <n>` (from dispatch input or parsed from `github.event.issue.number` on comment events), `--order claude,codex,copilot,kiro-cli`, `--timeout 30m`, `--dry-run`. Steps: resolve issue + spec file path (prefer the `spec_file` carried in the marker comment payload when present, fall back to deriving from issue title); checkout-or-create `auto-dev/issue-<n>` branch (resume if it exists); pre-flight each requested CLI (`which` + minimal auth probe — env var present and `--version` succeeds); for each CLI in order, run `timeout <T> <cli> <flags> "bmad-dev-story implement '<title>'"` with stdout/stderr captured to per-agent log files; after each, re-read spec frontmatter; on `status: review`, `status: in-review`, or `status: done` stage all changes, commit (`Co-authored-by` line per CLI that ran), push, `gh pr create --title "<issue title>" --body "Closes #<n>"`, exit 0; otherwise log the quota regex match (informational), continue. If no CLI succeeds, push the branch (if it has commits ahead of base), exit non-zero. Use the existing `ghCommand` helper style and `--dry-run` semantics from `story-project-sync.mjs`.
+- [x] `scripts/ready-for-dev-orchestrator.mjs` -- Implement orchestration. Inputs: `--issue <n>` (from dispatch input or parsed from `github.event.issue.number` on comment events), `--order claude,codex,copilot,kiro-cli`, `--timeout 30m`, `--dry-run`. Steps: resolve issue + spec file path (prefer the `spec_file` carried in the marker comment payload when present, fall back to deriving from issue title); checkout-or-create `auto-dev/issue-<n>` branch (resume if it exists); pre-flight each requested CLI (`which` + minimal auth probe — env var present, `--version` succeeds, and any non-interactive login step succeeds); for each CLI in order, run `timeout <T> <cli> <flags> "bmad-dev-story implement '<title>'"` with stdout/stderr captured to per-agent log files; after each, re-read spec frontmatter; on `status: review`, `status: in-review`, or `status: done` stage all changes, commit (`Co-authored-by` line per CLI that ran), push, `gh pr create --title "<issue title>" --body "Closes #<n>"`, exit 0; otherwise log the quota regex match (informational), continue. If no CLI succeeds, push the branch (if it has commits ahead of base), exit non-zero. Use the existing `ghCommand` helper style and `--dry-run` semantics from `story-project-sync.mjs`.
 - [x] `.github/workflows/ready-for-dev-orchestrator.yml` -- Triggers: `workflow_dispatch` with `issue_number` (required) and optional `agent_order` input; `issue_comment: { types: [created] }`. Top-level `if` on the comment-triggered job: `github.event_name == 'workflow_dispatch' || (github.event.issue.pull_request == null && contains(github.event.comment.body, '<!-- auto-dev:trigger v1 -->') && (github.event.comment.user.login == 'REW1L' || github.event.comment.user.login == 'github-actions[bot]'))`. `concurrency: { group: 'auto-dev-${{ github.event.issue.number || inputs.issue_number }}', cancel-in-progress: false }`. Permissions: `contents: write`, `pull-requests: write`, `issues: write` (for posting any progress comments back). Steps: checkout with `fetch-depth: 0` and explicit `ref: main`, setup Node 20, install CLIs that have credentials (skip ones whose secret is missing), `git config user.name/email` for the bot, run `node scripts/ready-for-dev-orchestrator.mjs ...`, `actions/upload-artifact` of the per-agent logs. Env passthrough: `ANTHROPIC_API_KEY`, `CODEX_API_KEY`, `OPENAI_API_KEY`, `COPILOT_GITHUB_TOKEN`, `KIRO_API_KEY`, plus the existing `GH_PROJECT_TOKEN` set as `GH_TOKEN` and `GITHUB_TOKEN`.
-- [x] `scripts/ready-for-dev-orchestrator.test.mjs` -- `node:test` suites covering: issue title `Story 3.1: AppTheme Token Migration` → `_bmad-output/implementation-artifacts/3-1-apptheme-token-migration.md`; spec status frontmatter parsing for both story-style (`Status: review`) and spec-style (`status: 'review'` / `status: 'in-review'` / `status: 'done'`); cascade decision when each CLI succeeds at position 1/2/3/4, including success on `review`, `in-review`, or `done`; cascade decision when all four fail; quota-signal regex against captured fixtures (Claude `rate_limit_error`, Codex `usage limit`, Copilot `premium request allowance`, Kiro `limit reached`); marker-comment payload extraction (well-formed, malformed JSON, missing marker); dry-run command plan output.
+- [x] `scripts/ready-for-dev-orchestrator.test.mjs` -- `node:test` suites covering: issue title `Story 3.1: AppTheme Token Migration` → `_bmad-output/implementation-artifacts/3-1-apptheme-token-migration.md`; spec status frontmatter parsing for both story-style (`Status: review`) and spec-style (`status: 'review'` / `status: 'in-review'` / `status: 'done'`); cascade decision when each CLI succeeds at position 1/2/3/4, including success on `review`, `in-review`, or `done`; cascade decision when all four fail; quota-signal regex against captured fixtures (Claude `rate_limit_error`, Codex `usage limit`, Copilot `premium request allowance`, Kiro `limit reached`); marker-comment payload extraction (well-formed, malformed JSON, missing marker); dry-run command plan output, including Codex non-interactive flags and the installed GitHub Copilot CLI binary name.
 - [x] `scripts/story-project-sync.mjs` -- Add `postReadyForDevMarker(issue, specFile)` helper invoked whenever the sync emits a status transition to `Ready for Dev`. Body: a brief human-readable line plus `<!-- auto-dev:trigger v1 -->` and a fenced `json` payload `{"issue_number": <n>, "spec_file": "<path>", "version": 1}`. Idempotency: query the last 5 issue comments via `gh issue view <n> --json comments`, skip if the most recent comment is already a v1 marker pointing at the same `spec_file`. Failures are logged but do not fail the sync run. Export the helpers (`parseStoryTitle`, `loadProjectMetadata`, `findIssueForArtifact`, slug derivation) the orchestrator script needs.
 - [x] `scripts/story-project-sync.test.mjs` -- Add coverage: marker is posted on a fresh `Ready for Dev` transition; marker is skipped when an identical recent marker already exists; marker body shape (HTML comment + JSON payload); marker post failure is logged and swallowed (sync still reports success).
 - [x] `README.md` -- Document required secrets (`ANTHROPIC_API_KEY`, `CODEX_API_KEY` *or* `OPENAI_API_KEY`, `COPILOT_GITHUB_TOKEN` (PAT with Copilot Requests), `KIRO_API_KEY`), how to trigger manually (`gh workflow run ready-for-dev-orchestrator.yml -f issue_number=42`), the marker-comment contract (so other automations can post the marker if needed), the cascade order, and how to read the run-log artifact.
@@ -78,8 +78,8 @@ The cascade-stop contract is intentionally outcome-based, not signal-based: the 
 
 CLI invocation flags (default):
 - `claude -p --output-format stream-json --verbose --include-partial-messages` (set `CLAUDE_CODE_MAX_RETRIES=2` to fail fast)
-- `codex exec --json --ask-for-approval never --sandbox workspace-write --skip-git-repo-check`
-- `copilot -p --no-ask-user --allow-all-tools`
+- `codex login --with-api-key` (stdin from `OPENAI_API_KEY` or `CODEX_API_KEY`) before `codex exec --json --ask-for-approval never --sandbox workspace-write --skip-git-repo-check`
+- `github-copilot-cli -p --no-ask-user --allow-all-tools` (the npm package exposes `github-copilot-cli`, not `copilot`)
 - `kiro-cli chat --no-interactive --trust-all-tools`
 
 User-project trigger gap (researched 2026-05-02): `projects_v2_item` does not fire for `users/<name>/projects/<n>` — still organization-only per current GitHub docs and the unresolved community feedback thread #17405. Pure project Status column moves also fire no `issues` events (the `issues.edited` payload carries no project field changes), so filtering issue events on status is a dead end. The chosen design uses a marker-comment contract instead of workflow chaining: when `story-project-sync` transitions an item to `Ready for Dev`, it posts a deterministic comment on the issue, and the orchestrator triggers on `issue_comment.created`. This decouples the orchestrator from any specific source workflow — anything authorized that posts the marker triggers it identically — and keeps the contract textual and inspectable in the issue thread.
@@ -112,3 +112,27 @@ UI-drag gap: when a human drags a card to `Ready for Dev` directly in the projec
 - After a PR is opened by the orchestrator, confirm `story-project-sync` advances the project item from `Ready for Dev` to `Review` automatically.
 - Inspect the uploaded run-log artifact and confirm one log file per agent invocation, plus the final spec `status:` value at the end of the run.
 - Post a non-marker comment from a non-owner account on a test issue; confirm the orchestrator workflow either does not run or runs with the gating job skipped.
+
+
+## Suggested Review Order
+
+**CLI authentication pre-flight**
+
+- Fixes Claude env gating and logs Codex in before cascade execution.
+  [`ready-for-dev-orchestrator.mjs:24`](../../scripts/ready-for-dev-orchestrator.mjs#L24)
+
+- Keeps unauthenticated login failures out of the cascade body.
+  [`ready-for-dev-orchestrator.mjs:326`](../../scripts/ready-for-dev-orchestrator.mjs#L326)
+
+**Copilot executable resolution**
+
+- Uses the binary actually installed by the Copilot npm package.
+  [`ready-for-dev-orchestrator.mjs:46`](../../scripts/ready-for-dev-orchestrator.mjs#L46)
+
+- Clarifies the Actions installation step without changing trigger semantics.
+  [`ready-for-dev-orchestrator.yml:79`](../../.github/workflows/ready-for-dev-orchestrator.yml#L79)
+
+**Regression coverage**
+
+- Locks dry-run output to authenticated Codex flags and Copilot binary.
+  [`ready-for-dev-orchestrator.test.mjs:357`](../../scripts/ready-for-dev-orchestrator.test.mjs#L357)

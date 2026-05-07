@@ -26,20 +26,25 @@ const CLI_CONFIGS = {
     cmd: "claude",
     args: ["-p", "--verbose"],
     env: { CLAUDE_CODE_MAX_RETRIES: "2" },
-    authEnv: ["ANTHROPIC_API_KEYS"],
+    authEnv: ["ANTHROPIC_API_KEY"],
   },
   codex: {
     cmd: "codex",
     args: [
       "exec",
-      "--dangerously-bypass-approvals-and-sandbox",
+      "--json",
+      "--ask-for-approval",
+      "never",
+      "--sandbox",
+      "workspace-write",
       "--skip-git-repo-check",
     ],
     env: {},
     authEnv: ["OPENAI_API_KEY", "CODEX_API_KEY"],
+    login: { args: ["login", "--with-api-key"], stdinEnv: ["OPENAI_API_KEY", "CODEX_API_KEY"] },
   },
   copilot: {
-    cmd: "copilot",
+    cmd: "github-copilot-cli",
     // --prompt/-p must be last: it consumes the next arg as prompt text
     args: ["--no-ask-user", "--allow-all-tools", "-p"],
     env: {},
@@ -314,6 +319,38 @@ function findSpecFileOnDisk(derivedPath) {
   return match ? path.join(dir, match) : null;
 }
 
+function firstSetEnv(envVars) {
+  return envVars.find((envVar) => Boolean(process.env[envVar])) ?? null;
+}
+
+function runLoginIfConfigured(name, config) {
+  if (!config.login) {
+    return { ok: true, reason: null };
+  }
+
+  const stdinEnv = firstSetEnv(config.login.stdinEnv ?? []);
+  if (!stdinEnv) {
+    return {
+      ok: false,
+      reason: `missing login stdin env (${(config.login.stdinEnv ?? []).join(" or ")})`,
+    };
+  }
+
+  try {
+    logInfo(`Pre-flight: logging in ${name} with ${stdinEnv}.`);
+    execFileSync(config.cmd, config.login.args, {
+      encoding: "utf8",
+      input: `${process.env[stdinEnv]}\n`,
+      stdio: ["pipe", "ignore", "pipe"],
+      timeout: 30_000,
+    });
+    return { ok: true, reason: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, reason: `login failed for ${config.cmd}: ${message}` };
+  }
+}
+
 function preflightCLI(name, config) {
   const hasAuth = config.authEnv.some((envVar) => Boolean(process.env[envVar]));
   if (!hasAuth) {
@@ -333,6 +370,11 @@ function preflightCLI(name, config) {
     execFileSync(config.cmd, ["--version"], { stdio: "ignore", timeout: 5000 });
   } catch {
     return { available: false, reason: `--version check failed for ${config.cmd}` };
+  }
+
+  const loginResult = runLoginIfConfigured(name, config);
+  if (!loginResult.ok) {
+    return { available: false, reason: loginResult.reason };
   }
 
   return { available: true, reason: null };

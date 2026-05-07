@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import test from "node:test";
 
 import {
@@ -350,4 +351,23 @@ test("deriveSpecFilePath is deterministic and produces a valid path string", () 
   assert.ok(result.startsWith("_bmad-output/implementation-artifacts/"));
   assert.ok(result.endsWith(".md"));
   assert.ok(!result.includes(" "), "Path should not contain spaces");
+});
+
+
+test("dry-run plans authenticated Codex and installed Copilot binary invocations", () => {
+  const output = execFileSync(
+    process.execPath,
+    [
+      "scripts/ready-for-dev-orchestrator.mjs",
+      "--dry-run",
+      "--issue",
+      "42",
+      "--order",
+      "codex,copilot",
+    ],
+    { encoding: "utf8" }
+  );
+
+  assert.match(output, /codex exec --json --ask-for-approval never --sandbox workspace-write/);
+  assert.match(output, /github-copilot-cli --no-ask-user --allow-all-tools -p/);
 });
