@@ -32,11 +32,7 @@ const CLI_CONFIGS = {
     cmd: "codex",
     args: [
       "exec",
-      "--json",
-      "--ask-for-approval",
-      "never",
-      "--sandbox",
-      "workspace-write",
+      "--dangerously-bypass-approvals-and-sandbox",
       "--skip-git-repo-check",
     ],
     env: {},
@@ -44,7 +40,7 @@ const CLI_CONFIGS = {
     login: { args: ["login", "--with-api-key"], stdinEnv: ["OPENAI_API_KEY", "CODEX_API_KEY"] },
   },
   copilot: {
-    cmd: "github-copilot-cli",
+    cmd: "copilot",
     // --prompt/-p must be last: it consumes the next arg as prompt text
     args: ["--no-ask-user", "--allow-all-tools", "-p"],
     env: {},
