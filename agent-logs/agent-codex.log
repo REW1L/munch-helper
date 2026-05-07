@@ -1,32 +1,8 @@
-Reading additional input from stdin...
-OpenAI Codex v0.128.0 (research preview)
---------
-workdir: /home/runner/work/munch-helper/munch-helper
-model: gpt-5.5
-provider: openai
-approval: never
-sandbox: danger-full-access
-reasoning effort: none
-reasoning summaries: none
-session id: 019e02d5-25e2-70d1-8410-3d187cb191e3
---------
-user
-bmad-dev-story implement 'Story 4.3: Reconnection & Session Restore'
-2026-05-07T14:26:24.179907Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-2026-05-07T14:26:24.436634Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-2026-05-07T14:26:24.883995Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-ERROR: Reconnecting... 2/5
-2026-05-07T14:26:25.548296Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-ERROR: Reconnecting... 3/5
-2026-05-07T14:26:26.599718Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-ERROR: Reconnecting... 4/5
-2026-05-07T14:26:28.317781Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-ERROR: Reconnecting... 5/5
-2026-05-07T14:26:31.577688Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: HTTP error: 401 Unauthorized, url: wss://api.openai.com/v1/responses
-ERROR: Reconnecting... 1/5
-ERROR: Reconnecting... 2/5
-ERROR: Reconnecting... 3/5
-ERROR: Reconnecting... 4/5
-ERROR: Reconnecting... 5/5
-ERROR: unexpected status 401 Unauthorized: Missing bearer or basic authentication in header, url: https://api.openai.com/v1/responses, cf-ray: 9f80e69dbb0548f1-IAD, request id: req_cd251ac705504c3e9246fb2460f22e01
-ERROR: unexpected status 401 Unauthorized: Missing bearer or basic authentication in header, url: https://api.openai.com/v1/responses, cf-ray: 9f80e69dbb0548f1-IAD, request id: req_cd251ac705504c3e9246fb2460f22e01
+error: unexpected argument '--ask-for-approval' found
+
+  tip: to pass '--ask-for-approval' as a value, use '-- --ask-for-approval'
+
+Usage: codex exec [OPTIONS] [PROMPT]
+       codex exec [OPTIONS] <COMMAND> [ARGS]
+
+For more information, try '--help'.
