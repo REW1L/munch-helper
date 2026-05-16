@@ -18,7 +18,7 @@ battle events), 5.6 (conclude), 5.7 (discard).
 
 ## Acceptance Criteria
 
-1. **Create when none active.** Given no battle is currently active in the room, when I start a battle from the Room View, then a new battle is created for that room with `status: 'active'`; the battle can include a user-provided `name` or fall back to a generated default; and only one active battle is allowed per room.
+1. **Create when none active.** Given no battle is currently active in the room, when I start a battle from the Room View, then a new battle is created for that room with `status: 'active'`; the battle always has a non-empty `name` (backend treats `name` as **required**; the frontend/presentational layer generates a default when the user does not supply one); and only one active battle is allowed per room.
 2. **No second active battle.** Given a battle is already active in the room, when I attempt to start another, then the app does not create a second active battle and I am routed to the existing active battle instead (HTTP `409` on the create attempt; the client recovers by navigating to the existing battle).
 3. **Battle View opens with state loaded.** Given a battle has been created successfully, when creation completes, then the Battle View opens with the active battle state loaded, and the active battle can be retrieved by room using the active-battle query contract (`GET /battles?roomId=X&status=active`).
 
@@ -51,6 +51,7 @@ battle events), 5.6 (conclude), 5.7 (discard).
 
 - [ ] **Task 2 — `Battle` Mongoose model + indexes** (AC: 1, 2)
   - [ ] `src/models/Battle.ts` with the full schema below. Embedded `BonusItem { id: string; value: number }` and `MonsterItem { id: string; name: string; level: number }` subdocuments.
+  - [ ] **`name` is a required, trimmed, non-empty `String`** (`{ type: String, required: true, trim: true }`). This is a deliberate product decision that overrides architecture ADR-13 ("name optional/nullable") — see Dev Notes "Resolved decisions". Do not make `name` nullable.
   - [ ] Schema options: `{ timestamps: true, toJSON: { virtuals: true, transform: (_, ret) => { delete ret._id; delete ret.__v; } } }` so the API exposes `id`, never raw `_id`/`__v`. (Architecture mandates the explicit toJSON transform — note `character-service` relies on the virtual `id` only; follow the architecture here.)
   - [ ] Indexes:
     - `{ roomId: 1, status: 1 }` **unique partial index**: `{ unique: true, partialFilterExpression: { status: 'active' } }` — DB-level guarantee of one active battle per room.
@@ -58,9 +59,9 @@ battle events), 5.6 (conclude), 5.7 (discard).
   - [ ] Model name `'Battle'`, collection resolves to `battles` (camelCase plural). Field names camelCase.
 
 - [ ] **Task 3 — `POST /battles` create endpoint** (AC: 1, 2)
-  - [ ] Validate body: `roomId` required non-empty string → `400 { message }` if missing. `name` optional: accept a non-empty string or treat absent/empty as `null`.
+  - [ ] Validate body: `roomId` required non-empty string → `400 { message }` if missing. **`name` is required**: must be a non-empty string after trim → `400 { message }` if missing/empty. (The backend does NOT generate a default — the presentational layer always supplies one.)
   - [ ] Pre-check: query for an existing `status: 'active'` battle for `roomId`. If found → respond `409 { message: 'A battle is already active for this room' }` and include the existing battle id so the client can route to it (e.g. `{ message, activeBattleId }`). [decision: see Dev Notes "GET/409 response shapes"]
-  - [ ] Create the battle: `{ roomId, name: name ?? null, status: 'active', playerSide: { characterIds: [], bonuses: [] }, monsterSide: { monsters: [], bonuses: [] }, result: null }`. (Empty sides; populating them is Story 5.3.)
+  - [ ] Create the battle: `{ roomId, name: name.trim(), status: 'active', playerSide: { characterIds: [], bonuses: [] }, monsterSide: { monsters: [], bonuses: [] }, result: null }`. (Empty sides; populating them is Story 5.3.)
   - [ ] Wrap `Battle.create` so a Mongo duplicate-key error (`code === 11000`, from the partial unique index — concurrent double-start race) is mapped to the **same `409`** as the pre-check, NOT a `502`.
   - [ ] On success respond `201` with the battle JSON (direct resource, no envelope).
   - [ ] Call the no-op publisher seam (Task 7) inside a `try/catch` that logs but never throws — mirrors character-service's `publisher.publish(...)` placement. Publish payload/transport itself is **Story 5.4**; here it is a no-op.
@@ -90,7 +91,7 @@ battle events), 5.6 (conclude), 5.7 (discard).
   - [ ] Do **not** implement SNS/Redis publishers, dual-topic fan-out, or payload contracts here — that is Story 5.4. The seam exists only so the create handler has a stable `publisher.publish(...)` call site.
 
 - [ ] **Task 8 — Frontend `api/battles.ts`** (AC: 1, 2, 3)
-  - [ ] Use `apiRequest` from `@/api/http` only (never raw fetch/axios). Export TS types: `Battle`, `BonusItem`, `MonsterItem`, `BattleStatus = 'active'|'concluded'|'discarded'`, `BattleResult = 'players_win'|'monster_wins'`, `StartBattlePayload = { roomId: string; name?: string | null }`.
+  - [ ] Use `apiRequest` from `@/api/http` only (never raw fetch/axios). Export TS types: `Battle`, `BonusItem`, `MonsterItem`, `BattleStatus = 'active'|'concluded'|'discarded'`, `BattleResult = 'players_win'|'monster_wins'`, `StartBattlePayload = { roomId: string; name: string }` (`name` is **required** — the api module does not default it).
   - [ ] `startBattle(payload: StartBattlePayload): Promise<Battle>` → `POST /battles` (body the payload). Surface the `409` distinctly (it carries `activeBattleId`) so callers can route to the existing battle — see `ApiError` (`status`, `details`) in `@/api/http`.
   - [ ] `getActiveBattle(roomId: string, signal?: AbortSignal): Promise<Battle | null>` → `GET /battles?roomId=${encodeURIComponent(roomId)}&status=active`; pass `{ signal }`; return `null` when the body is `null`.
 
@@ -104,14 +105,14 @@ battle events), 5.6 (conclude), 5.7 (discard).
 
 - [ ] **Task 11 — Battle View modal route `(battle)/index.tsx`** (AC: 3)
   - [ ] Create `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx`. Read `roomNumber` via `useLocalSearchParams`, resolve `roomId`, call `useRoomBattle(roomId)`.
-  - [ ] Render: loading state; error state; and the loaded battle's identity/status — battle `name` (or a generated default label when `name` is `null`, see Dev Notes) and `status`, plus placeholder Player Side / Monster Side sections (empty in 5.1; populated in 5.3). All styling via `AppTheme` tokens (`@/constants/theme`) — no hardcoded hex/px/font sizes.
+  - [ ] Render: loading state; error state; and the loaded battle's identity/status — battle `name` (always a non-empty string) and `status`, plus placeholder Player Side / Monster Side sections (empty in 5.1; populated in 5.3). All styling via `AppTheme` tokens (`@/constants/theme`) — no hardcoded hex/px/font sizes.
   - [ ] Present as a **modal** so Room View stays in the navigation stack (ADR-4). There is no `_layout.tsx` under `[roomNumber]/` today and existing modals live at `app/munchkin/modal-*.tsx`; add the minimal layout/Stack.Screen config needed for `presentation: 'modal'` on the `(battle)` group and verify back-navigation returns to Room View without refetching room state.
 
 - [ ] **Task 12 — Room View entry point** (AC: 1, 2, 3)
   - [ ] In `frontend/app/munchkin/[roomNumber]/index.tsx`, wire the existing hidden placeholder **Battle** button (currently `style={[styles.battleButton, { opacity: 0 }]}` near the action buttons) to be visible and functional. Keep changes minimal — the rich `ActiveBattleBanner` is Story 5.2.
   - [ ] Use `useRoomBattle(roomId)` to know if an active battle exists. On press:
     - If `battle !== null` → `router.push` to the `(battle)` route for this room (AC2: route to existing).
-    - If `battle === null` → call `useBattleActions().start({ roomId })`; on success `router.push` to the `(battle)` route (AC1, AC3); on `409` (race: another player just started) → refresh `useRoomBattle` and navigate to the now-existing battle instead of surfacing an error.
+    - If `battle === null` → call `useBattleActions().start({ roomId, name: <generated default> })` (5.1 has no name-input UI, so the **presentational layer generates a non-empty default name** here — e.g. a short human-friendly date/time label like `Battle • {locale date-time}`; keep this generator in the screen/component layer, NOT in the api module or backend); on success `router.push` to the `(battle)` route (AC1, AC3); on `409` (race: another player just started) → refresh `useRoomBattle` and navigate to the now-existing battle instead of surfacing an error.
   - [ ] Surface other errors via the screen's existing inline error pattern (see how Room View handles `actionError` for character create).
 
 - [ ] **Task 13 — Tests** (AC: 1, 2, 3)
@@ -148,7 +149,7 @@ The architecture documents (`core-architectural-decisions.md`, `implementation-p
 {
   _id: ObjectId,                         // aliased to id via toJSON; never exposed raw
   roomId: string,                        // required, indexed
-  name: string | null,                   // optional battle label (nullable)
+  name: string,                          // REQUIRED non-empty (product override of ADR-13; see Resolved decisions)
   status: 'active' | 'concluded' | 'discarded',
   playerSide: { characterIds: string[]; bonuses: BonusItem[] },
   monsterSide: { monsters: MonsterItem[]; bonuses: BonusItem[] },
@@ -158,15 +159,15 @@ The architecture documents (`core-architectural-decisions.md`, `implementation-p
 type BonusItem  = { id: string; value: number }   // signed int
 type MonsterItem = { id: string; name: string; level: number }
 ```
-For 5.1, new battles are created with empty `playerSide`/`monsterSide` and `result: null`; `concludedAt: null`. [Source: architecture/core-architectural-decisions.md#battle-schema, #adr-summary ADR-1, ADR-13, ADR-14]
+For 5.1, new battles are created with empty `playerSide`/`monsterSide` and `result: null`; `concludedAt: null`. **`name` is required** (overrides ADR-13 — see Resolved decisions). [Source: architecture/core-architectural-decisions.md#battle-schema, #adr-summary ADR-1, ADR-14]
 
-### GET / 409 response shapes (decisions to lock in)
+### GET / 409 response shapes (locked decisions)
 - `GET /battles?roomId=X&status=active`: `200` + battle JSON when active exists; `200` + literal JSON `null` when none. Never `404` (frontend `apiRequest` throws on non-2xx; `getActiveBattle` must resolve `Battle | null`).
-- `POST /battles` duplicate: `409` with `{ message, activeBattleId }`. The extra `activeBattleId` is an additive, non-breaking field that lets the Room View route the user to the existing battle (AC2) without a second round-trip. Frontend reads it from `ApiError.details`.
+- `POST /battles` duplicate: `409` with `{ message, activeBattleId }`. The extra `activeBattleId` field is **confirmed acceptable by product** — additive and non-breaking; it lets the Room View route the user to the existing battle (AC2) without a second round-trip. Frontend reads it from `ApiError.details`.
 - All error bodies are `{ message: string }` (plus the additive `activeBattleId` on the create-409). No `{ error: {...} }`, no `details` from the generic 502 handler. [Source: architecture/implementation-patterns-consistency-rules.md#error-responses, #http-status-codes]
 
-### Battle "generated default name" (AC1)
-Schema `name` is nullable (ADR-13). Treat the "generated default name" as a **presentational** concern: the server stores the user-provided string or `null`; the Battle View renders a default label (e.g. `"Battle"` or a creation-time-based label) when `name` is `null`. This keeps the contract simple and matches the nullable schema. If the product intent is server-generated persisted default names instead, raise it (see Questions) — but absent that, do not invent a server-side name generator.
+### Battle name handling (AC1 — locked decision, overrides ADR-13)
+**Product decision (confirmed by Ivan):** the backend treats `name` as a **required, non-empty** persisted field — NOT nullable. The backend never generates a default and rejects missing/empty `name` with `400`. The **presentational layer generates the default**: when the user starts a battle without typing a name (5.1 has no name-input UI, so this is always the case for the Room View Battle button), the screen/component layer produces a non-empty default label (e.g. a short locale date-time like `Battle • 16 May, 23:40`) and passes it as `name` into `useBattleActions().start(...)`. Keep the generator in the presentational layer only — do not put defaulting logic in `api/battles.ts`, `useBattleActions`, or the backend. This intentionally diverges from architecture ADR-13 ("name optional/nullable"); the divergence is deliberate and must not be "corrected" back to nullable.
 
 ### Files to create / modify (exact paths)
 
@@ -205,10 +206,10 @@ Story 5.1 is the first in Epic 5, so there is no in-epic predecessor. Patterns e
 - [Source: backend/{package.json,vitest.config.ts,docker-compose.local.yml,nginx/nginx.conf,sam/template.yaml,.env.example}] (wiring touchpoints)
 - [Source: _bmad-output/project-context.md] (all critical implementation rules)
 
-### Open Questions (for product/Ivan — non-blocking; sensible defaults assumed above)
-1. "Generated default name": assumed presentational (server stores `null`, UI shows a default label). Confirm, or specify a server-side persisted default format if required.
-2. AC2 routing on `409`: assumed the create-409 returns `activeBattleId` so the client can navigate to the existing battle. Confirm this additive field is acceptable, or prefer the client re-query `GET ...status=active` then navigate.
-3. Battle View modal presentation: assumed an Expo Router modal group `(battle)` with `presentation: 'modal'` keeping Room View in-stack (ADR-4). Confirm modal vs. full-screen push is the desired UX for 5.1's skeleton.
+### Resolved decisions (confirmed by Ivan, 2026-05-16)
+1. **Generated default name:** Backend treats `name` as a **required** persisted field (NOT nullable — overrides ADR-13). The **presentational layer generates** the default name when the user supplies none, and always sends a non-empty `name`. No server-side or api/hook-level defaulting. (See "Battle name handling".)
+2. **AC2 routing on `409`:** The additive `activeBattleId` field on the create-`409` response **is acceptable** and is the chosen approach — the client reads it from `ApiError.details` and navigates to the existing battle.
+3. **Battle View presentation:** **Modal confirmed.** Use an Expo Router modal group `(battle)` with `presentation: 'modal'`, keeping Room View in the navigation stack (ADR-4).
 
 ## Dev Agent Record
 
