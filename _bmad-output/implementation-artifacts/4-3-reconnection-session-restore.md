@@ -1,6 +1,6 @@
 # Story 4.3: Reconnection & Session Restore
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -32,36 +32,41 @@ so that I can continue the session without losing state or having to rejoin manu
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Implement `useReconnectOnForeground` hook that listens to `AppState` changes and triggers WebSocket reconnect when app returns to `active` from `background`/`inactive` (AC: 2)
-  - [ ] Use React Native `AppState` from `react-native`
-  - [ ] On transition to `active` from a non-active state, call WebSocket `connect()` if not already connected
-  - [ ] Do NOT persist any room ID to storage — reconnect only if the hook already has `roomId` in memory
+- [x] Task 1: Implement `useReconnectOnForeground` hook that listens to `AppState` changes and triggers WebSocket reconnect when app returns to `active` from `background`/`inactive` (AC: 2)
+  - [x] Use React Native `AppState` from `react-native`
+  - [x] On transition to `active` from a non-active state, call WebSocket `connect()` if not already connected
+  - [x] Do NOT persist any room ID to storage — reconnect only if the hook already has `roomId` in memory
 
-- [ ] Task 2: Integrate reconnect-on-foreground into the Room View and `useRoomWebSocket` (AC: 1, 2)
-  - [ ] Extend `useRoomWebSocket` to accept and expose a `reconnect()` callback that can be called externally
-  - [ ] Call `useReconnectOnForeground` from `frontend/app/munchkin/[roomNumber]/index.tsx`, passing `roomId`, `userId`, and the `reconnect` callback
-  - [ ] On reconnect, refresh room state via existing `useRoomCharacters` refresh mechanism
+- [x] Task 2: Integrate reconnect-on-foreground into the Room View and `useRoomWebSocket` (AC: 1, 2)
+  - [x] Extend `useRoomWebSocket` to accept and expose a `reconnect()` callback that can be called externally
+  - [x] Call `useReconnectOnForeground` from `frontend/app/munchkin/[roomNumber]/index.tsx`, passing `roomId`, `userId`, and the `reconnect` callback
+  - [x] On reconnect, refresh room state via existing `useRoomCharacters` refresh mechanism
 
-- [ ] Task 3: Implement 8-second timeout and "Connection lost · Retry" UI (AC: 4)
-  - [ ] In `useRoomWebSocket`, track elapsed time since last disconnect using `useRef` and `setTimeout`
-  - [ ] After 8 seconds with no successful reconnect, expose `isTimedOut: boolean` in hook return value
-  - [ ] In `frontend/app/munchkin/[roomNumber]/index.tsx`, render a "Connection lost · Retry" `Pressable` when `isTimedOut` is true
-  - [ ] Tapping the button calls `reconnect()` and resets the timeout counter
-  - [ ] Style the button using `AppTheme` tokens (`surfaceSubtle` background, `textMuted` text) consistent with the `ReconnectingBanner` planned in Story 4.4
+- [x] Task 3: Implement 8-second timeout and "Connection lost · Retry" UI (AC: 4)
+  - [x] In `useRoomWebSocket`, track elapsed time since last disconnect using `useRef` and `setTimeout`
+  - [x] After 8 seconds with no successful reconnect, expose `isTimedOut: boolean` in hook return value
+  - [x] In `frontend/app/munchkin/[roomNumber]/index.tsx`, render a "Connection lost · Retry" `Pressable` when `isTimedOut` is true
+  - [x] Tapping the button calls `reconnect()` and resets the timeout counter
+  - [x] Style the button using `AppTheme` tokens (`surfaceSubtle` background, `textMuted` text) consistent with the `ReconnectingBanner` planned in Story 4.4
 
-- [ ] Task 4: Confirm cold-start / crash scenario does NOT auto-reconnect (AC: 3)
-  - [ ] Verify that when `roomId` is not in memory (fresh app start), no reconnection or session restore is attempted
-  - [ ] No `AsyncStorage` or persistent storage writes for room session in this story
+- [x] Task 4: Confirm cold-start / crash scenario does NOT auto-reconnect (AC: 3)
+  - [x] Verify that when `roomId` is not in memory (fresh app start), no reconnection or session restore is attempted
+  - [x] No `AsyncStorage` or persistent storage writes for room session in this story
 
-- [ ] Task 5: Tests (AC: 1, 2, 3, 4)
-  - [ ] Add unit tests for `useReconnectOnForeground` covering: foreground transition triggers reconnect, background transition does not, no reconnect when already connected
-  - [ ] Add unit tests for the 8-second timeout behavior in `useRoomWebSocket`: `isTimedOut` becomes `true` after 8s without reconnect, resets on successful reconnect
-  - [ ] Add component test for "Connection lost · Retry" button appearance and tap behavior in room view
+- [x] Task 5: Tests (AC: 1, 2, 3, 4)
+  - [x] Add unit tests for `useReconnectOnForeground` covering: foreground transition triggers reconnect, background transition does not, no reconnect when already connected
+  - [x] Add unit tests for the 8-second timeout behavior in `useRoomWebSocket`: `isTimedOut` becomes `true` after 8s without reconnect, resets on successful reconnect
+  - [x] Add component test for "Connection lost · Retry" button appearance and tap behavior in room view
 
-- [ ] Task 6: Run frontend validation after implementation
-  - [ ] `cd frontend && npm run test:unit -- useRoomWebSocket.test.ts useReconnectOnForeground.test.ts`
-  - [ ] `cd frontend && npm run lint`
-  - [ ] `cd frontend && npm run tsc`
+- [x] Task 6: Run frontend validation after implementation
+  - [x] `cd frontend && npm run test:unit -- useRoomWebSocket.test.ts useReconnectOnForeground.test.ts`
+  - [x] `cd frontend && npm run lint`
+  - [x] `cd frontend && npm run tsc`
+
+### Review Findings
+
+- [x] [Review][Patch] Auto-backoff reconnect does not refresh missed room state [frontend/hooks/useCharacters.ts:113]
+- [x] [Review][Patch] Foreground reconnect is missed when the hook enables after backgrounding [frontend/hooks/useReconnectOnForeground.ts:5]
 
 ## Dev Notes
 
@@ -161,10 +166,36 @@ frontend/app/munchkin/[roomNumber]/index.tsx     ADD useReconnectOnForeground ca
 
 ### Agent Model Used
 
-claude-sonnet-4-5-latest
+GPT-5 Codex
 
 ### Debug Log References
 
+- 2026-05-07: `npm run test:unit -- useRoomWebSocket.test.ts useReconnectOnForeground.test.ts` passed.
+- 2026-05-07: `npm run test:room-route -- '[roomNumber].test.tsx'` passed.
+- 2026-05-07: `npm run test` passed: unit 80/80 and room route 21/21.
+- 2026-05-07: `npm run lint` passed with one pre-existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
+- 2026-05-07: `npm run tsc` passed.
+
 ### Completion Notes List
 
+- Added `useReconnectOnForeground` using React Native `AppState`; foreground reconnect is enabled only when room/user IDs are in memory and the socket is currently disconnected.
+- Extended `RoomWebSocketClient` and `useRoomWebSocket` with lifecycle callbacks, a public `reconnect()`, and an 8-second disconnect timeout surfaced as `isTimedOut`.
+- Routed reconnect state through `useRoomCharacters` so Room View keeps one WebSocket connection, refreshes characters after reconnect, and renders the retry Pressable without adding persistent room storage.
+- Added a narrow current-user create cooldown update to prevent duplicate auto-create after manual replacement creation and stale character refetches.
+
 ### File List
+
+- frontend/api/webSocket.ts
+- frontend/app/munchkin/[roomNumber]/index.tsx
+- frontend/__tests__/app/munchkin/[roomNumber].test.tsx
+- frontend/hooks/useCharacters.ts
+- frontend/hooks/useReconnectOnForeground.ts
+- frontend/hooks/useReconnectOnForeground.test.ts
+- frontend/hooks/useRoomWebSocket.ts
+- frontend/hooks/useRoomWebSocket.test.ts
+- _bmad-output/implementation-artifacts/4-3-reconnection-session-restore.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-05-07: Implemented Story 4.3 reconnection/session restore and moved story to review.

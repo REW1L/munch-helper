@@ -16,6 +16,7 @@ import type { UserProfileInterface } from '@/hooks/useUser';
 const mockSubscribe = vi.fn<(listener: (event: { event: string; event_body: { characterId: string } }) => void) => () => void>(
   () => () => undefined
 );
+let latestRoomWebSocketOptions: { onOpen?: () => void } | undefined;
 
 vi.mock('@/api/characters', () => ({
   createCharacter: vi.fn(),
@@ -25,9 +26,20 @@ vi.mock('@/api/characters', () => ({
 }));
 
 vi.mock('@/hooks/useRoomWebSocket', () => ({
-  useRoomWebSocket: () => ({
+  useRoomWebSocket: (
+    _roomId: string | undefined,
+    _userId: string | undefined,
+    _enabled: boolean,
+    options?: { onOpen?: () => void }
+  ) => ({
     isConnected: true,
+    isTimedOut: false,
+    reconnect: vi.fn(),
     subscribe: mockSubscribe,
+    ...(() => {
+      latestRoomWebSocketOptions = options;
+      return {};
+    })(),
   }),
 }));
 
@@ -64,6 +76,7 @@ describe('useRoomCharacters', () => {
     mockUpdateCharacter.mockReset();
     mockSubscribe.mockReset();
     mockSubscribe.mockImplementation(() => () => undefined);
+    latestRoomWebSocketOptions = undefined;
   });
 
   afterEach(() => {
@@ -229,6 +242,50 @@ describe('useRoomCharacters', () => {
     });
 
     expect(mockDeleteCharacter).toHaveBeenCalledWith('char-other');
+  });
+
+  it('refreshes room characters when the WebSocket opens after reconnect', async () => {
+    const initialCharacter = {
+      id: 'char-self',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Hero',
+      avatar: 1,
+      color: '#AA5500',
+      level: 2,
+      power: 3,
+      race: ['Human'],
+      gender: ['male'],
+      class: ['Warrior'],
+    };
+
+    const reconnectedCharacter = {
+      ...initialCharacter,
+      level: 3,
+    };
+
+    mockGetCharactersByRoom
+      .mockResolvedValueOnce([initialCharacter])
+      .mockResolvedValue([reconnectedCharacter]);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters[0]?.level).toBe(2);
+    });
+
+    act(() => {
+      latestRoomWebSocketOptions?.onOpen?.();
+    });
+
+    await waitFor(() => {
+      expect(result.current.characters[0]?.level).toBe(3);
+    });
   });
 
   it('does not auto-recreate the current user character after an intentional self-delete', async () => {

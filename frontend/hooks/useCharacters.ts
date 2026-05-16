@@ -18,7 +18,10 @@ interface UseRoomCharactersResult {
   isLoading: boolean;
   errorMessage: string | null;
   isCreateBlocked: boolean;
+  isConnected: boolean;
+  isTimedOut: boolean;
   refresh: () => Promise<void>;
+  reconnect: () => Promise<void>;
   create: (payload: Omit<CharacterWritePayload, 'roomId'>) => Promise<Character>;
   update: (characterId: string, payload: CharacterUpdatePayload) => Promise<Character>;
   remove: (characterId: string) => Promise<void>;
@@ -98,6 +101,15 @@ function consumeSuppressibleEcho(markers: Map<string, PendingLocalUpdateMarker>,
 
 export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
   const queryClient = useQueryClient();
+  const charactersQueryKey = useMemo(() => getCharactersQueryKey(roomId), [roomId]);
+  const webSocketOptions = useMemo(
+    () => ({
+      onOpen: () => {
+        void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
+      },
+    }),
+    [charactersQueryKey, queryClient]
+  );
   const isEnsuringCurrentCharacterRef = useRef(false);
   const lastEnsureAttemptAtRef = useRef(0);
   const autoCreateSuppressedForCurrentUserRef = useRef(false);
@@ -107,14 +119,15 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const [isCreateBlocked, setIsCreateBlocked] = useState(false);
 
   // Set up WebSocket connection for real-time updates
-  const { isConnected, subscribe } = useRoomWebSocket(
+  const { isConnected, isTimedOut, reconnect, subscribe } = useRoomWebSocket(
     roomId,
     userProfile.id,
-    Boolean(roomId && userProfile.id)
+    Boolean(roomId && userProfile.id),
+    webSocketOptions
   );
 
   const charactersQuery = useQuery({
-    queryKey: getCharactersQueryKey(roomId),
+    queryKey: charactersQueryKey,
     queryFn: async ({ signal }) => {
       if (!roomId) {
         return [] as Character[];
@@ -134,7 +147,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       return createCharacter({ ...payload, roomId });
     },
     onMutate: async (payload) => {
-      const queryKey = getCharactersQueryKey(roomId);
+      const queryKey = charactersQueryKey;
       await queryClient.cancelQueries({ queryKey });
       const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
 
@@ -158,21 +171,22 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     },
     onError: (_error, _payload, context) => {
       if (context) {
-        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+        queryClient.setQueryData(charactersQueryKey, context.previousCharacters);
       }
     },
     onSuccess: (createdCharacter) => {
       if (createdCharacter.userId === userProfile.id) {
         autoCreateSuppressedForCurrentUserRef.current = false;
+        lastEnsureAttemptAtRef.current = Date.now();
       }
 
-      queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
+      queryClient.setQueryData<Character[]>(charactersQueryKey, (currentCharacters = []) => {
         const nonOptimisticCharacters = currentCharacters.filter((character) => !character.id.startsWith('temp-'));
         return [...nonOptimisticCharacters, createdCharacter];
       });
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
     },
   });
 
@@ -182,7 +196,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     },
     onMutate: async ({ characterId, payload }) => {
       recordPendingLocalUpdate(recentLocalUpdateByCharacterRef.current, characterId);
-      const queryKey = getCharactersQueryKey(roomId);
+      const queryKey = charactersQueryKey;
       await queryClient.cancelQueries({ queryKey });
       const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
 
@@ -210,17 +224,17 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     onError: (_error, variables, context) => {
       settlePendingLocalUpdate(recentLocalUpdateByCharacterRef.current, variables.characterId);
       if (context) {
-        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+        queryClient.setQueryData(charactersQueryKey, context.previousCharacters);
       }
     },
     onSuccess: (updatedCharacter) => {
       settlePendingLocalUpdate(recentLocalUpdateByCharacterRef.current, updatedCharacter.id);
-      queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) =>
+      queryClient.setQueryData<Character[]>(charactersQueryKey, (currentCharacters = []) =>
         currentCharacters.map((character) => (character.id === updatedCharacter.id ? updatedCharacter : character))
       );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
     },
   });
 
@@ -229,7 +243,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       await deleteCharacter(characterId);
     },
     onMutate: async ({ characterId }) => {
-      const queryKey = getCharactersQueryKey(roomId);
+      const queryKey = charactersQueryKey;
       await queryClient.cancelQueries({ queryKey });
       const previousCharacters = queryClient.getQueryData<Character[]>(queryKey) ?? [];
       const deletedCharacter = previousCharacters.find((character) => character.id === characterId);
@@ -253,7 +267,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
       if (context?.deletedCharacter) {
         const deletedCharacter = context.deletedCharacter;
-        queryClient.setQueryData<Character[]>(getCharactersQueryKey(roomId), (currentCharacters = []) => {
+        queryClient.setQueryData<Character[]>(charactersQueryKey, (currentCharacters = []) => {
           const alreadyPresent = currentCharacters.some((character) => character.id === deletedCharacter.id);
 
           if (alreadyPresent) {
@@ -274,7 +288,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       }
 
       if (context?.previousCharacters) {
-        queryClient.setQueryData(getCharactersQueryKey(roomId), context.previousCharacters);
+        queryClient.setQueryData(charactersQueryKey, context.previousCharacters);
       }
     },
     onSettled: (_data, _error, _variables, context) => {
@@ -288,7 +302,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         setIsCreateBlocked(false);
       }
 
-      void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
     },
   });
 
@@ -302,7 +316,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       switch (event.event) {
         case 'character_created': {
           // Refetch all characters when a new one is created
-          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
           break;
         }
         case 'character_updated': {
@@ -313,7 +327,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
           if (isLikelyOwnUpdate) {
             consumeSuppressibleEcho(recentLocalUpdateByCharacterRef.current, updatedCharacterId);
-            void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+            void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
             break;
           }
 
@@ -323,19 +337,19 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
           }));
 
           // Refetch all characters when one is updated
-          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
           break;
         }
         case 'character_deleted': {
           // Refetch all characters when one is deleted
-          void queryClient.invalidateQueries({ queryKey: getCharactersQueryKey(roomId) });
+          void queryClient.invalidateQueries({ queryKey: charactersQueryKey });
           break;
         }
       }
     });
 
     return unsubscribe;
-  }, [isConnected, queryClient, roomId, subscribe, userProfile.id]);
+  }, [charactersQueryKey, isConnected, queryClient, subscribe, userProfile.id]);
 
   useEffect(() => {
     setRealtimeUpdateSignals({});
@@ -437,11 +451,14 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       isLoading,
       errorMessage,
       isCreateBlocked,
+      isConnected,
+      isTimedOut,
       refresh,
+      reconnect,
       create,
       update,
       remove,
     }),
-    [characters, create, errorMessage, isCreateBlocked, isLoading, realtimeUpdateSignals, refresh, remove, update]
+    [characters, create, errorMessage, isConnected, isCreateBlocked, isLoading, isTimedOut, realtimeUpdateSignals, reconnect, refresh, remove, update]
   );
 }

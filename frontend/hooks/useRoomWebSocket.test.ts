@@ -1,18 +1,26 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 type MockClientInstance = {
   connect: ReturnType<typeof vi.fn>;
+  reconnect: ReturnType<typeof vi.fn>;
   disconnect: ReturnType<typeof vi.fn>;
   subscribe: ReturnType<typeof vi.fn>;
   isConnected: ReturnType<typeof vi.fn>;
   roomId: string;
   userId: string;
-  options: unknown;
+  options?: MockWebSocketOptions;
 };
 
 const mockClientInstances: MockClientInstance[] = [];
 let nextConnectError: Error | null = null;
+
+type MockWebSocketOptions = {
+  onOpen?: () => void;
+  onClose?: () => void;
+  reconnectDelay?: number;
+  maxReconnectAttempts?: number;
+};
 
 vi.mock('@/api/webSocket', () => {
   return {
@@ -26,13 +34,26 @@ vi.mock('@/api/webSocket', () => {
 
         this.isConnected.mockReturnValue(true);
       });
+      reconnect = vi.fn(async () => {
+        if (nextConnectError) {
+          const error = nextConnectError;
+          nextConnectError = null;
+          throw error;
+        }
+
+        this.isConnected.mockReturnValue(true);
+        this.options?.onOpen?.();
+      });
       disconnect = vi.fn();
       subscribe = vi.fn((listener) => () => undefined);
       isConnected = vi.fn(() => false);
+      options?: MockWebSocketOptions;
 
-      constructor(roomId: string, userId: string, options?: unknown) {
+      constructor(roomId: string, userId: string, options?: MockWebSocketOptions) {
+        this.options = options;
         mockClientInstances.push({
           connect: this.connect,
+          reconnect: this.reconnect,
           disconnect: this.disconnect,
           subscribe: this.subscribe,
           isConnected: this.isConnected,
@@ -60,6 +81,7 @@ describe('useRoomWebSocket', () => {
     expect(result.current.isConnected).toBe(false);
     expect(result.current.isConnecting).toBe(false);
     expect(result.current.error).toBeNull();
+    expect(result.current.isTimedOut).toBe(false);
   });
 
   it('should return subscribe function', () => {
@@ -78,11 +100,9 @@ describe('useRoomWebSocket', () => {
     });
 
     expect(mockClientInstances.length).toBeGreaterThanOrEqual(1);
-    expect(mockClientInstances.at(-1)).toMatchObject({
-      roomId: 'room-1',
-      userId: 'user-1',
-      options,
-    });
+    expect(mockClientInstances.at(-1)?.roomId).toBe('room-1');
+    expect(mockClientInstances.at(-1)?.userId).toBe('user-1');
+    expect(mockClientInstances.at(-1)?.options).toMatchObject(options);
     expect(mockClientInstances.at(-1)?.connect).toHaveBeenCalledTimes(1);
   });
 
@@ -162,5 +182,59 @@ describe('useRoomWebSocket', () => {
     unmount();
 
     expect(mockClientInstances[1]?.disconnect).toHaveBeenCalled();
+  });
+
+  it('marks reconnect as timed out after 8 seconds without a successful reconnect', async () => {
+    const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    vi.useFakeTimers();
+    act(() => {
+      mockClientInstances[0]?.isConnected.mockReturnValue(false);
+      mockClientInstances[0]?.options?.onClose?.();
+    });
+
+    expect(result.current.isTimedOut).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(7999);
+    });
+    expect(result.current.isTimedOut).toBe(false);
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.isTimedOut).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('resets timeout state on manual reconnect and successful open', async () => {
+    const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    vi.useFakeTimers();
+    act(() => {
+      mockClientInstances[0]?.isConnected.mockReturnValue(false);
+      mockClientInstances[0]?.options?.onClose?.();
+      vi.advanceTimersByTime(8000);
+    });
+    expect(result.current.isTimedOut).toBe(true);
+
+    await act(async () => {
+      await result.current.reconnect();
+    });
+
+    expect(mockClientInstances[0]?.reconnect).toHaveBeenCalledTimes(1);
+    expect(result.current.isTimedOut).toBe(false);
+    expect(result.current.isConnected).toBe(true);
+
+    vi.useRealTimers();
   });
 });
