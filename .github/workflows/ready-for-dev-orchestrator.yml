@@ -12,9 +12,6 @@ on:
         required: false
         default: "claude,codex,copilot,kiro-cli"
         type: string
-  issue_comment:
-    types:
-      - created
 
 permissions:
   contents: write
