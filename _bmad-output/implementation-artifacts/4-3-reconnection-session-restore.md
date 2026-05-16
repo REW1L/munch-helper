@@ -1,6 +1,6 @@
 # Story 4.3: Reconnection & Session Restore
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -62,6 +62,11 @@ so that I can continue the session without losing state or having to rejoin manu
   - [x] `cd frontend && npm run test:unit -- useRoomWebSocket.test.ts useReconnectOnForeground.test.ts`
   - [x] `cd frontend && npm run lint`
   - [x] `cd frontend && npm run tsc`
+
+### Review Findings
+
+- [x] [Review][Patch] Auto-backoff reconnect does not refresh missed room state [frontend/hooks/useCharacters.ts:113]
+- [x] [Review][Patch] Foreground reconnect is missed when the hook enables after backgrounding [frontend/hooks/useReconnectOnForeground.ts:5]
 
 ## Dev Notes
 

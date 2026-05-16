@@ -64,7 +64,22 @@ describe('useReconnectOnForeground', () => {
 
     renderHook(() => useReconnectOnForeground(false, onForeground));
 
-    expect(AppState.addEventListener).not.toHaveBeenCalled();
-    expect(appStateMock.listener).toBeNull();
+    expect(AppState.addEventListener).toHaveBeenCalledTimes(1);
+    appStateMock.listener?.('background');
+    appStateMock.listener?.('active');
+    expect(onForeground).not.toHaveBeenCalled();
+  });
+
+  it('tracks background transitions while disabled so later foreground reconnect is not missed', () => {
+    const onForeground = vi.fn();
+    const { rerender } = renderHook(({ enabled }) => useReconnectOnForeground(enabled, onForeground), {
+      initialProps: { enabled: false },
+    });
+
+    appStateMock.listener?.('background');
+    rerender({ enabled: true });
+    appStateMock.listener?.('active');
+
+    expect(onForeground).toHaveBeenCalledTimes(1);
   });
 });

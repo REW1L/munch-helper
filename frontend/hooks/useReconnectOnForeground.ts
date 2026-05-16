@@ -5,12 +5,8 @@ export function useReconnectOnForeground(enabled: boolean, onForeground: () => v
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (appStateRef.current !== 'active' && nextState === 'active') {
+      if (enabled && appStateRef.current !== 'active' && nextState === 'active') {
         onForeground();
       }
 
