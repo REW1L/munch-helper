@@ -97,6 +97,94 @@ describe('useRoomCharacters', () => {
     queryClient.clear();
   });
 
+  it('loads the full current room state on mount before exposing an empty completed state', async () => {
+    const existingCharacters: Character[] = [
+      {
+        id: 'char-other-1',
+        roomId,
+        userId: 'user-2',
+        nickname: 'Late Room Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        race: ['Elf'],
+        gender: ['female'],
+        class: ['Thief'],
+      },
+      {
+        id: 'char-other-2',
+        roomId,
+        userId: 'user-3',
+        nickname: 'Late Room Mage',
+        avatar: 3,
+        color: '#BB44DD',
+        level: 5,
+        power: 6,
+        race: ['Human'],
+        gender: ['female'],
+        class: ['Wizard'],
+      },
+    ];
+
+    let resolveInitialFetch!: (characters: Character[]) => void;
+    mockGetCharactersByRoom.mockImplementationOnce(
+      () =>
+        new Promise<Character[]>((resolve) => {
+          resolveInitialFetch = resolve;
+        })
+    );
+    mockGetCharactersByRoom.mockResolvedValue(existingCharacters);
+    mockCreateCharacter.mockResolvedValue({
+      id: 'char-current',
+      roomId,
+      userId: userProfile.id,
+      nickname: userProfile.nickname,
+      avatar: userProfile.avatar,
+      color: '#9966FF',
+      level: 1,
+      power: 0,
+      race: ['Human'],
+      gender: ['male'],
+      class: [],
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    expect(result.current.characters).toEqual([]);
+    expect(result.current.isLoading).toBe(true);
+    expect(mockCreateCharacter).not.toHaveBeenCalled();
+    expect(mockGetCharactersByRoom).toHaveBeenCalledTimes(1);
+    expect(mockGetCharactersByRoom).toHaveBeenCalledWith(roomId, expect.any(AbortSignal));
+
+    await act(async () => {
+      resolveInitialFetch(existingCharacters);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.characters.map((character) => character.nickname)).toEqual([
+        'Late Room Rogue',
+        'Late Room Mage',
+      ]);
+    });
+
+    await waitFor(() => {
+      expect(mockCreateCharacter).toHaveBeenCalledWith(
+        expect.objectContaining({
+          roomId,
+          userId: userProfile.id,
+          nickname: userProfile.nickname,
+        })
+      );
+    });
+  });
+
   it('creates and updates room characters while keeping query state in sync', async () => {
     const initialCharacter = {
       id: 'char-initial',

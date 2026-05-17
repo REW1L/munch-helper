@@ -46,6 +46,10 @@ function formatCommand(argv) {
   return argv.map(shellQuote).join(" ");
 }
 
+function sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function ghCommand(args, { dryRun = false, stdin = null } = {}) {
   if (dryRun) {
     return "";
@@ -755,7 +759,7 @@ function loadExistingIssues(config, dryRun) {
   return parseJsonOutput(output, []);
 }
 
-function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus = null) {
+function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus = null, ghExec = ghCommand) {
   if (dryRun) {
     return [];
   }
@@ -773,7 +777,7 @@ function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus
     "--format",
     "json",
   ];
-  const output = ghCommand(args, { dryRun });
+  const output = ghExec(args, { dryRun });
   const parsed = parseJsonOutput(output, { items: [] });
   return parsed.items ?? [];
 }
@@ -860,8 +864,15 @@ function ensureIssue(config, issues, operation, dryRun, commandPlan) {
   return issue;
 }
 
-function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
-  let projectItems = loadProjectItemsForStory(config, operation, dryRun);
+export function ensureProjectItem(
+  config,
+  issue,
+  operation,
+  dryRun,
+  commandPlan,
+  { ghExec = ghCommand, sleepFn = sleepMs } = {}
+) {
+  let projectItems = loadProjectItemsForStory(config, operation, dryRun, null, ghExec);
   let projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
 
   if (!projectItem) {
@@ -875,9 +886,20 @@ function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
       issue.url,
     ];
     recordCommand(commandPlan, ["gh", ...addArgs]);
-    ghCommand(addArgs, { dryRun });
-    projectItems = loadProjectItemsForStory(config, operation, dryRun);
-    projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
+    ghExec(addArgs, { dryRun });
+
+    const maxRetries = 5;
+    const baseDelayMs = 2000;
+    for (let attempt = 1; attempt <= maxRetries && !projectItem; attempt++) {
+      sleepFn(baseDelayMs * attempt);
+      projectItems = loadProjectItemsForStory(config, operation, dryRun, null, ghExec);
+      projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
+      if (!projectItem) {
+        logInfo(
+          `Attempt ${attempt}/${maxRetries}: project item not yet visible for ${operation.fullTitle}, retrying…`
+        );
+      }
+    }
   }
 
   if (dryRun && !projectItem) {
@@ -957,6 +979,64 @@ export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPl
   } catch (error) {
     logInfo(
       `Warning: failed to post ready-for-dev marker on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+export function buildIssueBodyWithSources(specContent, specFile) {
+  return [
+    specContent.trimEnd(),
+    "",
+    "## Source artifacts",
+    `- \`${specFile}\``,
+  ].join("\n");
+}
+
+export function updateIssueBodyWithSpecContent(
+  config,
+  issue,
+  specFile,
+  dryRun,
+  commandPlan,
+  { ghExec = ghCommand, readFileFn = (p) => fs.readFileSync(p, "utf8") } = {}
+) {
+  const issueNumber = issue.number;
+
+  const editArgs = [
+    "issue",
+    "edit",
+    Number.isFinite(issueNumber) ? String(issueNumber) : "<n>",
+    "--repo",
+    config.repo,
+    "--body-file",
+    "-",
+  ];
+
+  if (dryRun) {
+    recordCommand(commandPlan, ["gh", ...editArgs]);
+    return;
+  }
+
+  if (!Number.isFinite(issueNumber)) {
+    logInfo("Warning: skipping issue body update — issue number is not a valid finite number.");
+    return;
+  }
+
+  let specContent;
+  try {
+    specContent = readFileFn(specFile);
+  } catch {
+    logInfo(`Warning: could not read spec file ${specFile} — skipping issue body update.`);
+    return;
+  }
+
+  try {
+    recordCommand(commandPlan, ["gh", ...editArgs]);
+    ghExec(editArgs, { stdin: buildIssueBodyWithSources(specContent, specFile) });
+    logInfo(`Updated issue #${issueNumber} body with spec content from ${specFile}.`);
+  } catch (error) {
+    logInfo(
+      `Warning: failed to update issue #${issueNumber} body: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -1069,6 +1149,7 @@ function main() {
       );
 
       if (operation.targetStatus === "ready-for-dev" && operation.sourcePaths.length > 0) {
+        updateIssueBodyWithSpecContent(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
         postReadyForDevMarker(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
       }
     }

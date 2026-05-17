@@ -173,6 +173,7 @@ GPT-5 Codex
 - 2026-05-17: Added `AccessibilityInfo` reduced-motion handling to `QuickEditSheet.tsx`; reduced mode snaps target values and default/unknown mode preserves animated timings.
 - 2026-05-17: Validation passed: `npm run test:unit -- QuickEditSheet.test.tsx RoomCharacterCard.test.tsx`, `npm run lint`, `npm run tsc`, and `npm test`.
 - 2026-05-17: Code review found one patch item; added reduced-motion pan-responder snap-back and dismiss coverage, then reran validation successfully.
+- 2026-05-17: Merged latest `main` updates into the story branch; revalidated Story 4.6 scope and found no additional implementation required.
 
 ### Completion Notes List
 
@@ -181,6 +182,7 @@ GPT-5 Codex
 - Preserved the existing open/close/full-edit/pan-responder state machine while skipping only the `Animated.parallel`/`Animated.timing` tween when reduced motion is enabled.
 - Added QuickEditSheet tests for reduced-motion snap open/close, default animated timings, and reduced-motion full-edit sequencing.
 - Resolved review finding by covering reduced-motion pan-responder snap-back and drag-dismiss behavior without animation.
+- After merging latest `main`, Story 4.6 remains complete: `QuickEditSheet` reduced-motion handling, realtime card reduced-motion coverage, and pan-responder coverage still satisfy all acceptance criteria.
 - `npm run lint` passes with one unrelated existing warning in `frontend/app/munchkin/modal-change-caracter.tsx` about `initialCharacter` in a `useEffect` dependency array.
 
 ### File List
@@ -195,3 +197,4 @@ GPT-5 Codex
 
 - 2026-05-17: Implemented reduced-motion support for QuickEditSheet and added runtime preference-change regression coverage for realtime card flash.
 - 2026-05-17: Addressed code review finding by adding reduced-motion pan-responder settle-path tests.
+- 2026-05-17: Merged latest main and confirmed no additional Story 4.6 implementation was needed.
