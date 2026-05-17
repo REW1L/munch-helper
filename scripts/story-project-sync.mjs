@@ -46,6 +46,10 @@ function formatCommand(argv) {
   return argv.map(shellQuote).join(" ");
 }
 
+function sleepMs(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function ghCommand(args, { dryRun = false, stdin = null } = {}) {
   if (dryRun) {
     return "";
@@ -876,8 +880,19 @@ function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
     ];
     recordCommand(commandPlan, ["gh", ...addArgs]);
     ghCommand(addArgs, { dryRun });
-    projectItems = loadProjectItemsForStory(config, operation, dryRun);
-    projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
+
+    const maxRetries = 5;
+    const baseDelayMs = 2000;
+    for (let attempt = 1; attempt <= maxRetries && !projectItem; attempt++) {
+      sleepMs(baseDelayMs * attempt);
+      projectItems = loadProjectItemsForStory(config, operation, dryRun);
+      projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
+      if (!projectItem) {
+        logInfo(
+          `Attempt ${attempt}/${maxRetries}: project item not yet visible for ${operation.fullTitle}, retrying…`
+        );
+      }
+    }
   }
 
   if (dryRun && !projectItem) {
