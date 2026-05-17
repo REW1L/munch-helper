@@ -38,6 +38,12 @@ so that I'm aware of the connection state without being blocked from viewing the
 
 ## Tasks / Subtasks
 
+- [x] Review Findings
+  - [x] [Review][Patch] Stale reconnecting state can leak onto a new room or disabled initial connect [frontend/hooks/useRoomWebSocket.ts:208]
+  - [x] [Review][Patch] Accessibility announcement is driven by `visible` changes instead of banner mount lifecycle [frontend/components/munchkin/ReconnectingBanner.tsx:10]
+  - [x] [Review][Patch] `useRoomCharacters` does not test forwarding `isReconnecting` [frontend/hooks/useCharacters.test.ts:34]
+  - [x] [Review][Defer] Stale manual reconnect can update the wrong room/state [frontend/hooks/useRoomWebSocket.ts:167] — deferred, pre-existing
+
 - [x] Task 1: Add `isReconnecting` to `useRoomWebSocket` so consumers can distinguish "initial connect in flight" from "previously connected, now reconnecting" (AC: 1, 5)
   - [x] In `frontend/hooks/useRoomWebSocket.ts`, add a `hasEverConnectedRef = useRef(false)` and set `hasEverConnectedRef.current = true` inside the `onOpen` handler (both the `client` `onOpen` callback wrapper and the `connectAsync` success branch — both paths flip `isConnected` to `true`).
   - [x] Reset `hasEverConnectedRef.current = false` in the cleanup branch where `enabled || !roomId || !userId` is false, and when the connection key changes (both points already disconnect the previous client). This prevents stale "reconnecting" state when switching rooms.
@@ -291,6 +297,7 @@ GPT-5 Codex
 - 2026-05-17: Added `ReconnectingBanner` component and tests for visibility, token styles, and imperative accessibility announcement.
 - 2026-05-17: Validation passed: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`. Lint reports one pre-existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
 - 2026-05-17: Web preview manual verification attempted on ports 19006, 19007, 19008, and the project default 8081; Expo did not open a listening port in this environment, including offline/localhost retries, so the manual preview subtask remains unchecked.
+- 2026-05-17: Code review patch findings resolved: reconnecting state is keyed to the active connection, banner announcement is mount-driven, and `useRoomCharacters` forwarding coverage was added. Validation re-run: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`.
 
 ### Completion Notes List
 
@@ -299,6 +306,7 @@ GPT-5 Codex
 - Added a low-prominence, token-styled `ReconnectingBanner` that announces "Reconnecting…" imperatively and avoids `accessibilityLiveRegion`.
 - Rendered the banner above the existing Retry indicator; route tests confirm the banner and Retry button stay mutually exclusive across reconnecting, timed-out, and connected states.
 - Automated validation is green; manual simulator/web-preview verification is blocked by local Expo preview startup in this environment.
+- Resolved all code review patch findings; deferred one pre-existing manual reconnect race to `_bmad-output/implementation-artifacts/deferred-work.md`.
 
 ### File List
 
@@ -315,3 +323,4 @@ GPT-5 Codex
 ### Change Log
 
 - 2026-05-17: Implemented reconnecting banner state, UI, route integration, and automated tests. Story remains in-progress pending manual simulator/web-preview verification.
+- 2026-05-17: Addressed code review patch findings and re-ran frontend validation. Story remains in-progress pending manual simulator/web-preview verification.

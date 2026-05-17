@@ -31,6 +31,7 @@ export function useRoomWebSocket(
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   const hasEverConnectedRef = useRef(false);
+  const lastConnectedKeyRef = useRef<string>('');
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
@@ -75,6 +76,7 @@ export function useRoomWebSocket(
         clientRef.current = null;
       }
       hasEverConnectedRef.current = false;
+      lastConnectedKeyRef.current = '';
       setIsConnected(false);
       setIsConnecting(false);
       setIsTimedOut(false);
@@ -95,6 +97,7 @@ export function useRoomWebSocket(
       clientRef.current.disconnect();
       clientRef.current = null;
       hasEverConnectedRef.current = false;
+      lastConnectedKeyRef.current = '';
     }
 
     connectionKeyRef.current = connectionKey;
@@ -110,6 +113,7 @@ export function useRoomWebSocket(
 
         clearReconnectTimeout();
         hasEverConnectedRef.current = true;
+        lastConnectedKeyRef.current = connectionKey;
         setIsConnected(true);
         setIsConnecting(false);
         setIsTimedOut(false);
@@ -136,6 +140,7 @@ export function useRoomWebSocket(
         await client.connect();
         if (isMounted) {
           hasEverConnectedRef.current = true;
+          lastConnectedKeyRef.current = connectionKey;
           setIsConnected(true);
           setIsConnecting(false);
           setIsTimedOut(false);
@@ -157,6 +162,7 @@ export function useRoomWebSocket(
       client.disconnect();
       clientRef.current = null;
       hasEverConnectedRef.current = false;
+      lastConnectedKeyRef.current = '';
       setIsConnected(false);
       setIsConnecting(false);
       setIsTimedOut(false);
@@ -205,7 +211,12 @@ export function useRoomWebSocket(
     return clientRef.current.subscribe(listener);
   };
 
-  const isReconnecting = hasEverConnectedRef.current && !isConnected && !isTimedOut;
+  const currentConnectionKey = enabled && roomId && userId ? `${roomId}:${userId}` : '';
+  const isReconnecting =
+    hasEverConnectedRef.current &&
+    lastConnectedKeyRef.current === currentConnectionKey &&
+    !isConnected &&
+    !isTimedOut;
 
   return {
     isConnected,

@@ -282,6 +282,69 @@ describe('useRoomWebSocket', () => {
     vi.useRealTimers();
   });
 
+  it('does not carry reconnecting state into a new room before the new connection opens', async () => {
+    const { result, rerender } = renderHook(
+      ({ roomId }) => useRoomWebSocket(roomId, 'user-1', true),
+      {
+        initialProps: {
+          roomId: 'room-1',
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    vi.useFakeTimers();
+    act(() => {
+      mockClientInstances[0]?.isConnected.mockReturnValue(false);
+      mockClientInstances[0]?.options?.onClose?.();
+    });
+
+    expect(result.current.isReconnecting).toBe(true);
+
+    nextConnectPromise = new Promise(() => undefined);
+    act(() => {
+      rerender({ roomId: 'room-2' });
+    });
+
+    expect(result.current.isReconnecting).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it('does not report reconnecting after the hook is disabled', async () => {
+    const { result, rerender } = renderHook(
+      ({ enabled }) => useRoomWebSocket('room-1', 'user-1', enabled),
+      {
+        initialProps: {
+          enabled: true,
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    vi.useFakeTimers();
+    act(() => {
+      mockClientInstances[0]?.isConnected.mockReturnValue(false);
+      mockClientInstances[0]?.options?.onClose?.();
+    });
+
+    expect(result.current.isReconnecting).toBe(true);
+
+    act(() => {
+      rerender({ enabled: false });
+    });
+
+    expect(result.current.isReconnecting).toBe(false);
+
+    vi.useRealTimers();
+  });
+
   it('resets timeout state on manual reconnect and successful open', async () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 

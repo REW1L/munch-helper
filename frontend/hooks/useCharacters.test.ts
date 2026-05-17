@@ -16,7 +16,13 @@ import type { UserProfileInterface } from '@/hooks/useUser';
 const mockSubscribe = vi.fn<(listener: (event: { event: string; event_body: { characterId: string } }) => void) => () => void>(
   () => () => undefined
 );
+const mockReconnect = vi.fn<() => Promise<void>>(() => Promise.resolve());
 let latestRoomWebSocketOptions: { onOpen?: () => void } | undefined;
+let mockRoomWebSocketState = {
+  isConnected: true,
+  isReconnecting: false,
+  isTimedOut: false,
+};
 
 vi.mock('@/api/characters', () => ({
   createCharacter: vi.fn(),
@@ -32,9 +38,10 @@ vi.mock('@/hooks/useRoomWebSocket', () => ({
     _enabled: boolean,
     options?: { onOpen?: () => void }
   ) => ({
-    isConnected: true,
-    isTimedOut: false,
-    reconnect: vi.fn(),
+    isConnected: mockRoomWebSocketState.isConnected,
+    isReconnecting: mockRoomWebSocketState.isReconnecting,
+    isTimedOut: mockRoomWebSocketState.isTimedOut,
+    reconnect: mockReconnect,
     subscribe: mockSubscribe,
     ...(() => {
       latestRoomWebSocketOptions = options;
@@ -75,7 +82,14 @@ describe('useRoomCharacters', () => {
     mockDeleteCharacter.mockReset();
     mockUpdateCharacter.mockReset();
     mockSubscribe.mockReset();
+    mockReconnect.mockReset();
     mockSubscribe.mockImplementation(() => () => undefined);
+    mockReconnect.mockResolvedValue(undefined);
+    mockRoomWebSocketState = {
+      isConnected: true,
+      isReconnecting: false,
+      isTimedOut: false,
+    };
     latestRoomWebSocketOptions = undefined;
   });
 
@@ -286,6 +300,50 @@ describe('useRoomCharacters', () => {
     await waitFor(() => {
       expect(result.current.characters[0]?.level).toBe(3);
     });
+  });
+
+  it('forwards reconnecting state from the room WebSocket hook', async () => {
+    const currentCharacter: Character = {
+      id: 'char-self',
+      roomId,
+      userId: userProfile.id,
+      nickname: 'Hero',
+      avatar: 1,
+      color: '#AA5500',
+      level: 2,
+      power: 3,
+      race: ['Human'],
+      gender: ['male'],
+      class: ['Warrior'],
+    };
+    mockRoomWebSocketState = {
+      isConnected: false,
+      isReconnecting: true,
+      isTimedOut: false,
+    };
+    mockGetCharactersByRoom.mockResolvedValue([currentCharacter]);
+
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+
+    const { result, rerender } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isReconnecting).toBe(true);
+    });
+
+    mockRoomWebSocketState = {
+      isConnected: true,
+      isReconnecting: false,
+      isTimedOut: false,
+    };
+    act(() => {
+      rerender();
+    });
+
+    expect(result.current.isReconnecting).toBe(false);
   });
 
   it('does not auto-recreate the current user character after an intentional self-delete', async () => {

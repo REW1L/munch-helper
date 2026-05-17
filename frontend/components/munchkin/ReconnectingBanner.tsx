@@ -7,17 +7,17 @@ interface ReconnectingBannerProps {
 }
 
 export default function ReconnectingBanner({ visible }: ReconnectingBannerProps) {
-  useEffect(() => {
-    if (!visible) {
-      return;
-    }
-
-    AccessibilityInfo.announceForAccessibility('Reconnecting…');
-  }, [visible]);
-
   if (!visible) {
     return null;
   }
+
+  return <MountedReconnectingBanner />;
+}
+
+function MountedReconnectingBanner() {
+  useEffect(() => {
+    AccessibilityInfo.announceForAccessibility('Reconnecting…');
+  }, []);
 
   return (
     <View
