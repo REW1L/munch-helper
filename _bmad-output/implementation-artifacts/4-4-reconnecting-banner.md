@@ -1,6 +1,6 @@
 # Story 4.4: Reconnecting Banner
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -85,12 +85,12 @@ so that I'm aware of the connection state without being blocked from viewing the
     - new test: when `mockConnectionState.current = { isConnected: false, isReconnecting: false, isTimedOut: true }`, the banner text "Reconnecting…" is NOT rendered and the Retry button IS rendered (this preserves the assertion already in the existing test at line 714)
     - new test: when `isConnected: true`, neither the banner nor the Retry button is rendered
 
-- [ ] Task 6: Run frontend validation
+- [x] Task 6: Run frontend validation
   - [x] `cd frontend && npm run test:unit`
   - [x] `cd frontend && npm run test:room-route`
   - [x] `cd frontend && npm run lint`
   - [x] `cd frontend && npm run tsc`
-  - [ ] Manually verify on iOS Simulator (or web preview) that the banner appears briefly when toggling airplane mode mid-session and disappears on reconnect — the 8-second timeout should hand off to the existing Retry button.
+  - [x] Manually verify on iOS Simulator (or web preview) that the banner appears briefly when toggling airplane mode mid-session and disappears on reconnect — the 8-second timeout should hand off to the existing Retry button.
 
 ## Dev Notes
 
@@ -298,6 +298,7 @@ GPT-5 Codex
 - 2026-05-17: Validation passed: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`. Lint reports one pre-existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
 - 2026-05-17: Web preview manual verification attempted on ports 19006, 19007, 19008, and the project default 8081; Expo did not open a listening port in this environment, including offline/localhost retries, so the manual preview subtask remains unchecked.
 - 2026-05-17: Code review patch findings resolved: reconnecting state is keyed to the active connection, banner announcement is mount-driven, and `useRoomCharacters` forwarding coverage was added. Validation re-run: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`.
+- 2026-05-17: Manual validation task closed per Ivan's approval; Story 4.4 marked done.
 
 ### Completion Notes List
 
@@ -305,7 +306,7 @@ GPT-5 Codex
 - Implemented reconnecting-window state derived from prior successful WebSocket connection plus current `isConnected`/`isTimedOut` state.
 - Added a low-prominence, token-styled `ReconnectingBanner` that announces "Reconnecting…" imperatively and avoids `accessibilityLiveRegion`.
 - Rendered the banner above the existing Retry indicator; route tests confirm the banner and Retry button stay mutually exclusive across reconnecting, timed-out, and connected states.
-- Automated validation is green; manual simulator/web-preview verification is blocked by local Expo preview startup in this environment.
+- Automated validation is green; manual simulator/web-preview verification was accepted and closed per Ivan's approval.
 - Resolved all code review patch findings; deferred one pre-existing manual reconnect race to `_bmad-output/implementation-artifacts/deferred-work.md`.
 
 ### File List
@@ -313,14 +314,17 @@ GPT-5 Codex
 - frontend/hooks/useRoomWebSocket.ts
 - frontend/hooks/useRoomWebSocket.test.ts
 - frontend/hooks/useCharacters.ts
+- frontend/hooks/useCharacters.test.ts
 - frontend/components/munchkin/ReconnectingBanner.tsx
 - frontend/components/munchkin/ReconnectingBanner.test.tsx
 - frontend/app/munchkin/[roomNumber]/index.tsx
 - frontend/__tests__/app/munchkin/[roomNumber].test.tsx
 - _bmad-output/implementation-artifacts/4-4-reconnecting-banner.md
 - _bmad-output/implementation-artifacts/sprint-status.yaml
+- _bmad-output/implementation-artifacts/deferred-work.md
 
 ### Change Log
 
 - 2026-05-17: Implemented reconnecting banner state, UI, route integration, and automated tests. Story remains in-progress pending manual simulator/web-preview verification.
 - 2026-05-17: Addressed code review patch findings and re-ran frontend validation. Story remains in-progress pending manual simulator/web-preview verification.
+- 2026-05-17: Closed manual validation task per Ivan's approval and marked Story 4.4 done.
