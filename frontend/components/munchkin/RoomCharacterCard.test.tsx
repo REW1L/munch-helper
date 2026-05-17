@@ -58,7 +58,11 @@ function getTextNode(renderer: any, text: string) {
 describe('RoomCharacterCard', () => {
   beforeEach(() => {
     vi.useRealTimers();
+    vi.mocked(AccessibilityInfo.addEventListener).mockClear();
     vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+    vi.mocked(AccessibilityInfo.addEventListener).mockReturnValue(
+      { remove: vi.fn() } as unknown as ReturnType<typeof AccessibilityInfo.addEventListener>
+    );
   });
 
   it('supports full-card press with accessibility label and hint', () => {
@@ -240,6 +244,50 @@ describe('RoomCharacterCard', () => {
     await act(async () => {
       resolveReducedMotion(true);
       await Promise.resolve();
+    });
+
+    expect(timingSpy).not.toHaveBeenCalled();
+    expect(timeoutSpy).toHaveBeenCalledWith(expect.any(Function), 700);
+
+    timingSpy.mockRestore();
+  });
+
+  it('honors reduced-motion preference changes after mount for realtime signals', async () => {
+    vi.useFakeTimers();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+    const timingSpy = vi.spyOn(Animated, 'timing');
+    const timeoutSpy = vi.spyOn(global, 'setTimeout');
+    let renderer: any;
+
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={0} />
+      );
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={1} />
+      );
+    });
+
+    expect(timingSpy).toHaveBeenCalled();
+    expect(timeoutSpy).not.toHaveBeenCalledWith(expect.any(Function), 700);
+
+    timingSpy.mockClear();
+    timeoutSpy.mockClear();
+
+    await act(async () => {
+      const reduceMotionListener = vi.mocked(AccessibilityInfo.addEventListener).mock.calls[0][1] as unknown as (
+        enabled: boolean
+      ) => void;
+      reduceMotionListener(true);
+    });
+
+    await act(async () => {
+      renderer.update(
+        <RoomCharacterCard character={baseCharacter} onChangePress={vi.fn()} realtimeFlashSignal={2} />
+      );
     });
 
     expect(timingSpy).not.toHaveBeenCalled();

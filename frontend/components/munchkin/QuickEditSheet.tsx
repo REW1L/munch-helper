@@ -1,8 +1,19 @@
 import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, Modal, PanResponder, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Dimensions,
+  Modal,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 type QuickEditStats = {
   level: number;
@@ -34,6 +45,9 @@ export default function QuickEditSheet({
   const [isSaving, setIsSaving] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [draftStats, setDraftStats] = useState<QuickEditStats>({ level: 0, power: 0 });
+  const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
+  const hasHandledVisibilityRef = useRef(false);
+  const lastVisibleRef = useRef(visible);
   const translateY = useMemo(() => new Animated.Value(0), []);
   const backdropOpacity = useMemo(() => new Animated.Value(1), []);
   const dismissOffset = useMemo(() => Dimensions.get('window').height, []);
@@ -41,6 +55,25 @@ export default function QuickEditSheet({
     (dx: number, dy: number) => Math.abs(dy) > Math.abs(dx) && dy > 4,
     []
   );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (isMounted) {
+        setIsReducedMotionEnabled(enabled);
+      }
+    });
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setIsReducedMotionEnabled(enabled);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const nextStats = {
@@ -59,6 +92,13 @@ export default function QuickEditSheet({
 
   const animateSheetTo = useCallback(
     (toValue: number, onFinished?: () => void) => {
+      if (isReducedMotionEnabled) {
+        translateY.setValue(toValue);
+        backdropOpacity.setValue(toValue === 0 ? 1 : 0);
+        onFinished?.();
+        return;
+      }
+
       Animated.parallel([
         Animated.timing(translateY, {
           toValue,
@@ -76,10 +116,17 @@ export default function QuickEditSheet({
         }
       });
     },
-    [backdropOpacity, translateY]
+    [backdropOpacity, isReducedMotionEnabled, translateY]
   );
 
   useEffect(() => {
+    if (hasHandledVisibilityRef.current && lastVisibleRef.current === visible) {
+      return;
+    }
+
+    hasHandledVisibilityRef.current = true;
+    lastVisibleRef.current = visible;
+
     if (!visible) {
       if (!isRendered) {
         setIsSaving(false);

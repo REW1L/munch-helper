@@ -1,6 +1,6 @@
 # Story 4.6: Reduced Motion Support
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,28 +33,32 @@ so that animations don't cause discomfort during play.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Verify and lock the realtime-flash reduced-motion behaviour (AC: 1, 3, 4)
-  - [ ] Confirm `RoomCharacterCard.tsx` already implements the reduced-motion path: immediate border colour, `surfaceWarm` restore after `REALTIME_FLASH_DURATION_MS` (700ms), no interpolation. **Do NOT rewrite this** — it shipped in Story 3.8.
-  - [ ] Confirm existing regression coverage exists in `frontend/components/munchkin/RoomCharacterCard.test.tsx` ("shows reduced-motion realtime border signal when an external update arrives", line ~186; "waits for reduced-motion preference resolution before processing the first realtime signal", line ~212).
-  - [ ] If (and only if) a gap exists, add coverage for the preference-change-at-runtime case (`reduceMotionChanged` listener flipping after mount). Do not duplicate already-passing assertions.
+- [x] Task 1: Verify and lock the realtime-flash reduced-motion behaviour (AC: 1, 3, 4)
+  - [x] Confirm `RoomCharacterCard.tsx` already implements the reduced-motion path: immediate border colour, `surfaceWarm` restore after `REALTIME_FLASH_DURATION_MS` (700ms), no interpolation. **Do NOT rewrite this** — it shipped in Story 3.8.
+  - [x] Confirm existing regression coverage exists in `frontend/components/munchkin/RoomCharacterCard.test.tsx` ("shows reduced-motion realtime border signal when an external update arrives", line ~186; "waits for reduced-motion preference resolution before processing the first realtime signal", line ~212).
+  - [x] If (and only if) a gap exists, add coverage for the preference-change-at-runtime case (`reduceMotionChanged` listener flipping after mount). Do not duplicate already-passing assertions.
 
-- [ ] Task 2: Add reduced-motion support to `QuickEditSheet` (AC: 2, 3, 4)
-  - [ ] Resolve the reduced-motion preference using the **same pattern already used in `RoomCharacterCard.tsx`**: `AccessibilityInfo.isReduceMotionEnabled()` for the initial value plus an `AccessibilityInfo.addEventListener('reduceMotionChanged', ...)` subscription, with the subscription removed on unmount. Track it in component state initialised to `null` (unknown) and treat unknown as "animate" (default behaviour) until resolved.
-  - [ ] In `animateSheetTo`, when reduced motion is enabled, set the target values directly (`translateY.setValue(toValue)`, `backdropOpacity.setValue(toValue === 0 ? 1 : 0)`) and invoke the `onFinished` callback synchronously instead of running `Animated.parallel`/`Animated.timing`. The open/close state machine (`isRendered`, `isClosing`, `isSaving`, `onOpenFullEdit` sequencing) MUST behave identically — only the tween is skipped.
-  - [ ] Ensure the `panResponder` release path still settles correctly under reduced motion (the snap-back / dismiss decision must remain; just skip the tween).
-  - [ ] Keep the change localised to `QuickEditSheet.tsx`. Do not change the component's props, the parent route, or `RoomCharactersList`.
+- [x] Task 2: Add reduced-motion support to `QuickEditSheet` (AC: 2, 3, 4)
+  - [x] Resolve the reduced-motion preference using the **same pattern already used in `RoomCharacterCard.tsx`**: `AccessibilityInfo.isReduceMotionEnabled()` for the initial value plus an `AccessibilityInfo.addEventListener('reduceMotionChanged', ...)` subscription, with the subscription removed on unmount. Track it in component state initialised to `null` (unknown) and treat unknown as "animate" (default behaviour) until resolved.
+  - [x] In `animateSheetTo`, when reduced motion is enabled, set the target values directly (`translateY.setValue(toValue)`, `backdropOpacity.setValue(toValue === 0 ? 1 : 0)`) and invoke the `onFinished` callback synchronously instead of running `Animated.parallel`/`Animated.timing`. The open/close state machine (`isRendered`, `isClosing`, `isSaving`, `onOpenFullEdit` sequencing) MUST behave identically — only the tween is skipped.
+  - [x] Ensure the `panResponder` release path still settles correctly under reduced motion (the snap-back / dismiss decision must remain; just skip the tween).
+  - [x] Keep the change localised to `QuickEditSheet.tsx`. Do not change the component's props, the parent route, or `RoomCharactersList`.
 
-- [ ] Task 3: Tests for `QuickEditSheet` reduced motion (AC: 2, 3, 4)
-  - [ ] In `frontend/components/munchkin/QuickEditSheet.test.tsx`, add an `AccessibilityInfo` mock following the `RoomCharacterCard.test.tsx` pattern (`isReduceMotionEnabled` default `false`; `addEventListener` returning a `{ remove }` subscription). The existing `react-native` mock spreads `actual`, so `AccessibilityInfo` is available — extend the mock object, do not replace `actual`.
-  - [ ] Add a test: with reduced motion **enabled**, opening the sheet leaves `translateY` at `0` and backdrop opacity at `1` immediately (no pending animation), and closing leaves `translateY` at `dismissOffset` immediately, with `Animated.timing`/`Animated.parallel` NOT called for the transition.
-  - [ ] Add a test: with reduced motion **disabled** (default), existing animated behaviour and all current assertions still hold (regression guard).
-  - [ ] Add a test: `onClose` / `onOpenFullEdit` sequencing still fires correctly in reduced-motion mode (sheet "dismisses" before `onOpenFullEdit` is called).
+- [x] Task 3: Tests for `QuickEditSheet` reduced motion (AC: 2, 3, 4)
+  - [x] In `frontend/components/munchkin/QuickEditSheet.test.tsx`, add an `AccessibilityInfo` mock following the `RoomCharacterCard.test.tsx` pattern (`isReduceMotionEnabled` default `false`; `addEventListener` returning a `{ remove }` subscription). The existing `react-native` mock spreads `actual`, so `AccessibilityInfo` is available — extend the mock object, do not replace `actual`.
+  - [x] Add a test: with reduced motion **enabled**, opening the sheet leaves `translateY` at `0` and backdrop opacity at `1` immediately (no pending animation), and closing leaves `translateY` at `dismissOffset` immediately, with `Animated.timing`/`Animated.parallel` NOT called for the transition.
+  - [x] Add a test: with reduced motion **disabled** (default), existing animated behaviour and all current assertions still hold (regression guard).
+  - [x] Add a test: `onClose` / `onOpenFullEdit` sequencing still fires correctly in reduced-motion mode (sheet "dismisses" before `onOpenFullEdit` is called).
 
-- [ ] Task 4: Frontend validation (AC: 1, 2, 3, 4)
-  - [ ] `cd frontend && npm run test:unit -- QuickEditSheet.test.tsx RoomCharacterCard.test.tsx`
-  - [ ] `cd frontend && npm run lint`
-  - [ ] `cd frontend && npm run tsc`
-  - [ ] `cd frontend && npm test` (full suite: unit + room-route) to confirm no regressions
+- [x] Task 4: Frontend validation (AC: 1, 2, 3, 4)
+  - [x] `cd frontend && npm run test:unit -- QuickEditSheet.test.tsx RoomCharacterCard.test.tsx`
+  - [x] `cd frontend && npm run lint`
+  - [x] `cd frontend && npm run tsc`
+  - [x] `cd frontend && npm test` (full suite: unit + room-route) to confirm no regressions
+
+### Review Findings
+
+- [x] [Review][Patch] Add reduced-motion coverage for pan-responder settle paths [frontend/components/munchkin/QuickEditSheet.test.tsx:81]
 
 ## Dev Notes
 
@@ -160,10 +164,34 @@ _bmad-output/implementation-artifacts/sprint-status.yaml             status tran
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
 
+- 2026-05-17: Started Story 4.6 implementation; sprint status moved to in-progress.
+- 2026-05-17: Verified `RoomCharacterCard.tsx` already contains the shipped reduced-motion realtime flash path and added runtime preference-change coverage.
+- 2026-05-17: Added `AccessibilityInfo` reduced-motion handling to `QuickEditSheet.tsx`; reduced mode snaps target values and default/unknown mode preserves animated timings.
+- 2026-05-17: Validation passed: `npm run test:unit -- QuickEditSheet.test.tsx RoomCharacterCard.test.tsx`, `npm run lint`, `npm run tsc`, and `npm test`.
+- 2026-05-17: Code review found one patch item; added reduced-motion pan-responder snap-back and dismiss coverage, then reran validation successfully.
+
 ### Completion Notes List
 
+- Confirmed the realtime card flash implementation already satisfies AC1 and AC3, then added an AC4 regression test for `reduceMotionChanged` switching after mount.
+- Implemented reduced-motion support in `QuickEditSheet` using the same `AccessibilityInfo.isReduceMotionEnabled()` plus `reduceMotionChanged` subscription pattern as `RoomCharacterCard`.
+- Preserved the existing open/close/full-edit/pan-responder state machine while skipping only the `Animated.parallel`/`Animated.timing` tween when reduced motion is enabled.
+- Added QuickEditSheet tests for reduced-motion snap open/close, default animated timings, and reduced-motion full-edit sequencing.
+- Resolved review finding by covering reduced-motion pan-responder snap-back and drag-dismiss behavior without animation.
+- `npm run lint` passes with one unrelated existing warning in `frontend/app/munchkin/modal-change-caracter.tsx` about `initialCharacter` in a `useEffect` dependency array.
+
 ### File List
+
+- `frontend/components/munchkin/QuickEditSheet.tsx`
+- `frontend/components/munchkin/QuickEditSheet.test.tsx`
+- `frontend/components/munchkin/RoomCharacterCard.test.tsx`
+- `_bmad-output/implementation-artifacts/4-6-reduced-motion-support.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+### Change Log
+
+- 2026-05-17: Implemented reduced-motion support for QuickEditSheet and added runtime preference-change regression coverage for realtime card flash.
+- 2026-05-17: Addressed code review finding by adding reduced-motion pan-responder settle-path tests.
