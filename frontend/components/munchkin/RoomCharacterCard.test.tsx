@@ -1,7 +1,7 @@
 import { Character } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
-import { AccessibilityInfo, Animated, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, ScrollView, StyleSheet } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -209,17 +209,10 @@ describe('RoomCharacterCard', () => {
     }
 
     const [cardScrollView] = renderer.root.findAllByType(ScrollView);
-    const [attributeContainer] = cardScrollView.findAll(
-      (node: { type: unknown; props: { style?: unknown } }) => {
-        const style = StyleSheet.flatten(node.props.style) as { flexWrap?: string } | undefined;
-        return node.type === View && style?.flexWrap === 'wrap';
-      }
-    );
-    const attributeContainerStyle = StyleSheet.flatten(attributeContainer.props.style);
     const firstAttributeStyle = StyleSheet.flatten(getTextNode(renderer, 'Dwarf').props.style);
 
-    expect(attributeContainerStyle.flexDirection).toBe('row');
-    expect(attributeContainerStyle.flexWrap).toBe('wrap');
+    expect(firstAttributeStyle.flexDirection).toBeUndefined();
+    expect(firstAttributeStyle.marginRight).toBeUndefined();
     expect(firstAttributeStyle.lineHeight).toBe(16);
     expect(cardScrollView.props.nestedScrollEnabled).toBe(true);
     expect(cardScrollView.props.showsVerticalScrollIndicator).toBe(true);

@@ -55,6 +55,7 @@ so that I can understand what's happening and participate without confusion.
 ### Review Findings
 
 - [x] [Review][Patch] Overflowing attributes still are not fully visible at scan time [frontend/components/munchkin/RoomCharacterCard.tsx:141]
+- [x] [Review][Manual] Preserve established card visual design after attribute reachability fix [frontend/components/munchkin/AttributeList.tsx]
 
 ## Dev Notes
 
@@ -148,14 +149,16 @@ GPT-5 Codex
 - 2026-05-17: Added failing regression tests for late-join initial state, room-route first render, and multi-attribute card reachability; confirmed red on hidden card scroll indicator.
 - 2026-05-17: Made `RoomCharacterCard` card attribute `ScrollView` show the vertical scroll indicator while preserving fixed card sizing and existing layout.
 - 2026-05-17: Verified existing `useRoomCharacters` HTTP-on-mount query, loading precedence, `hasCompletedInitialFetch` auto-create ordering, and WebSocket subscription path; no duplicate fetch path added.
-- 2026-05-17: Resolved code review finding by wrapping card attributes into compact rows so multi-value attributes are visible without relying on vertical overflow.
+- 2026-05-17: Resolved code review finding by making card attribute overflow discoverable through the existing vertical `ScrollView`.
+- 2026-05-17: Corrected manual review finding by restoring the original vertical card attribute list and retaining vertical scroll reachability without widening the attribute area.
 
 ### Completion Notes List
 
 - Preserved the existing single TanStack Query initial-load path in `useRoomCharacters`; added a regression test proving late joiners stay loading while the initial fetch is unresolved, receive the full current character list, and only then auto-create their current-user character.
 - Added a room-route late-join regression test proving existing other-player characters render immediately with nicknames and stats.
 - Kept the Story 3.6 card dimensions and visual structure; exposed the card attribute scroll indicator so multi-value race/gender/class content is reachable and discoverable.
-- Resolved review finding by making the card `AttributeList` variant wrap values into compact rows inside the existing attributes box, preserving the fixed card dimensions.
+- Resolved review finding by keeping the fixed card dimensions and making multi-value attributes reachable through the card's existing vertical `ScrollView`.
+- Corrected manual review regression: removed card attribute row wrapping/margins because they widened the established visual design; card attributes are vertical again and remain reachable through the card `ScrollView`.
 - Validation passed: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`, and `npm run test:coverage` from `frontend/`. Coverage lines: 80.12%, above the 70% floor. Lint has one existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
 
 ### File List
@@ -172,3 +175,4 @@ GPT-5 Codex
 
 - 2026-05-17: Implemented Story 4.5 late-join context awareness validation and attribute reachability fix; moved story to review.
 - 2026-05-17: Addressed code review finding and moved story to done.
+- 2026-05-17: Addressed manual review finding to preserve the established card attribute layout.
