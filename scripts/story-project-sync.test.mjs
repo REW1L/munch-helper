@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildIssueBodyWithSources,
   buildMarkerCommentBody,
   buildPullRequestOperations,
   buildPushOperations,
   deriveSpecFileSlug,
+  ensureProjectItem,
   extractStoryRefsFromMarkdown,
   getImplementationArtifactSkipReason,
   parseImplementationArtifact,
@@ -13,6 +15,7 @@ import {
   parseNameStatus,
   parseStoryTitle,
   shouldSkipMarkerPost,
+  updateIssueBodyWithSpecContent,
 } from "./story-project-sync.mjs";
 
 test("parseStoryTitle extracts the story number and title", () => {
@@ -514,6 +517,90 @@ test("postReadyForDevMarker logs failure and does not throw when gh errors", asy
   });
 });
 
+test("buildIssueBodyWithSources appends source artifacts section to spec content", () => {
+  const specContent = "# Story 1.1: My Story\n\nFull spec details.";
+  const body = buildIssueBodyWithSources(specContent, "path/to/spec.md");
+
+  assert.ok(body.startsWith(specContent.trimEnd()), "Should start with spec content");
+  assert.ok(body.includes("## Source artifacts"), "Should include source artifacts heading");
+  assert.ok(body.includes("- `path/to/spec.md`"), "Should include the spec file path");
+});
+
+test("updateIssueBodyWithSpecContent updates the issue body with spec file content and source artifacts", () => {
+  const specContent = "# Story 1.1: My Story\n\nFull spec details.";
+  const calls = [];
+  const mockGhExec = (args, options) => {
+    calls.push({ args: [...args], options });
+    return "";
+  };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "spec-foo.md",
+    false,
+    [],
+    { ghExec: mockGhExec, readFileFn: () => specContent }
+  );
+
+  const editCall = calls.find((c) => c.args.includes("edit"));
+  assert.ok(editCall, "gh issue edit should have been called");
+  assert.ok(editCall.args.includes("42"), "Should target the correct issue number");
+  assert.ok(editCall.options?.stdin?.includes(specContent.trimEnd()), "Should include spec content");
+  assert.ok(editCall.options?.stdin?.includes("## Source artifacts"), "Should include source artifacts section");
+  assert.ok(editCall.options?.stdin?.includes("- `spec-foo.md`"), "Should include the spec file path");
+});
+
+test("updateIssueBodyWithSpecContent skips update when spec file cannot be read", () => {
+  const calls = [];
+  const mockGhExec = (args) => { calls.push([...args]); return ""; };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "missing-spec.md",
+    false,
+    [],
+    { ghExec: mockGhExec, readFileFn: () => { throw new Error("ENOENT"); } }
+  );
+
+  assert.ok(!calls.some((c) => c.includes("edit")), "gh issue edit should NOT be called when file read fails");
+});
+
+test("updateIssueBodyWithSpecContent logs failure and does not throw when gh errors", () => {
+  assert.doesNotThrow(() => {
+    updateIssueBodyWithSpecContent(
+      { repo: "owner/repo" },
+      { number: 42 },
+      "spec.md",
+      false,
+      [],
+      {
+        ghExec: () => { throw new Error("network error"); },
+        readFileFn: () => "spec content",
+      }
+    );
+  });
+});
+
+test("updateIssueBodyWithSpecContent records dry-run command without executing", () => {
+  const commandPlan = [];
+  const calls = [];
+  const mockGhExec = (args) => { calls.push([...args]); return ""; };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "spec-foo.md",
+    true,
+    commandPlan,
+    { ghExec: mockGhExec, readFileFn: () => "spec content" }
+  );
+
+  assert.ok(commandPlan.some((cmd) => cmd.includes("issue") && cmd.includes("edit")), "Should record planned command");
+  assert.ok(!calls.length, "Should not execute gh command in dry-run mode");
+});
+
 test("push operations always include sourcePaths when targeting ready-for-dev, enabling marker post", () => {
   const changedFiles = [
     {
@@ -541,4 +628,89 @@ test("push operations always include sourcePaths when targeting ready-for-dev, e
     readyOps.every((op) => op.sourcePaths.length > 0),
     "All ready-for-dev operations should include sourcePaths for marker posting"
   );
+});
+
+const ITEM_OPERATION = {
+  storyNumber: "5.4",
+  fullTitle: "Story 5.4: Realtime Battle Updates from Battle Actions",
+  ensureIssue: true,
+  ensureProjectItem: true,
+  targetStatus: "ready-for-dev",
+  sourcePaths: [],
+};
+const ITEM_CONFIG = { projectOwner: "REW1L", projectNumber: 1 };
+const ITEM_ISSUE = { url: "https://github.com/REW1L/munch-helper/issues/42", number: 42 };
+const ITEM_RESULT = { id: "PVI_1", title: "Story 5.4: Realtime Battle Updates from Battle Actions" };
+const ITEM_LIST_RESPONSE = JSON.stringify({ items: [ITEM_RESULT] });
+const EMPTY_LIST_RESPONSE = JSON.stringify({ items: [] });
+
+test("ensureProjectItem returns immediately when item already exists in project", () => {
+  const calls = [];
+  const mockGhExec = (args) => {
+    calls.push([...args]);
+    return ITEM_LIST_RESPONSE;
+  };
+  const sleepFn = () => assert.fail("sleepFn should not be called when item is already present");
+
+  const result = ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+    ghExec: mockGhExec,
+    sleepFn,
+  });
+
+  assert.deepEqual(result, ITEM_RESULT);
+  assert.ok(
+    !calls.some((c) => c.includes("item-add")),
+    "item-add should not be called when item already exists"
+  );
+});
+
+test("ensureProjectItem retries and succeeds when item becomes visible after item-add", () => {
+  let listCallCount = 0;
+  const sleepDelays = [];
+  const calls = [];
+
+  // item-list returns empty on first call (before add), empty on first retry, present on second retry
+  const mockGhExec = (args) => {
+    calls.push([...args]);
+    if (args.includes("item-list")) {
+      listCallCount++;
+      return listCallCount >= 3 ? ITEM_LIST_RESPONSE : EMPTY_LIST_RESPONSE;
+    }
+    return "";
+  };
+  const sleepFn = (ms) => sleepDelays.push(ms);
+
+  const result = ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+    ghExec: mockGhExec,
+    sleepFn,
+  });
+
+  assert.deepEqual(result, ITEM_RESULT);
+  assert.ok(
+    calls.some((c) => c.includes("item-add")),
+    "item-add should have been called"
+  );
+  assert.equal(sleepDelays.length, 2, "should have slept twice before item became visible");
+  assert.deepEqual(sleepDelays, [2000, 4000], "delays should increase linearly");
+});
+
+test("ensureProjectItem throws after all retries are exhausted", () => {
+  const sleepDelays = [];
+  const mockGhExec = () => EMPTY_LIST_RESPONSE;
+  const sleepFn = (ms) => sleepDelays.push(ms);
+
+  assert.throws(
+    () =>
+      ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+        ghExec: mockGhExec,
+        sleepFn,
+      }),
+    (err) => {
+      assert.ok(err.message.includes("Story 5.4: Realtime Battle Updates from Battle Actions"));
+      return true;
+    }
+  );
+
+  assert.equal(sleepDelays.length, 5, "should have attempted all 5 retries");
+  assert.deepEqual(sleepDelays, [2000, 4000, 6000, 8000, 10000], "all retry delays should be present");
 });
