@@ -1,8 +1,8 @@
 import { Character } from '@/api/characters';
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Dimensions, TouchableOpacity } from 'react-native';
-import { describe, expect, it, vi } from 'vitest';
+import { AccessibilityInfo, Dimensions, TouchableOpacity } from 'react-native';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import QuickEditSheet from './QuickEditSheet';
 
@@ -23,6 +23,33 @@ const mockAnimatedParallel = vi.hoisted(() =>
     },
   }))
 );
+const mockReduceMotionSubscriptionRemove = vi.hoisted(() => vi.fn());
+const mockReduceMotionSubscription = vi.hoisted(
+  () => ({ remove: mockReduceMotionSubscriptionRemove }) as unknown as ReturnType<typeof AccessibilityInfo.addEventListener>
+);
+const mockPanResponderCreate = vi.hoisted(() =>
+  vi.fn(
+    (config: {
+      onStartShouldSetPanResponder?: (...args: unknown[]) => unknown;
+      onStartShouldSetPanResponderCapture?: (...args: unknown[]) => unknown;
+      onMoveShouldSetPanResponder?: (...args: unknown[]) => unknown;
+      onMoveShouldSetPanResponderCapture?: (...args: unknown[]) => unknown;
+      onPanResponderMove?: (...args: unknown[]) => unknown;
+      onPanResponderRelease?: (...args: unknown[]) => unknown;
+      onPanResponderTerminate?: (...args: unknown[]) => unknown;
+    }) => ({
+      panHandlers: {
+        onStartShouldSetResponder: config.onStartShouldSetPanResponder,
+        onStartShouldSetResponderCapture: config.onStartShouldSetPanResponderCapture,
+        onMoveShouldSetResponder: config.onMoveShouldSetPanResponder,
+        onMoveShouldSetResponderCapture: config.onMoveShouldSetPanResponderCapture,
+        onResponderMove: config.onPanResponderMove,
+        onResponderRelease: config.onPanResponderRelease,
+        onResponderTerminate: config.onPanResponderTerminate,
+      },
+    })
+  )
+);
 
 vi.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: {
@@ -40,6 +67,15 @@ vi.mock('react-native', async () => {
       ...actual.Animated,
       parallel: mockAnimatedParallel,
       timing: mockAnimatedTiming,
+    },
+    AccessibilityInfo: {
+      ...actual.AccessibilityInfo,
+      isReduceMotionEnabled: vi.fn().mockResolvedValue(false),
+      addEventListener: vi.fn(() => mockReduceMotionSubscription),
+    },
+    PanResponder: {
+      ...actual.PanResponder,
+      create: mockPanResponderCreate,
     },
     Modal: ({ children }: { children?: React.ReactNode }) => children,
   };
@@ -59,6 +95,17 @@ const baseCharacter: Character = {
 };
 
 describe('QuickEditSheet', () => {
+  beforeEach(() => {
+    mockImpactAsync.mockClear();
+    mockAnimatedTiming.mockClear();
+    mockAnimatedParallel.mockClear();
+    mockPanResponderCreate.mockClear();
+    mockReduceMotionSubscriptionRemove.mockClear();
+    vi.mocked(AccessibilityInfo.addEventListener).mockClear();
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(false);
+    vi.mocked(AccessibilityInfo.addEventListener).mockReturnValue(mockReduceMotionSubscription);
+  });
+
   it('exposes the top drag affordance as the movable gesture target', async () => {
     let renderer: any;
     await act(async () => {
@@ -212,6 +259,226 @@ describe('QuickEditSheet', () => {
     });
 
     expect(onOpenFullEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('snaps open and closed without animation when reduced motion is enabled', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+    const dismissOffset = Dimensions.get('window').height;
+
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet
+          visible={false}
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    mockAnimatedTiming.mockClear();
+    mockAnimatedParallel.mockClear();
+
+    await act(async () => {
+      renderer!.update(
+        <QuickEditSheet
+          visible
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    const sheetOpen = renderer!.root.findByProps({ testID: 'quick-edit-sheet' });
+    const translateYOpen = sheetOpen.props.style[2].transform[0].translateY;
+    const overlayBackdropOpen = renderer!.root.findByProps({ testID: 'quick-edit-overlay-backdrop' });
+
+    expect(translateYOpen.__getValue()).toBe(0);
+    expect(overlayBackdropOpen.props.style[1].opacity).toBe(1);
+    expect(mockAnimatedTiming).not.toHaveBeenCalled();
+    expect(mockAnimatedParallel).not.toHaveBeenCalled();
+
+    await act(async () => {
+      renderer!.update(
+        <QuickEditSheet
+          visible={false}
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    const sheetClosed = renderer!.root.findByProps({ testID: 'quick-edit-sheet' });
+    const translateYClosed = sheetClosed.props.style[2].transform[0].translateY;
+
+    expect(translateYClosed.__getValue()).toBe(dismissOffset);
+    expect(mockAnimatedTiming).not.toHaveBeenCalled();
+    expect(mockAnimatedParallel).not.toHaveBeenCalled();
+  });
+
+  it('keeps the default animated transition path when reduced motion is disabled', async () => {
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet
+          visible={false}
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    mockAnimatedTiming.mockClear();
+    mockAnimatedParallel.mockClear();
+
+    await act(async () => {
+      renderer!.update(
+        <QuickEditSheet
+          visible
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    expect(mockAnimatedParallel).toHaveBeenCalledTimes(1);
+    expect(mockAnimatedTiming).toHaveBeenCalledTimes(2);
+    expect(mockAnimatedTiming).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      expect.objectContaining({ toValue: 0, duration: 180, useNativeDriver: true })
+    );
+    expect(mockAnimatedTiming).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({ toValue: 1, duration: 120, useNativeDriver: true })
+    );
+  });
+
+  it('dismisses before opening full edit when reduced motion is enabled', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+    const onOpenFullEdit = vi.fn();
+
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet
+          visible={false}
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={onOpenFullEdit}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    await act(async () => {
+      renderer!.update(
+        <QuickEditSheet
+          visible
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={onOpenFullEdit}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    const buttons = renderer!.root.findAllByType(TouchableOpacity);
+    const editMoreButton = buttons[4];
+
+    await act(async () => {
+      editMoreButton.props.onPress();
+    });
+
+    const sheet = renderer!.root.findByProps({ testID: 'quick-edit-sheet' });
+    const translateY = sheet.props.style[2].transform[0].translateY;
+
+    expect(translateY.__getValue()).toBe(Dimensions.get('window').height);
+    expect(onOpenFullEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('snaps a reduced-motion drag release back open without animation', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet
+          visible
+          character={baseCharacter}
+          onClose={vi.fn()}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    mockAnimatedTiming.mockClear();
+    mockAnimatedParallel.mockClear();
+
+    const dragArea = renderer!.root.findByProps({ testID: 'quick-edit-drag-area' });
+    const sheet = renderer!.root.findByProps({ testID: 'quick-edit-sheet' });
+    const translateY = sheet.props.style[2].transform[0].translateY;
+
+    await act(async () => {
+      dragArea.props.onResponderMove({}, { dx: 0, dy: 80 });
+      dragArea.props.onResponderRelease({}, { dy: 80, vy: 0.2 });
+    });
+
+    expect(translateY.__getValue()).toBe(0);
+    expect(mockAnimatedTiming).not.toHaveBeenCalled();
+    expect(mockAnimatedParallel).not.toHaveBeenCalled();
+  });
+
+  it('keeps reduced-motion drag dismiss routed through close without animation', async () => {
+    vi.mocked(AccessibilityInfo.isReduceMotionEnabled).mockResolvedValue(true);
+    const onClose = vi.fn();
+
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet
+          visible
+          character={baseCharacter}
+          onClose={onClose}
+          onSave={vi.fn(async () => undefined)}
+          onOpenFullEdit={vi.fn()}
+          hasErrorFlash={false}
+        />
+      );
+    });
+
+    mockAnimatedTiming.mockClear();
+    mockAnimatedParallel.mockClear();
+
+    const dragArea = renderer!.root.findByProps({ testID: 'quick-edit-drag-area' });
+
+    await act(async () => {
+      dragArea.props.onResponderRelease({}, { dy: 140, vy: 0.2 });
+    });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockAnimatedTiming).not.toHaveBeenCalled();
+    expect(mockAnimatedParallel).not.toHaveBeenCalled();
   });
 
   it('renders a 60% bottom sheet, keeps larger centered actions, and applies floor zero on steppers', async () => {
