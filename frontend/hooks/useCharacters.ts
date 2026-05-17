@@ -19,6 +19,7 @@ interface UseRoomCharactersResult {
   errorMessage: string | null;
   isCreateBlocked: boolean;
   isConnected: boolean;
+  isReconnecting: boolean;
   isTimedOut: boolean;
   refresh: () => Promise<void>;
   reconnect: () => Promise<void>;
@@ -119,7 +120,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const [isCreateBlocked, setIsCreateBlocked] = useState(false);
 
   // Set up WebSocket connection for real-time updates
-  const { isConnected, isTimedOut, reconnect, subscribe } = useRoomWebSocket(
+  const { isConnected, isReconnecting, isTimedOut, reconnect, subscribe } = useRoomWebSocket(
     roomId,
     userProfile.id,
     Boolean(roomId && userProfile.id),
@@ -452,6 +453,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       errorMessage,
       isCreateBlocked,
       isConnected,
+      isReconnecting,
       isTimedOut,
       refresh,
       reconnect,
@@ -459,6 +461,6 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       update,
       remove,
     }),
-    [characters, create, errorMessage, isConnected, isCreateBlocked, isLoading, isTimedOut, realtimeUpdateSignals, reconnect, refresh, remove, update]
+    [characters, create, errorMessage, isConnected, isCreateBlocked, isLoading, isReconnecting, isTimedOut, realtimeUpdateSignals, reconnect, refresh, remove, update]
   );
 }

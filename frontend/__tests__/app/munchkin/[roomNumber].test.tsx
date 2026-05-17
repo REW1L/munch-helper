@@ -17,6 +17,7 @@ const mockIsCreateBlocked = vi.hoisted(() => ({ current: false }));
 const mockConnectionState = vi.hoisted(() => ({
   current: {
     isConnected: true,
+    isReconnecting: false,
     isTimedOut: false,
   },
 }));
@@ -66,6 +67,7 @@ vi.mock('@/hooks/useCharacters', () => ({
     refresh: mockRefreshCharacters,
     reconnect: mockReconnect,
     isConnected: mockConnectionState.current.isConnected,
+    isReconnecting: mockConnectionState.current.isReconnecting,
     isTimedOut: mockConnectionState.current.isTimedOut,
     isCreateBlocked: mockIsCreateBlocked.current,
     isLoading: false,
@@ -210,6 +212,7 @@ describe('Munchkin room header', () => {
     mockIsCreateBlocked.current = false;
     mockConnectionState.current = {
       isConnected: true,
+      isReconnecting: false,
       isTimedOut: false,
     };
     mockCreateCharacter.mockResolvedValue(undefined);
@@ -714,6 +717,7 @@ describe('Munchkin room header', () => {
   it('renders connection retry action after reconnect timeout and refreshes after retry', async () => {
     mockConnectionState.current = {
       isConnected: false,
+      isReconnecting: false,
       isTimedOut: true,
     };
     const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
@@ -736,6 +740,7 @@ describe('Munchkin room header', () => {
     });
 
     const retryButton = screen.getByRole('button', { name: 'Connection lost. Tap to retry' });
+    expect(screen.queryByText('Reconnecting…')).toBeNull();
     expect(screen.getByText('Connection lost · Retry')).toBeTruthy();
 
     await act(async () => {
@@ -745,6 +750,65 @@ describe('Munchkin room header', () => {
 
     expect(mockReconnect).toHaveBeenCalledTimes(1);
     expect(mockRefreshCharacters).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders reconnecting banner without the retry action while reconnect is in flight', async () => {
+    mockConnectionState.current = {
+      isConnected: false,
+      isReconnecting: true,
+      isTimedOut: false,
+    };
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.getByText('Reconnecting…')).toBeTruthy();
+    expect(screen.queryByText('Connection lost · Retry')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Connection lost. Tap to retry' })).toBeNull();
+  });
+
+  it('renders neither reconnecting banner nor retry action while connected', async () => {
+    mockConnectionState.current = {
+      isConnected: true,
+      isReconnecting: false,
+      isTimedOut: false,
+    };
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.queryByText('Reconnecting…')).toBeNull();
+    expect(screen.queryByText('Connection lost · Retry')).toBeNull();
   });
 
   it('skips foreground reconnect registration while already connected', async () => {

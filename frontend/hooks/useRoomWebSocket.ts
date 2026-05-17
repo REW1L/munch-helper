@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 interface UseRoomWebSocketResult {
   isConnected: boolean;
   isConnecting: boolean;
+  isReconnecting: boolean;
   isTimedOut: boolean;
   error: Error | null;
   reconnect: () => Promise<void>;
@@ -29,6 +30,7 @@ export function useRoomWebSocket(
   const clientRef = useRef<RoomWebSocketClient | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
+  const hasEverConnectedRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
@@ -72,6 +74,7 @@ export function useRoomWebSocket(
         clientRef.current.disconnect();
         clientRef.current = null;
       }
+      hasEverConnectedRef.current = false;
       setIsConnected(false);
       setIsConnecting(false);
       setIsTimedOut(false);
@@ -91,6 +94,7 @@ export function useRoomWebSocket(
     if (clientRef.current && connectionKeyRef.current !== connectionKey) {
       clientRef.current.disconnect();
       clientRef.current = null;
+      hasEverConnectedRef.current = false;
     }
 
     connectionKeyRef.current = connectionKey;
@@ -105,6 +109,7 @@ export function useRoomWebSocket(
         }
 
         clearReconnectTimeout();
+        hasEverConnectedRef.current = true;
         setIsConnected(true);
         setIsConnecting(false);
         setIsTimedOut(false);
@@ -130,6 +135,7 @@ export function useRoomWebSocket(
         setError(null);
         await client.connect();
         if (isMounted) {
+          hasEverConnectedRef.current = true;
           setIsConnected(true);
           setIsConnecting(false);
           setIsTimedOut(false);
@@ -150,6 +156,7 @@ export function useRoomWebSocket(
       isMounted = false;
       client.disconnect();
       clientRef.current = null;
+      hasEverConnectedRef.current = false;
       setIsConnected(false);
       setIsConnecting(false);
       setIsTimedOut(false);
@@ -198,9 +205,12 @@ export function useRoomWebSocket(
     return clientRef.current.subscribe(listener);
   };
 
+  const isReconnecting = hasEverConnectedRef.current && !isConnected && !isTimedOut;
+
   return {
     isConnected,
     isConnecting,
+    isReconnecting,
     isTimedOut,
     error,
     reconnect,
