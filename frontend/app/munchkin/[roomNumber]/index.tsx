@@ -10,6 +10,7 @@ import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
 import QuickEditSheet from '../../../components/munchkin/QuickEditSheet';
+import ReconnectingBanner from '../../../components/munchkin/ReconnectingBanner';
 import RoomCharactersList from '../../../components/munchkin/RoomCharactersList';
 import ChangeCharacterModal from '../modal-change-caracter';
 import CreateCharacterModal from '../modal-create-character';
@@ -36,6 +37,7 @@ const MunchkinIndexView: React.FC = () => {
     errorMessage,
     isCreateBlocked,
     isConnected,
+    isReconnecting,
     isTimedOut,
     refresh,
     reconnect,
@@ -250,6 +252,8 @@ const MunchkinIndexView: React.FC = () => {
               ),
             }}
           />
+
+          <ReconnectingBanner visible={isReconnecting} />
 
           {isTimedOut && !isConnected && (
             <Pressable

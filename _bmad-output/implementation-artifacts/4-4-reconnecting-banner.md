@@ -1,6 +1,6 @@
 # Story 4.4: Reconnecting Banner
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -38,53 +38,59 @@ so that I'm aware of the connection state without being blocked from viewing the
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add `isReconnecting` to `useRoomWebSocket` so consumers can distinguish "initial connect in flight" from "previously connected, now reconnecting" (AC: 1, 5)
-  - [ ] In `frontend/hooks/useRoomWebSocket.ts`, add a `hasEverConnectedRef = useRef(false)` and set `hasEverConnectedRef.current = true` inside the `onOpen` handler (both the `client` `onOpen` callback wrapper and the `connectAsync` success branch — both paths flip `isConnected` to `true`).
-  - [ ] Reset `hasEverConnectedRef.current = false` in the cleanup branch where `enabled || !roomId || !userId` is false, and when the connection key changes (both points already disconnect the previous client). This prevents stale "reconnecting" state when switching rooms.
-  - [ ] Derive `isReconnecting` returned from the hook as `hasEverConnectedRef.current && !isConnected && !isTimedOut`. Do **not** introduce a new `useState` for this — derive on each render to stay in sync with the existing `isConnected`/`isTimedOut` state transitions.
-  - [ ] Extend the `UseRoomWebSocketResult` interface with `isReconnecting: boolean`. Do not remove or rename existing fields (`isConnected`, `isConnecting`, `isTimedOut`, `error`, `reconnect`, `subscribe`).
+- [x] Review Findings
+  - [x] [Review][Patch] Stale reconnecting state can leak onto a new room or disabled initial connect [frontend/hooks/useRoomWebSocket.ts:208]
+  - [x] [Review][Patch] Accessibility announcement is driven by `visible` changes instead of banner mount lifecycle [frontend/components/munchkin/ReconnectingBanner.tsx:10]
+  - [x] [Review][Patch] `useRoomCharacters` does not test forwarding `isReconnecting` [frontend/hooks/useCharacters.test.ts:34]
+  - [x] [Review][Defer] Stale manual reconnect can update the wrong room/state [frontend/hooks/useRoomWebSocket.ts:167] — deferred, pre-existing
 
-- [ ] Task 2: Propagate `isReconnecting` through `useRoomCharacters` (AC: 1, 5)
-  - [ ] In `frontend/hooks/useCharacters.ts`, destructure `isReconnecting` from the `useRoomWebSocket` return value alongside the existing `isConnected`, `isTimedOut`, `reconnect`, `subscribe`.
-  - [ ] Add `isReconnecting: boolean` to the `UseRoomCharactersResult` interface and the final returned object.
-  - [ ] Update the dependency array of the trailing `useMemo` to include `isReconnecting`.
+- [x] Task 1: Add `isReconnecting` to `useRoomWebSocket` so consumers can distinguish "initial connect in flight" from "previously connected, now reconnecting" (AC: 1, 5)
+  - [x] In `frontend/hooks/useRoomWebSocket.ts`, add a `hasEverConnectedRef = useRef(false)` and set `hasEverConnectedRef.current = true` inside the `onOpen` handler (both the `client` `onOpen` callback wrapper and the `connectAsync` success branch — both paths flip `isConnected` to `true`).
+  - [x] Reset `hasEverConnectedRef.current = false` in the cleanup branch where `enabled || !roomId || !userId` is false, and when the connection key changes (both points already disconnect the previous client). This prevents stale "reconnecting" state when switching rooms.
+  - [x] Derive `isReconnecting` returned from the hook as `hasEverConnectedRef.current && !isConnected && !isTimedOut`. Do **not** introduce a new `useState` for this — derive on each render to stay in sync with the existing `isConnected`/`isTimedOut` state transitions.
+  - [x] Extend the `UseRoomWebSocketResult` interface with `isReconnecting: boolean`. Do not remove or rename existing fields (`isConnected`, `isConnecting`, `isTimedOut`, `error`, `reconnect`, `subscribe`).
 
-- [ ] Task 3: Implement `ReconnectingBanner` presentational component (AC: 1, 2, 4)
-  - [ ] Create `frontend/components/munchkin/ReconnectingBanner.tsx` exporting `ReconnectingBanner` as default.
-  - [ ] Props: `{ visible: boolean }`. Component renders `null` when `visible === false` and returns the banner JSX otherwise so that mount/unmount drives the accessibility announce side effect.
-  - [ ] On mount (`useEffect` with empty dep array), call `AccessibilityInfo.announceForAccessibility('Reconnecting…')`. Do not also set `accessibilityLiveRegion` — per `13.5` of UX, that prop is unreliable across platforms in React Native.
-  - [ ] Banner UI: a `View` with `backgroundColor: AppTheme.colors.surfaceSubtle`, full-width, sitting at the top of the Room View screen area (inside `SafeAreaView`, above `RoomCharactersList`). Padding `paddingVertical: AppTheme.spacing.sm`, `paddingHorizontal: AppTheme.spacing.md`. Text uses `color: AppTheme.colors.textMuted` and `AppTheme.typography.labelMd`. Center the text horizontally (`textAlign: 'center'`).
-  - [ ] Accessibility props on the View: `accessible={true}`, `accessibilityRole="alert"`, `accessibilityLabel="Reconnecting…"`. The imperative `announceForAccessibility` is the authoritative announcement; the `accessibilityRole="alert"` is supplementary semantic hinting.
-  - [ ] Co-locate the component test as `frontend/components/munchkin/ReconnectingBanner.test.tsx` (matching the casing convention `ComponentName.test.tsx` from `RoomCharacterCard.test.tsx`).
+- [x] Task 2: Propagate `isReconnecting` through `useRoomCharacters` (AC: 1, 5)
+  - [x] In `frontend/hooks/useCharacters.ts`, destructure `isReconnecting` from the `useRoomWebSocket` return value alongside the existing `isConnected`, `isTimedOut`, `reconnect`, `subscribe`.
+  - [x] Add `isReconnecting: boolean` to the `UseRoomCharactersResult` interface and the final returned object.
+  - [x] Update the dependency array of the trailing `useMemo` to include `isReconnecting`.
 
-- [ ] Task 4: Render `ReconnectingBanner` in Room View (AC: 1, 2, 3, 5)
-  - [ ] In `frontend/app/munchkin/[roomNumber]/index.tsx`, destructure `isReconnecting` from `useRoomCharacters` alongside the existing fields.
-  - [ ] Import and render `<ReconnectingBanner visible={isReconnecting} />` **above** the existing `{isTimedOut && !isConnected && (...) }` Retry block — banner sits at the very top of the screen content, below the `Stack.Screen` header but above the characters list and Retry button.
-  - [ ] Do not change the existing Retry button logic. The two indicators are mutually exclusive by construction (`isReconnecting` requires `!isTimedOut`, so they cannot both be true).
+- [x] Task 3: Implement `ReconnectingBanner` presentational component (AC: 1, 2, 4)
+  - [x] Create `frontend/components/munchkin/ReconnectingBanner.tsx` exporting `ReconnectingBanner` as default.
+  - [x] Props: `{ visible: boolean }`. Component renders `null` when `visible === false` and returns the banner JSX otherwise so that mount/unmount drives the accessibility announce side effect.
+  - [x] On mount (`useEffect` with empty dep array), call `AccessibilityInfo.announceForAccessibility('Reconnecting…')`. Do not also set `accessibilityLiveRegion` — per `13.5` of UX, that prop is unreliable across platforms in React Native.
+  - [x] Banner UI: a `View` with `backgroundColor: AppTheme.colors.surfaceSubtle`, full-width, sitting at the top of the Room View screen area (inside `SafeAreaView`, above `RoomCharactersList`). Padding `paddingVertical: AppTheme.spacing.sm`, `paddingHorizontal: AppTheme.spacing.md`. Text uses `color: AppTheme.colors.textMuted` and `AppTheme.typography.labelMd`. Center the text horizontally (`textAlign: 'center'`).
+  - [x] Accessibility props on the View: `accessible={true}`, `accessibilityRole="alert"`, `accessibilityLabel="Reconnecting…"`. The imperative `announceForAccessibility` is the authoritative announcement; the `accessibilityRole="alert"` is supplementary semantic hinting.
+  - [x] Co-locate the component test as `frontend/components/munchkin/ReconnectingBanner.test.tsx` (matching the casing convention `ComponentName.test.tsx` from `RoomCharacterCard.test.tsx`).
 
-- [ ] Task 5: Tests (AC: 1, 2, 3, 4, 5)
-  - [ ] `frontend/components/munchkin/ReconnectingBanner.test.tsx` — unit test the banner:
+- [x] Task 4: Render `ReconnectingBanner` in Room View (AC: 1, 2, 3, 5)
+  - [x] In `frontend/app/munchkin/[roomNumber]/index.tsx`, destructure `isReconnecting` from `useRoomCharacters` alongside the existing fields.
+  - [x] Import and render `<ReconnectingBanner visible={isReconnecting} />` **above** the existing `{isTimedOut && !isConnected && (...) }` Retry block — banner sits at the very top of the screen content, below the `Stack.Screen` header but above the characters list and Retry button.
+  - [x] Do not change the existing Retry button logic. The two indicators are mutually exclusive by construction (`isReconnecting` requires `!isTimedOut`, so they cannot both be true).
+
+- [x] Task 5: Tests (AC: 1, 2, 3, 4, 5)
+  - [x] `frontend/components/munchkin/ReconnectingBanner.test.tsx` — unit test the banner:
     - renders nothing when `visible={false}` (assert no text present)
     - renders the "Reconnecting…" text when `visible={true}` and applies `surfaceSubtle` background and `textMuted` text color (snapshot or style assertions)
     - calls `AccessibilityInfo.announceForAccessibility` exactly once with the reconnecting message on mount and does **not** call it again when the parent re-renders with the same visible state. Mock `AccessibilityInfo` via `vi.mock('react-native', ...)` mirroring `RoomCharacterCard.test.tsx` line 4 / 21.
     - does not call `announceForAccessibility` when initially mounted with `visible={false}`
-  - [ ] `frontend/hooks/useRoomWebSocket.test.ts` — extend existing suite:
+  - [x] `frontend/hooks/useRoomWebSocket.test.ts` — extend existing suite:
     - new test: `isReconnecting` is `false` before any connect completes (initial mount, no `onOpen` yet) even if `isConnected === false`
     - new test: after a successful `onOpen` and a subsequent disconnect (`onClose`), `isReconnecting` becomes `true` until either the mocked `isConnected` flips back to `true` (auto-reconnect) or `vi.advanceTimersByTime(8000)` triggers `isTimedOut`
     - new test: `isReconnecting` flips back to `false` when `isTimedOut` becomes `true`
     - reuse the existing `mockClientInstances` fake-timer pattern; do not introduce real timers
-  - [ ] `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` — extend the existing route-level mocks:
+  - [x] `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` — extend the existing route-level mocks:
     - add `isReconnecting` to the `mockConnectionState` hoisted ref and to the `useRoomCharacters` mock return value
     - new test: when `mockConnectionState.current = { isConnected: false, isReconnecting: true, isTimedOut: false }`, the banner text "Reconnecting…" is rendered and the "Connection lost · Retry" button is NOT rendered
     - new test: when `mockConnectionState.current = { isConnected: false, isReconnecting: false, isTimedOut: true }`, the banner text "Reconnecting…" is NOT rendered and the Retry button IS rendered (this preserves the assertion already in the existing test at line 714)
     - new test: when `isConnected: true`, neither the banner nor the Retry button is rendered
 
-- [ ] Task 6: Run frontend validation
-  - [ ] `cd frontend && npm run test:unit`
-  - [ ] `cd frontend && npm run test:room-route`
-  - [ ] `cd frontend && npm run lint`
-  - [ ] `cd frontend && npm run tsc`
-  - [ ] Manually verify on iOS Simulator (or web preview) that the banner appears briefly when toggling airplane mode mid-session and disappears on reconnect — the 8-second timeout should hand off to the existing Retry button.
+- [x] Task 6: Run frontend validation
+  - [x] `cd frontend && npm run test:unit`
+  - [x] `cd frontend && npm run test:room-route`
+  - [x] `cd frontend && npm run lint`
+  - [x] `cd frontend && npm run tsc`
+  - [x] Manually verify on iOS Simulator (or web preview) that the banner appears briefly when toggling airplane mode mid-session and disappears on reconnect — the 8-second timeout should hand off to the existing Retry button.
 
 ## Dev Notes
 
@@ -283,12 +289,42 @@ frontend/__tests__/app/munchkin/[roomNumber].test.tsx  ADD isReconnecting to hoi
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
+
+- 2026-05-17: Added derived `isReconnecting` state to `useRoomWebSocket` with `hasEverConnectedRef`; propagated through `useRoomCharacters` and Room View.
+- 2026-05-17: Added `ReconnectingBanner` component and tests for visibility, token styles, and imperative accessibility announcement.
+- 2026-05-17: Validation passed: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`. Lint reports one pre-existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
+- 2026-05-17: Web preview manual verification attempted on ports 19006, 19007, 19008, and the project default 8081; Expo did not open a listening port in this environment, including offline/localhost retries, so the manual preview subtask remains unchecked.
+- 2026-05-17: Code review patch findings resolved: reconnecting state is keyed to the active connection, banner announcement is mount-driven, and `useRoomCharacters` forwarding coverage was added. Validation re-run: `npm run test:unit`, `npm run test:room-route`, `npm run lint`, `npm run tsc`.
+- 2026-05-17: Manual validation task closed per Ivan's approval; Story 4.4 marked done.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed — comprehensive developer guide created
+- Implemented reconnecting-window state derived from prior successful WebSocket connection plus current `isConnected`/`isTimedOut` state.
+- Added a low-prominence, token-styled `ReconnectingBanner` that announces "Reconnecting…" imperatively and avoids `accessibilityLiveRegion`.
+- Rendered the banner above the existing Retry indicator; route tests confirm the banner and Retry button stay mutually exclusive across reconnecting, timed-out, and connected states.
+- Automated validation is green; manual simulator/web-preview verification was accepted and closed per Ivan's approval.
+- Resolved all code review patch findings; deferred one pre-existing manual reconnect race to `_bmad-output/implementation-artifacts/deferred-work.md`.
 
 ### File List
+
+- frontend/hooks/useRoomWebSocket.ts
+- frontend/hooks/useRoomWebSocket.test.ts
+- frontend/hooks/useCharacters.ts
+- frontend/hooks/useCharacters.test.ts
+- frontend/components/munchkin/ReconnectingBanner.tsx
+- frontend/components/munchkin/ReconnectingBanner.test.tsx
+- frontend/app/munchkin/[roomNumber]/index.tsx
+- frontend/__tests__/app/munchkin/[roomNumber].test.tsx
+- _bmad-output/implementation-artifacts/4-4-reconnecting-banner.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- _bmad-output/implementation-artifacts/deferred-work.md
+
+### Change Log
+
+- 2026-05-17: Implemented reconnecting banner state, UI, route integration, and automated tests. Story remains in-progress pending manual simulator/web-preview verification.
+- 2026-05-17: Addressed code review patch findings and re-ran frontend validation. Story remains in-progress pending manual simulator/web-preview verification.
+- 2026-05-17: Closed manual validation task per Ivan's approval and marked Story 4.4 done.
