@@ -983,6 +983,64 @@ export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPl
   }
 }
 
+export function buildIssueBodyWithSources(specContent, specFile) {
+  return [
+    specContent.trimEnd(),
+    "",
+    "## Source artifacts",
+    `- \`${specFile}\``,
+  ].join("\n");
+}
+
+export function updateIssueBodyWithSpecContent(
+  config,
+  issue,
+  specFile,
+  dryRun,
+  commandPlan,
+  { ghExec = ghCommand, readFileFn = (p) => fs.readFileSync(p, "utf8") } = {}
+) {
+  const issueNumber = issue.number;
+
+  const editArgs = [
+    "issue",
+    "edit",
+    Number.isFinite(issueNumber) ? String(issueNumber) : "<n>",
+    "--repo",
+    config.repo,
+    "--body-file",
+    "-",
+  ];
+
+  if (dryRun) {
+    recordCommand(commandPlan, ["gh", ...editArgs]);
+    return;
+  }
+
+  if (!Number.isFinite(issueNumber)) {
+    logInfo("Warning: skipping issue body update — issue number is not a valid finite number.");
+    return;
+  }
+
+  let specContent;
+  try {
+    specContent = readFileFn(specFile);
+  } catch {
+    logInfo(`Warning: could not read spec file ${specFile} — skipping issue body update.`);
+    return;
+  }
+
+  try {
+    recordCommand(commandPlan, ["gh", ...editArgs]);
+    ghExec(editArgs, { stdin: buildIssueBodyWithSources(specContent, specFile) });
+    logInfo(`Updated issue #${issueNumber} body with spec content from ${specFile}.`);
+  } catch (error) {
+    logInfo(
+      `Warning: failed to update issue #${issueNumber} body: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
 function parseArgs(argv) {
   return {
     dryRun: argv.includes("--dry-run"),
@@ -1091,6 +1149,7 @@ function main() {
       );
 
       if (operation.targetStatus === "ready-for-dev" && operation.sourcePaths.length > 0) {
+        updateIssueBodyWithSpecContent(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
         postReadyForDevMarker(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
       }
     }

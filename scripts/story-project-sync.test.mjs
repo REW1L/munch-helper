@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildIssueBodyWithSources,
   buildMarkerCommentBody,
   buildPullRequestOperations,
   buildPushOperations,
@@ -14,6 +15,7 @@ import {
   parseNameStatus,
   parseStoryTitle,
   shouldSkipMarkerPost,
+  updateIssueBodyWithSpecContent,
 } from "./story-project-sync.mjs";
 
 test("parseStoryTitle extracts the story number and title", () => {
@@ -513,6 +515,90 @@ test("postReadyForDevMarker logs failure and does not throw when gh errors", asy
       { ghExec: throwingGhExec }
     );
   });
+});
+
+test("buildIssueBodyWithSources appends source artifacts section to spec content", () => {
+  const specContent = "# Story 1.1: My Story\n\nFull spec details.";
+  const body = buildIssueBodyWithSources(specContent, "path/to/spec.md");
+
+  assert.ok(body.startsWith(specContent.trimEnd()), "Should start with spec content");
+  assert.ok(body.includes("## Source artifacts"), "Should include source artifacts heading");
+  assert.ok(body.includes("- `path/to/spec.md`"), "Should include the spec file path");
+});
+
+test("updateIssueBodyWithSpecContent updates the issue body with spec file content and source artifacts", () => {
+  const specContent = "# Story 1.1: My Story\n\nFull spec details.";
+  const calls = [];
+  const mockGhExec = (args, options) => {
+    calls.push({ args: [...args], options });
+    return "";
+  };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "spec-foo.md",
+    false,
+    [],
+    { ghExec: mockGhExec, readFileFn: () => specContent }
+  );
+
+  const editCall = calls.find((c) => c.args.includes("edit"));
+  assert.ok(editCall, "gh issue edit should have been called");
+  assert.ok(editCall.args.includes("42"), "Should target the correct issue number");
+  assert.ok(editCall.options?.stdin?.includes(specContent.trimEnd()), "Should include spec content");
+  assert.ok(editCall.options?.stdin?.includes("## Source artifacts"), "Should include source artifacts section");
+  assert.ok(editCall.options?.stdin?.includes("- `spec-foo.md`"), "Should include the spec file path");
+});
+
+test("updateIssueBodyWithSpecContent skips update when spec file cannot be read", () => {
+  const calls = [];
+  const mockGhExec = (args) => { calls.push([...args]); return ""; };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "missing-spec.md",
+    false,
+    [],
+    { ghExec: mockGhExec, readFileFn: () => { throw new Error("ENOENT"); } }
+  );
+
+  assert.ok(!calls.some((c) => c.includes("edit")), "gh issue edit should NOT be called when file read fails");
+});
+
+test("updateIssueBodyWithSpecContent logs failure and does not throw when gh errors", () => {
+  assert.doesNotThrow(() => {
+    updateIssueBodyWithSpecContent(
+      { repo: "owner/repo" },
+      { number: 42 },
+      "spec.md",
+      false,
+      [],
+      {
+        ghExec: () => { throw new Error("network error"); },
+        readFileFn: () => "spec content",
+      }
+    );
+  });
+});
+
+test("updateIssueBodyWithSpecContent records dry-run command without executing", () => {
+  const commandPlan = [];
+  const calls = [];
+  const mockGhExec = (args) => { calls.push([...args]); return ""; };
+
+  updateIssueBodyWithSpecContent(
+    { repo: "owner/repo" },
+    { number: 42 },
+    "spec-foo.md",
+    true,
+    commandPlan,
+    { ghExec: mockGhExec, readFileFn: () => "spec content" }
+  );
+
+  assert.ok(commandPlan.some((cmd) => cmd.includes("issue") && cmd.includes("edit")), "Should record planned command");
+  assert.ok(!calls.length, "Should not execute gh command in dry-run mode");
 });
 
 test("push operations always include sourcePaths when targeting ready-for-dev, enabling marker post", () => {
