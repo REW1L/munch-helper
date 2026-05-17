@@ -15,9 +15,10 @@ const AttributeList = memo(function AttributeList({
   variant = 'card',
 }: AttributeListProps) {
   const textStyle = variant === 'footer' ? styles.footerAttributeText : styles.attributeText;
+  const containerStyle = variant === 'footer' ? undefined : styles.cardAttributeList;
 
   return (
-    <View>
+    <View style={containerStyle}>
       {ATTRIBUTES.map((attribute) =>
         character[attribute].map((value) => (
           <Text key={`attribute-${character.id}-${attribute}-${value}`} style={textStyle}>
@@ -30,12 +31,17 @@ const AttributeList = memo(function AttributeList({
 });
 
 const styles = StyleSheet.create({
+  cardAttributeList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
   attributeText: {
     fontSize: 11,
     fontWeight: '500',
     color: AppTheme.colors.textPrimary,
     letterSpacing: 0.5,
     lineHeight: 16,
+    marginRight: 8,
   },
   footerAttributeText: {
     fontSize: 11,

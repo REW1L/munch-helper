@@ -373,6 +373,60 @@ describe('Munchkin room header', () => {
     expect(mockUpdateCharacter).toHaveBeenCalledWith('char-1', { level: 3, power: 1 });
   });
 
+  it('renders existing room characters immediately for a late joiner', async () => {
+    mockCharactersState.current = [
+      {
+        id: 'char-rogue',
+        roomId: 'ROOM42',
+        userId: 'user-2',
+        nickname: 'Rogue',
+        avatar: 2,
+        color: '#0088CC',
+        level: 4,
+        power: 1,
+        class: ['Thief'],
+        race: ['Elf'],
+        gender: ['female'],
+      },
+      {
+        id: 'char-mage',
+        roomId: 'ROOM42',
+        userId: 'user-3',
+        nickname: 'Mage',
+        avatar: 3,
+        color: '#BB44DD',
+        level: 5,
+        power: 6,
+        class: ['Wizard'],
+        race: ['Human'],
+        gender: ['female'],
+      },
+    ];
+
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.getByText('Rogue: 4 lvl / 1 str')).toBeTruthy();
+    expect(screen.getByText('Mage: 5 lvl / 6 str')).toBeTruthy();
+    expect(mockCreateCharacter).not.toHaveBeenCalled();
+  });
+
   it('renders delete actions for own character full edit and requires explicit confirmation', async () => {
     mockCharactersState.current = [
       {
