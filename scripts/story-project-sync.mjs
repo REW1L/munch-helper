@@ -759,7 +759,7 @@ function loadExistingIssues(config, dryRun) {
   return parseJsonOutput(output, []);
 }
 
-function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus = null) {
+function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus = null, ghExec = ghCommand) {
   if (dryRun) {
     return [];
   }
@@ -777,7 +777,7 @@ function loadProjectItemsForStory(config, operation, dryRun, onlyIfCurrentStatus
     "--format",
     "json",
   ];
-  const output = ghCommand(args, { dryRun });
+  const output = ghExec(args, { dryRun });
   const parsed = parseJsonOutput(output, { items: [] });
   return parsed.items ?? [];
 }
@@ -864,8 +864,15 @@ function ensureIssue(config, issues, operation, dryRun, commandPlan) {
   return issue;
 }
 
-function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
-  let projectItems = loadProjectItemsForStory(config, operation, dryRun);
+export function ensureProjectItem(
+  config,
+  issue,
+  operation,
+  dryRun,
+  commandPlan,
+  { ghExec = ghCommand, sleepFn = sleepMs } = {}
+) {
+  let projectItems = loadProjectItemsForStory(config, operation, dryRun, null, ghExec);
   let projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
 
   if (!projectItem) {
@@ -879,13 +886,13 @@ function ensureProjectItem(config, issue, operation, dryRun, commandPlan) {
       issue.url,
     ];
     recordCommand(commandPlan, ["gh", ...addArgs]);
-    ghCommand(addArgs, { dryRun });
+    ghExec(addArgs, { dryRun });
 
     const maxRetries = 5;
     const baseDelayMs = 2000;
     for (let attempt = 1; attempt <= maxRetries && !projectItem; attempt++) {
-      sleepMs(baseDelayMs * attempt);
-      projectItems = loadProjectItemsForStory(config, operation, dryRun);
+      sleepFn(baseDelayMs * attempt);
+      projectItems = loadProjectItemsForStory(config, operation, dryRun, null, ghExec);
       projectItem = chooseProjectItem(projectItems, operation.storyNumber, operation.fullTitle);
       if (!projectItem) {
         logInfo(

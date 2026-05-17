@@ -6,6 +6,7 @@ import {
   buildPullRequestOperations,
   buildPushOperations,
   deriveSpecFileSlug,
+  ensureProjectItem,
   extractStoryRefsFromMarkdown,
   getImplementationArtifactSkipReason,
   parseImplementationArtifact,
@@ -541,4 +542,89 @@ test("push operations always include sourcePaths when targeting ready-for-dev, e
     readyOps.every((op) => op.sourcePaths.length > 0),
     "All ready-for-dev operations should include sourcePaths for marker posting"
   );
+});
+
+const ITEM_OPERATION = {
+  storyNumber: "5.4",
+  fullTitle: "Story 5.4: Realtime Battle Updates from Battle Actions",
+  ensureIssue: true,
+  ensureProjectItem: true,
+  targetStatus: "ready-for-dev",
+  sourcePaths: [],
+};
+const ITEM_CONFIG = { projectOwner: "REW1L", projectNumber: 1 };
+const ITEM_ISSUE = { url: "https://github.com/REW1L/munch-helper/issues/42", number: 42 };
+const ITEM_RESULT = { id: "PVI_1", title: "Story 5.4: Realtime Battle Updates from Battle Actions" };
+const ITEM_LIST_RESPONSE = JSON.stringify({ items: [ITEM_RESULT] });
+const EMPTY_LIST_RESPONSE = JSON.stringify({ items: [] });
+
+test("ensureProjectItem returns immediately when item already exists in project", () => {
+  const calls = [];
+  const mockGhExec = (args) => {
+    calls.push([...args]);
+    return ITEM_LIST_RESPONSE;
+  };
+  const sleepFn = () => assert.fail("sleepFn should not be called when item is already present");
+
+  const result = ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+    ghExec: mockGhExec,
+    sleepFn,
+  });
+
+  assert.deepEqual(result, ITEM_RESULT);
+  assert.ok(
+    !calls.some((c) => c.includes("item-add")),
+    "item-add should not be called when item already exists"
+  );
+});
+
+test("ensureProjectItem retries and succeeds when item becomes visible after item-add", () => {
+  let listCallCount = 0;
+  const sleepDelays = [];
+  const calls = [];
+
+  // item-list returns empty on first call (before add), empty on first retry, present on second retry
+  const mockGhExec = (args) => {
+    calls.push([...args]);
+    if (args.includes("item-list")) {
+      listCallCount++;
+      return listCallCount >= 3 ? ITEM_LIST_RESPONSE : EMPTY_LIST_RESPONSE;
+    }
+    return "";
+  };
+  const sleepFn = (ms) => sleepDelays.push(ms);
+
+  const result = ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+    ghExec: mockGhExec,
+    sleepFn,
+  });
+
+  assert.deepEqual(result, ITEM_RESULT);
+  assert.ok(
+    calls.some((c) => c.includes("item-add")),
+    "item-add should have been called"
+  );
+  assert.equal(sleepDelays.length, 2, "should have slept twice before item became visible");
+  assert.deepEqual(sleepDelays, [2000, 4000], "delays should increase linearly");
+});
+
+test("ensureProjectItem throws after all retries are exhausted", () => {
+  const sleepDelays = [];
+  const mockGhExec = () => EMPTY_LIST_RESPONSE;
+  const sleepFn = (ms) => sleepDelays.push(ms);
+
+  assert.throws(
+    () =>
+      ensureProjectItem(ITEM_CONFIG, ITEM_ISSUE, ITEM_OPERATION, false, [], {
+        ghExec: mockGhExec,
+        sleepFn,
+      }),
+    (err) => {
+      assert.ok(err.message.includes("Story 5.4: Realtime Battle Updates from Battle Actions"));
+      return true;
+    }
+  );
+
+  assert.equal(sleepDelays.length, 5, "should have attempted all 5 retries");
+  assert.deepEqual(sleepDelays, [2000, 4000, 6000, 8000, 10000], "all retry delays should be present");
 });
