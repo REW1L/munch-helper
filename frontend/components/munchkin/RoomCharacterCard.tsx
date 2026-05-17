@@ -141,7 +141,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
       <View style={styles.attributesBox}>
         <ScrollView
           nestedScrollEnabled
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
           contentContainerStyle={styles.attributesScrollContent}
         >
           <AttributeList character={character} />

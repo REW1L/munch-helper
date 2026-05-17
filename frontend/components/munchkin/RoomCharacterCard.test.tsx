@@ -170,7 +170,7 @@ describe('RoomCharacterCard', () => {
     });
     const [cardScrollView] = cardRenderer.root.findAllByType(ScrollView);
     expect(cardScrollView.props.nestedScrollEnabled).toBe(true);
-    expect(cardScrollView.props.showsVerticalScrollIndicator).toBe(false);
+    expect(cardScrollView.props.showsVerticalScrollIndicator).toBe(true);
     expect(cardButton.findAllByType(ScrollView)).toHaveLength(0);
 
     let footerRenderer: any;
@@ -181,6 +181,41 @@ describe('RoomCharacterCard', () => {
     const [footerScrollView] = footerRenderer.root.findAllByType(ScrollView);
     expect(footerScrollView.props.nestedScrollEnabled).toBe(true);
     expect(footerScrollView.props.showsVerticalScrollIndicator).toBe(false);
+  });
+
+  it('keeps every multi-value attribute reachable from the room card', () => {
+    const multiAttributeCharacter: Character = {
+      ...baseCharacter,
+      race: ['Dwarf', 'Elf'],
+      gender: ['Male', 'Female'],
+      class: ['Warrior', 'Wizard', 'Thief'],
+    };
+    let renderer: any;
+
+    act(() => {
+      renderer = TestRenderer.create(<RoomCharacterCard character={multiAttributeCharacter} onChangePress={vi.fn()} />);
+    });
+
+    for (const attribute of [
+      'Dwarf',
+      'Elf',
+      'Male',
+      'Female',
+      'Warrior',
+      'Wizard',
+      'Thief',
+    ]) {
+      expect(getTextNode(renderer, attribute)).toBeTruthy();
+    }
+
+    const [cardScrollView] = renderer.root.findAllByType(ScrollView);
+    const firstAttributeStyle = StyleSheet.flatten(getTextNode(renderer, 'Dwarf').props.style);
+
+    expect(firstAttributeStyle.flexDirection).toBeUndefined();
+    expect(firstAttributeStyle.marginRight).toBeUndefined();
+    expect(firstAttributeStyle.lineHeight).toBe(16);
+    expect(cardScrollView.props.nestedScrollEnabled).toBe(true);
+    expect(cardScrollView.props.showsVerticalScrollIndicator).toBe(true);
   });
 
   it('shows reduced-motion realtime border signal when an external update arrives', async () => {
