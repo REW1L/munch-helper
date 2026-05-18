@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { userProfileContext } from '@/context/UserContext';
 import type { Character } from '@/api/characters';
+import type { Battle } from '@/api/battles';
+import { ApiError } from '@/api/http';
 
 const mockSetStringAsync = vi.hoisted(() => vi.fn());
 const mockRoomNumber = vi.hoisted(() => ({ current: 'ROOM42' as string | string[] | undefined }));
@@ -11,6 +13,9 @@ const mockCreateCharacter = vi.hoisted(() => vi.fn());
 const mockUpdateCharacter = vi.hoisted(() => vi.fn());
 const mockRemoveCharacter = vi.hoisted(() => vi.fn());
 const mockRefreshCharacters = vi.hoisted(() => vi.fn());
+const mockStartBattle = vi.hoisted(() => vi.fn());
+const mockRefreshBattle = vi.hoisted(() => vi.fn());
+const mockRouterPush = vi.hoisted(() => vi.fn());
 const mockReconnect = vi.hoisted(() => vi.fn());
 const mockUseReconnectOnForeground = vi.hoisted(() => vi.fn());
 const mockIsCreateBlocked = vi.hoisted(() => ({ current: false }));
@@ -23,6 +28,13 @@ const mockConnectionState = vi.hoisted(() => ({
 }));
 const mockCharactersState = vi.hoisted(() => ({
   current: [] as Character[],
+}));
+const mockBattleState = vi.hoisted(() => ({
+  current: {
+    battle: null as Battle | null,
+    isLoading: false,
+    errorMessage: null as string | null,
+  },
 }));
 vi.mock('expo-clipboard', () => ({
   setStringAsync: mockSetStringAsync,
@@ -56,6 +68,9 @@ vi.mock('expo-router', () => ({
   useLocalSearchParams: () => ({
     roomNumber: mockRoomNumber.current,
   }),
+  useRouter: () => ({
+    push: mockRouterPush,
+  }),
 }));
 
 vi.mock('@/hooks/useCharacters', () => ({
@@ -70,6 +85,23 @@ vi.mock('@/hooks/useCharacters', () => ({
     isReconnecting: mockConnectionState.current.isReconnecting,
     isTimedOut: mockConnectionState.current.isTimedOut,
     isCreateBlocked: mockIsCreateBlocked.current,
+    isLoading: false,
+    errorMessage: null,
+  }),
+}));
+
+vi.mock('@/hooks/useRoomBattle', () => ({
+  useRoomBattle: () => ({
+    battle: mockBattleState.current.battle,
+    isLoading: mockBattleState.current.isLoading,
+    errorMessage: mockBattleState.current.errorMessage,
+    refresh: mockRefreshBattle,
+  }),
+}));
+
+vi.mock('@/hooks/useBattleActions', () => ({
+  useBattleActions: () => ({
+    start: mockStartBattle,
     isLoading: false,
     errorMessage: null,
   }),
@@ -207,6 +239,9 @@ describe('Munchkin room header', () => {
     mockUpdateCharacter.mockReset();
     mockRemoveCharacter.mockReset();
     mockRefreshCharacters.mockReset();
+    mockStartBattle.mockReset();
+    mockRefreshBattle.mockReset();
+    mockRouterPush.mockReset();
     mockReconnect.mockReset();
     mockUseReconnectOnForeground.mockReset();
     mockIsCreateBlocked.current = false;
@@ -219,8 +254,15 @@ describe('Munchkin room header', () => {
     mockUpdateCharacter.mockResolvedValue(undefined);
     mockRemoveCharacter.mockResolvedValue(undefined);
     mockRefreshCharacters.mockResolvedValue(undefined);
+    mockStartBattle.mockResolvedValue(undefined);
+    mockRefreshBattle.mockResolvedValue(undefined);
     mockReconnect.mockResolvedValue(undefined);
     mockCharactersState.current = [];
+    mockBattleState.current = {
+      battle: null,
+      isLoading: false,
+      errorMessage: null,
+    };
     mockRoomNumber.current = 'ROOM42';
     latestHeaderOptions.current = undefined;
   });
@@ -804,6 +846,7 @@ describe('Munchkin room header', () => {
 
     expect(mockReconnect).toHaveBeenCalledTimes(1);
     expect(mockRefreshCharacters).toHaveBeenCalledTimes(1);
+    expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
   });
 
   it('renders reconnecting banner without the retry action while reconnect is in flight', async () => {
@@ -948,5 +991,114 @@ describe('Munchkin room header', () => {
     });
 
     expect(screen.queryByText('Edit Rogue')).toBeNull();
+  });
+
+  it('starts a battle from the room and opens the battle view', async () => {
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open battle' }));
+      await Promise.resolve();
+    });
+
+    expect(mockStartBattle).toHaveBeenCalledWith(expect.objectContaining({
+      roomId: 'ROOM42',
+      name: expect.stringMatching(/^Battle /),
+    }));
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]/(battle)',
+      params: { roomNumber: 'ROOM42' },
+    });
+  });
+
+  it('opens an existing active battle without creating another', async () => {
+    mockBattleState.current.battle = {
+      id: 'battle-1',
+      roomId: 'ROOM42',
+      name: 'Existing',
+      status: 'active',
+      playerSide: { characterIds: [], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+      result: null,
+      concludedAt: null,
+    };
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open battle' }));
+    });
+
+    expect(mockStartBattle).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]/(battle)',
+      params: { roomNumber: 'ROOM42' },
+    });
+  });
+
+  it('recovers from battle create conflict by refreshing and opening the existing battle', async () => {
+    mockStartBattle.mockRejectedValueOnce(new ApiError('Already active', 409, { activeBattleId: 'battle-1' }));
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open battle' }));
+      await Promise.resolve();
+    });
+
+    expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]/(battle)',
+      params: { roomNumber: 'ROOM42' },
+    });
   });
 });

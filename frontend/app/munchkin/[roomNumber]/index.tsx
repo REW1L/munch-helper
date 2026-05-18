@@ -1,16 +1,20 @@
+import { ApiError } from '@/api/http';
 import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
+import { useBattleActions } from '@/hooks/useBattleActions';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useReconnectOnForeground } from '@/hooks/useReconnectOnForeground';
+import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
 import QuickEditSheet from '../../../components/munchkin/QuickEditSheet';
 import ReconnectingBanner from '../../../components/munchkin/ReconnectingBanner';
+import { RoomHeaderTitle } from '../../../components/munchkin/RoomHeaderTitle';
 import RoomCharactersList from '../../../components/munchkin/RoomCharactersList';
 import ChangeCharacterModal from '../modal-change-caracter';
 import CreateCharacterModal from '../modal-create-character';
@@ -24,6 +28,7 @@ type UndoState = {
 
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
   const { userProfile } = useContext(userProfileContext);
@@ -42,6 +47,13 @@ const MunchkinIndexView: React.FC = () => {
     refresh,
     reconnect,
   } = useRoomCharacters(roomId, userProfile);
+  const {
+    battle,
+    isLoading: isBattleLoading,
+    errorMessage: battleErrorMessage,
+    refresh: refreshBattle,
+  } = useRoomBattle(roomId);
+  const battleActions = useBattleActions(roomId);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
@@ -223,7 +235,55 @@ const MunchkinIndexView: React.FC = () => {
   const handleReconnect = useCallback(async () => {
     await reconnect();
     await refresh();
-  }, [reconnect, refresh]);
+    await refreshBattle();
+  }, [reconnect, refresh, refreshBattle]);
+
+  const navigateToBattle = useCallback(() => {
+    if (!roomId) {
+      return;
+    }
+
+    router.push({
+      pathname: '/munchkin/[roomNumber]/(battle)',
+      params: { roomNumber: roomId },
+    });
+  }, [roomId, router]);
+
+  const createDefaultBattleName = useCallback(() => {
+    const timestamp = new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date());
+
+    return `Battle ${timestamp}`;
+  }, []);
+
+  const handleBattlePress = useCallback(async () => {
+    if (!roomId) {
+      return;
+    }
+
+    if (battle) {
+      navigateToBattle();
+      return;
+    }
+
+    try {
+      setActionError(null);
+      await battleActions.start({ roomId, name: createDefaultBattleName() });
+      navigateToBattle();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        await refreshBattle();
+        navigateToBattle();
+        return;
+      }
+
+      setActionError(error instanceof Error ? error.message : 'Failed to start battle');
+    }
+  }, [battle, battleActions, createDefaultBattleName, navigateToBattle, refreshBattle, roomId]);
 
   useReconnectOnForeground(Boolean(roomId && userProfile.id && !isConnected), handleReconnect);
 
@@ -234,21 +294,12 @@ const MunchkinIndexView: React.FC = () => {
           <Stack.Screen
             options={{
               headerTitle: () => (
-                <View style={styles.headerTitleRow}>
-                  <Text style={styles.headerRoomLabel}>Room</Text>
-                  <Text style={styles.headerRoomCode} numberOfLines={1} ellipsizeMode="middle">
-                    {roomCode}
-                  </Text>
-                  <TouchableOpacity
-                    accessibilityLabel={accessibilityLabel}
-                    accessibilityRole="button"
-                    onPress={handleCopyRoomCodePress}
-                    style={styles.headerCopyButton}
-                    disabled={roomCode.length === 0}
-                  >
-                    <Text style={styles.headerCopyButtonLabel}>{buttonLabel}</Text>
-                  </TouchableOpacity>
-                </View>
+                <RoomHeaderTitle
+                  roomCode={roomCode}
+                  buttonLabel={buttonLabel}
+                  accessibilityLabel={accessibilityLabel}
+                  onCopyPress={handleCopyRoomCodePress}
+                />
               ),
             }}
           />
@@ -280,13 +331,28 @@ const MunchkinIndexView: React.FC = () => {
           />
 
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={[styles.battleButton, { opacity: 0 }]}>
+            <TouchableOpacity
+              accessibilityLabel="Open battle"
+              accessibilityRole="button"
+              disabled={!roomId || isBattleLoading || battleActions.isLoading}
+              onPress={() => {
+                void handleBattlePress();
+              }}
+              style={[
+                styles.battleButton,
+                (!roomId || isBattleLoading || battleActions.isLoading) && styles.actionButtonDisabled,
+              ]}
+            >
               <Text style={styles.battleButtonText}>Battle</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.logButton, { opacity: 0 }]}>
               <Text style={styles.logButtonText}>Log</Text>
             </TouchableOpacity>
           </View>
+
+          {battleErrorMessage && (
+            <Text style={styles.inlineError}>{battleErrorMessage}</Text>
+          )}
 
           {currentCharacter && (
             <CurrentCharacterFooter key={`own-char-${currentCharacter.id}`} character={currentCharacter} onChangePress={handleChangePress} />
@@ -401,42 +467,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppTheme.colors.elevated,
   },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    columnGap: AppTheme.spacing.sm,
-    flexShrink: 1,
-    minWidth: 0,
-    maxWidth: '100%',
-  },
-  headerRoomCode: {
-    color: AppTheme.colors.accent,
-    fontSize: 18,
-    fontWeight: '600',
-    flexShrink: 1,
-    minWidth: 0,
-  },
-  headerRoomLabel: {
-    color: AppTheme.colors.textMuted,
-    ...AppTheme.typography.labelMd,
-  },
-  headerCopyButton: {
-    backgroundColor: AppTheme.colors.elevated,
-    borderColor: AppTheme.colors.accent,
-    borderRadius: AppTheme.radius.pill,
-    borderWidth: 1,
-    paddingHorizontal: AppTheme.spacing.md,
-    paddingVertical: AppTheme.spacing.xs,
-  },
-  headerCopyButtonLabel: {
-    color: AppTheme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
   actionButtons: {
-    height: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.md,
     backgroundColor: AppTheme.colors.background,
     flexDirection: 'row',
     justifyContent: 'center',
@@ -444,10 +477,11 @@ const styles = StyleSheet.create({
     gap: 30,
   },
   battleButton: {
-    paddingHorizontal: 50,
-    paddingVertical: 7,
+    minWidth: 144,
+    paddingHorizontal: AppTheme.spacing.xl,
+    paddingVertical: AppTheme.spacing.sm,
     backgroundColor: AppTheme.colors.danger,
-    borderRadius: 5,
+    borderRadius: AppTheme.radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -455,6 +489,15 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '400',
     color: AppTheme.colors.textPrimary,
+  },
+  actionButtonDisabled: {
+    opacity: 0.55,
+  },
+  inlineError: {
+    color: AppTheme.colors.textAccentSoft,
+    paddingHorizontal: AppTheme.spacing.lg,
+    paddingBottom: AppTheme.spacing.sm,
+    ...AppTheme.typography.labelMd,
   },
   logButton: {
     paddingHorizontal: 21,

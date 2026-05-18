@@ -1,0 +1,17 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /battles",
+  "rawPath": "/battles",
+  "rawQueryString": "",
+  "headers": {
+    "content-type": "application/json"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST",
+      "path": "/battles"
+    }
+  },
+  "body": "{\"roomId\":\"ROOM1234\",\"name\":\"Battle 1\"}",
+  "isBase64Encoded": false
+}

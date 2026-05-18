@@ -10,6 +10,7 @@ services:
       - user-service
       - room-service
       - character-service
+      - battle-service
       - room-notifications-service
 
   user-service:
@@ -52,6 +53,19 @@ services:
       ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
     depends_on:
       - mongo-character
+      - redis
+
+  battle-service:
+    build:
+      context: ./battle-service
+    container_name: munch-battle-service
+    ports:
+      - "8086:8086"
+    environment:
+      PORT: 8086
+      BATTLE_MONGO_URI: mongodb://mongo-battle:27017/munch_battle_service
+    depends_on:
+      - mongo-battle
       - redis
 
   room-notifications-service:
@@ -97,7 +111,16 @@ services:
     volumes:
       - mongo-character-data:/data/db
 
+  mongo-battle:
+    image: mongo:7
+    container_name: munch-mongo-battle
+    ports:
+      - "27024:27017"
+    volumes:
+      - mongo-battle-data:/data/db
+
 volumes:
   mongo-user-data:
   mongo-room-data:
   mongo-character-data:
+  mongo-battle-data:

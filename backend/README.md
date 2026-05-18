@@ -6,6 +6,7 @@ This backend is split into local microservices under `backend`:
 - `user-service`
 - `room-service`
 - `character-service`
+- `battle-service`
 - `room-notifications-service`
 
 ## Scope
@@ -15,6 +16,7 @@ Implemented in this phase:
 - User management (`POST /users`, `GET /users/:userId`, `PATCH /users/:userId`)
 - Room management (`POST /rooms`, `POST /rooms/associations`)
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
+- Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`)
 - Room service synchronous call to character service on create/join flow.
 - Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
 
@@ -47,6 +49,7 @@ Nginx runs on `http://localhost:8080` by default and proxies:
 - `/users` -> `user-service`
 - `/rooms` -> `room-service`
 - `/characters` -> `character-service`
+- `/battles` -> `battle-service`
 - `/ws` -> `room-notifications-service`
 
 Room notifications are available through `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`.
@@ -88,6 +91,7 @@ Notes:
 	- `mongodb://host.docker.internal:27021/munch_user_service`
 	- `mongodb://host.docker.internal:27022/munch_room_service`
 	- `mongodb://host.docker.internal:27023/munch_character_service`
+	- `mongodb://host.docker.internal:27024/munch_battle_service`
 - Room-to-character service call URL defaults to `http://host.docker.internal:3000` for local SAM.
 - `sam/samconfig.toml` contains default stack and parameter values. Override `UserMongoUri` if needed.
 
