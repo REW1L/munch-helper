@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: "Munch Helper backend SAM template (phase 2: user, room, character services)"
+Description: "Munch Helper backend SAM template (user, room, character, battle, and room notification services)"
 
 Parameters:
   UserMongoUri:
@@ -15,6 +15,10 @@ Parameters:
     Type: String
     Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/character?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
     Description: MongoDB connection URI used by character-service Lambda
+  BattleMongoUri:
+    Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/battle?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
+    Description: MongoDB connection URI used by battle-service Lambda
   RoomNotificationsMongoUri:
     Type: String
     Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/notifications?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
@@ -109,6 +113,21 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref RoomCharacterEventsTopic
+
+  BattleServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub battle-service-${AWS::Region}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
 
   RoomNotificationsRole:
     Type: AWS::IAM::Role
@@ -328,6 +347,40 @@ Resources:
           Type: SNS
           Properties:
             Topic: !Ref RoomCharacterEventsTopic
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+  BattleServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-battle-service
+      CodeUri: ../battle-service
+      Handler: lambda.handler
+      Role: !GetAtt BattleServiceRole.Arn
+      Environment:
+        Variables:
+          BATTLE_MONGO_URI: !Ref BattleMongoUri
+          ROUTE_PREFIX: !Ref RoutePrefix
+      Events:
+        BattleListGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /battles
+            Method: GET
+        BattleCreatePost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /battles
+            Method: POST
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

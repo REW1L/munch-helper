@@ -7,6 +7,7 @@ export default defineConfig({
       'user-service/src/**/*.test.ts',
       'room-service/src/**/*.test.ts',
       'character-service/src/**/*.test.ts',
+      'battle-service/src/**/*.test.ts',
       'room-notifications-service/src/**/*.test.ts'
     ],
     coverage: {
@@ -16,6 +17,7 @@ export default defineConfig({
         'user-service/src/**/*.ts',
         'room-service/src/**/*.ts',
         'character-service/src/**/*.ts',
+        'battle-service/src/**/*.ts',
         'room-notifications-service/src/**/*.ts'
       ],
       exclude: [
