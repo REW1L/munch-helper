@@ -36,6 +36,17 @@ const mockBattleState = vi.hoisted(() => ({
     errorMessage: null as string | null,
   },
 }));
+
+const activeBattle: Battle = {
+  id: 'battle-1',
+  roomId: 'ROOM42',
+  name: 'Existing Battle',
+  status: 'active',
+  playerSide: { characterIds: [], bonuses: [] },
+  monsterSide: { monsters: [], bonuses: [] },
+  result: null,
+  concludedAt: null,
+};
 vi.mock('expo-clipboard', () => ({
   setStringAsync: mockSetStringAsync,
 }));
@@ -1028,17 +1039,91 @@ describe('Munchkin room header', () => {
     });
   });
 
+  it('shows an active battle banner above the room list and does not auto-navigate on mount', async () => {
+    mockBattleState.current.battle = activeBattle;
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.getByTestId('active-battle-banner')).toBeTruthy();
+    expect(screen.getByText('Existing Battle')).toBeTruthy();
+    expect(screen.getByText('View Battle →')).toBeTruthy();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it('opens the battle view from the active battle banner', async () => {
+    mockBattleState.current.battle = activeBattle;
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Battle in progress. Tap to view.' }));
+    });
+
+    expect(mockStartBattle).not.toHaveBeenCalled();
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]/(battle)',
+      params: { roomNumber: 'ROOM42' },
+    });
+  });
+
+  it('hides the active battle banner when no battle is active and keeps the battle button available', async () => {
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    expect(screen.queryByTestId('active-battle-banner')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Open battle' })).toBeTruthy();
+  });
+
   it('opens an existing active battle without creating another', async () => {
-    mockBattleState.current.battle = {
-      id: 'battle-1',
-      roomId: 'ROOM42',
-      name: 'Existing',
-      status: 'active',
-      playerSide: { characterIds: [], bonuses: [] },
-      monsterSide: { monsters: [], bonuses: [] },
-      result: null,
-      concludedAt: null,
-    };
+    mockBattleState.current.battle = activeBattle;
     const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
 
     await act(async () => {

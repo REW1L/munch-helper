@@ -1,5 +1,5 @@
-import { ApiError } from '@/api/http';
 import { Character as RoomCharacter } from '@/api/characters';
+import { ApiError } from '@/api/http';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useBattleActions } from '@/hooks/useBattleActions';
@@ -11,11 +11,12 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import ActiveBattleBanner from '../../../components/munchkin/ActiveBattleBanner';
 import CurrentCharacterFooter from '../../../components/munchkin/CurrentCharacterFooter';
 import QuickEditSheet from '../../../components/munchkin/QuickEditSheet';
 import ReconnectingBanner from '../../../components/munchkin/ReconnectingBanner';
-import { RoomHeaderTitle } from '../../../components/munchkin/RoomHeaderTitle';
 import RoomCharactersList from '../../../components/munchkin/RoomCharactersList';
+import { RoomHeaderTitle } from '../../../components/munchkin/RoomHeaderTitle';
 import ChangeCharacterModal from '../modal-change-caracter';
 import CreateCharacterModal from '../modal-create-character';
 
@@ -260,6 +261,10 @@ const MunchkinIndexView: React.FC = () => {
     });
   }, [roomId, router]);
 
+  const handleViewBattle = useCallback(() => {
+    navigateToBattle();
+  }, [navigateToBattle]);
+
   const createDefaultBattleName = useCallback(() => {
     const timestamp = new Intl.DateTimeFormat(undefined, {
       month: 'short',
@@ -340,6 +345,10 @@ const MunchkinIndexView: React.FC = () => {
             >
               <Text style={styles.connectionRetryButtonText}>Connection lost · Retry</Text>
             </Pressable>
+          )}
+
+          {battle !== null && (
+            <ActiveBattleBanner battleName={battle.name} onViewBattle={handleViewBattle} />
           )}
 
           <RoomCharactersList
@@ -488,7 +497,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: AppTheme.colors.elevated,
+    backgroundColor: AppTheme.colors.background,
   },
   actionButtons: {
     paddingHorizontal: AppTheme.spacing.md,
