@@ -1,10 +1,14 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Battle } from '@/api/battles';
 
-const mockBattleState = vi.hoisted(() => ({
-  current: {
+const mockBattleState = vi.hoisted(() => {
+  const createState = (): {
+    battle: Battle | null;
+    isLoading: boolean;
+    errorMessage: string | null;
+  } => ({
     battle: {
       id: 'battle-1',
       roomId: 'ROOM42',
@@ -14,11 +18,13 @@ const mockBattleState = vi.hoisted(() => ({
       monsterSide: { monsters: [], bonuses: [] },
       result: null,
       concludedAt: null,
-    } as Battle | null,
+    },
     isLoading: false,
-    errorMessage: null as string | null,
-  },
-}));
+    errorMessage: null,
+  });
+
+  return { current: createState(), createState };
+});
 
 vi.mock('react-native-safe-area-context', async () => {
   const ReactRuntime = await import('react');
@@ -43,6 +49,10 @@ vi.mock('@/hooks/useRoomBattle', () => ({
 }));
 
 describe('Battle view', () => {
+  beforeEach(() => {
+    mockBattleState.current = mockBattleState.createState();
+  });
+
   it('renders the loaded active battle state', async () => {
     const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
 

@@ -26,6 +26,17 @@ type UndoState = {
   previous: CharacterStatsOverride;
 };
 
+const readActiveBattleId = (details: unknown): string | null => {
+  if (typeof details === 'object' && details !== null && 'activeBattleId' in details) {
+    const value = (details as { activeBattleId?: unknown }).activeBattleId;
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+  }
+
+  return null;
+};
+
 const MunchkinIndexView: React.FC = () => {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const router = useRouter();
@@ -276,8 +287,20 @@ const MunchkinIndexView: React.FC = () => {
       navigateToBattle();
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
+        const activeBattleId = readActiveBattleId(error.details);
+
+        if (activeBattleId) {
+          // Resolved decision #2: route straight to the existing battle from the
+          // 409 payload — no second round-trip.
+          navigateToBattle();
+          return;
+        }
+
+        // 409 without an activeBattleId: the conflicting battle is already gone.
+        // Re-sync the room instead of navigating to a battle that does not
+        // exist, and let the next press start a fresh one.
         await refreshBattle();
-        navigateToBattle();
+        setActionError('Could not start the battle. Please try again.');
         return;
       }
 

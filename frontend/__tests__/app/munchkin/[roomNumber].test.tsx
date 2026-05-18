@@ -1069,7 +1069,7 @@ describe('Munchkin room header', () => {
     });
   });
 
-  it('recovers from battle create conflict by refreshing and opening the existing battle', async () => {
+  it('routes to the existing battle from a 409 payload without a second round-trip', async () => {
     mockStartBattle.mockRejectedValueOnce(new ApiError('Already active', 409, { activeBattleId: 'battle-1' }));
     const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
 
@@ -1095,10 +1095,47 @@ describe('Munchkin room header', () => {
       await Promise.resolve();
     });
 
-    expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
+    expect(mockStartBattle).toHaveBeenCalledTimes(1);
+    expect(mockRefreshBattle).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/(battle)',
       params: { roomNumber: 'ROOM42' },
     });
+    expect(screen.queryByText('Could not start the battle. Please try again.')).toBeNull();
+  });
+
+  it('re-syncs and surfaces a retry error when a 409 carries no activeBattleId', async () => {
+    mockStartBattle.mockRejectedValueOnce(
+      new ApiError('A battle is already active for this room', 409, {
+        message: 'A battle is already active for this room',
+      })
+    );
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open battle' }));
+      await Promise.resolve();
+    });
+
+    expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(screen.getByText('Could not start the battle. Please try again.')).toBeTruthy();
   });
 });

@@ -30,7 +30,15 @@ export default function RoomLayout() {
                   accessibilityLabel="Back to room"
                   accessibilityRole="button"
                   onPress={() => {
-                    router.back();
+                    if (router.canGoBack()) {
+                      router.back();
+                      return;
+                    }
+
+                    router.replace({
+                      pathname: '/munchkin/[roomNumber]',
+                      params: { roomNumber: roomId ?? roomCode },
+                    });
                   }}
                   style={styles.battleBackButton}
                 >

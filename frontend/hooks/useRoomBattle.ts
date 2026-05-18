@@ -29,8 +29,8 @@ export function useRoomBattle(roomId: string | undefined): UseRoomBattleResult {
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: battleQueryKey });
-    await battleQuery.refetch();
-  }, [battleQuery, battleQueryKey, queryClient]);
+    await queryClient.refetchQueries({ queryKey: battleQueryKey });
+  }, [battleQueryKey, queryClient]);
 
   return useMemo(
     () => ({

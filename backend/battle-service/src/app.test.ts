@@ -80,6 +80,55 @@ describe('battle-service app', () => {
     expect(response.body.activeBattleId).toBe('race-winner');
   });
 
+  it('retries the create when the duplicate-key winner is already gone', async () => {
+    const model = buildBattleModel();
+    const battle = buildBattle({ id: 'retried-battle' });
+    vi.mocked(model.findOne).mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+    vi.mocked(model.create).mockRejectedValueOnce({ code: 11000 }).mockResolvedValueOnce(battle);
+
+    const response = await request(createApp(model)).post('/battles').send({ roomId: 'room-1', name: 'Retry' });
+
+    expect(response.status).toBe(201);
+    expect(response.body.id).toBe('retried-battle');
+    expect(model.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('maps wrapped duplicate-key errors to 409 instead of 502', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findOne)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(buildBattle({ id: 'race-winner' }));
+    vi.mocked(model.create).mockRejectedValue({ writeErrors: [{ code: 11000 }] });
+
+    const response = await request(createApp(model)).post('/battles').send({ roomId: 'room-1', name: 'Race' });
+
+    expect(response.status).toBe(409);
+    expect(response.body.activeBattleId).toBe('race-winner');
+  });
+
+  it('returns 400 for a malformed JSON body', async () => {
+    const model = buildBattleModel();
+
+    const response = await request(createApp(model))
+      .post('/battles')
+      .set('Content-Type', 'application/json')
+      .send('{"roomId": "room-1"');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'Invalid JSON body' });
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('resolves to null for a non-active status query without querying the model', async () => {
+    const model = buildBattleModel();
+
+    const response = await request(createApp(model)).get('/battles').query({ roomId: 'room-1', status: 'concluded' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toBeNull();
+    expect(model.findOne).not.toHaveBeenCalled();
+  });
+
   it('gets an active battle by room', async () => {
     const model = buildBattleModel();
     vi.mocked(model.findOne).mockResolvedValue(buildBattle());

@@ -16,6 +16,8 @@ const mockBattleState = vi.hoisted(() => ({
   },
 }));
 const mockRouterBack = vi.hoisted(() => vi.fn());
+const mockRouterReplace = vi.hoisted(() => vi.fn());
+const mockRouterCanGoBack = vi.hoisted(() => vi.fn());
 
 vi.mock('expo-clipboard', () => ({
   setStringAsync: vi.fn(),
@@ -47,6 +49,8 @@ vi.mock('expo-router', async () => {
     useLocalSearchParams: () => ({ roomNumber: 'ROOM42' }),
     useRouter: () => ({
       back: mockRouterBack,
+      replace: mockRouterReplace,
+      canGoBack: mockRouterCanGoBack,
     }),
     useSegments: () => mockSegments.current,
   };
@@ -62,6 +66,9 @@ describe('Room route layout', () => {
       },
     };
     mockRouterBack.mockClear();
+    mockRouterReplace.mockClear();
+    mockRouterCanGoBack.mockReset();
+    mockRouterCanGoBack.mockReturnValue(true);
   });
 
   it('shows the room header only for the room route and preserves battle modal routing', async () => {
@@ -123,5 +130,25 @@ describe('Room route layout', () => {
     backButtonProps?.onPress();
 
     expect(mockRouterBack).toHaveBeenCalledOnce();
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+  });
+
+  it('falls back to replacing with the room route when there is no navigation history', async () => {
+    mockSegments.current = ['munchkin', '[roomNumber]', '(battle)'];
+    mockRouterCanGoBack.mockReturnValue(false);
+    const { default: RoomLayout } = await import('../../../../app/munchkin/[roomNumber]/_layout');
+
+    render(<RoomLayout />);
+
+    const headerLeft = stackScreens.current[0]?.options?.headerLeft as (() => React.ReactElement) | undefined;
+    const backButton = headerLeft?.();
+    const backButtonProps = backButton?.props as { onPress: () => void } | undefined;
+    backButtonProps?.onPress();
+
+    expect(mockRouterBack).not.toHaveBeenCalled();
+    expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]',
+      params: { roomNumber: 'ROOM42' },
+    });
   });
 });
