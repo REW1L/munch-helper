@@ -1,6 +1,6 @@
 # Story 5.1: Start a Battle
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -293,3 +293,38 @@ GPT-5 Codex
 ### Change Log
 
 - 2026-05-17 — Implemented Story 5.1 Start a Battle and moved to review.
+- 2026-05-18 — Adversarial code review completed; 3 decisions resolved, 8 patches applied and verified, 8 items deferred; moved to done.
+
+## Review Findings
+
+_Adversarial code review (Blind Hunter + Edge Case Hunter + Acceptance Auditor), 2026-05-18. Diff: `main...HEAD` (story 5.1 implementation + main merge). Patches verified green and committed to `codex/story-5-1-start-battle`._
+
+### Decision Needed
+
+_All 3 decision-needed findings resolved 2026-05-18: (1) premature `battle_started` payload → **deferred to Story 5.4**; (2) modal/header config → **dismissed** (header already visually verified on Expo web/iOS/Android, current state accepted by Ivan); (3) AC2 `activeBattleId` consumption → **promoted to patch** (align to locked Resolved decision #2)._
+
+### Patch
+
+- [x] [Review][Patch] AC2 409-recovery: consume `activeBattleId` from `ApiError.details` per locked Resolved decision #2 (the 409 handler now routes to the existing battle without a second round-trip) [frontend/app/munchkin/[roomNumber]/index.tsx 409 handler; frontend/api/http.ts ApiError.details]
+- [x] [Review][Patch] Duplicate-key 409 no longer returns `activeBattleId: undefined`; the create retries when the conflicting battle is already gone, and the client no longer navigates to an empty Battle View [backend/battle-service/src/app.ts POST /battles dup-key catch; frontend/app/munchkin/[roomNumber]/index.tsx 409 handler]
+- [x] [Review][Patch] `isDuplicateKeyError` now also detects wrapped Mongo errors (cause / writeErrors) so the concurrent double-start race maps to 409, not 502 [backend/battle-service/src/app.ts]
+- [x] [Review][Patch] Battle modal back button falls back to `router.replace` when there is no navigation history (deep-link / cold-start no longer traps the user) [frontend/app/munchkin/[roomNumber]/_layout.tsx back button]
+- [x] [Review][Patch] Malformed JSON body on `POST /battles` now returns 400, not a generic 502 [backend/battle-service/src/app.ts error handler]
+- [x] [Review][Patch] `GET /battles` no longer leaks the active battle for a non-active `status` query (returns `200 null`) [backend/battle-service/src/app.ts GET /battles]
+- [x] [Review][Patch] `useRoomBattle.refresh` deps stabilized (no per-render AppState listener churn on the Room View) [frontend/hooks/useRoomBattle.ts]
+- [x] [Review][Patch] `(battle)/index.test.tsx` resets shared mock state via `beforeEach` (no order-coupled/flaky state) [frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx]
+
+### Verification (2026-05-18)
+
+All 8 patches applied and verified green: backend `battle-service` typecheck ✓, backend tests ✓ (15 passed, incl. 4 new: dup-key-winner-gone retry, wrapped dup-key→409, malformed-JSON→400, non-active-status→null); frontend `tsc` ✓; frontend battle unit tests ✓ (7 passed); frontend room-route suite ✓ (35 passed, incl. updated 409/back-button/Battle-View-isolation tests).
+
+### Deferred
+
+- [x] [Review][Defer] Premature `battle_started` event payload contract (`BattleEventPayload`/`createBattleStartedEventPayload`, published in create handler, asserted in tests) — Task 7 deferred the payload to Story 5.4 [backend/battle-service/src/publisher.ts; backend/battle-service/src/app.ts] — deferred to Story 5.4 (5.4 owns the battle_started event payload/transport contract; reconcile or replace the seam there). Harmless now (Noop publisher; no SNS/Redis/SAM wired).
+- [x] [Review][Defer] `db.ts` connect-promise race + no `readyState===2` (connecting) guard [backend/battle-service/src/db.ts] — deferred, pre-existing (copied verbatim from character-service per Task 1; repo-wide pattern)
+- [x] [Review][Defer] Mongoose `autoIndex` is best-effort: partial-unique index may not exist on cold start/fresh DB → theoretical two-active-battles under first-write race; no backend test asserts the DB-level uniqueness (model is mocked everywhere) [backend/battle-service/src/models/Battle.ts] — deferred, pre-existing (repo-wide Mongoose pattern)
+- [x] [Review][Defer] Dockerfile uses `npm install` (no `npm ci`, workspace lockfile not copied) → non-reproducible images [backend/battle-service/Dockerfile] — deferred, pre-existing (inherited scaffold pattern across all services)
+- [x] [Review][Defer] Stale cached active battle (discarded by another client) → tapping Battle navigates to a now-nonexistent battle / "No active battle"; also `useRoomBattle` collapses disabled/loading/empty/no-roomId all to `battle:null`/`errorMessage:null` so Battle View can't distinguish "no battle" from a routing bug [frontend/hooks/useRoomBattle.ts; frontend/app/munchkin/[roomNumber]/index.tsx] — deferred, owned by Story 5.4 (no realtime in 5.1 by scope; create-path self-heals via 409)
+- [x] [Review][Defer] `package-lock.json` `@types/node` minor skew (battle-service 24.12.4 vs character-service 24.11.0) — incidental lockfile drift vs "no incidental dependency drift" rule (gateway-workspace removal in same change is defensible — required for `npm run typecheck`) [backend/package-lock.json] — deferred, low-risk, scoped follow-up
+- [x] [Review][Defer] `handleBattlePress` discards the created `Battle` instead of `setQueryData`-seeding `['battle',roomId]` → brief empty/loading flash before the invalidate-driven refetch resolves in Battle View (AC3 still met after refetch) [frontend/app/munchkin/[roomNumber]/index.tsx] — deferred, UX refinement beyond 5.1 load-and-display skeleton
+- [x] [Review][Defer] Battle-route detection `segments.some(s => String(s)==='(battle)')` — brittle reliance on Expo Router group-segment string form; works on Expo Router 55, fragile across upgrades [frontend/app/munchkin/[roomNumber]/_layout.tsx] — deferred, works on current Expo Router version
