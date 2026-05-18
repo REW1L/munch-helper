@@ -80,7 +80,7 @@ development_status:
 
   epic-5: in-progress
   5-1-start-a-battle: done
-  5-2-show-active-battle-in-room-view: in-progress
+  5-2-show-active-battle-in-room-view: done
   5-3-manage-battle-state: ready-for-dev
   5-4-realtime-battle-updates-from-battle-actions: ready-for-dev
   5-5-realtime-battle-updates-from-character-changes: ready-for-dev

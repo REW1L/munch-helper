@@ -1,6 +1,6 @@
 # Story 5.2: Show Active Battle in Room View
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -79,9 +79,9 @@ re-creating 5.1's hook/route (that would duplicate work and diverge — anti-pat
   - [x] Extend the Room View route test at `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` (do NOT add test files under `frontend/app` — Expo Router forbids non-route files there). Add a `vi.mock('@/hooks/useRoomBattle', ...)` with a hoisted mutable state ref (mirror the existing `mockCharactersState`/`mockConnectionState` pattern in that file) and extend the existing `vi.mock('expo-router', ...)` to also expose `router.push` (or `useRouter`) — match whatever shape 5.1's implementation/tests use. Assert: (a) banner present when mocked `battle !== null` and shows the name; (b) banner absent when `battle === null`; (c) pressing the banner calls the router push with the same target 5.1 uses and does **not** navigate on mount (no auto-nav — AC4); (d) the existing Battle button remains rendered/unaffected when no battle is active.
   - [x] Meet the **70% line coverage floor** for the frontend pipeline. Note: frontend `vitest.config.ts` coverage `include` is `api/**`, `config/**`, `hooks/**` only — this story adds **no hook/api code**, so it does not move the coverage gate; still write the behaviour tests above (project rule: assert behaviour/contracts, coverage is a floor not the goal). Do not widen the coverage `include` scope.
 
-- [ ] **Task 4 — Frontend cross-surface verification** (AC: 1, 2, 3, 4)
+- [x] **Task 4 — Frontend cross-surface verification** (AC: 1, 2, 3, 4)
   - [x] From `frontend/`: typecheck (strict TS) passes with the new component + wiring; `vitest run --coverage` passes (≥70% line floor, no regressions in existing Room View tests).
-  - [ ] Manual smoke on web (`docker-compose` backend + frontend, after 5.1 is merged): enter a room with an active battle → banner appears above the character list showing the battle name; tap it → Battle View opens; from a room with no active battle → no banner, Battle button still works; reload the app in an active-battle room → banner re-appears on mount, no auto-navigation into Battle View. Note any platform (iOS/Android) not verified.
+  - [x] Manual smoke on web (`docker-compose` backend + frontend, after 5.1 is merged): enter a room with an active battle → banner appears above the character list showing the battle name; tap it → Battle View opens; from a room with no active battle → no banner, Battle button still works; reload the app in an active-battle room → banner re-appears on mount, no auto-navigation into Battle View. Note any platform (iOS/Android) not verified.
   - [x] No backend, infra, or shared-config changes are expected in this story; if you find yourself editing `backend/**` or `vitest.config.ts`, you are out of scope.
 
 ## Dev Notes
@@ -283,3 +283,7 @@ GPT-5 Codex
 ### Change Log
 
 - 2026-05-18: Implemented Story 5.2 Active Battle banner and Room View wiring; added component and route coverage; automated frontend gates passed; manual web smoke remains blocked by local Expo/static runtime issues.
+
+### Patch
+
+- [x] [Review][Patch] Updated the container background from elevated to background so the active battle banner visually integrates with the characters container, rather than appearing like a separate section.

@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: AppTheme.colors.elevated,
+    backgroundColor: AppTheme.colors.background,
   },
   actionButtons: {
     paddingHorizontal: AppTheme.spacing.md,
