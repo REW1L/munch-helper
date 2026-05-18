@@ -1,6 +1,6 @@
 # Story 5.2: Show Active Battle in Room View
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -60,29 +60,29 @@ re-creating 5.1's hook/route (that would duplicate work and diverge — anti-pat
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Create `ActiveBattleBanner` presentational component** (AC: 1, 2)
-  - [ ] New file `frontend/components/munchkin/ActiveBattleBanner.tsx`. Props (explicit exported interface): `{ battleName?: string | null; onViewBattle: () => void }`. Keep it presentational — no hooks, no data fetching, no navigation logic inside (the screen owns navigation).
-  - [ ] Render a **single** `Pressable` (the entire strip is one tap target) containing: a `⚔️` icon glyph, a label = `battleName?.trim() || 'Battle in progress'`, and a trailing `View Battle →` affordance text. Do **not** nest a separate `<TouchableOpacity>`/`VioletButton` inside it — see Dev Notes "Banner is a single button (design resolution)".
-  - [ ] `onPress={onViewBattle}`. Accessibility: `accessible`, `accessibilityRole="button"`, `accessibilityLabel="Battle in progress. Tap to view."` (exact string from UX §13.5 — keep it static regardless of battle name so screen-reader output is stable).
-  - [ ] Styling: pure `StyleSheet.create` referencing `AppTheme` tokens only — background `AppTheme.colors.danger` (`#922525`), text `AppTheme.colors.textPrimary` (`#FFFFFF`), spacing/radius via `AppTheme.spacing`/`AppTheme.radius`. No hardcoded hex/px/font-size literals (project rule; mirror the existing `connectionRetryButton` Pressable in `index.tsx` for the token-only pattern).
-  - [ ] Mark the component `memo` and give the action affordance a `testID="active-battle-banner"` to make route/component tests deterministic (mirror the `testID` convention used by `VioletButton`/`create-character-button`).
+- [x] **Task 1 — Create `ActiveBattleBanner` presentational component** (AC: 1, 2)
+  - [x] New file `frontend/components/munchkin/ActiveBattleBanner.tsx`. Props (explicit exported interface): `{ battleName?: string | null; onViewBattle: () => void }`. Keep it presentational — no hooks, no data fetching, no navigation logic inside (the screen owns navigation).
+  - [x] Render a **single** `Pressable` (the entire strip is one tap target) containing: a `⚔️` icon glyph, a label = `battleName?.trim() || 'Battle in progress'`, and a trailing `View Battle →` affordance text. Do **not** nest a separate `<TouchableOpacity>`/`VioletButton` inside it — see Dev Notes "Banner is a single button (design resolution)".
+  - [x] `onPress={onViewBattle}`. Accessibility: `accessible`, `accessibilityRole="button"`, `accessibilityLabel="Battle in progress. Tap to view."` (exact string from UX §13.5 — keep it static regardless of battle name so screen-reader output is stable).
+  - [x] Styling: pure `StyleSheet.create` referencing `AppTheme` tokens only — background `AppTheme.colors.danger` (`#922525`), text `AppTheme.colors.textPrimary` (`#FFFFFF`), spacing/radius via `AppTheme.spacing`/`AppTheme.radius`. No hardcoded hex/px/font-size literals (project rule; mirror the existing `connectionRetryButton` Pressable in `index.tsx` for the token-only pattern).
+  - [x] Mark the component `memo` and give the action affordance a `testID="active-battle-banner"` to make route/component tests deterministic (mirror the `testID` convention used by `VioletButton`/`create-character-button`).
 
-- [ ] **Task 2 — Wire the banner into Room View** (AC: 1, 2, 3, 4)
-  - [ ] In `frontend/app/munchkin/[roomNumber]/index.tsx`: import `useRoomBattle` from `@/hooks/useRoomBattle` and `ActiveBattleBanner` from `../../../components/munchkin/ActiveBattleBanner` (match the existing relative-import style used for `RoomCharactersList`/`QuickEditSheet` in this file).
-  - [ ] Call `const { battle } = useRoomBattle(roomId);` near the existing `useRoomCharacters` call. Use the **same `roomId`** variable already derived at the top of the component (`Array.isArray(roomNumber) ? roomNumber[0] : roomNumber`).
-  - [ ] Render `{battle !== null && <ActiveBattleBanner battleName={battle.name} onViewBattle={handleViewBattle} />}` **between** the connection-retry `Pressable` block and `<RoomCharactersList .../>` (so it sits above the list and is not scrolled away — UX §11.4: "always visible when battle active"). Do not place it inside `RoomCharactersList` `ListHeaderComponent` (that slot is reserved for `actionError` and scrolls with the list).
-  - [ ] Implement `handleViewBattle` (a `useCallback`) that performs the **same navigation call Story 5.1 uses for its Battle button** to open the `(battle)` route for the current room. Read 5.1's implemented `index.tsx` Battle-button handler and reuse the identical `router.push(...)` target/shape — do not invent a different path. (Expected shape per architecture ADR-4: an Expo Router push to the `(battle)` modal group under `[roomNumber]`; the exact string MUST match 5.1.)
-  - [ ] Do **not** modify the existing hidden Battle button, its handler, or the `actionButtons`/`battleButton`/`logButton` styles. 5.2 only **adds** the banner + its navigation handler.
+- [x] **Task 2 — Wire the banner into Room View** (AC: 1, 2, 3, 4)
+  - [x] In `frontend/app/munchkin/[roomNumber]/index.tsx`: import `useRoomBattle` from `@/hooks/useRoomBattle` and `ActiveBattleBanner` from `../../../components/munchkin/ActiveBattleBanner` (match the existing relative-import style used for `RoomCharactersList`/`QuickEditSheet` in this file).
+  - [x] Call `const { battle } = useRoomBattle(roomId);` near the existing `useRoomCharacters` call. Use the **same `roomId`** variable already derived at the top of the component (`Array.isArray(roomNumber) ? roomNumber[0] : roomNumber`).
+  - [x] Render `{battle !== null && <ActiveBattleBanner battleName={battle.name} onViewBattle={handleViewBattle} />}` **between** the connection-retry `Pressable` block and `<RoomCharactersList .../>` (so it sits above the list and is not scrolled away — UX §11.4: "always visible when battle active"). Do not place it inside `RoomCharactersList` `ListHeaderComponent` (that slot is reserved for `actionError` and scrolls with the list).
+  - [x] Implement `handleViewBattle` (a `useCallback`) that performs the **same navigation call Story 5.1 uses for its Battle button** to open the `(battle)` route for the current room. Read 5.1's implemented `index.tsx` Battle-button handler and reuse the identical `router.push(...)` target/shape — do not invent a different path. (Expected shape per architecture ADR-4: an Expo Router push to the `(battle)` modal group under `[roomNumber]`; the exact string MUST match 5.1.)
+  - [x] Do **not** modify the existing hidden Battle button, its handler, or the `actionButtons`/`battleButton`/`logButton` styles. 5.2 only **adds** the banner + its navigation handler.
 
-- [ ] **Task 3 — Tests** (AC: 1, 2, 3, 4)
-  - [ ] Co-located `frontend/components/munchkin/ActiveBattleBanner.test.tsx` (Vitest + jsdom, `@testing-library/react`): renders the battle name when provided; renders `Battle in progress` fallback when `battleName` is `undefined`/`null`/empty/whitespace; calls `onViewBattle` once when pressed; asserts `accessibilityRole="button"` and the exact `accessibilityLabel`. (Casing mirrors source: `ActiveBattleBanner.test.tsx`.)
-  - [ ] Extend the Room View route test at `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` (do NOT add test files under `frontend/app` — Expo Router forbids non-route files there). Add a `vi.mock('@/hooks/useRoomBattle', ...)` with a hoisted mutable state ref (mirror the existing `mockCharactersState`/`mockConnectionState` pattern in that file) and extend the existing `vi.mock('expo-router', ...)` to also expose `router.push` (or `useRouter`) — match whatever shape 5.1's implementation/tests use. Assert: (a) banner present when mocked `battle !== null` and shows the name; (b) banner absent when `battle === null`; (c) pressing the banner calls the router push with the same target 5.1 uses and does **not** navigate on mount (no auto-nav — AC4); (d) the existing Battle button remains rendered/unaffected when no battle is active.
-  - [ ] Meet the **70% line coverage floor** for the frontend pipeline. Note: frontend `vitest.config.ts` coverage `include` is `api/**`, `config/**`, `hooks/**` only — this story adds **no hook/api code**, so it does not move the coverage gate; still write the behaviour tests above (project rule: assert behaviour/contracts, coverage is a floor not the goal). Do not widen the coverage `include` scope.
+- [x] **Task 3 — Tests** (AC: 1, 2, 3, 4)
+  - [x] Co-located `frontend/components/munchkin/ActiveBattleBanner.test.tsx` (Vitest + jsdom, `@testing-library/react`): renders the battle name when provided; renders `Battle in progress` fallback when `battleName` is `undefined`/`null`/empty/whitespace`; calls `onViewBattle` once when pressed; asserts `accessibilityRole="button"` and the exact `accessibilityLabel`. (Casing mirrors source: `ActiveBattleBanner.test.tsx`.)
+  - [x] Extend the Room View route test at `frontend/__tests__/app/munchkin/[roomNumber].test.tsx` (do NOT add test files under `frontend/app` — Expo Router forbids non-route files there). Add a `vi.mock('@/hooks/useRoomBattle', ...)` with a hoisted mutable state ref (mirror the existing `mockCharactersState`/`mockConnectionState` pattern in that file) and extend the existing `vi.mock('expo-router', ...)` to also expose `router.push` (or `useRouter`) — match whatever shape 5.1's implementation/tests use. Assert: (a) banner present when mocked `battle !== null` and shows the name; (b) banner absent when `battle === null`; (c) pressing the banner calls the router push with the same target 5.1 uses and does **not** navigate on mount (no auto-nav — AC4); (d) the existing Battle button remains rendered/unaffected when no battle is active.
+  - [x] Meet the **70% line coverage floor** for the frontend pipeline. Note: frontend `vitest.config.ts` coverage `include` is `api/**`, `config/**`, `hooks/**` only — this story adds **no hook/api code**, so it does not move the coverage gate; still write the behaviour tests above (project rule: assert behaviour/contracts, coverage is a floor not the goal). Do not widen the coverage `include` scope.
 
 - [ ] **Task 4 — Frontend cross-surface verification** (AC: 1, 2, 3, 4)
-  - [ ] From `frontend/`: typecheck (strict TS) passes with the new component + wiring; `vitest run --coverage` passes (≥70% line floor, no regressions in existing Room View tests).
+  - [x] From `frontend/`: typecheck (strict TS) passes with the new component + wiring; `vitest run --coverage` passes (≥70% line floor, no regressions in existing Room View tests).
   - [ ] Manual smoke on web (`docker-compose` backend + frontend, after 5.1 is merged): enter a room with an active battle → banner appears above the character list showing the battle name; tap it → Battle View opens; from a room with no active battle → no banner, Battle button still works; reload the app in an active-battle room → banner re-appears on mount, no auto-navigation into Battle View. Note any platform (iOS/Android) not verified.
-  - [ ] No backend, infra, or shared-config changes are expected in this story; if you find yourself editing `backend/**` or `vitest.config.ts`, you are out of scope.
+  - [x] No backend, infra, or shared-config changes are expected in this story; if you find yourself editing `backend/**` or `vitest.config.ts`, you are out of scope.
 
 ## Dev Notes
 
@@ -252,12 +252,34 @@ small frontend PR.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
+
+- `npm run test:unit -- components/munchkin/ActiveBattleBanner.test.tsx` from `frontend/` — passed 7 tests.
+- `npm run test:room-route -- '__tests__/app/munchkin/[roomNumber].test.tsx'` from `frontend/` — passed 21 tests.
+- `npm run tsc` from `frontend/` — passed.
+- `npm run test:coverage` from `frontend/` — passed 114 unit tests + 38 route tests; 80.37% line coverage.
+- `npm run lint` from `frontend/` — passed with one pre-existing warning in `frontend/app/munchkin/modal-change-caracter.tsx`.
+- Manual web smoke was attempted on ports 19006, 19007, 19010, and 19012, but Expo reported each requested port as already in use while `curl`/`lsof` showed no listener; backend health at `http://localhost:8080/health` returned `{"service":"nginx","status":"ok"}`.
+- Static web export was attempted with `EXPO_PUBLIC_API_URL=http://localhost:8080 npx expo export --platform web --output-dir /private/tmp/munch-web-smoke`; export completed, but browser load of the exported bundle still failed with `Missing EXPO_PUBLIC_API_URL in a non-development environment`, so manual web smoke remains unverified.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added a memoized `ActiveBattleBanner` single-Pressable component with battle-name fallback, stable accessibility label, token-based styling, and deterministic `testID`.
+- Wired the banner into Room View above `RoomCharactersList`, driven by the existing `useRoomBattle(roomId).battle` result and reusing the Story 5.1 battle route navigation shape.
+- Added component and route tests for banner visibility, fallback text, press behavior, no-banner state, no auto-navigation on mount, and existing Battle button availability.
 
 ### File List
+
+- _bmad-output/implementation-artifacts/5-2-show-active-battle-in-room-view.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- frontend/app/munchkin/[roomNumber]/index.tsx
+- frontend/components/munchkin/ActiveBattleBanner.tsx
+- frontend/components/munchkin/ActiveBattleBanner.test.tsx
+- frontend/__tests__/app/munchkin/[roomNumber].test.tsx
+
+### Change Log
+
+- 2026-05-18: Implemented Story 5.2 Active Battle banner and Room View wiring; added component and route coverage; automated frontend gates passed; manual web smoke remains blocked by local Expo/static runtime issues.
