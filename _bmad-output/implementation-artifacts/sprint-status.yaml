@@ -91,7 +91,7 @@ development_status:
   epic-6: in-progress
   6-1-character-events-are-published-for-room-history: ready-for-dev
   6-2-published-events-are-stored-and-readable-in-room-history: ready-for-dev
-  6-3-battle-lifecycle-events-are-published-for-room-history: backlog
+  6-3-battle-lifecycle-events-are-published-for-room-history: ready-for-dev
   6-4-room-history-api-returns-paginated-events: backlog
   6-5-room-history-loads-in-the-app: backlog
   6-6-room-history-view-shows-character-events: backlog
