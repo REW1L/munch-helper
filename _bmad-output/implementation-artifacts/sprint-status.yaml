@@ -93,7 +93,7 @@ development_status:
   6-2-published-events-are-stored-and-readable-in-room-history: ready-for-dev
   6-3-battle-lifecycle-events-are-published-for-room-history: ready-for-dev
   6-4-room-history-api-returns-paginated-events: ready-for-dev
-  6-5-room-history-loads-in-the-app: backlog
+  6-5-room-history-loads-in-the-app: ready-for-dev
   6-6-room-history-view-shows-character-events: backlog
   6-7-room-history-view-shows-battle-events-and-opens-completed-battles: backlog
   epic-6-retrospective: optional
