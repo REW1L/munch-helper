@@ -43,6 +43,9 @@ export const AppTheme = {
     actionSecondary: '#6E6BD4',
     surfaceWarm: '#8A6150',
     surfaceSubtle: '#353535',
+    parchmentSurface: '#D2ACAC',
+    parchmentText: '#CEB464',
+    parchmentTextShadow: '#796834',
   },
   spacing: {
     xs: 4,

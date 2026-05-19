@@ -8,7 +8,7 @@ import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useUserProfile } from '@/hooks/useUser';
 import { createUuidV4 } from '@/utils/uuid';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -42,18 +42,35 @@ export default function BattleView() {
   const [draft, setDraft] = useState<BattleDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<BattleDraft | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const initializedBattleIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!battle) {
+      initializedBattleIdRef.current = null;
       setDraft(null);
       setSavedDraft(null);
       return;
     }
 
-    const nextDraft = cloneDraft(battle);
-    setDraft(nextDraft);
-    setSavedDraft(nextDraft);
-    setSaveError(null);
+    // First load or switching to a different battle — reset draft to the
+    // server-side state. This is the only path that may overwrite local edits.
+    if (initializedBattleIdRef.current !== battle.id) {
+      initializedBattleIdRef.current = battle.id;
+      const nextDraft = cloneDraft(battle);
+      setDraft(nextDraft);
+      setSavedDraft(nextDraft);
+      setSaveError(null);
+      return;
+    }
+
+    // Same battle, refreshed object reference (background refetch / post-save
+    // invalidation). Re-sync `savedDraft` to the latest server state so the
+    // dirty comparison stays accurate, but preserve the user's draft so unsaved
+    // edits survive the refetch.
+    setSavedDraft((current) => {
+      const next = cloneDraft(battle);
+      return current && areDraftsEqual(current, next) ? current : next;
+    });
   }, [battle]);
 
   const playerTotal = useMemo(() => {
@@ -93,6 +110,8 @@ export default function BattleView() {
     return draft.playerSide.characterIds.filter((id) => !characters.some((character) => character.id === id));
   }, [characters, draft]);
   const isDirty = !areDraftsEqual(draft, savedDraft);
+  const isNameValid = !!draft && draft.name.trim().length > 0;
+  const canSave = isDirty && isNameValid && !battleActions.isLoading;
 
   const updatePlayerSide = useCallback((updater: (side: PlayerSide) => PlayerSide) => {
     setDraft((current) => current ? { ...current, playerSide: updater(current.playerSide) } : current);
@@ -103,7 +122,7 @@ export default function BattleView() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!battle || !draft || !isDirty || battleActions.isLoading) {
+    if (!battle || !draft || !isDirty || !isNameValid || battleActions.isLoading) {
       return;
     }
 
@@ -120,7 +139,7 @@ export default function BattleView() {
       }
       setSaveError(error instanceof Error ? error.message : 'Failed to save battle');
     }
-  }, [battle, battleActions, draft, isDirty]);
+  }, [battle, battleActions, draft, isDirty, isNameValid]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -154,12 +173,15 @@ export default function BattleView() {
               <TouchableOpacity
                 accessibilityLabel="Save battle"
                 accessibilityRole="button"
-                disabled={!isDirty || battleActions.isLoading}
-                style={[styles.saveButton, (!isDirty || battleActions.isLoading) && styles.saveButtonDisabled]}
+                accessibilityState={{ disabled: !canSave }}
+                disabled={!canSave}
+                style={[styles.saveButton, !canSave && styles.saveButtonDisabled]}
                 testID="save-battle"
                 onPress={handleSave}
               >
-                <Text style={styles.saveButtonText}>{battleActions.isLoading ? 'Saving' : 'Save'}</Text>
+                <Text style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>
+                  {battleActions.isLoading ? 'Saving' : 'Save'}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -285,6 +307,9 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: AppTheme.colors.surfaceSubtle,
     ...AppTheme.typography.labelMd,
+  },
+  saveButtonTextDisabled: {
+    color: AppTheme.colors.textMuted,
   },
   comparison: {
     alignItems: 'center',

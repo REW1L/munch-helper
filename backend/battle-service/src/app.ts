@@ -183,16 +183,22 @@ const parseBonuses = (value: unknown): BonusItem[] | string => {
 };
 
 const parsePlayerSide = (value: unknown): PlayerSidePayload | string => {
-  if (!isPlainObject(value) || !Array.isArray(value.characterIds)) {
+  if (!isPlainObject(value) || !Array.isArray(value.characterIds) || !Array.isArray(value.bonuses)) {
     return 'Field playerSide must include characterIds and bonuses';
   }
 
   const characterIds: string[] = [];
+  const seenCharacterIds = new Set<string>();
   for (const characterId of value.characterIds) {
     if (!isNonEmptyString(characterId)) {
       return 'Field playerSide.characterIds must contain only non-empty strings';
     }
-    characterIds.push(characterId.trim());
+    const trimmed = characterId.trim();
+    if (seenCharacterIds.has(trimmed)) {
+      return 'Field playerSide.characterIds must not contain duplicates';
+    }
+    seenCharacterIds.add(trimmed);
+    characterIds.push(trimmed);
   }
 
   const bonuses = parseBonuses(value.bonuses);
@@ -204,7 +210,7 @@ const parsePlayerSide = (value: unknown): PlayerSidePayload | string => {
 };
 
 const parseMonsterSide = (value: unknown): MonsterSidePayload | string => {
-  if (!isPlainObject(value) || !Array.isArray(value.monsters)) {
+  if (!isPlainObject(value) || !Array.isArray(value.monsters) || !Array.isArray(value.bonuses)) {
     return 'Field monsterSide must include monsters and bonuses';
   }
 

@@ -240,7 +240,10 @@ describe('battle-service app', () => {
     ['duplicate bonus ids', { playerSide: { characterIds: [], bonuses: [{ id: 'bonus-1', value: 1 }, { id: 'bonus-1', value: 2 }] } }],
     ['bad monster level', { monsterSide: { monsters: [{ id: 'monster-1', name: 'Orc', level: -1 }], bonuses: [] } }],
     ['duplicate monster ids', { monsterSide: { monsters: [{ id: 'monster-1', name: 'Orc', level: 1 }, { id: 'monster-1', name: 'Troll', level: 2 }], bonuses: [] } }],
-    ['empty character id', { playerSide: { characterIds: [' '], bonuses: [] } }]
+    ['empty character id', { playerSide: { characterIds: [' '], bonuses: [] } }],
+    ['playerSide missing bonuses', { playerSide: { characterIds: ['character-1'] } }],
+    ['monsterSide missing bonuses', { monsterSide: { monsters: [] } }],
+    ['duplicate character ids', { playerSide: { characterIds: ['character-1', 'character-1'], bonuses: [] } }]
   ])('returns 400 for invalid patch payload: %s', async (_label, payload) => {
     const model = buildBattleModel();
 
@@ -250,6 +253,34 @@ describe('battle-service app', () => {
     expect(response.body.message).toEqual(expect.any(String));
     expect(model.findById).not.toHaveBeenCalled();
     expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns the side-level error message when bonuses is omitted', async () => {
+    const model = buildBattleModel();
+    const app = createApp(model);
+
+    const playerResponse = await request(app)
+      .patch('/battles/battle-1')
+      .send({ playerSide: { characterIds: ['character-1'] } });
+    const monsterResponse = await request(app)
+      .patch('/battles/battle-1')
+      .send({ monsterSide: { monsters: [] } });
+
+    expect(playerResponse.status).toBe(400);
+    expect(playerResponse.body).toEqual({ message: 'Field playerSide must include characterIds and bonuses' });
+    expect(monsterResponse.status).toBe(400);
+    expect(monsterResponse.body).toEqual({ message: 'Field monsterSide must include monsters and bonuses' });
+  });
+
+  it('rejects duplicate characterIds with a duplicate-specific message', async () => {
+    const model = buildBattleModel();
+
+    const response = await request(createApp(model))
+      .patch('/battles/battle-1')
+      .send({ playerSide: { characterIds: ['character-1', 'character-1'], bonuses: [] } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'Field playerSide.characterIds must not contain duplicates' });
   });
 
   it('returns 404 when patch target is missing or malformed', async () => {

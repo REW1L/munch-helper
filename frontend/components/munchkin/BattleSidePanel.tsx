@@ -24,7 +24,7 @@ export interface BattleSidePanelProps {
 
 const BONUS_VALUES = [-10, -5, -2, -1, 1, 2, 5, 10] as const;
 const DEFAULT_MONSTER_NAME = 'Fungeater';
-const DEFAULT_MONSTER_POWER = '25';
+const DEFAULT_MONSTER_LEVEL = '25';
 
 const monsterImage = require('../../assets/images/munchkin-cat.png');
 
@@ -47,7 +47,7 @@ function BattleSidePanel({
 }: BattleSidePanelProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState('');
   const [monsterName, setMonsterName] = useState(DEFAULT_MONSTER_NAME);
-  const [monsterPowerText, setMonsterPowerText] = useState(DEFAULT_MONSTER_POWER);
+  const [monsterLevelText, setMonsterLevelText] = useState(DEFAULT_MONSTER_LEVEL);
   const [isMonsterModalVisible, setIsMonsterModalVisible] = useState(false);
   const selectedCharacters = useMemo(
     () => selectedCharacterIds.map((id) => characters.find((character) => character.id === id)).filter(Boolean) as RoomCharacter[],
@@ -68,24 +68,24 @@ function BattleSidePanel({
 
   const handleAddMonster = useCallback(() => {
     const trimmedName = monsterName.trim();
-    const parsedPower = Number.parseInt(monsterPowerText, 10);
-    const monsterPower = Number.isInteger(parsedPower) ? Math.max(0, parsedPower) : Number.NaN;
+    const parsedLevel = Number.parseInt(monsterLevelText, 10);
+    const monsterLevel = Number.isInteger(parsedLevel) ? Math.max(0, parsedLevel) : Number.NaN;
     if (!trimmedName || !onAddMonster) {
       return;
     }
-    if (!Number.isInteger(monsterPower)) {
+    if (!Number.isInteger(monsterLevel)) {
       return;
     }
-    onAddMonster(trimmedName, monsterPower);
+    onAddMonster(trimmedName, monsterLevel);
     setMonsterName(DEFAULT_MONSTER_NAME);
-    setMonsterPowerText(DEFAULT_MONSTER_POWER);
+    setMonsterLevelText(DEFAULT_MONSTER_LEVEL);
     setIsMonsterModalVisible(false);
-  }, [monsterName, monsterPowerText, onAddMonster]);
+  }, [monsterName, monsterLevelText, onAddMonster]);
 
   const closeMonsterModal = useCallback(() => {
     setIsMonsterModalVisible(false);
     setMonsterName(DEFAULT_MONSTER_NAME);
-    setMonsterPowerText(DEFAULT_MONSTER_POWER);
+    setMonsterLevelText(DEFAULT_MONSTER_LEVEL);
   }, []);
 
   return (
@@ -182,7 +182,7 @@ function BattleSidePanel({
             testID="open-add-monster"
             onPress={() => {
               setMonsterName(DEFAULT_MONSTER_NAME);
-              setMonsterPowerText(DEFAULT_MONSTER_POWER);
+              setMonsterLevelText(DEFAULT_MONSTER_LEVEL);
               setIsMonsterModalVisible(true);
             }}
           >
@@ -251,17 +251,17 @@ function BattleSidePanel({
                   />
                 </View>
                 <View style={styles.monsterDialogField}>
-                  <Text style={styles.monsterDialogLabel}>Power:</Text>
+                  <Text style={styles.monsterDialogLabel}>Level:</Text>
                   <TextInput
-                    accessibilityLabel="Monster power"
+                    accessibilityLabel="Monster level"
                     inputMode="numeric"
                     keyboardType="number-pad"
-                    placeholder={DEFAULT_MONSTER_POWER}
+                    placeholder={DEFAULT_MONSTER_LEVEL}
                     placeholderTextColor={AppTheme.colors.surfaceWarm}
                     style={styles.monsterDialogInput}
-                    testID="monster-power-input"
-                    value={monsterPowerText}
-                    onChangeText={setMonsterPowerText}
+                    testID="monster-level-input"
+                    value={monsterLevelText}
+                    onChangeText={setMonsterLevelText}
                   />
                 </View>
               </View>
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   },
   monsterDialogButton: {
     alignItems: 'center',
-    backgroundColor: '#D2ACAC',
+    backgroundColor: AppTheme.colors.parchmentSurface,
     borderRadius: AppTheme.radius.lg,
     flex: 1,
     justifyContent: 'center',
@@ -530,13 +530,13 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   monsterDialogButtonText: {
-    color: '#CEB464',
+    color: AppTheme.colors.parchmentText,
     fontFamily: 'Roboto',
     fontSize: 22,
     fontWeight: '400',
     lineHeight: 28,
     textAlign: 'center',
-    textShadowColor: '#796834',
+    textShadowColor: AppTheme.colors.parchmentTextShadow,
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 1,
   },

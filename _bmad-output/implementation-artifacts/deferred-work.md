@@ -1,3 +1,11 @@
+## Deferred from: code review of 5-3-manage-battle-state (2026-05-19)
+
+- TOCTOU race between `findById` status check and `findByIdAndUpdate` [`backend/battle-service/src/app.ts:380-395`] — no concurrent status flip is possible until Stories 5.6 (Conclude) / 5.7 (Discard) ship; revisit with an atomic `findOneAndUpdate({ _id, status: 'active' }, …)` when those stories land. Harmless now.
+- `apiRequest` retries PATCH on `502`, doubling no-op `battle_updated` publishes [`frontend/api/http.ts:52`] — pre-existing global retry policy; will matter once Story 5.4 wires the real publisher and consumer. Either disable retry on PATCH or document idempotency expectations for the Story 5.4 consumer.
+- `handleSave` always sends the full draft (all three keys) instead of just changed sides [`frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:104`] — full-replace semantics are still respected per ADR-16; selective-body shaping is a payload-size optimisation, not a correctness gap. Worth a small follow-up to compute a delta vs `savedDraft` and only ship changed sides.
+- Edit controls remain interactive briefly when `battle.status` flips to non-active [`frontend/app/munchkin/[roomNumber]/(battle)/index.tsx`] — depends on Story 5.4 realtime status updates; backend 409 is the authoritative guard today, but the post-Conclude/Discard UX will need a status-aware read-only mode.
+- No `Light` haptic on bonus preset / add / remove / save taps [`frontend/components/munchkin/BattleSidePanel.tsx`] — original stepper that the spec required haptics on was replaced by preset buttons during review; treat as UX polish under the haptic-consistency follow-up across stepper-replacement components.
+
 ## Deferred from: code review of 5-1-start-a-battle (2026-05-18)
 
 - Premature `battle_started` event payload contract: `backend/battle-service/src/publisher.ts` defines `BattleEventPayload` + `createBattleStartedEventPayload({event:'battle_started',emittedAt,...})`, the create handler builds & publishes it, and `publisher.test.ts`/`app.test.ts` assert the shape. Task 7 explicitly deferred the event payload to Story 5.4 (no-op seam only). Deferred to Story 5.4 — that story owns the battle_started event payload/transport contract; reconcile or replace the seam there. Harmless now (NoopBattleEventPublisher; no SNS/Redis/SAM publish wired).

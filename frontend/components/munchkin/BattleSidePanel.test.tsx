@@ -61,7 +61,7 @@ describe('BattleSidePanel', () => {
 
     fireEvent.click(screen.getByTestId('open-add-monster'));
     fireEvent.change(screen.getByTestId('monster-name-input'), { target: { value: 'Level 6 Monster' } });
-    fireEvent.change(screen.getByTestId('monster-power-input'), { target: { value: '6' } });
+    fireEvent.change(screen.getByTestId('monster-level-input'), { target: { value: '6' } });
     fireEvent.click(screen.getByTestId('save-monster'));
     fireEvent.click(screen.getByTestId('remove-monster-monster-1'));
 
@@ -70,7 +70,7 @@ describe('BattleSidePanel', () => {
     expect(onRemoveMonster).toHaveBeenCalledWith('monster-1');
   });
 
-  it('prefills the default monster name and power in the add dialog', () => {
+  it('prefills the default monster name and level in the add dialog', () => {
     const onAddMonster = vi.fn();
 
     render(

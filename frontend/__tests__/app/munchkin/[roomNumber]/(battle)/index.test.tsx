@@ -208,4 +208,23 @@ describe('Battle view', () => {
       expect(screen.getByTestId('battle-save-error').textContent).toBe('Battle is not active');
     });
   });
+
+  it('disables Save when the battle name is empty or whitespace', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    render(<BattleView />);
+
+    // Make the draft dirty so Save would otherwise enable.
+    fireEvent.click(screen.getByTestId('select-character-character-1'));
+    fireEvent.click(screen.getByTestId('add-character'));
+
+    // Blank out the name.
+    fireEvent.change(screen.getByTestId('battle-name-input'), { target: { value: '   ' } });
+
+    const saveButton = screen.getByTestId('save-battle');
+    expect(saveButton.getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.click(saveButton);
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
 });
