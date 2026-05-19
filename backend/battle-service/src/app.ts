@@ -4,8 +4,7 @@ import morgan from 'morgan';
 import {
   type BattleEventPublisher,
   NoopBattleEventPublisher,
-  createBattleStartedEventPayload,
-  createBattleUpdatedEventPayload
+  createBattleEventPayload
 } from './publisher';
 
 export type BattleStatus = 'active' | 'concluded' | 'discarded';
@@ -337,7 +336,8 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
 
       try {
         await publisher.publish(
-          createBattleStartedEventPayload({
+          createBattleEventPayload({
+            event: 'battle_started',
             roomId: battle.roomId,
             battleId: battle.id
           })
@@ -409,7 +409,8 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
 
       try {
         await publisher.publish(
-          createBattleUpdatedEventPayload({
+          createBattleEventPayload({
+            event: 'battle_updated',
             roomId: battle.roomId,
             battleId: battle.id
           })

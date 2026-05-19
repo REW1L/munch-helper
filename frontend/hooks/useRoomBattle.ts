@@ -1,6 +1,8 @@
 import { Battle, getActiveBattle } from '@/api/battles';
+import { useRoomWebSocket } from '@/hooks/useRoomWebSocket';
+import { UserProfileInterface } from '@/hooks/useUser';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 interface UseRoomBattleResult {
   battle: Battle | null;
@@ -11,9 +13,29 @@ interface UseRoomBattleResult {
 
 export const getBattleQueryKey = (roomId: string | undefined): readonly ['battle', string | undefined] => ['battle', roomId];
 
-export function useRoomBattle(roomId: string | undefined): UseRoomBattleResult {
+export function useRoomBattle(
+  roomId: string | undefined,
+  userProfile?: UserProfileInterface
+): UseRoomBattleResult {
   const queryClient = useQueryClient();
   const battleQueryKey = useMemo(() => getBattleQueryKey(roomId), [roomId]);
+
+  const webSocketOptions = useMemo(
+    () => ({
+      onOpen: () => {
+        void queryClient.invalidateQueries({ queryKey: battleQueryKey });
+      },
+    }),
+    [battleQueryKey, queryClient]
+  );
+
+  const userId = userProfile?.id;
+  const { isConnected, subscribe } = useRoomWebSocket(
+    roomId,
+    userId,
+    Boolean(roomId && userId),
+    webSocketOptions
+  );
 
   const battleQuery = useQuery({
     queryKey: battleQueryKey,
@@ -26,6 +48,20 @@ export function useRoomBattle(roomId: string | undefined): UseRoomBattleResult {
     },
     enabled: Boolean(roomId)
   });
+
+  useEffect(() => {
+    if (!isConnected) {
+      return;
+    }
+
+    const unsubscribe = subscribe((event) => {
+      if (event.event.startsWith('battle_')) {
+        void queryClient.invalidateQueries({ queryKey: battleQueryKey });
+      }
+    });
+
+    return unsubscribe;
+  }, [battleQueryKey, isConnected, queryClient, subscribe]);
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: battleQueryKey });

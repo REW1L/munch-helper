@@ -42,7 +42,7 @@ const handleSnsEvent = async (event: unknown) => {
     console.info('room-notifications.sns.event', {
       event: parsed.event,
       roomId: parsed.roomId,
-      characterId: parsed.event_body.characterId,
+      event_body: parsed.event_body,
       correlationId: parsed.correlationId,
       connectionsCount: connections.length
     });
@@ -51,7 +51,7 @@ const handleSnsEvent = async (event: unknown) => {
     console.info('room-notifications.sns.event_dispatched', {
       event: parsed.event,
       roomId: parsed.roomId,
-      characterId: parsed.event_body.characterId,
+      event_body: parsed.event_body,
       connectionsCount: connections.length
     });
   }

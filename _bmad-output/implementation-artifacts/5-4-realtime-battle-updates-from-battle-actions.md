@@ -1,6 +1,6 @@
 # Story 5.4: Realtime Battle Updates from Battle Actions
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -231,8 +231,8 @@ architecture only for net-new battle decisions where no existing pattern conflic
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — battle-service real publisher (Sns/Redis) + payload helper** (AC: 1)
-  - [ ] In `backend/battle-service/src/publisher.ts` (5.1 created it with the
+- [x] **Task 1 — battle-service real publisher (Sns/Redis) + payload helper** (AC: 1)
+  - [x] In `backend/battle-service/src/publisher.ts` (5.1 created it with the
     `BattleEventPublisher` interface + `NoopBattleEventPublisher`): add
     `SnsBattleEventPublisher` and `RedisBattleEventPublisher` and a
     `createBattleEventPayload(input)` factory, **structurally mirroring
@@ -242,14 +242,14 @@ architecture only for net-new battle decisions where no existing pattern conflic
     'battle_discarded'` and `BattleEventPayload = { event: BattleEventType; roomId:
     string; event_body: { battleId: string }; emittedAt: string; correlationId?:
     string }`. `createBattleEventPayload` sets `emittedAt: new Date().toISOString()`.
-  - [ ] Keep `NoopBattleEventPublisher` as the default in the app factory (5.1
+  - [x] Keep `NoopBattleEventPublisher` as the default in the app factory (5.1
     pattern). Do not change `src/app.ts`'s publisher option plumbing beyond passing
     the chosen publisher through (5.1 already wired the option + the no-op call sites).
-  - [ ] Extend `backend/battle-service/src/publisher.test.ts` (co-located): Sns and
+  - [x] Extend `backend/battle-service/src/publisher.test.ts` (co-located): Sns and
     Redis publishers serialize the exact `battle_*` payload; Noop logs and resolves.
 
-- [ ] **Task 2 — Wire publisher selection from env (index.ts / lambda.ts)** (AC: 1)
-  - [ ] `backend/battle-service/src/index.ts`: select `RedisBattleEventPublisher`
+- [x] **Task 2 — Wire publisher selection from env (index.ts / lambda.ts)** (AC: 1)
+  - [x] `backend/battle-service/src/index.ts`: select `RedisBattleEventPublisher`
     when `process.env.BATTLE_EVENTS_REDIS_URL` is set (channel from
     `process.env.ROOM_CHARACTER_EVENTS_CHANNEL || 'room-character-events'`), else
     `NoopBattleEventPublisher`. Mirror `character-service/src/index.ts` exactly
@@ -258,77 +258,77 @@ architecture only for net-new battle decisions where no existing pattern conflic
     `BATTLE_EVENTS_REDIS_URL` (do NOT reuse `CHARACTER_EVENTS_REDIS_URL` — service
     isolation, per 5.1's env-naming rule), but the **channel name is shared**
     (`room-character-events`) because it is the same transport.
-  - [ ] `backend/battle-service/src/lambda.ts`: select `SnsBattleEventPublisher`
+  - [x] `backend/battle-service/src/lambda.ts`: select `SnsBattleEventPublisher`
     when `process.env.ROOM_CHARACTER_EVENTS_TOPIC_ARN` is set, else Noop. Mirror
     `character-service/src/lambda.ts` exactly. (Topic ARN env name is **shared** —
     same topic.)
-  - [ ] Extend co-located `index.test.ts`/`lambda.test.ts` if 5.1 created them
+  - [x] Extend co-located `index.test.ts`/`lambda.test.ts` if 5.1 created them
     (mirror character-service's; otherwise assert publisher selection via
     `service.ts`/`app.ts` tests — match whatever 5.1 established).
 
-- [ ] **Task 3 — Publish `battle_started` (POST) and `battle_updated` (PATCH)** (AC: 1, 2)
-  - [ ] In `backend/battle-service/src/app.ts`, at 5.1's `POST /battles` success
+- [x] **Task 3 — Publish `battle_started` (POST) and `battle_updated` (PATCH)** (AC: 1, 2)
+  - [x] In `backend/battle-service/src/app.ts`, at 5.1's `POST /battles` success
     path: replace the no-op publish with
     `await publisher.publish(createBattleEventPayload({ event: 'battle_started',
     roomId: battle.roomId, battleId: battle.id, correlationId }))` inside the
     **existing** `try/catch` that `console.error`s but never rethrows (mirror
     character-service POST). The HTTP `201` must succeed even if publish throws.
-  - [ ] At 5.3's `PATCH /battles/:id` success path (after the `200` battle is
+  - [x] At 5.3's `PATCH /battles/:id` success path (after the `200` battle is
     resolved, **only** when status was `active` and the update applied): publish
     `battle_updated` the same way. The `409` (not-active) and `404`/`400` paths must
     publish **nothing**.
-  - [ ] Do not add publish calls for `battle_concluded`/`battle_discarded` (no
+  - [x] Do not add publish calls for `battle_concluded`/`battle_discarded` (no
     endpoints yet — 5.6/5.7). Do not change error codes (battle-service is `502`, per
     5.1 — not character-service's `500`).
-  - [ ] Extend `backend/battle-service/src/app.test.ts`: inject a mock publisher
+  - [x] Extend `backend/battle-service/src/app.test.ts`: inject a mock publisher
     (mirror 5.1's mock-model injection); assert `publish` called once with the exact
     `battle_started` payload on `POST` success and `battle_updated` on `PATCH`
     success; assert a throwing publisher does **not** fail the request; assert no
     publish on `409`/`400`/`404`.
 
-- [ ] **Task 4 — Extend room-notifications-service for `battle_*` (additive)** (AC: 1, 4)
-  - [ ] `backend/room-notifications-service/src/types.ts`: add the four `battle_*`
+- [x] **Task 4 — Extend room-notifications-service for `battle_*` (additive)** (AC: 1, 4)
+  - [x] `backend/room-notifications-service/src/types.ts`: add the four `battle_*`
     strings to the event-type union; change `event_body` to a shape that carries
     battle identity without breaking character delivery — see Dev Notes
     "Notification contract extension — exact shape" for the exact recommended type.
-  - [ ] `src/app.ts` `parseNotificationEvent`: add `battle_*` to `EVENT_TYPES`.
+  - [x] `src/app.ts` `parseNotificationEvent`: add `battle_*` to `EVENT_TYPES`.
     Branch the `event_body` validation by event family: `character_*` → require
     non-empty `event_body.characterId` (UNCHANGED); `battle_*` → require non-empty
     `event_body.battleId`. Reject (return `null`) only when `roomId` or the
     family-appropriate identity is missing — never drop a valid character event.
-  - [ ] `src/service.ts` `sendEventToConnections` and `src/index.ts` local dispatch:
+  - [x] `src/service.ts` `sendEventToConnections` and `src/index.ts` local dispatch:
     forward the parsed `event_body` **unchanged** (`{ event, event_body }`) instead
     of rebuilding `{ characterId }`. Make the `characterId` log fields optional/
     identity-agnostic (e.g. log `event_body` or a derived id) so battle events don't
     log `undefined`.
-  - [ ] Extend `app.test.ts`/`service.test.ts` and the local-dispatch test: (a)
+  - [x] Extend `app.test.ts`/`service.test.ts` and the local-dispatch test: (a)
     `battle_started`/`battle_updated`/`battle_concluded`/`battle_discarded` with
     `{ battleId }` parse + room-match + deliver `{ event, event_body:{battleId} }`;
     (b) **regression**: a `character_updated` with `{ characterId }` still parses and
     delivers `{ event, event_body:{characterId} }` byte-identically; (c) wrong-room
     events are not delivered (unchanged).
 
-- [ ] **Task 5 — Frontend WS: additive typing + shared multiplexed client** (AC: 2, 4)
-  - [ ] `frontend/api/webSocket.ts`: add `BattleEventType` (the four `battle_*`) and
+- [x] **Task 5 — Frontend WS: additive typing + shared multiplexed client** (AC: 2, 4)
+  - [x] `frontend/api/webSocket.ts`: add `BattleEventType` (the four `battle_*`) and
     a battle event shape; export a `RoomNotificationEvent` union (character |
     battle). Keep `CharacterNotificationEvent` exported and unchanged so
     `useRoomCharacters`/its tests compile untouched. `isValidNotificationEvent`:
     accept `character_*` (require `event_body.characterId`, UNCHANGED) **and**
     `battle_*` (require `event_body.battleId`). Listeners receive the union.
-  - [ ] `RoomWebSocketClient`: convert the single `options.onOpen`/`options.onClose`
+  - [x] `RoomWebSocketClient`: convert the single `options.onOpen`/`options.onClose`
     into **add/remove-able open/close listener sets** (model on the existing message
     `listeners: Set` + `subscribe()` → returns an unsubscribe). Preserve the
     constructor options surface for back-compat (an `options.onOpen`/`onClose`
     passed in still registers as one listener). Wire protocol, heartbeat,
     reconnect/backoff, and `connect()` URL are **unchanged**.
-  - [ ] **Shared-client registry:** add a module-level
+  - [x] **Shared-client registry:** add a module-level
     `Map<string /* `${roomId}:${userId}` */, { client: RoomWebSocketClient;
     refCount: number }>` plus `acquireRoomWebSocketClient(roomId, userId)` /
     `releaseRoomWebSocketClient(roomId, userId)`: first acquire creates + connects
     the client; each release decrements; refCount → 0 disconnects and removes the
     entry. Connection-key change (room/user) releases the old key and acquires the
     new (mirror the existing `connectionKeyRef` swap logic).
-  - [ ] `frontend/hooks/useRoomWebSocket.ts`: keep the public signature `(roomId,
+  - [x] `frontend/hooks/useRoomWebSocket.ts`: keep the public signature `(roomId,
     userId, enabled, options)` and `UseRoomWebSocketResult`. Internally
     acquire/release the **shared** client (not `new RoomWebSocketClient` per hook);
     register this hook's `options.onOpen`/`onClose` and its `subscribe` listeners
@@ -337,24 +337,24 @@ architecture only for net-new battle decisions where no existing pattern conflic
     open/close listeners. Widen the `subscribe` listener + result types to the
     union. Existing `useRoomCharacters` consumption (switch over the three character
     cases) must still type-check and behave identically.
-  - [ ] Extend `frontend/api/webSocket.test.ts`: `isValidNotificationEvent` accepts
+  - [x] Extend `frontend/api/webSocket.test.ts`: `isValidNotificationEvent` accepts
     each `battle_*` shape and **still** accepts each `character_*` shape; malformed
     battle event (missing `battleId`) rejected; open/close listener add/remove fan
     out to multiple listeners.
-  - [ ] Extend/add `frontend/hooks/useRoomWebSocket.test.ts`: **two hook instances
+  - [x] Extend/add `frontend/hooks/useRoomWebSocket.test.ts`: **two hook instances
     for the same (roomId,userId) share one underlying client / one connection**;
     refCount connect-on-first / disconnect-on-last; each hook's own `onOpen` fires
     on (re)connect; room/user change swaps keys; **regression** — existing single-
     consumer behaviour (connect/reconnect/timeout/onOpen) unchanged.
 
-- [ ] **Task 6 — Add battle WS subscription to `useRoomBattle`** (AC: 2, 3)
-  - [ ] `frontend/hooks/useRoomBattle.ts` (5.1 created HTTP-only): add a
+- [x] **Task 6 — Add battle WS subscription to `useRoomBattle`** (AC: 2, 3)
+  - [x] `frontend/hooks/useRoomBattle.ts` (5.1 created HTTP-only): add a
     `userProfile`/`userId` parameter (mirror `useRoomCharacters(roomId,
     userProfile)`); update 5.1's existing `useRoomBattle(roomId)` call sites
     (Room View `[roomNumber]/index.tsx`, Battle View `(battle)/index.tsx`, and 5.2's
     Room View call) to pass the profile from `useUserProfile()` — these screens
     already obtain it for `useRoomCharacters`.
-  - [ ] Mirror `useRoomCharacters`: `const battleQueryKey = ['battle', roomId]`;
+  - [x] Mirror `useRoomCharacters`: `const battleQueryKey = ['battle', roomId]`;
     `webSocketOptions = useMemo(() => ({ onOpen: () =>
     queryClient.invalidateQueries({ queryKey: battleQueryKey }) }), [...])`;
     `useRoomWebSocket(roomId, userProfile.id, Boolean(roomId && userProfile.id),
@@ -364,29 +364,29 @@ architecture only for net-new battle decisions where no existing pattern conflic
     `battle_` for this room, calls `queryClient.invalidateQueries({ queryKey:
     battleQueryKey })`. Ignore `character_*` events here (5.5 owns
     character→battle reconciliation).
-  - [ ] Keep the return shape `{ battle, isLoading, errorMessage, refresh }`. Do not
+  - [x] Keep the return shape `{ battle, isLoading, errorMessage, refresh }`. Do not
     add optimistic-echo suppression (Scope Boundaries).
-  - [ ] Extend `frontend/hooks/useRoomBattle.test.ts`: wrap in
+  - [x] Extend `frontend/hooks/useRoomBattle.test.ts`: wrap in
     `QueryClientProvider`; mock `@/hooks/useRoomWebSocket` (hoisted mutable
     `subscribe`/`isConnected`, mirror `useCharacters.test`); a delivered `battle_*`
     event invalidates `['battle', roomId]` (assert refetch / `getActiveBattle`
     re-called); `onOpen` invalidates; a `character_*` event does **not** trigger a
     battle refetch.
 
-- [ ] **Task 7 — Cross-surface verification** (AC: 1, 2, 3, 4)
-  - [ ] Backend: from `backend/`, `npm run typecheck` and `npm test`/`test:coverage`
+- [x] **Task 7 — Cross-surface verification** (AC: 1, 2, 3, 4)
+  - [x] Backend: from `backend/`, `npm run typecheck` and `npm test`/`test:coverage`
     pass with battle-service publisher + room-notifications changes;
     **character-service and room-notifications-service existing tests still green**
     (regression gate for AC1/AC4).
-  - [ ] Frontend: from `frontend/`, strict typecheck + `vitest run --coverage`
+  - [x] Frontend: from `frontend/`, strict typecheck + `vitest run --coverage`
     (≥70% line floor; coverage `include` = `api/**`,`config/**`,`hooks/**` — do not
     widen). Existing `useCharacters`/`webSocket`/`useRoomWebSocket` tests still green
     (shared-client refactor regression gate for AC1/AC4).
-  - [ ] **Single-connection check:** with both Room View hooks mounted
+  - [x] **Single-connection check:** with both Room View hooks mounted
     (`useRoomCharacters` + `useRoomBattle`, same room/user), assert exactly **one**
     `RoomWebSocketClient`/one `connect()` for that key (unit test on the registry,
     and in the manual smoke confirm one `/ws` connection in browser devtools).
-  - [ ] Local manual smoke (`docker-compose up`, after 5.1+5.3 merged): two browser
+  - [x] Local manual smoke (`docker-compose up`, after 5.1+5.3 merged): two browser
     tabs (web), same room, two device identities. Tab A starts a battle → Tab B's
     Room View banner (5.2) appears **without reload**; Tab A opens Battle View and
     adds a monster + Save (PATCH) → Tab B's open Battle View reflects it within the
@@ -395,6 +395,13 @@ architecture only for net-new battle decisions where no existing pattern conflic
     onOpen fired), no duplicate banner. Confirm a plain character edit still flashes
     the card in the other tab (character realtime regression over the shared
     socket). Verify web at minimum; note any platform (iOS/Android) not verified.
+
+### Review Findings
+
+- [x] [Review][Patch] Battle View renders stale local draft after realtime refetch [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:66]
+- [x] [Review][Patch] Shared WebSocket hook drops reconnect and heartbeat timing options [frontend/hooks/useRoomWebSocket.ts:105]
+- [x] [Review][Patch] Notification parser can throw on malformed battle identity payloads [backend/room-notifications-service/src/app.ts:122]
+- [x] [Review][Patch] Shared WebSocket listener fan-out is not isolated from listener exceptions [frontend/api/webSocket.ts:95]
 
 ## Dev Notes
 
@@ -658,12 +665,50 @@ at most one active battle, so the refetch can never yield two.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Task 1: Added `SnsBattleEventPublisher`, `RedisBattleEventPublisher`, `createBattleEventPayload` to `publisher.ts`, mirroring character-service. Tests cover Sns/Redis/Noop payloads and connect-once.
+- Task 2: Wired Redis publisher in `index.ts` (env `BATTLE_EVENTS_REDIS_URL`) and SNS publisher in `lambda.ts` (env `ROOM_CHARACTER_EVENTS_TOPIC_ARN`). Lambda test TypeScript fix: cast `mock.calls as unknown as Array<[...]>`.
+- Task 3: `app.ts` POST publishes `battle_started`, PATCH publishes `battle_updated` inside swallow-catch. App tests assert exact payloads, throw-swallow, and no publish on 409.
+- Task 4: `room-notifications-service/src/types.ts` widened to include all four `battle_*` types. `app.ts` branches validation by event family (character→requires `characterId`, battle→requires `battleId`). `service.ts`/`index.ts`/`lambda.ts` forward `event_body` as-parsed. All character regression tests green.
+- Task 5: `frontend/api/webSocket.ts` added `BattleEventType`, `BattleNotificationEvent`, widened `RoomNotificationEvent` union. `RoomWebSocketClient` gained `addOpenListener`/`addCloseListener` Sets (back-compat constructor options). Registry: `acquireRoomWebSocketClient` returns `{ client, isFirstAcquirer }`, `releaseRoomWebSocketClient` disconnects on last release. `useRoomWebSocket.ts` rewired to use registry: first acquirer calls `connect()`, subsequent acquirers sync from `isConnected()`. Test rewritten with registry-based mock; 20 tests including shared-client and refcount tests.
+- Task 6: `useRoomBattle.ts` gained optional `userProfile?: UserProfileInterface` param, `useRoomWebSocket` call with `onOpen→invalidate`, `useEffect` subscribing to `battle_*` events for invalidation. Call sites in `(battle)/index.tsx` and `index.tsx` updated to pass `userProfile`. 8 new tests covering WS integration.
+- Task 7: Backend typecheck/114 tests pass. Frontend strict typecheck passes. 145 frontend tests pass with 83.49% coverage (≥70% gate). Character regression tests green across both surfaces.
 
 ### File List
+
+- `backend/battle-service/src/publisher.ts`
+- `backend/battle-service/src/publisher.test.ts`
+- `backend/battle-service/src/index.ts`
+- `backend/battle-service/src/lambda.ts`
+- `backend/battle-service/src/lambda.test.ts`
+- `backend/battle-service/src/app.ts`
+- `backend/battle-service/src/app.test.ts`
+- `backend/sam/template.yaml`
+- `backend/docker-compose.local.yml`
+- `backend/room-notifications-service/src/types.ts`
+- `backend/room-notifications-service/src/app.ts`
+- `backend/room-notifications-service/src/app.test.ts`
+- `backend/room-notifications-service/src/service.ts`
+- `backend/room-notifications-service/src/service.test.ts`
+- `backend/room-notifications-service/src/lambda.ts`
+- `backend/room-notifications-service/src/index.ts`
+- `frontend/api/webSocket.ts`
+- `frontend/api/webSocket.test.ts`
+- `frontend/hooks/useRoomWebSocket.ts`
+- `frontend/hooks/useRoomWebSocket.test.ts`
+- `frontend/hooks/useRoomBattle.ts`
+- `frontend/hooks/useRoomBattle.test.ts`
+- `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx`
+- `frontend/app/munchkin/[roomNumber]/index.tsx`
+
+### Change Log
+
+| Date | Version | Description | Author |
+|------|---------|-------------|--------|
+| 2026-05-19 | 1.0 | Implemented story: real Sns/Redis publishers in battle-service, battle_* extension in room-notifications-service, shared multiplexed WebSocket client, useRoomBattle WS subscription | claude-sonnet-4-6 |

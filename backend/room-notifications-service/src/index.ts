@@ -80,7 +80,7 @@ const start = async () => {
     console.info('room-notifications.local.event_dispatched', {
       event: parsedEvent.event,
       roomId: parsedEvent.roomId,
-      characterId: parsedEvent.event_body.characterId,
+      event_body: parsedEvent.event_body,
       deliveredCount,
       activeConnections: connections.size
     });

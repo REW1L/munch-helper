@@ -1,7 +1,7 @@
 import type { ApiGatewayManagementApiClient } from '@aws-sdk/client-apigatewaymanagementapi';
 import { DeleteConnectionCommand, GetConnectionCommand, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
 import { RoomConnection } from './models/RoomConnection';
-import type { ConnectionRecord, RoomCharacterNotificationEvent } from './types';
+import type { ConnectionRecord, RoomNotificationEvent } from './types';
 
 export const upsertConnection = async (input: {
   connectionId: string;
@@ -61,13 +61,11 @@ const isGoneConnectionError = (error: unknown): boolean => {
 export const sendEventToConnections = async (
   client: ApiGatewayManagementApiClient,
   connections: ConnectionRecord[],
-  event: RoomCharacterNotificationEvent
+  event: RoomNotificationEvent
 ): Promise<void> => {
   const payload = JSON.stringify({
     event: event.event,
-    event_body: {
-      characterId: event.event_body.characterId
-    }
+    event_body: event.event_body
   });
 
   await Promise.all(
@@ -84,7 +82,7 @@ export const sendEventToConnections = async (
         console.info('room-notifications.event.delivered', {
           event: event.event,
           roomId: event.roomId,
-          characterId: event.event_body.characterId,
+          event_body: event.event_body,
           connectionId: connection.connectionId,
           userId: connection.userId
         });
@@ -102,7 +100,7 @@ export const sendEventToConnections = async (
         console.error('room-notifications.event.delivery_failed', {
           event: event.event,
           roomId: event.roomId,
-          characterId: event.event_body.characterId,
+          event_body: event.event_body,
           connectionId: connection.connectionId,
           userId: connection.userId,
           error

@@ -82,7 +82,7 @@ development_status:
   5-1-start-a-battle: done
   5-2-show-active-battle-in-room-view: done
   5-3-manage-battle-state: done
-  5-4-realtime-battle-updates-from-battle-actions: ready-for-dev
+  5-4-realtime-battle-updates-from-battle-actions: done
   5-5-realtime-battle-updates-from-character-changes: ready-for-dev
   5-6-conclude-a-battle: ready-for-dev
   5-7-discard-a-battle: ready-for-dev

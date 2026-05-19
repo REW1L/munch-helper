@@ -64,6 +64,8 @@ services:
     environment:
       PORT: 8086
       BATTLE_MONGO_URI: mongodb://mongo-battle:27017/munch_battle_service
+      BATTLE_EVENTS_REDIS_URL: redis://redis:6379
+      ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
     depends_on:
       - mongo-battle
       - redis
