@@ -3,13 +3,15 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { startBattle } from '@/api/battles';
+import { patchBattle, startBattle } from '@/api/battles';
 import { useBattleActions } from '@/hooks/useBattleActions';
 
 vi.mock('@/api/battles', () => ({
+  patchBattle: vi.fn(),
   startBattle: vi.fn(),
 }));
 
+const mockPatchBattle = vi.mocked(patchBattle);
 const mockStartBattle = vi.mocked(startBattle);
 
 describe('useBattleActions', () => {
@@ -22,6 +24,7 @@ describe('useBattleActions', () => {
         mutations: { retry: false },
       },
     });
+    mockPatchBattle.mockReset();
     mockStartBattle.mockReset();
   });
 
@@ -66,5 +69,32 @@ describe('useBattleActions', () => {
     await waitFor(() => {
       expect(result.current.errorMessage).toBe('Start failed');
     });
+  });
+
+  it('patches a battle and invalidates the room battle query', async () => {
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockPatchBattle.mockResolvedValue({
+      id: 'battle-1',
+      roomId: 'room-1',
+      name: 'Battle',
+      status: 'active',
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+      result: null,
+      concludedAt: null,
+    });
+
+    const { result } = renderHook(() => useBattleActions('room-1'), { wrapper });
+
+    await act(async () => {
+      await result.current.patch('battle-1', {
+        playerSide: { characterIds: ['character-1'], bonuses: [] },
+      });
+    });
+
+    expect(mockPatchBattle).toHaveBeenCalledWith('battle-1', {
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['battle', 'room-1'] });
   });
 });

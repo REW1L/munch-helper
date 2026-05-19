@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "routeKey": "PATCH /battles/{id}",
+  "rawPath": "/battles/67c24f2ec9b1456aa0d9ea13",
+  "rawQueryString": "",
+  "headers": {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "host": "localhost"
+  },
+  "pathParameters": {
+    "id": "67c24f2ec9b1456aa0d9ea13"
+  },
+  "requestContext": {
+    "http": {
+      "method": "PATCH",
+      "path": "/battles/67c24f2ec9b1456aa0d9ea13",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "sam-local"
+    }
+  },
+  "body": "{\"name\":\"Battle 1\",\"playerSide\":{\"characterIds\":[\"character-1\"],\"bonuses\":[{\"id\":\"bonus-1\",\"value\":3}]},\"monsterSide\":{\"monsters\":[{\"id\":\"monster-1\",\"name\":\"Level 6 Monster\",\"level\":6}],\"bonuses\":[]}}",
+  "isBase64Encoded": false
+}

@@ -16,7 +16,7 @@ Implemented in this phase:
 - User management (`POST /users`, `GET /users/:userId`, `PATCH /users/:userId`)
 - Room management (`POST /rooms`, `POST /rooms/associations`)
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
-- Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`)
+- Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`, `PATCH /battles/:id`)
 - Room service synchronous call to character service on create/join flow.
 - Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
 

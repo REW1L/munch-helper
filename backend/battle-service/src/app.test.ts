@@ -22,6 +22,8 @@ function buildBattle(overrides: Partial<BattleLike> = {}): BattleLike {
 function buildBattleModel(): BattleModelLike {
   return {
     findOne: vi.fn(),
+    findById: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
     create: vi.fn()
   };
 }
@@ -171,6 +173,162 @@ describe('battle-service app', () => {
 
     expect(response.status).toBe(502);
     expect(response.body).toEqual({ message: 'Unexpected error' });
+  });
+
+  it('patches an active battle with full side replacements and trimmed name', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    const existing = buildBattle({
+      playerSide: { characterIds: ['old-character'], bonuses: [{ id: 'old-bonus', value: 1 }] },
+      monsterSide: { monsters: [{ id: 'old-monster', name: 'Old', level: 1 }], bonuses: [] }
+    });
+    const updated = buildBattle({
+      name: 'Updated Battle',
+      playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-1', value: 3 }] },
+      monsterSide: {
+        monsters: [{ id: 'monster-1', name: 'Goblin', level: 6 }],
+        bonuses: [{ id: 'monster-bonus-1', value: -1 }]
+      }
+    });
+
+    vi.mocked(model.findById).mockResolvedValue(existing);
+    vi.mocked(model.findByIdAndUpdate).mockResolvedValue(updated);
+
+    const response = await request(createApp(model, { publisher }))
+      .patch('/battles/battle-1')
+      .send({
+        name: ' Updated Battle ',
+        status: 'concluded',
+        roomId: 'other-room',
+        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-1', value: 3 }] },
+        monsterSide: {
+          monsters: [{ id: 'monster-1', name: ' Goblin ', level: 6 }],
+          bonuses: [{ id: 'monster-bonus-1', value: -1 }]
+        }
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 'battle-1',
+      name: 'Updated Battle',
+      playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-1', value: 3 }] },
+      monsterSide: {
+        monsters: [{ id: 'monster-1', name: 'Goblin', level: 6 }],
+        bonuses: [{ id: 'monster-bonus-1', value: -1 }]
+      }
+    });
+    expect(response.body._id).toBeUndefined();
+    expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+      'battle-1',
+      {
+        name: 'Updated Battle',
+        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-1', value: 3 }] },
+        monsterSide: {
+          monsters: [{ id: 'monster-1', name: 'Goblin', level: 6 }],
+          bonuses: [{ id: 'monster-bonus-1', value: -1 }]
+        }
+      },
+      { new: true, runValidators: true }
+    );
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ event: 'battle_updated', battleId: 'battle-1' }));
+  });
+
+  it.each([
+    ['no valid fields', { status: 'active' }],
+    ['empty name', { name: ' ' }],
+    ['bad bonus value', { playerSide: { characterIds: [], bonuses: [{ id: 'bonus-1', value: 1.5 }] } }],
+    ['duplicate bonus ids', { playerSide: { characterIds: [], bonuses: [{ id: 'bonus-1', value: 1 }, { id: 'bonus-1', value: 2 }] } }],
+    ['bad monster level', { monsterSide: { monsters: [{ id: 'monster-1', name: 'Orc', level: -1 }], bonuses: [] } }],
+    ['duplicate monster ids', { monsterSide: { monsters: [{ id: 'monster-1', name: 'Orc', level: 1 }, { id: 'monster-1', name: 'Troll', level: 2 }], bonuses: [] } }],
+    ['empty character id', { playerSide: { characterIds: [' '], bonuses: [] } }],
+    ['playerSide missing bonuses', { playerSide: { characterIds: ['character-1'] } }],
+    ['monsterSide missing bonuses', { monsterSide: { monsters: [] } }],
+    ['duplicate character ids', { playerSide: { characterIds: ['character-1', 'character-1'], bonuses: [] } }]
+  ])('returns 400 for invalid patch payload: %s', async (_label, payload) => {
+    const model = buildBattleModel();
+
+    const response = await request(createApp(model)).patch('/battles/battle-1').send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toEqual(expect.any(String));
+    expect(model.findById).not.toHaveBeenCalled();
+    expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns the side-level error message when bonuses is omitted', async () => {
+    const model = buildBattleModel();
+    const app = createApp(model);
+
+    const playerResponse = await request(app)
+      .patch('/battles/battle-1')
+      .send({ playerSide: { characterIds: ['character-1'] } });
+    const monsterResponse = await request(app)
+      .patch('/battles/battle-1')
+      .send({ monsterSide: { monsters: [] } });
+
+    expect(playerResponse.status).toBe(400);
+    expect(playerResponse.body).toEqual({ message: 'Field playerSide must include characterIds and bonuses' });
+    expect(monsterResponse.status).toBe(400);
+    expect(monsterResponse.body).toEqual({ message: 'Field monsterSide must include monsters and bonuses' });
+  });
+
+  it('rejects duplicate characterIds with a duplicate-specific message', async () => {
+    const model = buildBattleModel();
+
+    const response = await request(createApp(model))
+      .patch('/battles/battle-1')
+      .send({ playerSide: { characterIds: ['character-1', 'character-1'], bonuses: [] } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'Field playerSide.characterIds must not contain duplicates' });
+  });
+
+  it('returns 404 when patch target is missing or malformed', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findById).mockResolvedValueOnce(null).mockRejectedValueOnce(Object.assign(new Error('bad id'), { name: 'CastError' }));
+    const app = createApp(model);
+
+    const missing = await request(app).patch('/battles/missing').send({ name: 'Battle' });
+    const castError = await request(app).patch('/battles/bad-id').send({ name: 'Battle' });
+
+    expect(missing.status).toBe(404);
+    expect(missing.body).toEqual({ message: 'Battle not found' });
+    expect(castError.status).toBe(404);
+    expect(castError.body).toEqual({ message: 'Battle not found' });
+  });
+
+  it.each(['concluded', 'discarded'] as const)('returns 409 for patching a %s battle', async (status) => {
+    const model = buildBattleModel();
+    vi.mocked(model.findById).mockResolvedValue(buildBattle({ status }));
+
+    const response = await request(createApp(model)).patch('/battles/battle-1').send({ name: 'Updated' });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ message: 'Battle is not active' });
+    expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 for unexpected patch errors', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findById).mockResolvedValue(buildBattle());
+    vi.mocked(model.findByIdAndUpdate).mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(createApp(model)).patch('/battles/battle-1').send({ name: 'Updated' });
+
+    expect(response.status).toBe(502);
+    expect(response.body).toEqual({ message: 'Unexpected error' });
+  });
+
+  it('keeps successful patches successful when the publisher fails', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish unavailable')) };
+    vi.mocked(model.findById).mockResolvedValue(buildBattle());
+    vi.mocked(model.findByIdAndUpdate).mockResolvedValue(buildBattle({ name: 'Updated' }));
+
+    const response = await request(createApp(model, { publisher })).patch('/battles/battle-1').send({ name: 'Updated' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe('Updated');
   });
 
   it('strips the configured route prefix', async () => {
