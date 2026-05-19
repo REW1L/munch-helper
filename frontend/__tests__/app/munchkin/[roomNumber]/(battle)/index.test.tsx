@@ -112,7 +112,19 @@ vi.mock('expo-haptics', () => ({
 describe('Battle view', () => {
   beforeEach(() => {
     mockBattleState.current = mockBattleState.createState();
+    mockCharactersState.current = {
+      characters: [
+        { id: 'character-1', roomId: 'ROOM42', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+        { id: 'character-2', roomId: 'ROOM42', userId: 'user-2', nickname: 'Bob', avatar: 1, level: 2, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+      ],
+      isLoading: false,
+      errorMessage: null,
+    };
     mockBattleActions.patch.mockReset();
+    mockBattleActions.patch.mockImplementation(async (_battleId: string, payload: Partial<Battle>) => ({
+      ...mockBattleState.current.battle!,
+      ...payload,
+    }));
     mockBattleActions.current = { isLoading: false, errorMessage: null };
   });
 
@@ -227,7 +239,7 @@ describe('Battle view', () => {
     await waitFor(() => {
       expect(mockBattleActions.patch).toHaveBeenCalledWith('battle-1', {
         name: 'Dungeon Door',
-        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-new', value: 1 }] },
+        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: expect.any(String), value: 1 }] },
         monsterSide: { monsters: [], bonuses: [] },
       });
     });
@@ -265,5 +277,157 @@ describe('Battle view', () => {
 
     fireEvent.click(saveButton);
     expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
+
+  it('derives participating character updates into the player row and total without dirtying the draft', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 1 }] },
+      monsterSide: { monsters: [], bonuses: [] },
+    };
+
+    const view = render(<BattleView />);
+    expect(screen.getByText('Alice · Level 4')).toBeTruthy();
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('5');
+    expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
+
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        { ...mockCharactersState.current.characters[0], nickname: 'Alice Prime', level: 9 },
+        mockCharactersState.current.characters[1],
+      ],
+    };
+    view.rerender(<BattleView />);
+
+    expect(screen.getByText('Alice Prime · Level 9')).toBeTruthy();
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('10');
+    expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
+
+  it('renders deleted participating characters as tombstones and keeps the draft unchanged until explicit save', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+    };
+
+    const view = render(<BattleView />);
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
+
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [mockCharactersState.current.characters[0]],
+    };
+    view.rerender(<BattleView />);
+
+    expect(screen.getByText('Alice · Level 4')).toBeTruthy();
+    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
+    expect(screen.queryByText(/character-2/)).toBeNull();
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
+    expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByTestId('add-bonus-players-1'));
+    fireEvent.click(screen.getByTestId('save-battle'));
+
+    await waitFor(() => {
+      expect(mockBattleActions.patch).toHaveBeenCalledWith('battle-1', {
+        name: 'Dungeon Door',
+        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: expect.any(String), value: 1 }] },
+        monsterSide: { monsters: [], bonuses: [] },
+      });
+    });
+  });
+
+  it('ignores non-participating character changes for player rows, total, and dirty state', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+    };
+
+    const view = render(<BattleView />);
+    const beforeRows = screen.getAllByTestId('battle-participant-active').map((row) => row.textContent);
+    const beforeTotal = screen.getByTestId('battle-players-total').textContent;
+
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        mockCharactersState.current.characters[0],
+        { ...mockCharactersState.current.characters[1], nickname: 'Bob Updated', level: 12 },
+      ],
+    };
+    view.rerender(<BattleView />);
+
+    expect(screen.getAllByTestId('battle-participant-active').map((row) => row.textContent)).toEqual(beforeRows);
+    expect(screen.getByTestId('battle-players-total').textContent).toBe(beforeTotal);
+    expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [mockCharactersState.current.characters[0]],
+    };
+    view.rerender(<BattleView />);
+
+    expect(screen.getAllByTestId('battle-participant-active').map((row) => row.textContent)).toEqual(beforeRows);
+    expect(screen.getByTestId('battle-players-total').textContent).toBe(beforeTotal);
+    expect(screen.queryByTestId('battle-participant-removed')).toBeNull();
+    expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
+
+  it('uses latest room character state on remount without duplicate or stale participant rows', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+    };
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        { ...mockCharactersState.current.characters[0], nickname: 'Alice Latest', level: 6 },
+      ],
+    };
+
+    const view = render(<BattleView />);
+
+    expect(screen.getByText('Alice Latest · Level 6')).toBeTruthy();
+    expect(screen.queryByText('Alice · Level 4')).toBeNull();
+    expect(screen.getAllByTestId('battle-participant-active')).toHaveLength(1);
+    expect(screen.getAllByTestId('battle-participant-removed')).toHaveLength(1);
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
+
+    view.unmount();
+    render(<BattleView />);
+
+    expect(screen.getAllByTestId('battle-participant-active')).toHaveLength(1);
+    expect(screen.getAllByTestId('battle-participant-removed')).toHaveLength(1);
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
+    expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
+
+  it('hides optimistic (temp-) characters from the add picker so the just-added participant cannot flip to a tombstone after id swap', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        ...mockCharactersState.current.characters,
+        { id: 'temp-1700000000000', roomId: 'ROOM42', userId: 'user-1', nickname: 'Pending', avatar: 2, level: 3, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+      ],
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('select-character-character-1')).toBeTruthy();
+    expect(screen.getByTestId('select-character-character-2')).toBeTruthy();
+    expect(screen.queryByTestId('select-character-temp-1700000000000')).toBeNull();
+    expect(screen.queryByText('Pending')).toBeNull();
   });
 });

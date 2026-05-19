@@ -1,6 +1,7 @@
 import { Character as RoomCharacter } from '@/api/characters';
 import { BonusItem, MonsterItem } from '@/api/battles';
 import { AppTheme } from '@/constants/theme';
+import type { ActivePlayerParticipant } from '@/utils/battlePlayerSide';
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -9,9 +10,10 @@ export interface BattleSidePanelProps {
   title: string;
   total: number;
   toneColor: string;
+  activeParticipants?: ActivePlayerParticipant[];
   characters?: RoomCharacter[];
   selectedCharacterIds?: string[];
-  unavailableCharacterIds?: string[];
+  removedCharacterIds?: string[];
   monsters?: MonsterItem[];
   bonuses: BonusItem[];
   onAddCharacter?: (characterId: string) => void;
@@ -33,9 +35,10 @@ function BattleSidePanel({
   title,
   total,
   toneColor,
+  activeParticipants,
   characters = [],
   selectedCharacterIds = [],
-  unavailableCharacterIds = [],
+  removedCharacterIds = [],
   monsters = [],
   bonuses,
   onAddCharacter,
@@ -49,10 +52,7 @@ function BattleSidePanel({
   const [monsterName, setMonsterName] = useState(DEFAULT_MONSTER_NAME);
   const [monsterLevelText, setMonsterLevelText] = useState(DEFAULT_MONSTER_LEVEL);
   const [isMonsterModalVisible, setIsMonsterModalVisible] = useState(false);
-  const selectedCharacters = useMemo(
-    () => selectedCharacterIds.map((id) => characters.find((character) => character.id === id)).filter(Boolean) as RoomCharacter[],
-    [characters, selectedCharacterIds]
-  );
+  const selectedParticipants = activeParticipants ?? [];
   const availableCharacters = useMemo(
     () => characters.filter((character) => !selectedCharacterIds.includes(character.id)),
     [characters, selectedCharacterIds]
@@ -100,28 +100,30 @@ function BattleSidePanel({
       {side === 'players' && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Characters</Text>
-          {selectedCharacters.map((character) => (
-            <View key={character.id} style={styles.row}>
+          {selectedParticipants.map(({ id, character }) => (
+            <View key={id} style={styles.row} testID="battle-participant-active">
               <Text style={styles.rowText}>{character.nickname} · Level {character.level}</Text>
               <TouchableOpacity
                 accessibilityLabel={`Remove ${character.nickname}`}
                 accessibilityRole="button"
                 style={styles.removeButton}
-                testID={`remove-character-${character.id}`}
-                onPress={() => onRemoveCharacter?.(character.id)}
+                testID={`remove-character-${id}`}
+                onPress={() => onRemoveCharacter?.(id)}
               >
                 <Text style={styles.removeButtonText}>-</Text>
               </TouchableOpacity>
             </View>
           ))}
-          {unavailableCharacterIds.map((id) => (
-            <View key={id} style={styles.row}>
-              <Text style={styles.mutedText}>Unavailable · {id}</Text>
+          {removedCharacterIds.map((id) => (
+            <View key={id} style={styles.removedRow} testID="battle-participant-removed">
+              <Text accessibilityLabel={`${id} - removed from room`} style={styles.removedText}>
+                Removed character
+              </Text>
               <TouchableOpacity
-                accessibilityLabel="Remove unavailable character"
+                accessibilityLabel="Drop removed character from draft"
                 accessibilityRole="button"
                 style={styles.removeButton}
-                testID={`remove-character-${id}`}
+                testID={`discard-removed-character-${id}`}
                 onPress={() => onRemoveCharacter?.(id)}
               >
                 <Text style={styles.removeButtonText}>-</Text>
@@ -345,6 +347,23 @@ const styles = StyleSheet.create({
   mutedText: {
     color: AppTheme.colors.textMuted,
     flex: 1,
+    ...AppTheme.typography.labelSm,
+  },
+  removedRow: {
+    alignItems: 'center',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 44,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.sm,
+    gap: AppTheme.spacing.md,
+  },
+  removedText: {
+    color: AppTheme.colors.textMuted,
+    flex: 1,
+    textDecorationLine: 'line-through',
     ...AppTheme.typography.labelSm,
   },
   removeButton: {

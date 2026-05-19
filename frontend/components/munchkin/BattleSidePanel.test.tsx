@@ -17,6 +17,7 @@ describe('BattleSidePanel', () => {
 
     render(
       <BattleSidePanel
+        activeParticipants={[{ id: 'character-1', character: characters[0] }]}
         bonuses={[]}
         characters={characters}
         selectedCharacterIds={['character-1']}
@@ -38,6 +39,82 @@ describe('BattleSidePanel', () => {
     expect(onAddCharacter).toHaveBeenCalledWith('character-2');
     expect(onRemoveCharacter).toHaveBeenCalledWith('character-1');
     expect(screen.getByLabelText('Add selected character')).toBeTruthy();
+  });
+
+  it('renders active and removed participant states while excluding tombstones from the displayed total', () => {
+    render(
+      <BattleSidePanel
+        activeParticipants={[{ id: 'character-1', character: characters[0] }]}
+        bonuses={[]}
+        characters={characters}
+        removedCharacterIds={['character-removed']}
+        selectedCharacterIds={['character-1', 'character-removed']}
+        side="players"
+        title="Player Side"
+        toneColor={AppTheme.colors.accent}
+        total={4}
+        onAddBonus={vi.fn()}
+        onAddCharacter={vi.fn()}
+        onRemoveBonus={vi.fn()}
+        onRemoveCharacter={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Level 4');
+    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
+    expect(screen.queryByText(/character-removed/)).toBeNull();
+    expect(screen.getByLabelText('character-removed - removed from room')).toBeTruthy();
+    expect(screen.getByLabelText('Drop removed character from draft')).toBeTruthy();
+    expect(screen.getByTestId('discard-removed-character-character-removed')).toBeTruthy();
+    expect(screen.queryByTestId('remove-character-character-removed')).toBeNull();
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
+    expect(screen.queryByText('Unavailable · character-removed')).toBeNull();
+  });
+
+  it('updates active participant rows from supplied live character data without adding non-participants', () => {
+    const { rerender } = render(
+      <BattleSidePanel
+        activeParticipants={[{ id: 'character-1', character: characters[0] }]}
+        bonuses={[]}
+        characters={characters}
+        selectedCharacterIds={['character-1']}
+        side="players"
+        title="Player Side"
+        toneColor={AppTheme.colors.accent}
+        total={4}
+        onAddBonus={vi.fn()}
+        onAddCharacter={vi.fn()}
+        onRemoveBonus={vi.fn()}
+        onRemoveCharacter={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Level 4');
+
+    const updatedCharacters = [
+      { ...characters[0], nickname: 'Alice Updated', level: 8 },
+      characters[1],
+    ];
+    rerender(
+      <BattleSidePanel
+        activeParticipants={[{ id: 'character-1', character: updatedCharacters[0] }]}
+        bonuses={[]}
+        characters={updatedCharacters}
+        selectedCharacterIds={['character-1']}
+        side="players"
+        title="Player Side"
+        toneColor={AppTheme.colors.accent}
+        total={8}
+        onAddBonus={vi.fn()}
+        onAddCharacter={vi.fn()}
+        onRemoveBonus={vi.fn()}
+        onRemoveCharacter={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice Updated · Level 8');
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('8');
+    expect(screen.queryByText('Bob · Level 2')).toBeNull();
   });
 
   it('opens a Figma-inspired dialog to add monsters and displays total', () => {
