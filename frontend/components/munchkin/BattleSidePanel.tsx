@@ -52,15 +52,7 @@ function BattleSidePanel({
   const [monsterName, setMonsterName] = useState(DEFAULT_MONSTER_NAME);
   const [monsterLevelText, setMonsterLevelText] = useState(DEFAULT_MONSTER_LEVEL);
   const [isMonsterModalVisible, setIsMonsterModalVisible] = useState(false);
-  const selectedParticipants = useMemo(
-    () => activeParticipants || selectedCharacterIds
-      .map((id) => {
-        const character = characters.find((item) => item.id === id);
-        return character ? { id, character } : null;
-      })
-      .filter((participant): participant is ActivePlayerParticipant => !!participant),
-    [activeParticipants, characters, selectedCharacterIds]
-  );
+  const selectedParticipants = activeParticipants ?? [];
   const availableCharacters = useMemo(
     () => characters.filter((character) => !selectedCharacterIds.includes(character.id)),
     [characters, selectedCharacterIds]
@@ -125,13 +117,13 @@ function BattleSidePanel({
           {removedCharacterIds.map((id) => (
             <View key={id} style={styles.removedRow} testID="battle-participant-removed">
               <Text accessibilityLabel={`${id} - removed from room`} style={styles.removedText}>
-                Removed · {id}
+                Removed character
               </Text>
               <TouchableOpacity
-                accessibilityLabel="Remove removed character"
+                accessibilityLabel="Drop removed character from draft"
                 accessibilityRole="button"
                 style={styles.removeButton}
-                testID={`remove-character-${id}`}
+                testID={`discard-removed-character-${id}`}
                 onPress={() => onRemoveCharacter?.(id)}
               >
                 <Text style={styles.removeButtonText}>-</Text>

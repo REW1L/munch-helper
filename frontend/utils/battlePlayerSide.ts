@@ -38,7 +38,13 @@ export function reconcilePlayerParticipants(
 }
 
 export function computePlayerTotal(active: Pick<ActivePlayerParticipant, 'character'>[], bonuses: BonusItem[]): number {
-  const characterLevelTotal = active.reduce((total, participant) => total + participant.character.level, 0);
-  const bonusTotal = bonuses.reduce((total, bonus) => total + bonus.value, 0);
+  const characterLevelTotal = active.reduce(
+    (total, participant) => total + (Number.isFinite(participant.character.level) ? participant.character.level : 0),
+    0,
+  );
+  const bonusTotal = bonuses.reduce(
+    (total, bonus) => total + (Number.isFinite(bonus.value) ? bonus.value : 0),
+    0,
+  );
   return characterLevelTotal + bonusTotal;
 }

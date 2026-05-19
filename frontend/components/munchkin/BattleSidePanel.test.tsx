@@ -17,6 +17,7 @@ describe('BattleSidePanel', () => {
 
     render(
       <BattleSidePanel
+        activeParticipants={[{ id: 'character-1', character: characters[0] }]}
         bonuses={[]}
         characters={characters}
         selectedCharacterIds={['character-1']}
@@ -60,8 +61,12 @@ describe('BattleSidePanel', () => {
     );
 
     expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Level 4');
-    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed · character-removed');
+    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
+    expect(screen.queryByText(/character-removed/)).toBeNull();
     expect(screen.getByLabelText('character-removed - removed from room')).toBeTruthy();
+    expect(screen.getByLabelText('Drop removed character from draft')).toBeTruthy();
+    expect(screen.getByTestId('discard-removed-character-character-removed')).toBeTruthy();
+    expect(screen.queryByTestId('remove-character-character-removed')).toBeNull();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
     expect(screen.queryByText('Unavailable · character-removed')).toBeNull();
   });

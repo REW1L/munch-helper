@@ -325,7 +325,8 @@ describe('Battle view', () => {
     view.rerender(<BattleView />);
 
     expect(screen.getByText('Alice · Level 4')).toBeTruthy();
-    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed · character-2');
+    expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
+    expect(screen.queryByText(/character-2/)).toBeNull();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
     expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
     expect(mockBattleActions.patch).not.toHaveBeenCalled();
@@ -410,5 +411,23 @@ describe('Battle view', () => {
     expect(screen.getAllByTestId('battle-participant-removed')).toHaveLength(1);
     expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
     expect(mockBattleActions.patch).not.toHaveBeenCalled();
+  });
+
+  it('hides optimistic (temp-) characters from the add picker so the just-added participant cannot flip to a tombstone after id swap', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        ...mockCharactersState.current.characters,
+        { id: 'temp-1700000000000', roomId: 'ROOM42', userId: 'user-1', nickname: 'Pending', avatar: 2, level: 3, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+      ],
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('select-character-character-1')).toBeTruthy();
+    expect(screen.getByTestId('select-character-character-2')).toBeTruthy();
+    expect(screen.queryByTestId('select-character-temp-1700000000000')).toBeNull();
+    expect(screen.queryByText('Pending')).toBeNull();
   });
 });

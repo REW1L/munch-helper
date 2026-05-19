@@ -49,4 +49,18 @@ describe('battlePlayerSide', () => {
       { id: 'bonus-2', value: -2 },
     ])).toBe(9);
   });
+
+  it('treats non-finite levels and bonus values as zero so a stray NaN/null cannot invert the comparison label', () => {
+    const corruptedCharacter = { ...characters[0], level: Number.NaN } as Character;
+    const total = computePlayerTotal(
+      [{ character: corruptedCharacter }, { character: characters[1] }],
+      [
+        { id: 'bonus-1', value: Number.NaN },
+        { id: 'bonus-2', value: 3 },
+      ],
+    );
+
+    expect(Number.isFinite(total)).toBe(true);
+    expect(total).toBe(5);
+  });
 });

@@ -1,6 +1,6 @@
 # Story 5.5: Realtime Battle Updates from Character Changes
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -573,3 +573,15 @@ GPT-5 Codex
 
 - 2026-05-19: Implemented live Battle View player-side reconciliation from current room characters, removed tombstone rendering, and AC-focused frontend tests. Automated verification passed.
 - 2026-05-20: Recorded successful local manual smoke, checked the coverage-floor task, and moved story to review.
+- 2026-05-20: Code review applied 6 patches — temp-id filter in BattleView, NaN-safe totals, unique tombstone testID, friendlier tombstone label and accessibility text, removed dead `||` fallback in `BattleSidePanel`. Verified with `npm run tsc`, full `npm run test:coverage` (207 tests pass, 84.31% line coverage), `npm run lint` (only the pre-existing `modal-change-caracter.tsx` warning).
+
+### Review Findings
+
+- [x] [Review][Patch] Filter `temp-*` ids out of the Battle View add picker — optimistic characters (`useCharacters.ts:156` mints `temp-${Date.now()}`) can otherwise be added to `draft.playerSide.characterIds` and, when the server confirms, get replaced by a real id (`useCharacters.ts:185`), flipping the just-added participant to a `Removed · temp-...` tombstone and persisting a dangling temp id on Save. Filter `temp-` ids out so they can never enter the draft. AC1/AC3 fix. Resolved: added `confirmedCharacters` memo in `(battle)/index.tsx` filtering `temp-` ids, passed to `BattleSidePanel.characters`; new route test asserts `select-character-temp-*` never renders.
+- [x] [Review][Patch] `computePlayerTotal` dropped numeric guards — NaN `level`/`value` propagates and silently inverts comparison ternary [frontend/utils/battlePlayerSide.ts:41-42]. Resolved: each reducer now passes through `Number.isFinite(...)` and contributes `0` otherwise; added a unit test that injects NaN and asserts the total stays finite.
+- [x] [Review][Patch] Tombstone row reuses `testID="remove-character-${id}"` of the active row [frontend/components/munchkin/BattleSidePanel.tsx:118 vs :134]. Resolved: tombstone's remove button now `testID={\`discard-removed-character-${id}\`}`; tests updated.
+- [x] [Review][Patch] Tombstone visible label leaked raw UUID [frontend/components/munchkin/BattleSidePanel.tsx:127-129]. Resolved: visible text is now `Removed character` (accessibility label retains the id for screen readers per spec).
+- [x] [Review][Patch] Tombstone remove button accessibilityLabel was nonsensical English [frontend/components/munchkin/BattleSidePanel.tsx:131]. Resolved: now `"Drop removed character from draft"`.
+- [x] [Review][Patch] Dead `||` fallback in `BattleSidePanel.selectedParticipants` [frontend/components/munchkin/BattleSidePanel.tsx:55-63]. Resolved: simplified to `activeParticipants ?? []`; sole caller already passes the prop, and the panel test was updated to provide it explicitly.
+- [x] [Review][Defer] Battle UI gating blanks the whole view on transient empty-room refetch or characters-query error — `useRoomCharacters.isLoading` (`hooks/useCharacters.ts:444-446` returns true while `isFetching && characters.length === 0`) combined with the render gate at `(battle)/index.tsx:152-158` hides battle + draft when all characters are momentarily absent or the characters refetch errors. Pre-existing 5.3 gating; deferred — out of scope for 5.5.
+- [x] [Review][Defer] Story status flip bundled in same commit as code — `_bmad-output/.../5-5-...md` Status moves to `review` and `sprint-status.yaml` is updated inside `a757881`. Common pattern in this repo; deferred as a process matter.

@@ -75,6 +75,14 @@ export default function BattleView() {
     setSavedDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
   }, [battle, draft, savedDraft]);
 
+  // Exclude optimistic (temp-) ids from the add picker so users can't add a
+  // character that's about to get its id swapped — otherwise the just-added
+  // participant would flip to a tombstone the moment the server confirms.
+  const confirmedCharacters = useMemo(
+    () => characters.filter((character) => !character.id.startsWith('temp-')),
+    [characters],
+  );
+
   const playerParticipants = useMemo(() => {
     if (!draft) {
       return { active: [], removed: [] };
@@ -194,7 +202,7 @@ export default function BattleView() {
             <BattleSidePanel
               bonuses={draft.playerSide.bonuses}
               activeParticipants={playerParticipants.active}
-              characters={characters}
+              characters={confirmedCharacters}
               removedCharacterIds={playerParticipants.removed}
               selectedCharacterIds={draft.playerSide.characterIds}
               side="players"

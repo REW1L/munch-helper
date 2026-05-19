@@ -1,3 +1,8 @@
+## Deferred from: code review of 5-5-realtime-battle-updates-from-character-changes (2026-05-20)
+
+- Battle UI gating blanks the whole view on transient empty-room refetch or characters-query error — `useRoomCharacters.isLoading` ([frontend/hooks/useCharacters.ts:444-446](frontend/hooks/useCharacters.ts:444)) returns true while `isFetching && characters.length === 0` (e.g., after a mass character delete during refetch), and the render gate at [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:152-158](frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:152) hides battle+draft on either the loading or the error path. Pre-existing 5.3 gating; mid-edit edits stay in state but become invisible. Out of scope for 5.5.
+- Story status flip bundled in same commit as code — Status moves to `review` and `sprint-status.yaml` is updated inside `a757881` alongside implementation. Common pattern in this repo; deferred as a process matter.
+
 ## Deferred from: code review of 5-3-manage-battle-state (2026-05-19)
 
 - TOCTOU race between `findById` status check and `findByIdAndUpdate` [`backend/battle-service/src/app.ts:380-395`] — no concurrent status flip is possible until Stories 5.6 (Conclude) / 5.7 (Discard) ship; revisit with an atomic `findOneAndUpdate({ _id, status: 'active' }, …)` when those stories land. Harmless now.
