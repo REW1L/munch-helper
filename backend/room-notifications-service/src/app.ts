@@ -26,6 +26,15 @@ const ALL_EVENT_TYPES = new Set<NotificationEventType>([
   ...BATTLE_EVENT_TYPES,
 ]);
 
+const normalizeNonEmptyString = (value: unknown): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+};
+
 export interface ConnectRequest {
   connectionId: string;
   roomId: string;
@@ -104,7 +113,7 @@ export const parseNotificationEvent = (payload: unknown): RoomNotificationEvent 
   const eventType = data.event as NotificationEventType;
 
   if (CHARACTER_EVENT_TYPES.has(eventType as CharacterNotificationEventType)) {
-    const characterId = (data.event_body?.characterId as string | undefined || '').trim();
+    const characterId = normalizeNonEmptyString(data.event_body?.characterId);
     if (!characterId) {
       return null;
     }
@@ -119,7 +128,7 @@ export const parseNotificationEvent = (payload: unknown): RoomNotificationEvent 
   }
 
   // battle_* family
-  const battleId = (data.event_body?.battleId as string | undefined || '').trim();
+  const battleId = normalizeNonEmptyString(data.event_body?.battleId);
   if (!battleId) {
     return null;
   }

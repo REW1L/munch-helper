@@ -63,15 +63,16 @@ export default function BattleView() {
       return;
     }
 
-    // Same battle, refreshed object reference (background refetch / post-save
-    // invalidation). Re-sync `savedDraft` to the latest server state so the
-    // dirty comparison stays accurate, but preserve the user's draft so unsaved
-    // edits survive the refetch.
-    setSavedDraft((current) => {
-      const next = cloneDraft(battle);
-      return current && areDraftsEqual(current, next) ? current : next;
-    });
-  }, [battle]);
+    // Same battle, refreshed object reference (background refetch / realtime
+    // invalidation). If the user has no local edits, move the visible draft forward
+    // with the server state; otherwise keep their unsaved draft and update only the
+    // saved baseline so the dirty comparison stays accurate.
+    const nextDraft = cloneDraft(battle);
+    if (!draft || !savedDraft || areDraftsEqual(draft, savedDraft)) {
+      setDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
+    }
+    setSavedDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
+  }, [battle, draft, savedDraft]);
 
   const playerTotal = useMemo(() => {
     if (!draft) {

@@ -81,6 +81,24 @@ describe('RoomWebSocketClient', () => {
       return connectPromise.catch(() => undefined);
     });
 
+    it('keeps notifying open listeners when one listener throws', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const open2 = vi.fn();
+      client.addOpenListener(() => {
+        throw new Error('open listener failed');
+      });
+      client.addOpenListener(open2);
+
+      const connectPromise = client.connect();
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onopen?.();
+
+      await expect(connectPromise).resolves.toBeUndefined();
+      expect(open2).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith('[WebSocket] Open listener failed:', expect.any(Error));
+      consoleError.mockRestore();
+    });
+
     it('allows removing open listeners', () => {
       const open1 = vi.fn();
       const remove = client.addOpenListener(open1);
@@ -108,6 +126,56 @@ describe('RoomWebSocketClient', () => {
 
       expect(close1).toHaveBeenCalledTimes(1);
       expect(close2).toHaveBeenCalledTimes(1);
+      return connectPromise.catch(() => undefined);
+    });
+
+    it('keeps reconnecting when a close listener throws', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const close2 = vi.fn();
+      const attemptReconnect = vi.spyOn(
+        client as unknown as { attemptReconnect: () => void },
+        'attemptReconnect'
+      ).mockImplementation(() => undefined);
+      client.addCloseListener(() => {
+        throw new Error('close listener failed');
+      });
+      client.addCloseListener(close2);
+
+      const connectPromise = client.connect();
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onopen?.();
+      ws.onclose?.();
+
+      expect(close2).toHaveBeenCalledTimes(1);
+      expect(attemptReconnect).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith('[WebSocket] Close listener failed:', expect.any(Error));
+      attemptReconnect.mockRestore();
+      consoleError.mockRestore();
+      return connectPromise.catch(() => undefined);
+    });
+  });
+
+  describe('message listener fan-out', () => {
+    it('keeps notifying message listeners when one listener throws', () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const listener2 = vi.fn();
+      client.subscribe(() => {
+        throw new Error('message listener failed');
+      });
+      client.subscribe(listener2);
+
+      const connectPromise = client.connect();
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onmessage?.(
+        new MessageEvent('message', {
+          data: JSON.stringify({ event: 'character_updated', event_body: { characterId: 'char-1' } }),
+        })
+      );
+
+      expect(listener2).toHaveBeenCalledWith({ event: 'character_updated', event_body: { characterId: 'char-1' } });
+      expect(consoleError).toHaveBeenCalledWith('[WebSocket] Message listener failed:', expect.any(Error));
+      consoleError.mockRestore();
+      ws.onerror?.(new Event('error'));
       return connectPromise.catch(() => undefined);
     });
   });

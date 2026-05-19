@@ -52,6 +52,16 @@ describe('room-notifications app helpers', () => {
         })
       ).toBeNull();
     });
+
+    it('drops a character event with a non-string characterId', () => {
+      expect(
+        parseNotificationEvent({
+          event: 'character_created',
+          roomId: 'ROOM01',
+          event_body: { characterId: 123 }
+        })
+      ).toBeNull();
+    });
   });
 
   describe('parseNotificationEvent — battle events', () => {
@@ -79,6 +89,16 @@ describe('room-notifications app helpers', () => {
           event: 'battle_started',
           roomId: 'ROOM01',
           event_body: {}
+        })
+      ).toBeNull();
+    });
+
+    it('drops a battle event with a non-string battleId', () => {
+      expect(
+        parseNotificationEvent({
+          event: 'battle_started',
+          roomId: 'ROOM01',
+          event_body: { battleId: 123 }
         })
       ).toBeNull();
     });

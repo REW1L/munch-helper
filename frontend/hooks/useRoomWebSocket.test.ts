@@ -158,6 +158,11 @@ describe('useRoomWebSocket', () => {
 
     expect(allCreatedClients).toHaveLength(1);
     expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1);
+    expect(acquireRoomWebSocketClientMock).toHaveBeenCalledWith('room-1', 'user-1', {
+      heartbeatInterval: undefined,
+      maxReconnectAttempts: undefined,
+      reconnectDelay: 5000,
+    });
   });
 
   it('surfaces connection failures via error state', async () => {
@@ -204,6 +209,20 @@ describe('useRoomWebSocket', () => {
 
     expect(result.current.subscribe(listener)).toBe(unsubscribe);
     expect(allCreatedClients[0]?.subscribe).toHaveBeenCalledWith(listener);
+  });
+
+  it('does not reconnect when only callback option identity changes for the same key', async () => {
+    const { rerender } = renderHook(
+      ({ onOpen }) => useRoomWebSocket('room-1', 'user-1', true, { onOpen }),
+      { initialProps: { onOpen: vi.fn() } }
+    );
+
+    await waitFor(() => expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1));
+
+    rerender({ onOpen: vi.fn() });
+
+    expect(acquireRoomWebSocketClientMock).toHaveBeenCalledTimes(1);
+    expect(allCreatedClients[0]?.disconnect).not.toHaveBeenCalled();
   });
 
   it('disconnects the old client and creates a new one when room changes', async () => {

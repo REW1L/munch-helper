@@ -1,6 +1,6 @@
 # Story 5.4: Realtime Battle Updates from Battle Actions
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -395,6 +395,13 @@ architecture only for net-new battle decisions where no existing pattern conflic
     onOpen fired), no duplicate banner. Confirm a plain character edit still flashes
     the card in the other tab (character realtime regression over the shared
     socket). Verify web at minimum; note any platform (iOS/Android) not verified.
+
+### Review Findings
+
+- [x] [Review][Patch] Battle View renders stale local draft after realtime refetch [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:66]
+- [x] [Review][Patch] Shared WebSocket hook drops reconnect and heartbeat timing options [frontend/hooks/useRoomWebSocket.ts:105]
+- [x] [Review][Patch] Notification parser can throw on malformed battle identity payloads [backend/room-notifications-service/src/app.ts:122]
+- [x] [Review][Patch] Shared WebSocket listener fan-out is not isolated from listener exceptions [frontend/api/webSocket.ts:95]
 
 ## Dev Notes
 

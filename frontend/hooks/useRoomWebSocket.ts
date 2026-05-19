@@ -38,10 +38,15 @@ export function useRoomWebSocket(
   const hasEverConnectedRef = useRef(false);
   const lastConnectedKeyRef = useRef<string>('');
   const connectionKeyRef = useRef<string>('');
+  const onOpenRef = useRef(options?.onOpen);
+  const onCloseRef = useRef(options?.onClose);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const reconnectDelay = options?.reconnectDelay;
+  const maxReconnectAttempts = options?.maxReconnectAttempts;
+  const heartbeatInterval = options?.heartbeatInterval;
 
   const clearReconnectTimeout = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -70,6 +75,11 @@ export function useRoomWebSocket(
       clearReconnectTimeout();
     };
   }, [clearReconnectTimeout]);
+
+  useEffect(() => {
+    onOpenRef.current = options?.onOpen;
+    onCloseRef.current = options?.onClose;
+  }, [options?.onClose, options?.onOpen]);
 
   useEffect(() => {
     if (!enabled || !roomId || !userId) {
@@ -102,7 +112,11 @@ export function useRoomWebSocket(
 
     connectionKeyRef.current = connectionKey;
 
-    const { client, isFirstAcquirer } = acquireRoomWebSocketClient(roomId, userId);
+    const { client, isFirstAcquirer } = acquireRoomWebSocketClient(roomId, userId, {
+      heartbeatInterval,
+      maxReconnectAttempts,
+      reconnectDelay,
+    });
     clientRef.current = client;
 
     let isMounted = true;
@@ -119,7 +133,7 @@ export function useRoomWebSocket(
       setIsConnecting(false);
       setIsTimedOut(false);
       setError(null);
-      options?.onOpen?.();
+      onOpenRef.current?.();
     };
 
     const onClose = () => {
@@ -130,7 +144,7 @@ export function useRoomWebSocket(
       setIsConnected(false);
       setIsConnecting(false);
       startReconnectTimeout();
-      options?.onClose?.();
+      onCloseRef.current?.();
     };
 
     // Register listeners before connect so they are in place when the connection opens.
@@ -172,7 +186,16 @@ export function useRoomWebSocket(
         clearReconnectTimeout();
       }
     };
-  }, [clearReconnectTimeout, enabled, options, roomId, startReconnectTimeout, userId]);
+  }, [
+    clearReconnectTimeout,
+    enabled,
+    heartbeatInterval,
+    maxReconnectAttempts,
+    reconnectDelay,
+    roomId,
+    startReconnectTimeout,
+    userId,
+  ]);
 
   const reconnect = useCallback(async (): Promise<void> => {
     if (!enabled || !roomId || !userId || !clientRef.current || clientRef.current.isConnected()) {

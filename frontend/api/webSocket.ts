@@ -92,7 +92,7 @@ export class RoomWebSocketClient {
           this.isIntentionallyClosed = false;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
-          this.openListeners.forEach((listener) => listener());
+          this.notifyOpenListeners();
           resolve();
         };
 
@@ -100,7 +100,7 @@ export class RoomWebSocketClient {
           try {
             const parsedEvent = JSON.parse(event.data) as RoomNotificationEvent;
             if (isValidNotificationEvent(parsedEvent)) {
-              this.listeners.forEach((listener) => listener(parsedEvent));
+              this.notifyMessageListeners(parsedEvent);
             }
             console.info('[WebSocket] Received message:', parsedEvent);
           } catch (error) {
@@ -117,7 +117,7 @@ export class RoomWebSocketClient {
           console.log(`[WebSocket] Disconnected from room ${this.roomId}`);
           this.stopHeartbeat();
           if (!this.isIntentionallyClosed) {
-            this.closeListeners.forEach((listener) => listener());
+            this.notifyCloseListeners();
             this.attemptReconnect();
           }
         };
@@ -159,6 +159,36 @@ export class RoomWebSocketClient {
 
   isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  private notifyOpenListeners(): void {
+    this.openListeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('[WebSocket] Open listener failed:', error);
+      }
+    });
+  }
+
+  private notifyCloseListeners(): void {
+    this.closeListeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('[WebSocket] Close listener failed:', error);
+      }
+    });
+  }
+
+  private notifyMessageListeners(event: RoomNotificationEvent): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(event);
+      } catch (error) {
+        console.error('[WebSocket] Message listener failed:', error);
+      }
+    });
   }
 
   private attemptReconnect(): void {
@@ -241,7 +271,8 @@ const clientRegistry = new Map<string, RegistryEntry>();
 
 export function acquireRoomWebSocketClient(
   roomId: string,
-  userId: string
+  userId: string,
+  options: Pick<WebSocketOptions, 'reconnectDelay' | 'maxReconnectAttempts' | 'heartbeatInterval'> = {}
 ): { client: RoomWebSocketClient; isFirstAcquirer: boolean } {
   const key = `${roomId}:${userId}`;
   const existing = clientRegistry.get(key);
@@ -249,7 +280,7 @@ export function acquireRoomWebSocketClient(
     existing.refCount += 1;
     return { client: existing.client, isFirstAcquirer: false };
   }
-  const client = new RoomWebSocketClient(roomId, userId);
+  const client = new RoomWebSocketClient(roomId, userId, options);
   clientRegistry.set(key, { client, refCount: 1 });
   return { client, isFirstAcquirer: true };
 }

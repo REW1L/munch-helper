@@ -129,6 +129,45 @@ describe('Battle view', () => {
     expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(AppTheme.colors.surfaceSubtle));
   });
 
+  it('syncs the visible draft when the same battle refetches and there are no local edits', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    const view = render(<BattleView />);
+    expect(screen.getByDisplayValue('Dungeon Door')).toBeTruthy();
+
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      name: 'Remote Update',
+      monsterSide: {
+        monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }],
+        bonuses: [],
+      },
+    };
+    view.rerender(<BattleView />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Remote Update')).toBeTruthy();
+      expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Monsters ahead');
+    });
+  });
+
+  it('preserves unsaved local edits when the same battle refetches', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    const view = render(<BattleView />);
+    fireEvent.change(screen.getByTestId('battle-name-input'), { target: { value: 'Local Edit' } });
+
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      name: 'Remote Update',
+    };
+    view.rerender(<BattleView />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Local Edit')).toBeTruthy();
+    });
+  });
+
   it.each([
     ['Players ahead', ['character-1'], [], AppTheme.colors.accent],
     ['Monsters ahead', [], [{ id: 'monster-1', name: 'Fungeater', level: 5 }], AppTheme.colors.danger],
