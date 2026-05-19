@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getActiveBattle, startBattle } from '@/api/battles';
+import { getActiveBattle, patchBattle, startBattle } from '@/api/battles';
 import { ApiError, apiRequest } from '@/api/http';
 
 vi.mock('@/api/http', async () => {
@@ -50,6 +50,40 @@ describe('battles api', () => {
     await expect(startBattle({ roomId: 'room-1', name: 'Battle 2' })).rejects.toMatchObject({
       status: 409,
       details: { activeBattleId: 'battle-1' },
+    });
+  });
+
+  it('patches a battle with URL-encoded id and selective body', async () => {
+    mockApiRequest.mockResolvedValueOnce({
+      id: 'battle/1',
+      roomId: 'room-1',
+      name: 'Battle 1',
+      status: 'active',
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+      result: null,
+      concludedAt: null,
+    });
+
+    await patchBattle('battle/1', {
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+    });
+
+    expect(mockApiRequest).toHaveBeenCalledWith('/battles/battle%2F1', {
+      method: 'PATCH',
+      body: {
+        playerSide: { characterIds: ['character-1'], bonuses: [] },
+      },
+    });
+  });
+
+  it('surfaces 409 ApiError details for non-active battle patches', async () => {
+    const conflict = new ApiError('Battle is not active', 409, { message: 'Battle is not active' });
+    mockApiRequest.mockRejectedValueOnce(conflict);
+
+    await expect(patchBattle('battle-1', { name: 'Updated' })).rejects.toMatchObject({
+      status: 409,
+      details: { message: 'Battle is not active' },
     });
   });
 });

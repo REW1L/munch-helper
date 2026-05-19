@@ -381,6 +381,12 @@ Resources:
             ApiId: !Ref CloudHttpApi
             Path: /battles
             Method: POST
+        BattlePatch:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /battles/{id}
+            Method: PATCH
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

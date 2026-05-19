@@ -38,6 +38,15 @@ export interface StartBattlePayload {
   name: string;
 }
 
+export type PlayerSide = Battle['playerSide'];
+export type MonsterSide = Battle['monsterSide'];
+
+export interface PatchBattlePayload {
+  name?: string;
+  playerSide?: PlayerSide;
+  monsterSide?: MonsterSide;
+}
+
 export async function startBattle(payload: StartBattlePayload): Promise<Battle> {
   return apiRequest<Battle>('/battles', {
     method: 'POST',
@@ -48,5 +57,24 @@ export async function startBattle(payload: StartBattlePayload): Promise<Battle> 
 export async function getActiveBattle(roomId: string, signal?: AbortSignal): Promise<Battle | null> {
   return apiRequest<Battle | null>(`/battles?roomId=${encodeURIComponent(roomId)}&status=active`, {
     signal,
+  });
+}
+
+export async function patchBattle(battleId: string, payload: PatchBattlePayload): Promise<Battle> {
+  const body: PatchBattlePayload = {};
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'name')) {
+    body.name = payload.name;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'playerSide')) {
+    body.playerSide = payload.playerSide;
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'monsterSide')) {
+    body.monsterSide = payload.monsterSide;
+  }
+
+  return apiRequest<Battle>(`/battles/${encodeURIComponent(battleId)}`, {
+    method: 'PATCH',
+    body,
   });
 }

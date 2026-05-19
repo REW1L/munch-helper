@@ -4,6 +4,8 @@ import { createBattleModel } from './service';
 vi.mock('./models/Battle', () => ({
   Battle: {
     findOne: vi.fn(),
+    findById: vi.fn(),
+    findByIdAndUpdate: vi.fn(),
     create: vi.fn()
   }
 }));
@@ -27,9 +29,12 @@ describe('battle-service model wrapper', () => {
     };
 
     vi.mocked(Battle.findOne as any).mockResolvedValue(document);
+    vi.mocked(Battle.findById as any).mockResolvedValue(document);
+    vi.mocked(Battle.findByIdAndUpdate as any).mockResolvedValue(document);
     vi.mocked(Battle.create as any).mockResolvedValue(document);
 
     await expect(model.findOne({ roomId: 'room-1', status: 'active' })).resolves.toMatchObject({ id: 'battle-1' });
+    await expect(model.findById('battle-1')).resolves.toMatchObject({ id: 'battle-1' });
     await expect(model.create({
       roomId: 'room-1',
       name: 'Battle',
@@ -38,6 +43,10 @@ describe('battle-service model wrapper', () => {
       monsterSide: { monsters: [], bonuses: [] },
       result: null,
       concludedAt: null
+    })).resolves.toMatchObject({ id: 'battle-1' });
+    await expect(model.findByIdAndUpdate('battle-1', { name: 'Updated' }, {
+      new: true,
+      runValidators: true
     })).resolves.toMatchObject({ id: 'battle-1' });
   });
 });

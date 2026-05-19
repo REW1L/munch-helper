@@ -36,6 +36,15 @@ export function createBattleModel(): BattleModelLike {
       }
       return toBattleLike(battle);
     },
+    findById: async (id) => {
+      console.info('[battle-service] db find battle by id', { battleId: id });
+      const battle = await Battle.findById(id);
+      if (!battle) {
+        console.info('[battle-service] db find battle by id not found', { battleId: id });
+        return null;
+      }
+      return toBattleLike(battle);
+    },
     create: async (payload) => {
       console.info('[battle-service] db create battle', {
         roomId: payload.roomId,
@@ -43,6 +52,22 @@ export function createBattleModel(): BattleModelLike {
       });
       const battle = await Battle.create(payload);
       console.info('[battle-service] db create battle success', {
+        battleId: battle.id,
+        roomId: battle.roomId
+      });
+      return toBattleLike(battle);
+    },
+    findByIdAndUpdate: async (id, updates, options) => {
+      console.info('[battle-service] db update battle', {
+        battleId: id,
+        updates: Object.keys(updates)
+      });
+      const battle = await Battle.findByIdAndUpdate(id, updates, options);
+      if (!battle) {
+        console.info('[battle-service] db update battle not found', { battleId: id });
+        return null;
+      }
+      console.info('[battle-service] db update battle success', {
         battleId: battle.id,
         roomId: battle.roomId
       });

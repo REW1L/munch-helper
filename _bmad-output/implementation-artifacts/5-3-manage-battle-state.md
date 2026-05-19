@@ -1,6 +1,6 @@
 # Story 5.3: Manage Battle State
 
-Status: ready-for-dev
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -78,59 +78,59 @@ diverge — anti-pattern).
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Backend: `findById` + `findByIdAndUpdate` on the battle model wrapper** (AC: 5)
-  - [ ] In `backend/battle-service/src/service.ts`, extend the `BattleModelLike` interface + `createBattleModel()` with `findById(id)` and `findByIdAndUpdate(id, updates, options)` methods, mirroring `backend/character-service/src/service.ts` (same `console.info` logging style, same null-on-not-found, same `{ new: true, runValidators: true }` usage by the caller). Map the Mongoose doc through the same response shaping 5.1 uses (`toJSON` exposes `id`, never `_id`/`__v`).
-  - [ ] Keep the wrapper type exported so `app.test.ts` can inject a mock model (5.1 test pattern).
+- [x] **Task 1 — Backend: `findById` + `findByIdAndUpdate` on the battle model wrapper** (AC: 5)
+  - [x] In `backend/battle-service/src/service.ts`, extend the `BattleModelLike` interface + `createBattleModel()` with `findById(id)` and `findByIdAndUpdate(id, updates, options)` methods, mirroring `backend/character-service/src/service.ts` (same `console.info` logging style, same null-on-not-found, same `{ new: true, runValidators: true }` usage by the caller). Map the Mongoose doc through the same response shaping 5.1 uses (`toJSON` exposes `id`, never `_id`/`__v`).
+  - [x] Keep the wrapper type exported so `app.test.ts` can inject a mock model (5.1 test pattern).
 
-- [ ] **Task 2 — Backend: `PATCH /battles/:id` route** (AC: 1, 2, 3, 4, 5)
-  - [ ] Add `app.patch('/battles/:id', ...)` **inline in `src/app.ts`** (repo convention — `character-service` has no `routes/` folder; do NOT introduce one despite the architecture diagram).
-  - [ ] Whitelist updatable fields only: `name`, `playerSide`, `monsterSide` (mirror character-service's allowed-keys whitelist loop). If none present → `400 { message }` ("No valid fields provided for update"). Reject `status`/`result`/`roomId` silently (not in whitelist) — those are owned by create/conclude/discard.
-  - [ ] **Validation (all `400 { message }`):**
+- [x] **Task 2 — Backend: `PATCH /battles/:id` route** (AC: 1, 2, 3, 4, 5)
+  - [x] Add `app.patch('/battles/:id', ...)` **inline in `src/app.ts`** (repo convention — `character-service` has no `routes/` folder; do NOT introduce one despite the architecture diagram).
+  - [x] Whitelist updatable fields only: `name`, `playerSide`, `monsterSide` (mirror character-service's allowed-keys whitelist loop). If none present → `400 { message }` ("No valid fields provided for update"). Reject `status`/`result`/`roomId` silently (not in whitelist) — those are owned by create/conclude/discard.
+  - [x] **Validation (all `400 { message }`):**
     - `name` (if present): non-empty string after `trim()` (5.1 product decision — `name` is required/non-empty, overrides ADR-13; never nullable). Store trimmed.
     - `playerSide` (if present): object with `characterIds: string[]` (array of non-empty strings) and `bonuses: BonusItem[]`. Replace wholesale.
     - `monsterSide` (if present): object with `monsters: MonsterItem[]` and `bonuses: BonusItem[]`. Replace wholesale.
     - `BonusItem`: `{ id: string (non-empty, opaque), value: number (integer; may be negative/zero) }`. Reject non-integer/`NaN` values.
     - `MonsterItem`: `{ id: string (non-empty, opaque), name: string (non-empty, trimmed), level: number (integer, ≥ 0) }`.
     - Treat `id` as an **opaque non-empty string** — do NOT enforce UUID format (client generates UUID v4 but the backend must not couple to that). Reject duplicate ids within a side's array.
-  - [ ] **Lookup + status guard (order matters):** find battle by `:id`. If not found → `404 { message: 'Battle not found' }`. Catch Mongoose `CastError` (bad ObjectId) → also `404` (mirror character-service). If found but `status !== 'active'` → `409 { message: 'Battle is not active' }` (ADR-8) — do **not** mutate.
-  - [ ] Apply the update via `findByIdAndUpdate(id, updates, { new: true, runValidators: true })`. Arrays are replaced wholesale (full-replace / last-write-wins — ADR-16). Respond `200` with the updated battle JSON (direct resource, no envelope).
-  - [ ] After success: call `publisher.publish(...)` (5.1's no-op seam) inside `try/catch` that logs but never throws — placeholder for Story 5.4's `battle_updated`. Do NOT build the payload/transport here.
-  - [ ] Unexpected errors flow to the **`502 { message: 'Unexpected error' }`** handler 5.1 established (NOT `500`, NOT `{ message, details }` — architecture rule; this intentionally diverges from character-service's existing `500` handler).
+  - [x] **Lookup + status guard (order matters):** find battle by `:id`. If not found → `404 { message: 'Battle not found' }`. Catch Mongoose `CastError` (bad ObjectId) → also `404` (mirror character-service). If found but `status !== 'active'` → `409 { message: 'Battle is not active' }` (ADR-8) — do **not** mutate.
+  - [x] Apply the update via `findByIdAndUpdate(id, updates, { new: true, runValidators: true })`. Arrays are replaced wholesale (full-replace / last-write-wins — ADR-16). Respond `200` with the updated battle JSON (direct resource, no envelope).
+  - [x] After success: call `publisher.publish(...)` (5.1's no-op seam) inside `try/catch` that logs but never throws — placeholder for Story 5.4's `battle_updated`. Do NOT build the payload/transport here.
+  - [x] Unexpected errors flow to the **`502 { message: 'Unexpected error' }`** handler 5.1 established (NOT `500`, NOT `{ message, details }` — architecture rule; this intentionally diverges from character-service's existing `500` handler).
 
-- [ ] **Task 3 — Backend wiring & tests** (AC: 5)
-  - [ ] `backend/sam/template.yaml`: add a `BattlePatch` HttpApi event (`Path: /battles/{id}`, `Method: PATCH`) to `BattleServiceFunction` (mirror `CharacterUpdatePatch`). Do **not** add SNS topics/IAM publish (Story 5.4).
-  - [ ] `backend/sam/events/battle-patch-battle.json`: new HttpApi `PATCH /battles/:id` test event (model on the existing character PATCH / `user-post-users.json` envelope).
-  - [ ] `backend/nginx/nginx.conf`: confirm the 5.1 `/battles` location block already proxies PATCH (it mirrors `/characters`, whose `Access-Control-Allow-Methods` includes `PATCH`). No change expected — note "verified" in completion notes. If 5.1's block omitted PATCH, add it (kept consistent with `/characters`).
-  - [ ] Backend tests (co-located `<source>.test.ts`, run by root `backend/vitest.config.ts`, supertest, mock model injected per 5.1 pattern). Cover: success — PATCH replaces `playerSide`/`monsterSide`/`name` (`200`, correct shape, `id` not `_id`); validation `400` (no valid fields; bad bonus value; bad monster level; duplicate ids; empty `name`); `404` (missing battle + `CastError`); **`409` when battle `status` is `concluded`/`discarded`**; unexpected error → `502`. Full-replace semantics asserted (old array fully replaced, not merged).
+- [x] **Task 3 — Backend wiring & tests** (AC: 5)
+  - [x] `backend/sam/template.yaml`: add a `BattlePatch` HttpApi event (`Path: /battles/{id}`, `Method: PATCH`) to `BattleServiceFunction` (mirror `CharacterUpdatePatch`). Do **not** add SNS topics/IAM publish (Story 5.4).
+  - [x] `backend/sam/events/battle-patch-battle.json`: new HttpApi `PATCH /battles/:id` test event (model on the existing character PATCH / `user-post-users.json` envelope).
+  - [x] `backend/nginx/nginx.conf`: confirm the 5.1 `/battles` location block already proxies PATCH (it mirrors `/characters`, whose `Access-Control-Allow-Methods` includes `PATCH`). No change expected — note "verified" in completion notes. If 5.1's block omitted PATCH, add it (kept consistent with `/characters`).
+  - [x] Backend tests (co-located `<source>.test.ts`, run by root `backend/vitest.config.ts`, supertest, mock model injected per 5.1 pattern). Cover: success — PATCH replaces `playerSide`/`monsterSide`/`name` (`200`, correct shape, `id` not `_id`); validation `400` (no valid fields; bad bonus value; bad monster level; duplicate ids; empty `name`); `404` (missing battle + `CastError`); **`409` when battle `status` is `concluded`/`discarded`**; unexpected error → `502`. Full-replace semantics asserted (old array fully replaced, not merged).
 
-- [ ] **Task 4 — Frontend `api/battles.ts`: `patchBattle`** (AC: 1, 5)
-  - [ ] Add exported type `PatchBattlePayload = { name?: string; playerSide?: PlayerSide; monsterSide?: MonsterSide }` where `PlayerSide = { characterIds: string[]; bonuses: BonusItem[] }` and `MonsterSide = { monsters: MonsterItem[]; bonuses: BonusItem[] }` (reuse/derive from the `Battle`/`BonusItem`/`MonsterItem` types 5.1 exports — do not redefine them).
-  - [ ] `patchBattle(battleId: string, payload: PatchBattlePayload): Promise<Battle>` → `apiRequest<Battle>(\`/battles/${encodeURIComponent(battleId)}\`, { method: 'PATCH', body })`. Build `body` by including only present keys (mirror `updateCharacter`'s `hasOwnProperty` selective-body pattern in `frontend/api/characters.ts`). Use `apiRequest` from `@/api/http` only — never raw fetch/axios.
-  - [ ] `ApiError` (status, details) propagates; callers distinguish `409` (not active) from `400`/other.
+- [x] **Task 4 — Frontend `api/battles.ts`: `patchBattle`** (AC: 1, 5)
+  - [x] Add exported type `PatchBattlePayload = { name?: string; playerSide?: PlayerSide; monsterSide?: MonsterSide }` where `PlayerSide = { characterIds: string[]; bonuses: BonusItem[] }` and `MonsterSide = { monsters: MonsterItem[]; bonuses: BonusItem[] }` (reuse/derive from the `Battle`/`BonusItem`/`MonsterItem` types 5.1 exports — do not redefine them).
+  - [x] `patchBattle(battleId: string, payload: PatchBattlePayload): Promise<Battle>` → `apiRequest<Battle>(\`/battles/${encodeURIComponent(battleId)}\`, { method: 'PATCH', body })`. Build `body` by including only present keys (mirror `updateCharacter`'s `hasOwnProperty` selective-body pattern in `frontend/api/characters.ts`). Use `apiRequest` from `@/api/http` only — never raw fetch/axios.
+  - [x] `ApiError` (status, details) propagates; callers distinguish `409` (not active) from `400`/other.
 
-- [ ] **Task 5 — Frontend `hooks/useBattleActions.ts`: add `patch`** (AC: 5)
-  - [ ] Add `patch: (battleId: string, payload: PatchBattlePayload) => Promise<Battle>` implemented as a `useMutation` calling `patchBattle`; on settle `invalidateQueries({ queryKey: ['battle', roomId] })` (consistent with 5.1's `start`). Keep the existing `start`; return `{ start, patch, isLoading, errorMessage }`. (`isLoading`/`errorMessage` aggregate across mutations as 5.1 does for `start`.)
-  - [ ] Do not add `conclude`/`discard` (Stories 5.6/5.7).
+- [x] **Task 5 — Frontend `hooks/useBattleActions.ts`: add `patch`** (AC: 5)
+  - [x] Add `patch: (battleId: string, payload: PatchBattlePayload) => Promise<Battle>` implemented as a `useMutation` calling `patchBattle`; on settle `invalidateQueries({ queryKey: ['battle', roomId] })` (consistent with 5.1's `start`). Keep the existing `start`; return `{ start, patch, isLoading, errorMessage }`. (`isLoading`/`errorMessage` aggregate across mutations as 5.1 does for `start`.)
+  - [x] Do not add `conclude`/`discard` (Stories 5.6/5.7).
 
-- [ ] **Task 6 — Frontend Battle View: real two-sided management UI** (AC: 1, 2, 3, 4, 5)
-  - [ ] In `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx` (5.1's skeleton): keep 5.1's `roomId` derivation, `useRoomBattle(roomId)`, modal presentation, loading/error states, and back-navigation. Replace the placeholder Player/Monster sections with the real UI below. Add `useUserProfile()` + `useRoomCharacters(roomId, userProfile)` (mirror `frontend/app/munchkin/[roomNumber]/index.tsx`) to source/select player-side characters and compute the player total.
-  - [ ] **Local draft state:** initialize a draft `{ name, playerSide, monsterSide }` from `battle` on load; all add/remove actions mutate the **draft** only (immediate local UI update per AC2/3/4). Track dirty state. **Save** submits the full changed side(s) via `useBattleActions().patch(battle.id, draft)` — full-replace; on success the `['battle', roomId]` invalidation refetches and re-syncs the draft. Mirror `QuickEditSheet`'s Clean / Dirty (Save active) / Saving (Save disabled, `surfaceSubtle` bg) states.
-  - [ ] **Player side (`accent` `#D4C26E`):** list current participants resolved by joining `playerSide.characterIds` with room characters (show name + level; if an id has no matching room character, show a neutral "Unavailable" row — do not crash; full reconciliation is 5.5). Add via a picker/list of room characters not yet in the battle (reuse `@/components/munchkin/NativePicker` + the add-row pattern from `modal-change-caracter.tsx` class selection: existing rows each with a `−` remove; a trailing select + `+` add). Removing toggles the id out of `characterIds`.
-  - [ ] **Monster side (`danger` `#922525`):** list `monsterSide.monsters` (name + level), each with a `−` remove; an add row with a name text input + a numeric level stepper + `+` add. Numeric stepper: mirror `QuickEditSheet` `stepperRow`/`stepperButton` (44×44 tap target, `Light` haptic on tap, floor 0, `accent` value text). First monster is the "main" monster, subsequent are "wandering" — display-only nuance; no separate UX required by the ACs.
-  - [ ] **Bonuses (both sides):** list `bonuses` (signed int `value`), each with a `−` remove. Add row: a numeric value input/stepper (allow negative — sign toggle or +/- stepper that crosses zero) + `+` add. **No in-place edit** of an existing bonus (AC4) — to change a value, remove and add a new one. Generate `BonusItem.id` (and new `MonsterItem.id`) as **UUID v4 client-side** via a tiny inline RFC4122-v4 helper (the repo has **no** uuid/expo-crypto dependency and the project rule forbids incidental dependency additions — do not add a package; see Dev Notes "Client-generated item IDs").
-  - [ ] **Totals + comparison (AC1):** show each side's effective strength: player = Σ(level of room characters whose id ∈ draft `playerSide.characterIds`) + Σ(draft `playerSide.bonuses[].value`); monster = Σ(draft `monsterSide.monsters[].level`) + Σ(draft `monsterSide.bonuses[].value`). Show a **non-authoritative** comparison label (e.g. "Players ahead" / "Monsters ahead" / "Even") — purely informational. Do **NOT** auto-decide a winner, auto-conclude, or encode Munchkin tie rules; the explicit result is chosen at Conclude (Story 5.6).
-  - [ ] Styling: pure `StyleSheet.create` with `AppTheme` tokens only (no hardcoded hex/px/font sizes). Player side `AppTheme.colors.accent`, monster side `AppTheme.colors.danger`, Save = primary `accent` (one primary per screen — UX-DR19), text/spacing/radius/typography via tokens. Add stable `testID`s and accessibility (`accessibilityRole="button"`, labels) on add/remove/save controls (mirror `RoomCharacterCard`/`QuickEditSheet`/`VioletButton`).
-  - [ ] Extract side panels / rows into presentational components under `frontend/components/munchkin/` (PascalCase, `memo`, explicit prop interface, default export, `StyleSheet` at bottom referencing `AppTheme`) — no data fetching/navigation inside; the screen owns hooks/navigation/Save.
+- [x] **Task 6 — Frontend Battle View: real two-sided management UI** (AC: 1, 2, 3, 4, 5)
+  - [x] In `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx` (5.1's skeleton): keep 5.1's `roomId` derivation, `useRoomBattle(roomId)`, modal presentation, loading/error states, and back-navigation. Replace the placeholder Player/Monster sections with the real UI below. Add `useUserProfile()` + `useRoomCharacters(roomId, userProfile)` (mirror `frontend/app/munchkin/[roomNumber]/index.tsx`) to source/select player-side characters and compute the player total.
+  - [x] **Local draft state:** initialize a draft `{ name, playerSide, monsterSide }` from `battle` on load; all add/remove actions mutate the **draft** only (immediate local UI update per AC2/3/4). Track dirty state. **Save** submits the full changed side(s) via `useBattleActions().patch(battle.id, draft)` — full-replace; on success the `['battle', roomId]` invalidation refetches and re-syncs the draft. Mirror `QuickEditSheet`'s Clean / Dirty (Save active) / Saving (Save disabled, `surfaceSubtle` bg) states.
+  - [x] **Player side (`accent` `#D4C26E`):** list current participants resolved by joining `playerSide.characterIds` with room characters (show name + level; if an id has no matching room character, show a neutral "Unavailable" row — do not crash; full reconciliation is 5.5). Add via a picker/list of room characters not yet in the battle (reuse `@/components/munchkin/NativePicker` + the add-row pattern from `modal-change-caracter.tsx` class selection: existing rows each with a `−` remove; a trailing select + `+` add). Removing toggles the id out of `characterIds`.
+  - [x] **Monster side (`danger` `#922525`):** list `monsterSide.monsters` (name + level), each with a `−` remove; an add row with a name text input + a numeric level stepper + `+` add. Numeric stepper: mirror `QuickEditSheet` `stepperRow`/`stepperButton` (44×44 tap target, `Light` haptic on tap, floor 0, `accent` value text). First monster is the "main" monster, subsequent are "wandering" — display-only nuance; no separate UX required by the ACs.
+  - [x] **Bonuses (both sides):** list `bonuses` (signed int `value`), each with a `−` remove. Add row: a numeric value input/stepper (allow negative — sign toggle or +/- stepper that crosses zero) + `+` add. **No in-place edit** of an existing bonus (AC4) — to change a value, remove and add a new one. Generate `BonusItem.id` (and new `MonsterItem.id`) as **UUID v4 client-side** via a tiny inline RFC4122-v4 helper (the repo has **no** uuid/expo-crypto dependency and the project rule forbids incidental dependency additions — do not add a package; see Dev Notes "Client-generated item IDs").
+  - [x] **Totals + comparison (AC1):** show each side's effective strength: player = Σ(level of room characters whose id ∈ draft `playerSide.characterIds`) + Σ(draft `playerSide.bonuses[].value`); monster = Σ(draft `monsterSide.monsters[].level`) + Σ(draft `monsterSide.bonuses[].value`). Show a **non-authoritative** comparison label (e.g. "Players ahead" / "Monsters ahead" / "Even") — purely informational. Do **NOT** auto-decide a winner, auto-conclude, or encode Munchkin tie rules; the explicit result is chosen at Conclude (Story 5.6).
+  - [x] Styling: pure `StyleSheet.create` with `AppTheme` tokens only (no hardcoded hex/px/font sizes). Player side `AppTheme.colors.accent`, monster side `AppTheme.colors.danger`, Save = primary `accent` (one primary per screen — UX-DR19), text/spacing/radius/typography via tokens. Add stable `testID`s and accessibility (`accessibilityRole="button"`, labels) on add/remove/save controls (mirror `RoomCharacterCard`/`QuickEditSheet`/`VioletButton`).
+  - [x] Extract side panels / rows into presentational components under `frontend/components/munchkin/` (PascalCase, `memo`, explicit prop interface, default export, `StyleSheet` at bottom referencing `AppTheme`) — no data fetching/navigation inside; the screen owns hooks/navigation/Save.
 
-- [ ] **Task 7 — Tests** (AC: 1, 2, 3, 4, 5)
-  - [ ] Frontend (co-located, Vitest+jsdom; coverage scope = `api/**`,`hooks/**`): extend `frontend/api/battles.test.ts` (mock `@/api/http`; assert PATCH URL/encoding, selective body, `409` surfacing) and `frontend/hooks/useBattleActions.test.ts` (wrap in `QueryClientProvider`, mock `@/api/battles`; assert `patch` calls `patchBattle` and invalidates `['battle', roomId]`).
-  - [ ] Component tests (co-located `*.test.tsx`) for the new side/row components: add/remove characters, add/remove monsters (name+level), add/remove bonuses, **no in-place bonus edit**, totals/comparison computation, dirty→Save enable, accessibility roles/labels.
-  - [ ] Battle View route/screen test under `frontend/__tests__/app/munchkin/[roomNumber]/(battle)/...` (NOT under `frontend/app` — Expo Router forbids non-route files there). Extend 5.1's harness: `vi.mock` `@/hooks/useRoomBattle`, `@/hooks/useBattleActions`, `@/hooks/useCharacters` (or `useRoomCharacters`), `@/hooks/useUser`, `expo-router` via `vi.hoisted` mutable refs (mirror the `[roomNumber].test.tsx` pattern). Assert: loads sides from battle; add/remove updates draft; Save calls `patch` with the **full** changed side(s); a non-active battle path surfaces the `409` (no silent success); back-nav unaffected.
-  - [ ] Meet the **70% line coverage floor** for both pipelines; assert behaviour/contracts, not internals. Do not widen the frontend coverage `include` scope (`api/**`,`config/**`,`hooks/**`).
+- [x] **Task 7 — Tests** (AC: 1, 2, 3, 4, 5)
+  - [x] Frontend (co-located, Vitest+jsdom; coverage scope = `api/**`,`hooks/**`): extend `frontend/api/battles.test.ts` (mock `@/api/http`; assert PATCH URL/encoding, selective body, `409` surfacing) and `frontend/hooks/useBattleActions.test.ts` (wrap in `QueryClientProvider`, mock `@/api/battles`; assert `patch` calls `patchBattle` and invalidates `['battle', roomId]`).
+  - [x] Component tests (co-located `*.test.tsx`) for the new side/row components: add/remove characters, add/remove monsters (name+level), add/remove bonuses, **no in-place bonus edit**, totals/comparison computation, dirty→Save enable, accessibility roles/labels.
+  - [x] Battle View route/screen test under `frontend/__tests__/app/munchkin/[roomNumber]/(battle)/...` (NOT under `frontend/app` — Expo Router forbids non-route files there). Extend 5.1's harness: `vi.mock` `@/hooks/useRoomBattle`, `@/hooks/useBattleActions`, `@/hooks/useCharacters` (or `useRoomCharacters`), `@/hooks/useUser`, `expo-router` via `vi.hoisted` mutable refs (mirror the `[roomNumber].test.tsx` pattern). Assert: loads sides from battle; add/remove updates draft; Save calls `patch` with the **full** changed side(s); a non-active battle path surfaces the `409` (no silent success); back-nav unaffected.
+  - [x] Meet the **70% line coverage floor** for both pipelines; assert behaviour/contracts, not internals. Do not widen the frontend coverage `include` scope (`api/**`,`config/**`,`hooks/**`).
 
 - [ ] **Task 8 — Cross-surface verification** (AC: 1, 2, 3, 4, 5)
-  - [ ] Backend: from `backend/`, `npm run typecheck` and `npm test`/`test:coverage` pass with battle-service PATCH included.
-  - [ ] Frontend: from `frontend/`, strict typecheck + `vitest run --coverage` pass (≥70% line floor, no regression to existing tests).
+  - [x] Backend: from `backend/`, `npm run typecheck` and `npm test`/`test:coverage` pass with battle-service PATCH included.
+  - [x] Frontend: from `frontend/`, strict typecheck + `vitest run --coverage` pass (≥70% line floor, no regression to existing tests).
   - [ ] Local manual smoke (`docker-compose` up, after 5.1 merged): create room → start battle → open Battle View → add 2 room characters + a `+3` and a `-1` player bonus; add a monster (name+level) + a monster bonus → totals update live → Save → reload Battle View, state persisted. Attempt a PATCH semantics check: confirm replacing one side does not wipe the untouched side. Verify on web at minimum; note any platform (iOS/Android) not verified.
 
 ## Dev Notes
@@ -372,12 +372,73 @@ remaining ambiguity:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
+
+- 2026-05-19: `backend/` `npm test -- --run battle-service/src/app.test.ts battle-service/src/service.test.ts battle-service/src/publisher.test.ts` passed.
+- 2026-05-19: `backend/` `npm run typecheck` passed.
+- 2026-05-19: `backend/` `npm test` passed.
+- 2026-05-19: `backend/` `npm run test:coverage` passed, line coverage 80.25%.
+- 2026-05-19: `frontend/` `npm run test:unit -- api/battles.test.ts hooks/useBattleActions.test.ts components/munchkin/BattleSidePanel.test.tsx` passed.
+- 2026-05-19: `frontend/` `npm run test:room-route -- '__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx'` passed.
+- 2026-05-19: `frontend/` `npm run tsc` passed.
+- 2026-05-19: `frontend/` `npm run test:coverage` passed, line coverage 80.61%.
+- 2026-05-19: Review follow-up: Figma node `376:52` inspected for add-monster dialog design.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:unit -- api/battles.test.ts hooks/useBattleActions.test.ts components/munchkin/BattleSidePanel.test.tsx` passed.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:room-route -- '__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx'` passed.
+- 2026-05-19: Review follow-up: `frontend/` `npm run tsc` passed.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:coverage` passed, line coverage 80.61%.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:unit -- components/munchkin/BattleSidePanel.test.tsx` passed.
+- 2026-05-19: Review follow-up: `frontend/` `npm run tsc` passed after default monster draft update.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:unit -- components/munchkin/BattleSidePanel.test.tsx` passed after Add monster button style alignment.
+- 2026-05-19: Review follow-up: `frontend/` `npm run tsc` passed after Add monster button style alignment.
+- 2026-05-19: Review follow-up: reproduced local `PATCH /battles/:id` 404 as a stale `munch-battle-service` container missing the PATCH route; after `backend/scripts/dev-up.sh` rebuild, exact SAVED1007 PATCH returned `200 OK` and persisted state.
+- 2026-05-19: Review follow-up: `frontend/` `npm run test:room-route -- '__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx'` passed after comparison border update.
+- 2026-05-19: Review follow-up: `frontend/` `npm run tsc` passed after comparison border update.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added battle-service PATCH support with full-replace `name`/`playerSide`/`monsterSide`, active-status guard, validation, `404` CastError mapping, `409` non-active response, and non-fatal no-op `battle_updated` publisher seam.
+- Added SAM PATCH event and sample event; verified the nginx `/battles` block already permits `PATCH`.
+- Added frontend `patchBattle` and `useBattleActions().patch` with battle query invalidation and `ApiError` propagation.
+- Replaced the Battle View skeleton with draft-based two-sided management UI: player participants, unavailable rows, monster rows, bonus add/remove, totals, comparison, UUID-v4 item IDs, dirty/save/saving states, and conflict error surfacing.
+- Added backend route/model tests plus frontend API, hook, side-panel, and Battle View route tests.
+- Automated backend and frontend typecheck/test/coverage gates pass. Manual local web smoke remains pending because no interactive local browser/manual device surface was available in this run; story remains `in-progress`.
+- Review comments addressed: replaced bonus steppers with fixed `-10, -5, -2, -1, +1, +2, +5, +10` buttons on both sides; replaced inline monster creation with a Figma-inspired Add monster modal using the existing local image asset and AppTheme tokens.
+- Review comment addressed: Add monster dialog now opens with default `Fungeater` name and `25` power already entered so players can save immediately or overwrite.
+- Review comment addressed: Add monster dialog Save/Cancel buttons now match the existing character modal button styling.
+- Review comment verified: Save/PATCH works locally for room `SAVED1007` after rebuilding the local battle-service container with the current source.
+- Review comment addressed: comparison container now has a 1px border that uses danger for monsters ahead, accent for players ahead, and surfaceSubtle for even.
 
 ### File List
+
+- backend/README.md
+- backend/battle-service/src/app.test.ts
+- backend/battle-service/src/app.ts
+- backend/battle-service/src/publisher.ts
+- backend/battle-service/src/service.test.ts
+- backend/battle-service/src/service.ts
+- backend/sam/events/battle-patch-battle.json
+- backend/sam/template.yaml
+- frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx
+- frontend/api/battles.test.ts
+- frontend/api/battles.ts
+- frontend/app/munchkin/[roomNumber]/(battle)/index.tsx
+- frontend/components/munchkin/BattleSidePanel.test.tsx
+- frontend/components/munchkin/BattleSidePanel.tsx
+- frontend/hooks/useBattleActions.test.ts
+- frontend/hooks/useBattleActions.ts
+- frontend/utils/uuid.ts
+- _bmad-output/implementation-artifacts/5-3-manage-battle-state.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-05-19: Implemented backend PATCH contract, frontend battle-state management UI, and automated tests/verification. Story left in-progress pending manual local web smoke.
+- 2026-05-19: Addressed review comments for bonus preset buttons and Figma-inspired monster add modal.
+- 2026-05-19: Addressed review comment to prefill Add monster defaults.
+- 2026-05-19: Addressed review comment to align Add monster dialog buttons with other modals.
+- 2026-05-19: Verified reported local PATCH 404 was caused by stale local container image; rebuilt local stack and confirmed exact request succeeds.
+- 2026-05-19: Addressed review comment for comparison container result-colored border.

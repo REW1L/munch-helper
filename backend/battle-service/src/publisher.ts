@@ -28,3 +28,13 @@ export const createBattleStartedEventPayload = (input: {
   battleId: input.battleId,
   emittedAt: new Date().toISOString()
 });
+
+export const createBattleUpdatedEventPayload = (input: {
+  roomId: string;
+  battleId: string;
+}): BattleEventPayload => ({
+  event: 'battle_updated',
+  roomId: input.roomId,
+  battleId: input.battleId,
+  emittedAt: new Date().toISOString()
+});
