@@ -1,6 +1,6 @@
 # Story 5.5: Realtime Battle Updates from Character Changes
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -189,8 +189,8 @@ build here):**
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Pure reconciliation helper** (AC: 1, 2, 3)
-  - [ ] Add `frontend/utils/battlePlayerSide.ts` (match 5.3's util dir; if 5.3
+- [x] **Task 1 — Pure reconciliation helper** (AC: 1, 2, 3)
+  - [x] Add `frontend/utils/battlePlayerSide.ts` (match 5.3's util dir; if 5.3
     created `frontend/utils/uuid.ts`, colocate here). Export:
     - `reconcilePlayerParticipants(characterIds: string[], roomCharacters:
       Character[]): { active: { id: string; character: Character }[]; removed:
@@ -205,18 +205,18 @@ build here):**
       5.3's player effective-strength formula exactly (read 5.3's implemented
       total; this helper replaces/centralises that computation — do not invent a
       different formula).
-  - [ ] Import `Character` from `@/api/characters` and `BonusItem` from
+  - [x] Import `Character` from `@/api/characters` and `BonusItem` from
     `@/api/battles` (5.1 types) — do not redefine types.
-  - [ ] Co-located `frontend/utils/battlePlayerSide.test.ts`: all-resolved;
+  - [x] Co-located `frontend/utils/battlePlayerSide.test.ts`: all-resolved;
     some-removed (order preserved, removed ids collected); empty `characterIds`;
     duplicate id; total excludes removed and includes signed/negative bonuses.
 
-- [ ] **Task 2 — Battle View: live derived player side** (AC: 1, 2, 3, 4)
-  - [ ] In `(battle)/index.tsx`, reuse 5.3's existing `useRoomCharacters(roomId,
+- [x] **Task 2 — Battle View: live derived player side** (AC: 1, 2, 3, 4)
+  - [x] In `(battle)/index.tsx`, reuse 5.3's existing `useRoomCharacters(roomId,
     userProfile)` instance (5.3 Task 6 already adds `useUserProfile()` +
     `useRoomCharacters` here). Do **not** add a second `useRoomCharacters` and do
     **not** add `useRoomWebSocket`/WS code.
-  - [ ] Replace 5.3's mount-time player-side resolution with a `useMemo`
+  - [x] Replace 5.3's mount-time player-side resolution with a `useMemo`
     derivation: `reconcilePlayerParticipants(draft.playerSide.characterIds,
     roomCharacters)` recomputed whenever `draft.playerSide.characterIds` or
     `roomCharacters` change (so a `['characters', roomId]` invalidation →
@@ -224,24 +224,24 @@ build here):**
     active, draft.playerSide.bonuses)`. This is a **derived render value**, not
     state and not an effect — do not `setState`/`useEffect` from the room-character
     list (prevents AC3 spurious draft mutation / dirty flips).
-  - [ ] **Draft is not mutated by reconciliation.** Keep 5.3's draft init (from
+  - [x] **Draft is not mutated by reconciliation.** Keep 5.3's draft init (from
     `battle` on load) and dirty/Clean/Saving model exactly. A remote character
     change must not re-init the draft, not set dirty, not enable Save (AC3). The
     deleted id stays in `draft.playerSide.characterIds` (tombstone is
     display-only — Resolved decision #1).
-  - [ ] Pass `active` (resolved participants) and `removed` (tombstone ids) into
+  - [x] Pass `active` (resolved participants) and `removed` (tombstone ids) into
     the 5.3 player-side list/row component(s). The participant **add picker**
     (5.3) still lists room characters not already in `characterIds`; the per-row
     `−` remove (5.3) still mutates the **draft** as before (explicit user action →
     dirty → Save) — unchanged.
-  - [ ] AC4 is satisfied structurally: on Battle View (re)mount 5.3 re-inits the
+  - [x] AC4 is satisfied structurally: on Battle View (re)mount 5.3 re-inits the
     draft from the refetched `['battle', roomId]` and the join derives from the
     current shared `['characters', roomId]` cache (kept live by the Room View's
     mounted `useRoomCharacters` + 5.4 shared socket). No extra code needed —
     **do not** add a refetch/effect for "return to view"; assert it in tests.
 
-- [ ] **Task 3 — Player-side row: resolved / tombstone rendering** (AC: 1, 2)
-  - [ ] In 5.3's player-side row/list component(s) (exact filenames per 5.3's
+- [x] **Task 3 — Player-side row: resolved / tombstone rendering** (AC: 1, 2)
+  - [x] In 5.3's player-side row/list component(s) (exact filenames per 5.3's
     actual code under `frontend/components/munchkin/`): render
     - **resolved/active row:** live `character.nickname`/`level`/`avatar`/`color`
       from the matched room character (re-renders on `character_updated` because
@@ -259,21 +259,21 @@ build here):**
     - This **replaces** 5.3's neutral "Unavailable" row for unresolved ids — the
       tombstone is the single representation for "id in `characterIds` but not in
       live room characters".
-  - [ ] Styling strictly via `AppTheme` tokens (player side stays
+  - [x] Styling strictly via `AppTheme` tokens (player side stays
     `AppTheme.colors.accent` for active values per 5.3/UX-DR13; tombstone uses
     muted/subtle tokens). No hardcoded hex/px/font-size. Mirror 5.3's component
     conventions (PascalCase file, `memo`, explicit prop interface, default export,
     `StyleSheet.create` at bottom referencing `AppTheme`, `testID` +
     accessibility props).
 
-- [ ] **Task 4 — Tests** (AC: 1, 2, 3, 4)
-  - [ ] Helper unit test (Task 1) — pure, deterministic.
-  - [ ] Co-located component test(s) for the player-side row/list: renders an
+- [x] **Task 4 — Tests** (AC: 1, 2, 3, 4)
+  - [x] Helper unit test (Task 1) — pure, deterministic.
+  - [x] Co-located component test(s) for the player-side row/list: renders an
     active row from a resolved character; renders a struck-through tombstone for a
     removed id; tombstone is excluded from the displayed total; updating the
     matched character's level changes the active row + total; a non-participant
     character in the list does not add a row (AC3).
-  - [ ] Extend 5.3's Battle View route test under
+  - [x] Extend 5.3's Battle View route test under
     `frontend/__tests__/app/munchkin/[roomNumber]/(battle)/...` (NOT under
     `frontend/app` — Expo Router forbids non-route files there). Mock
     `@/hooks/useRoomBattle`, `@/hooks/useCharacters` (or `useRoomCharacters`),
@@ -291,7 +291,7 @@ build here):**
     - **AC4:** simulate remount (changed characters since mount) → rows/total
       reflect the latest mocked character state, no duplicate rows, no stale
       values; no auto-navigation.
-  - [ ] Meet the **70% line coverage floor** for the frontend pipeline. Note:
+  - [x] Meet the **70% line coverage floor** for the frontend pipeline. Note:
     `frontend/vitest.config.ts` coverage `include` is `api/**`,`config/**`,
     `hooks/**` only — 5.5 adds **no** hook/api code (Battle-View + component +
     `utils/` only), so it does not move the coverage gate (same situation as 5.2).
@@ -299,12 +299,12 @@ build here):**
     is a floor not the goal). **Do not widen** the coverage `include` scope to
     pad `utils/`.
 
-- [ ] **Task 5 — Frontend cross-surface verification** (AC: 1, 2, 3, 4)
-  - [ ] From `frontend/`: strict TS typecheck passes with the helper + Battle
+- [x] **Task 5 — Frontend cross-surface verification** (AC: 1, 2, 3, 4)
+  - [x] From `frontend/`: strict TS typecheck passes with the helper + Battle
     View/row changes; `vitest run --coverage` passes (≥70% line floor, **no
     regression** in existing `useCharacters`/`webSocket`/`useRoomWebSocket`/Battle
     View/Room View tests — 5.5 must not perturb the live character flow).
-  - [ ] Local manual smoke (`docker-compose up`, after 5.1–5.4 merged), two web
+  - [x] Local manual smoke (`docker-compose up`, after 5.1–5.4 merged), two web
     tabs, same room, two device identities:
     - Tab A starts a battle, opens Battle View, adds two room characters to the
       player side, Saves. Tab B opens the same Battle View.
@@ -321,7 +321,7 @@ build here):**
     - Return: Tab B leaves Battle View, Tab A makes more participant edits, Tab B
       reopens Battle View → state consistent with latest, no duplicates (AC4).
     - Verify web at minimum; note any platform (iOS/Android) not verified.
-  - [ ] No backend/infra/transport changes expected — if you edit `backend/**`,
+  - [x] No backend/infra/transport changes expected — if you edit `backend/**`,
     `frontend/api/webSocket.ts`, `frontend/hooks/useRoomWebSocket.ts`, or
     `frontend/hooks/useRoomBattle.ts`, you are out of scope (re-read ADR-9 +
     Scope Boundaries).
@@ -537,12 +537,39 @@ effect (see "AC3 anti-pattern guard").
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
+
+- `npm install` in `frontend/` to restore local dependencies for verification.
+- `npm run tsc` in `frontend/` passed.
+- `npx vitest run utils/battlePlayerSide.test.ts components/munchkin/BattleSidePanel.test.tsx` passed: 11 tests.
+- `npx vitest run -c vitest.room-route.config.ts __tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx` passed: 13 tests.
+- `npm run test:coverage` in `frontend/` passed: 156 unit/component/hook tests, 49 route tests, 84.31% line coverage.
+- `npm run lint` in `frontend/` passed with one existing warning in `frontend/app/munchkin/modal-change-caracter.tsx` about a missing `useEffect` dependency.
+- Local two-client manual smoke passed, confirmed by Ivan on 2026-05-20.
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Added a pure battle player-side reconciliation helper that preserves participant order, de-duplicates ids, separates active vs removed participants, and computes totals from active levels plus signed bonuses.
+- Battle View now derives player participants from the current `useRoomCharacters` result on every render without mutating the draft, auto-saving, patching, or touching realtime/backend surfaces.
+- Player-side rows now render active participants from live character data and removed participants as muted, struck-through tombstones excluded from totals while keeping explicit remove/save behavior available.
+- Added helper, component, and route tests covering participating updates, deleted tombstones, non-participant no-ops, remount consistency, total exclusion, and retained draft `characterIds`.
+- Manual two-client web smoke passed, confirming live participant updates, tombstone rendering, non-participant no-op behavior, and return-to-view consistency.
 
 ### File List
+
+- frontend/app/munchkin/[roomNumber]/(battle)/index.tsx
+- frontend/components/munchkin/BattleSidePanel.tsx
+- frontend/components/munchkin/BattleSidePanel.test.tsx
+- frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx
+- frontend/utils/battlePlayerSide.ts
+- frontend/utils/battlePlayerSide.test.ts
+- _bmad-output/implementation-artifacts/5-5-realtime-battle-updates-from-character-changes.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+
+- 2026-05-19: Implemented live Battle View player-side reconciliation from current room characters, removed tombstone rendering, and AC-focused frontend tests. Automated verification passed.
+- 2026-05-20: Recorded successful local manual smoke, checked the coverage-floor task, and moved story to review.

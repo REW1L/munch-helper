@@ -6,6 +6,7 @@ import { useBattleActions } from '@/hooks/useBattleActions';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useUserProfile } from '@/hooks/useUser';
+import { computePlayerTotal, reconcilePlayerParticipants } from '@/utils/battlePlayerSide';
 import { createUuidV4 } from '@/utils/uuid';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -74,18 +75,21 @@ export default function BattleView() {
     setSavedDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
   }, [battle, draft, savedDraft]);
 
+  const playerParticipants = useMemo(() => {
+    if (!draft) {
+      return { active: [], removed: [] };
+    }
+
+    return reconcilePlayerParticipants(draft.playerSide.characterIds, characters);
+  }, [characters, draft]);
+
   const playerTotal = useMemo(() => {
     if (!draft) {
       return 0;
     }
 
-    const characterLevelTotal = draft.playerSide.characterIds.reduce((total, id) => {
-      const character = characters.find((item) => item.id === id);
-      return total + (character?.level ?? 0);
-    }, 0);
-    const bonusTotal = draft.playerSide.bonuses.reduce((total, bonus) => total + bonus.value, 0);
-    return characterLevelTotal + bonusTotal;
-  }, [characters, draft]);
+    return computePlayerTotal(playerParticipants.active, draft.playerSide.bonuses);
+  }, [draft, playerParticipants]);
 
   const monsterTotal = useMemo(() => {
     if (!draft) {
@@ -103,13 +107,6 @@ export default function BattleView() {
     : playerTotal > monsterTotal
       ? AppTheme.colors.accent
       : AppTheme.colors.danger;
-  const unavailableCharacterIds = useMemo(() => {
-    if (!draft) {
-      return [];
-    }
-
-    return draft.playerSide.characterIds.filter((id) => !characters.some((character) => character.id === id));
-  }, [characters, draft]);
   const isDirty = !areDraftsEqual(draft, savedDraft);
   const isNameValid = !!draft && draft.name.trim().length > 0;
   const canSave = isDirty && isNameValid && !battleActions.isLoading;
@@ -196,13 +193,14 @@ export default function BattleView() {
 
             <BattleSidePanel
               bonuses={draft.playerSide.bonuses}
+              activeParticipants={playerParticipants.active}
               characters={characters}
+              removedCharacterIds={playerParticipants.removed}
               selectedCharacterIds={draft.playerSide.characterIds}
               side="players"
               title="Player Side"
               toneColor={AppTheme.colors.accent}
               total={playerTotal}
-              unavailableCharacterIds={unavailableCharacterIds}
               onAddBonus={(value) => updatePlayerSide((side) => ({
                 ...side,
                 bonuses: [...side.bonuses, { id: createUuidV4(), value }],
