@@ -128,6 +128,15 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: PublishRoomCharacterEvents
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref RoomCharacterEventsTopic
 
   RoomNotificationsRole:
     Type: AWS::IAM::Role
@@ -368,6 +377,7 @@ Resources:
         Variables:
           BATTLE_MONGO_URI: !Ref BattleMongoUri
           ROUTE_PREFIX: !Ref RoutePrefix
+          ROOM_CHARACTER_EVENTS_TOPIC_ARN: !Ref RoomCharacterEventsTopic
       Events:
         BattleListGet:
           Type: HttpApi

@@ -36,7 +36,7 @@ export default function BattleView() {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const { userProfile } = useUserProfile();
-  const { battle, isLoading, errorMessage } = useRoomBattle(roomId);
+  const { battle, isLoading, errorMessage } = useRoomBattle(roomId, userProfile);
   const { characters, isLoading: charactersLoading, errorMessage: charactersErrorMessage } = useRoomCharacters(roomId, userProfile);
   const battleActions = useBattleActions(roomId);
   const [draft, setDraft] = useState<BattleDraft | null>(null);

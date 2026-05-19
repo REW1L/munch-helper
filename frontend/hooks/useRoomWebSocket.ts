@@ -1,4 +1,10 @@
-import { RoomWebSocketClient, type CharacterNotificationEvent, type WebSocketOptions } from '@/api/webSocket';
+import {
+  acquireRoomWebSocketClient,
+  releaseRoomWebSocketClient,
+  type RoomNotificationEvent,
+  type RoomWebSocketClient,
+  type WebSocketOptions,
+} from '@/api/webSocket';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseRoomWebSocketResult {
@@ -8,18 +14,17 @@ interface UseRoomWebSocketResult {
   isTimedOut: boolean;
   error: Error | null;
   reconnect: () => Promise<void>;
-  subscribe: (listener: (event: CharacterNotificationEvent) => void) => () => void;
+  subscribe: (listener: (event: RoomNotificationEvent) => void) => () => void;
 }
 
 const RECONNECT_TIMEOUT_MS = 8000;
 
 /**
- * Hook for managing WebSocket connection to a room and subscribing to character notifications.
+ * Hook for managing WebSocket connection to a room and subscribing to room notifications.
  *
- * @param roomId - The room to subscribe to events for
- * @param userId - The user ID for connection authentication
- * @param enabled - Whether to establish the connection (default: true)
- * @param options - Optional configuration for reconnection and heartbeat
+ * Multiple hook instances with the same (roomId, userId) share a single underlying
+ * RoomWebSocketClient (refcounted registry). Each hook registers its own onOpen/onClose
+ * listeners on the shared client, so both hooks get notified on reconnect.
  */
 export function useRoomWebSocket(
   roomId: string | undefined,
@@ -32,13 +37,11 @@ export function useRoomWebSocket(
   const isMountedRef = useRef(true);
   const hasEverConnectedRef = useRef(false);
   const lastConnectedKeyRef = useRef<string>('');
+  const connectionKeyRef = useRef<string>('');
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  // Track which room/user we're connected to to avoid reconnecting unnecessarily
-  const connectionKeyRef = useRef<string>('');
 
   const clearReconnectTimeout = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -69,12 +72,13 @@ export function useRoomWebSocket(
   }, [clearReconnectTimeout]);
 
   useEffect(() => {
-    // Clean up and disconnect if conditions aren't met
     if (!enabled || !roomId || !userId) {
-      if (clientRef.current) {
-        clientRef.current.disconnect();
+      if (clientRef.current && connectionKeyRef.current) {
+        const [prevRoom, prevUser] = connectionKeyRef.current.split(':');
+        releaseRoomWebSocketClient(prevRoom!, prevUser!);
         clientRef.current = null;
       }
+      connectionKeyRef.current = '';
       hasEverConnectedRef.current = false;
       lastConnectedKeyRef.current = '';
       setIsConnected(false);
@@ -87,14 +91,10 @@ export function useRoomWebSocket(
 
     const connectionKey = `${roomId}:${userId}`;
 
-    // Skip if already connected to the same room/user
-    if (connectionKeyRef.current === connectionKey && clientRef.current?.isConnected()) {
-      return;
-    }
-
     // Disconnect from previous connection if room/user changed
     if (clientRef.current && connectionKeyRef.current !== connectionKey) {
-      clientRef.current.disconnect();
+      const [prevRoom, prevUser] = connectionKeyRef.current.split(':');
+      releaseRoomWebSocketClient(prevRoom!, prevUser!);
       clientRef.current = null;
       hasEverConnectedRef.current = false;
       lastConnectedKeyRef.current = '';
@@ -102,73 +102,77 @@ export function useRoomWebSocket(
 
     connectionKeyRef.current = connectionKey;
 
-    let isMounted = true;
-
-    const client = new RoomWebSocketClient(roomId, userId, {
-      ...options,
-      onOpen: () => {
-        if (!isMounted) {
-          return;
-        }
-
-        clearReconnectTimeout();
-        hasEverConnectedRef.current = true;
-        lastConnectedKeyRef.current = connectionKey;
-        setIsConnected(true);
-        setIsConnecting(false);
-        setIsTimedOut(false);
-        setError(null);
-        options?.onOpen?.();
-      },
-      onClose: () => {
-        if (!isMounted) {
-          return;
-        }
-
-        setIsConnected(false);
-        setIsConnecting(false);
-        startReconnectTimeout();
-        options?.onClose?.();
-      },
-    });
+    const { client, isFirstAcquirer } = acquireRoomWebSocketClient(roomId, userId);
     clientRef.current = client;
 
-    const connectAsync = async () => {
-      try {
-        setIsConnecting(true);
-        setError(null);
-        await client.connect();
-        if (isMounted) {
-          hasEverConnectedRef.current = true;
-          lastConnectedKeyRef.current = connectionKey;
-          setIsConnected(true);
-          setIsConnecting(false);
-          setIsTimedOut(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          const error = err instanceof Error ? err : new Error('Failed to connect to WebSocket');
-          setError(error);
-          setIsConnected(false);
-          setIsConnecting(false);
-        }
+    let isMounted = true;
+
+    const onOpen = () => {
+      if (!isMounted) {
+        return;
       }
+
+      clearReconnectTimeout();
+      hasEverConnectedRef.current = true;
+      lastConnectedKeyRef.current = connectionKey;
+      setIsConnected(true);
+      setIsConnecting(false);
+      setIsTimedOut(false);
+      setError(null);
+      options?.onOpen?.();
     };
 
-    void connectAsync();
+    const onClose = () => {
+      if (!isMounted) {
+        return;
+      }
+
+      setIsConnected(false);
+      setIsConnecting(false);
+      startReconnectTimeout();
+      options?.onClose?.();
+    };
+
+    // Register listeners before connect so they are in place when the connection opens.
+    const removeOpenListener = client.addOpenListener(onOpen);
+    const removeCloseListener = client.addCloseListener(onClose);
+
+    if (isFirstAcquirer) {
+      setIsConnecting(true);
+      client.connect().catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+        const connError = err instanceof Error ? err : new Error('Failed to connect to WebSocket');
+        setError(connError);
+        setIsConnected(false);
+        setIsConnecting(false);
+      });
+    } else if (client.isConnected()) {
+      setIsConnected(true);
+      setIsConnecting(false);
+      hasEverConnectedRef.current = true;
+      lastConnectedKeyRef.current = connectionKey;
+    } else {
+      setIsConnecting(true);
+    }
 
     return () => {
       isMounted = false;
-      client.disconnect();
-      clientRef.current = null;
-      hasEverConnectedRef.current = false;
-      lastConnectedKeyRef.current = '';
-      setIsConnected(false);
-      setIsConnecting(false);
-      setIsTimedOut(false);
-      clearReconnectTimeout();
+      removeOpenListener();
+      removeCloseListener();
+      if (connectionKeyRef.current === connectionKey) {
+        releaseRoomWebSocketClient(roomId, userId);
+        clientRef.current = null;
+        hasEverConnectedRef.current = false;
+        lastConnectedKeyRef.current = '';
+        setIsConnected(false);
+        setIsConnecting(false);
+        setIsTimedOut(false);
+        clearReconnectTimeout();
+      }
     };
-  }, [clearReconnectTimeout, enabled, roomId, startReconnectTimeout, userId, options]);
+  }, [clearReconnectTimeout, enabled, options, roomId, startReconnectTimeout, userId]);
 
   const reconnect = useCallback(async (): Promise<void> => {
     if (!enabled || !roomId || !userId || !clientRef.current || clientRef.current.isConnected()) {
@@ -194,15 +198,15 @@ export function useRoomWebSocket(
         return;
       }
 
-      const error = err instanceof Error ? err : new Error('Failed to reconnect to WebSocket');
-      setError(error);
+      const connError = err instanceof Error ? err : new Error('Failed to reconnect to WebSocket');
+      setError(connError);
       setIsConnected(false);
       setIsConnecting(false);
       startReconnectTimeout();
     }
   }, [clearReconnectTimeout, enabled, roomId, startReconnectTimeout, userId]);
 
-  const subscribe = (listener: (event: CharacterNotificationEvent) => void): (() => void) => {
+  const subscribe = (listener: (event: RoomNotificationEvent) => void): (() => void) => {
     if (!clientRef.current) {
       return () => {
         // no-op

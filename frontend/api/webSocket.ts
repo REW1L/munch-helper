@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "@/config/runtime";
 
 export type CharacterEventType = 'character_created' | 'character_updated' | 'character_deleted';
+export type BattleEventType = 'battle_started' | 'battle_updated' | 'battle_concluded' | 'battle_discarded';
 
 export interface CharacterNotificationEvent {
   event: CharacterEventType;
@@ -8,6 +9,15 @@ export interface CharacterNotificationEvent {
     characterId: string;
   };
 }
+
+export interface BattleNotificationEvent {
+  event: BattleEventType;
+  event_body: {
+    battleId: string;
+  };
+}
+
+export type RoomNotificationEvent = CharacterNotificationEvent | BattleNotificationEvent;
 
 export interface WebSocketOptions {
   reconnectDelay?: number;
@@ -21,14 +31,14 @@ export class RoomWebSocketClient {
   private ws: WebSocket | null = null;
   private roomId: string;
   private userId: string;
-  private listeners: Set<(event: CharacterNotificationEvent) => void> = new Set();
+  private listeners: Set<(event: RoomNotificationEvent) => void> = new Set();
+  private openListeners: Set<() => void> = new Set();
+  private closeListeners: Set<() => void> = new Set();
   private isIntentionallyClosed = false;
   private reconnectAttempts = 0;
   private reconnectDelay: number;
   private maxReconnectAttempts: number;
   private heartbeatInterval: number;
-  private onOpen?: () => void;
-  private onClose?: () => void;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -42,8 +52,26 @@ export class RoomWebSocketClient {
     this.reconnectDelay = options.reconnectDelay ?? 3000;
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? 5;
     this.heartbeatInterval = options.heartbeatInterval ?? 30000;
-    this.onOpen = options.onOpen;
-    this.onClose = options.onClose;
+    if (options.onOpen) {
+      this.openListeners.add(options.onOpen);
+    }
+    if (options.onClose) {
+      this.closeListeners.add(options.onClose);
+    }
+  }
+
+  addOpenListener(listener: () => void): () => void {
+    this.openListeners.add(listener);
+    return () => {
+      this.openListeners.delete(listener);
+    };
+  }
+
+  addCloseListener(listener: () => void): () => void {
+    this.closeListeners.add(listener);
+    return () => {
+      this.closeListeners.delete(listener);
+    };
   }
 
   connect(): Promise<void> {
@@ -64,14 +92,14 @@ export class RoomWebSocketClient {
           this.isIntentionallyClosed = false;
           this.reconnectAttempts = 0;
           this.startHeartbeat();
-          this.onOpen?.();
+          this.openListeners.forEach((listener) => listener());
           resolve();
         };
 
         this.ws.onmessage = (event) => {
           try {
-            const parsedEvent = JSON.parse(event.data) as CharacterNotificationEvent;
-            if (this.isValidNotificationEvent(parsedEvent)) {
+            const parsedEvent = JSON.parse(event.data) as RoomNotificationEvent;
+            if (isValidNotificationEvent(parsedEvent)) {
               this.listeners.forEach((listener) => listener(parsedEvent));
             }
             console.info('[WebSocket] Received message:', parsedEvent);
@@ -89,7 +117,7 @@ export class RoomWebSocketClient {
           console.log(`[WebSocket] Disconnected from room ${this.roomId}`);
           this.stopHeartbeat();
           if (!this.isIntentionallyClosed) {
-            this.onClose?.();
+            this.closeListeners.forEach((listener) => listener());
             this.attemptReconnect();
           }
         };
@@ -122,7 +150,7 @@ export class RoomWebSocketClient {
     return this.connect();
   }
 
-  subscribe(listener: (event: CharacterNotificationEvent) => void): () => void {
+  subscribe(listener: (event: RoomNotificationEvent) => void): () => void {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
@@ -169,21 +197,72 @@ export class RoomWebSocketClient {
       this.heartbeatTimer = null;
     }
   }
+}
 
-  private isValidNotificationEvent(event: unknown): event is CharacterNotificationEvent {
-    if (typeof event !== 'object' || event === null) {
-      return false;
-    }
+export function isValidNotificationEvent(event: unknown): event is RoomNotificationEvent {
+  if (typeof event !== 'object' || event === null) {
+    return false;
+  }
 
-    const data = event as Record<string, unknown>;
-    const validEvents: CharacterEventType[] = ['character_created', 'character_updated', 'character_deleted'];
+  const data = event as Record<string, unknown>;
+  const characterEvents: CharacterEventType[] = ['character_created', 'character_updated', 'character_deleted'];
+  const battleEvents: BattleEventType[] = ['battle_started', 'battle_updated', 'battle_concluded', 'battle_discarded'];
 
+  if (typeof data.event !== 'string') {
+    return false;
+  }
+
+  if (characterEvents.includes(data.event as CharacterEventType)) {
     return (
-      typeof data.event === 'string' &&
-      validEvents.includes(data.event as CharacterEventType) &&
       typeof data.event_body === 'object' &&
       data.event_body !== null &&
       typeof (data.event_body as Record<string, unknown>).characterId === 'string'
     );
+  }
+
+  if (battleEvents.includes(data.event as BattleEventType)) {
+    return (
+      typeof data.event_body === 'object' &&
+      data.event_body !== null &&
+      typeof (data.event_body as Record<string, unknown>).battleId === 'string'
+    );
+  }
+
+  return false;
+}
+
+// Shared refcounted client registry: one WS connection per (roomId, userId) pair.
+interface RegistryEntry {
+  client: RoomWebSocketClient;
+  refCount: number;
+}
+
+const clientRegistry = new Map<string, RegistryEntry>();
+
+export function acquireRoomWebSocketClient(
+  roomId: string,
+  userId: string
+): { client: RoomWebSocketClient; isFirstAcquirer: boolean } {
+  const key = `${roomId}:${userId}`;
+  const existing = clientRegistry.get(key);
+  if (existing) {
+    existing.refCount += 1;
+    return { client: existing.client, isFirstAcquirer: false };
+  }
+  const client = new RoomWebSocketClient(roomId, userId);
+  clientRegistry.set(key, { client, refCount: 1 });
+  return { client, isFirstAcquirer: true };
+}
+
+export function releaseRoomWebSocketClient(roomId: string, userId: string): void {
+  const key = `${roomId}:${userId}`;
+  const existing = clientRegistry.get(key);
+  if (!existing) {
+    return;
+  }
+  existing.refCount -= 1;
+  if (existing.refCount <= 0) {
+    existing.client.disconnect();
+    clientRegistry.delete(key);
   }
 }

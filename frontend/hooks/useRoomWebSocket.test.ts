@@ -1,88 +1,138 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type MockClientInstance = {
-  connect: ReturnType<typeof vi.fn>;
-  reconnect: ReturnType<typeof vi.fn>;
-  disconnect: ReturnType<typeof vi.fn>;
-  subscribe: ReturnType<typeof vi.fn>;
-  isConnected: ReturnType<typeof vi.fn>;
-  roomId: string;
-  userId: string;
-  options?: MockWebSocketOptions;
+// ---------------------------------------------------------------------------
+// Mock setup — hoisted so it runs before any imports
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MockClient = Record<string, any> & {
+  _triggerOpen: () => void;
+  _triggerClose: () => void;
 };
 
-const mockClientInstances: MockClientInstance[] = [];
-let nextConnectError: Error | null = null;
-let nextConnectPromise: Promise<void> | null = null;
+const {
+  acquireRoomWebSocketClientMock,
+  releaseRoomWebSocketClientMock,
+  allCreatedClients,
+  registryMock,
+  connectBehavior,
+} = vi.hoisted(() => {
+  const registryMock = new Map<string, { client: MockClient; refCount: number }>();
+  const allCreatedClients: MockClient[] = [];
+  const connectBehavior = { error: null as Error | null, hang: false };
 
-type MockWebSocketOptions = {
-  onOpen?: () => void;
-  onClose?: () => void;
-  reconnectDelay?: number;
-  maxReconnectAttempts?: number;
-};
+  function createMockClient(): MockClient {
+    const openListeners = new Set<() => void>();
+    const closeListeners = new Set<() => void>();
 
-vi.mock('@/api/webSocket', () => {
+    const client: MockClient = {
+      connect: vi.fn(async () => {
+        if (connectBehavior.hang) {
+          // Hangs indefinitely — simulates in-progress connection
+          await new Promise<void>(() => undefined);
+          return;
+        }
+        if (connectBehavior.error) {
+          const err = connectBehavior.error;
+          connectBehavior.error = null;
+          throw err;
+        }
+        client.isConnected.mockReturnValue(true);
+        // Defer open notification to the microtask queue so that all effects
+        // (including from a second concurrent hook) have registered their
+        // listeners before the open fires.
+        await Promise.resolve();
+        openListeners.forEach((l) => l());
+      }),
+      reconnect: vi.fn(async () => {
+        if (connectBehavior.error) {
+          const err = connectBehavior.error;
+          connectBehavior.error = null;
+          throw err;
+        }
+        client.isConnected.mockReturnValue(true);
+        await Promise.resolve();
+        openListeners.forEach((l) => l());
+      }),
+      disconnect: vi.fn(),
+      subscribe: vi.fn().mockReturnValue(() => undefined),
+      isConnected: vi.fn().mockReturnValue(false),
+      addOpenListener: vi.fn((listener: () => void) => {
+        openListeners.add(listener);
+        return () => openListeners.delete(listener);
+      }),
+      addCloseListener: vi.fn((listener: () => void) => {
+        closeListeners.add(listener);
+        return () => closeListeners.delete(listener);
+      }),
+      _triggerOpen() {
+        openListeners.forEach((l) => l());
+      },
+      _triggerClose() {
+        closeListeners.forEach((l) => l());
+      },
+    };
+
+    allCreatedClients.push(client);
+    return client;
+  }
+
+  const acquireRoomWebSocketClientMock = vi.fn((roomId: string, userId: string) => {
+    const key = `${roomId}:${userId}`;
+    const existing = registryMock.get(key);
+    if (existing) {
+      existing.refCount += 1;
+      return { client: existing.client, isFirstAcquirer: false };
+    }
+    const client = createMockClient();
+    registryMock.set(key, { client, refCount: 1 });
+    return { client, isFirstAcquirer: true };
+  });
+
+  const releaseRoomWebSocketClientMock = vi.fn((roomId: string, userId: string) => {
+    const key = `${roomId}:${userId}`;
+    const existing = registryMock.get(key);
+    if (!existing) {
+      return;
+    }
+    existing.refCount -= 1;
+    if (existing.refCount <= 0) {
+      existing.client.disconnect();
+      registryMock.delete(key);
+    }
+  });
+
   return {
-    RoomWebSocketClient: class MockRoomWebSocketClient {
-      connect = vi.fn(async () => {
-        if (nextConnectPromise) {
-          await nextConnectPromise;
-          nextConnectPromise = null;
-        }
-
-        if (nextConnectError) {
-          const error = nextConnectError;
-          nextConnectError = null;
-          throw error;
-        }
-
-        this.isConnected.mockReturnValue(true);
-      });
-      reconnect = vi.fn(async () => {
-        if (nextConnectError) {
-          const error = nextConnectError;
-          nextConnectError = null;
-          throw error;
-        }
-
-        this.isConnected.mockReturnValue(true);
-        this.options?.onOpen?.();
-      });
-      disconnect = vi.fn();
-      subscribe = vi.fn((listener) => () => undefined);
-      isConnected = vi.fn(() => false);
-      options?: MockWebSocketOptions;
-
-      constructor(roomId: string, userId: string, options?: MockWebSocketOptions) {
-        this.options = options;
-        mockClientInstances.push({
-          connect: this.connect,
-          reconnect: this.reconnect,
-          disconnect: this.disconnect,
-          subscribe: this.subscribe,
-          isConnected: this.isConnected,
-          roomId,
-          userId,
-          options,
-        });
-      }
-    },
+    acquireRoomWebSocketClientMock,
+    releaseRoomWebSocketClientMock,
+    allCreatedClients,
+    registryMock,
+    connectBehavior,
   };
 });
+
+vi.mock('@/api/webSocket', () => ({
+  acquireRoomWebSocketClient: acquireRoomWebSocketClientMock,
+  releaseRoomWebSocketClient: releaseRoomWebSocketClientMock,
+}));
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 import { useRoomWebSocket } from './useRoomWebSocket';
 
 describe('useRoomWebSocket', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockClientInstances.length = 0;
-    nextConnectError = null;
-    nextConnectPromise = null;
+    registryMock.clear();
+    allCreatedClients.length = 0;
+    connectBehavior.error = null;
+    connectBehavior.hang = false;
   });
 
-  it('should initialize hook with disabled connection', () => {
+  it('initialises with no connection when disabled', () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', false));
 
     expect(result.current.isConnected).toBe(false);
@@ -92,13 +142,12 @@ describe('useRoomWebSocket', () => {
     expect(result.current.isTimedOut).toBe(false);
   });
 
-  it('should return subscribe function', () => {
+  it('returns a subscribe function', () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', false));
-
     expect(typeof result.current.subscribe).toBe('function');
   });
 
-  it('connects successfully when enabled with room and user ids', async () => {
+  it('connects successfully when enabled with roomId and userId', async () => {
     const options = { reconnectDelay: 5000 };
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true, options));
 
@@ -107,15 +156,12 @@ describe('useRoomWebSocket', () => {
       expect(result.current.isConnecting).toBe(false);
     });
 
-    expect(mockClientInstances.length).toBeGreaterThanOrEqual(1);
-    expect(mockClientInstances.at(-1)?.roomId).toBe('room-1');
-    expect(mockClientInstances.at(-1)?.userId).toBe('user-1');
-    expect(mockClientInstances.at(-1)?.options).toMatchObject(options);
-    expect(mockClientInstances.at(-1)?.connect).toHaveBeenCalledTimes(1);
+    expect(allCreatedClients).toHaveLength(1);
+    expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1);
   });
 
-  it('surfaces connection failures', async () => {
-    nextConnectError = new Error('socket failed');
+  it('surfaces connection failures via error state', async () => {
+    connectBehavior.error = new Error('socket failed');
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
     await waitFor(() => {
@@ -125,29 +171,26 @@ describe('useRoomWebSocket', () => {
     });
   });
 
-  it('should disable connection when roomId is undefined', () => {
+  it('does not connect when roomId is undefined', () => {
     const { result } = renderHook(() => useRoomWebSocket(undefined, 'user-1', true));
-
     expect(result.current.isConnected).toBe(false);
+    expect(acquireRoomWebSocketClientMock).not.toHaveBeenCalled();
   });
 
-  it('should disable connection when userId is undefined', () => {
+  it('does not connect when userId is undefined', () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', undefined, true));
-
     expect(result.current.isConnected).toBe(false);
+    expect(acquireRoomWebSocketClientMock).not.toHaveBeenCalled();
   });
 
-  it('should accept optional configuration', () => {
-    const options = {
-      reconnectDelay: 5000,
-      maxReconnectAttempts: 10,
-    };
+  it('accepts optional WebSocketOptions without crashing', () => {
     const { result } = renderHook(() =>
-      useRoomWebSocket('room-1', 'user-1', false, options)
+      useRoomWebSocket('room-1', 'user-1', false, {
+        reconnectDelay: 5000,
+        maxReconnectAttempts: 10,
+      })
     );
-
     expect(result.current.subscribe).toBeDefined();
-    expect(result.current.isConnected).toBe(false);
   });
 
   it('delegates subscriptions to the client once connected', async () => {
@@ -155,73 +198,55 @@ describe('useRoomWebSocket', () => {
     const unsubscribe = vi.fn();
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
-    mockClientInstances[0]?.subscribe.mockReturnValue(unsubscribe);
+    allCreatedClients[0]?.subscribe.mockReturnValue(unsubscribe);
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     expect(result.current.subscribe(listener)).toBe(unsubscribe);
-    expect(mockClientInstances[0]?.subscribe).toHaveBeenCalledWith(listener);
+    expect(allCreatedClients[0]?.subscribe).toHaveBeenCalledWith(listener);
   });
 
-  it('disconnects the old client when room or user changes', async () => {
+  it('disconnects the old client and creates a new one when room changes', async () => {
     const { rerender, unmount } = renderHook(
       ({ roomId, userId }) => useRoomWebSocket(roomId, userId, true),
-      {
-        initialProps: {
-          roomId: 'room-1',
-          userId: 'user-1',
-        },
-      }
+      { initialProps: { roomId: 'room-1', userId: 'user-1' } }
     );
 
-    await waitFor(() => {
-      expect(mockClientInstances[0]?.connect).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(() => expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1));
 
     rerender({ roomId: 'room-2', userId: 'user-1' });
 
-    await waitFor(() => {
-      expect(mockClientInstances).toHaveLength(2);
-    });
-    expect(mockClientInstances[0]?.disconnect).toHaveBeenCalled();
+    await waitFor(() => expect(allCreatedClients).toHaveLength(2));
+    expect(allCreatedClients[0]?.disconnect).toHaveBeenCalled();
 
     unmount();
-
-    expect(mockClientInstances[1]?.disconnect).toHaveBeenCalled();
+    expect(allCreatedClients[1]?.disconnect).toHaveBeenCalled();
   });
 
-  it('marks reconnect as timed out after 8 seconds without a successful reconnect', async () => {
+  it('marks isTimedOut after 8 seconds without a successful reconnect', async () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
     });
 
     expect(result.current.isTimedOut).toBe(false);
 
-    act(() => {
-      vi.advanceTimersByTime(7999);
-    });
+    act(() => { vi.advanceTimersByTime(7999); });
     expect(result.current.isTimedOut).toBe(false);
 
-    act(() => {
-      vi.advanceTimersByTime(1);
-    });
+    act(() => { vi.advanceTimersByTime(1); });
     expect(result.current.isTimedOut).toBe(true);
 
     vi.useRealTimers();
   });
 
   it('keeps isReconnecting false before any connect completes', () => {
-    nextConnectPromise = new Promise(() => undefined);
+    connectBehavior.hang = true;
     const { result, unmount } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
     expect(result.current.isConnected).toBe(false);
@@ -230,25 +255,23 @@ describe('useRoomWebSocket', () => {
     unmount();
   });
 
-  it('marks isReconnecting true after a successful connection drops and clears it on reconnect', async () => {
+  it('marks isReconnecting true after connection drops, clears it on reconnect', async () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
     });
 
     expect(result.current.isConnected).toBe(false);
     expect(result.current.isReconnecting).toBe(true);
 
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(true);
-      mockClientInstances[0]?.options?.onOpen?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(true);
+      allCreatedClients[0]?._triggerOpen();
     });
 
     expect(result.current.isConnected).toBe(true);
@@ -257,24 +280,20 @@ describe('useRoomWebSocket', () => {
     vi.useRealTimers();
   });
 
-  it('clears isReconnecting when reconnect timeout fires', async () => {
+  it('clears isReconnecting when the reconnect timeout fires', async () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
     });
 
     expect(result.current.isReconnecting).toBe(true);
 
-    act(() => {
-      vi.advanceTimersByTime(8000);
-    });
+    act(() => { vi.advanceTimersByTime(8000); });
 
     expect(result.current.isTimedOut).toBe(true);
     expect(result.current.isReconnecting).toBe(false);
@@ -285,29 +304,21 @@ describe('useRoomWebSocket', () => {
   it('does not carry reconnecting state into a new room before the new connection opens', async () => {
     const { result, rerender } = renderHook(
       ({ roomId }) => useRoomWebSocket(roomId, 'user-1', true),
-      {
-        initialProps: {
-          roomId: 'room-1',
-        },
-      }
+      { initialProps: { roomId: 'room-1' } }
     );
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
     });
 
     expect(result.current.isReconnecting).toBe(true);
 
-    nextConnectPromise = new Promise(() => undefined);
-    act(() => {
-      rerender({ roomId: 'room-2' });
-    });
+    connectBehavior.hang = true;
+    act(() => { rerender({ roomId: 'room-2' }); });
 
     expect(result.current.isReconnecting).toBe(false);
 
@@ -317,28 +328,20 @@ describe('useRoomWebSocket', () => {
   it('does not report reconnecting after the hook is disabled', async () => {
     const { result, rerender } = renderHook(
       ({ enabled }) => useRoomWebSocket('room-1', 'user-1', enabled),
-      {
-        initialProps: {
-          enabled: true,
-        },
-      }
+      { initialProps: { enabled: true } }
     );
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
     });
 
     expect(result.current.isReconnecting).toBe(true);
 
-    act(() => {
-      rerender({ enabled: false });
-    });
+    act(() => { rerender({ enabled: false }); });
 
     expect(result.current.isReconnecting).toBe(false);
 
@@ -348,14 +351,12 @@ describe('useRoomWebSocket', () => {
   it('resets timeout state on manual reconnect and successful open', async () => {
     const { result } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
 
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true);
-    });
+    await waitFor(() => expect(result.current.isConnected).toBe(true));
 
     vi.useFakeTimers();
     act(() => {
-      mockClientInstances[0]?.isConnected.mockReturnValue(false);
-      mockClientInstances[0]?.options?.onClose?.();
+      allCreatedClients[0]?.isConnected.mockReturnValue(false);
+      allCreatedClients[0]?._triggerClose();
       vi.advanceTimersByTime(8000);
     });
     expect(result.current.isTimedOut).toBe(true);
@@ -364,10 +365,69 @@ describe('useRoomWebSocket', () => {
       await result.current.reconnect();
     });
 
-    expect(mockClientInstances[0]?.reconnect).toHaveBeenCalledTimes(1);
+    expect(allCreatedClients[0]?.reconnect).toHaveBeenCalledTimes(1);
     expect(result.current.isTimedOut).toBe(false);
     expect(result.current.isConnected).toBe(true);
 
     vi.useRealTimers();
+  });
+
+  describe('shared client registry', () => {
+    it('two hooks with the same roomId/userId share one underlying client', async () => {
+      const { result: result1 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+      const { result: result2 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+      await waitFor(() => {
+        expect(result1.current.isConnected).toBe(true);
+        expect(result2.current.isConnected).toBe(true);
+      });
+
+      // One client instance, connect called once
+      expect(allCreatedClients).toHaveLength(1);
+      expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('second hook syncs isConnected immediately when client is already connected', async () => {
+      const { result: result1 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+      await waitFor(() => expect(result1.current.isConnected).toBe(true));
+
+      const { result: result2 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+      // Synchronously connected — no wait needed
+      expect(result2.current.isConnected).toBe(true);
+      expect(result2.current.isConnecting).toBe(false);
+      // connect was NOT called again
+      expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('client is disconnected only when the last hook releases', async () => {
+      const { unmount: unmount1 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+      const { unmount: unmount2 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+      await waitFor(() => expect(allCreatedClients[0]?.connect).toHaveBeenCalledTimes(1));
+
+      unmount1();
+      expect(allCreatedClients[0]?.disconnect).not.toHaveBeenCalled();
+
+      unmount2();
+      expect(allCreatedClients[0]?.disconnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('both hooks receive the open notification when the connection fires', async () => {
+      connectBehavior.hang = true;
+      const { result: result1 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+      const { result: result2 } = renderHook(() => useRoomWebSocket('room-1', 'user-1', true));
+
+      expect(result1.current.isConnected).toBe(false);
+      expect(result2.current.isConnected).toBe(false);
+
+      act(() => {
+        allCreatedClients[0]?.isConnected.mockReturnValue(true);
+        allCreatedClients[0]?._triggerOpen();
+      });
+
+      expect(result1.current.isConnected).toBe(true);
+      expect(result2.current.isConnected).toBe(true);
+    });
   });
 });

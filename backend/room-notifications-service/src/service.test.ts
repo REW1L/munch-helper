@@ -183,4 +183,37 @@ describe('room notification service', () => {
     expect(send.mock.calls[0]?.[0]).toBeInstanceOf(DeleteConnectionCommand);
     expect(send.mock.calls[0]?.[0].input).toEqual({ ConnectionId: 'conn-4' });
   });
+
+  it('delivers battle events with battleId (regression: event_body forwarded unchanged)', async () => {
+    const send = vi.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined);
+
+    await sendEventToConnections(
+      { send } as never,
+      [
+        {
+          connectionId: 'conn-b',
+          roomId: 'ROOM01',
+          userId: 'user-1',
+          connectedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ],
+      {
+        event: 'battle_started',
+        roomId: 'ROOM01',
+        event_body: { battleId: 'battle-1' },
+        emittedAt: '2026-05-17T00:00:00.000Z',
+      }
+    );
+
+    expect(send.mock.calls[1]?.[0].input).toEqual({
+      ConnectionId: 'conn-b',
+      Data: Buffer.from(JSON.stringify({
+        event: 'battle_started',
+        event_body: { battleId: 'battle-1' },
+      })),
+    });
+  });
 });

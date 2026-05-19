@@ -52,7 +52,24 @@ describe('battle-service app', () => {
     });
     expect(response.body._id).toBeUndefined();
     expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'room-1', name: 'Dungeon Door' }));
-    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ event: 'battle_started', battleId: 'battle-1' }));
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'battle_started',
+      event_body: { battleId: 'battle-1' }
+    }));
+  });
+
+  it('swallows a publisher failure on POST without failing the request', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish down')) };
+    vi.mocked(model.findOne).mockResolvedValue(null);
+    vi.mocked(model.create).mockResolvedValue(buildBattle());
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles')
+      .send({ roomId: 'room-1', name: 'Battle' });
+
+    expect(response.status).toBe(201);
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a second active battle', async () => {
@@ -230,7 +247,10 @@ describe('battle-service app', () => {
       },
       { new: true, runValidators: true }
     );
-    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ event: 'battle_updated', battleId: 'battle-1' }));
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'battle_updated',
+      event_body: { battleId: 'battle-1' }
+    }));
   });
 
   it.each([
@@ -297,15 +317,17 @@ describe('battle-service app', () => {
     expect(castError.body).toEqual({ message: 'Battle not found' });
   });
 
-  it.each(['concluded', 'discarded'] as const)('returns 409 for patching a %s battle', async (status) => {
+  it.each(['concluded', 'discarded'] as const)('returns 409 for patching a %s battle and does not publish', async (status) => {
     const model = buildBattleModel();
+    const publisher = { publish: vi.fn() };
     vi.mocked(model.findById).mockResolvedValue(buildBattle({ status }));
 
-    const response = await request(createApp(model)).patch('/battles/battle-1').send({ name: 'Updated' });
+    const response = await request(createApp(model, { publisher })).patch('/battles/battle-1').send({ name: 'Updated' });
 
     expect(response.status).toBe(409);
     expect(response.body).toEqual({ message: 'Battle is not active' });
     expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+    expect(publisher.publish).not.toHaveBeenCalled();
   });
 
   it('returns 502 for unexpected patch errors', async () => {

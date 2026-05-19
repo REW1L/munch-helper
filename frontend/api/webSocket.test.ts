@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RoomWebSocketClient } from './webSocket';
+import { RoomWebSocketClient, isValidNotificationEvent } from './webSocket';
 
 // Mock WebSocket class properly
 class MockWebSocket {
@@ -20,8 +20,7 @@ describe('RoomWebSocketClient', () => {
 
   beforeEach(() => {
     client = new RoomWebSocketClient('test-room', 'test-user');
-    // Mock global WebSocket with our class
-    global.WebSocket = MockWebSocket as any;
+    global.WebSocket = MockWebSocket as never;
   });
 
   afterEach(() => {
@@ -32,24 +31,16 @@ describe('RoomWebSocketClient', () => {
   describe('connection lifecycle', () => {
     it('should create a client instance', () => {
       expect(client).toBeDefined();
-      // New client is not connected until connect() is called
-      const isConnected = client.isConnected();
-      expect(isConnected).toBe(false);
+      expect(client.isConnected()).toBe(false);
     });
 
     it('should attempt to connect to WebSocket', async () => {
-      // Start the connection
       const connectPromise = client.connect();
-
-      // The WebSocket constructor should have been called
       expect(global.WebSocket).toBeDefined();
-
-      // The promise should be defined
       expect(connectPromise instanceof Promise).toBe(true);
     });
 
     it('should disconnect gracefully', () => {
-      // Disconnect should not throw
       expect(() => {
         client.disconnect();
       }).not.toThrow();
@@ -60,7 +51,6 @@ describe('RoomWebSocketClient', () => {
     it('should allow listeners to subscribe', () => {
       const listener = vi.fn();
       const unsubscribe = client.subscribe(listener);
-
       expect(typeof unsubscribe).toBe('function');
     });
 
@@ -68,41 +58,57 @@ describe('RoomWebSocketClient', () => {
       const listener = vi.fn();
       const unsubscribe = client.subscribe(listener);
       unsubscribe();
-
-      // After unsubscribe, listener should not be called
-      // (This would be tested with actual event simulation)
     });
   });
 
-  describe('event validation', () => {
-    it('should validate character_created events', () => {
-      const event = {
-        event: 'character_created',
-        event_body: {
-          characterId: '123'
-        }
-      };
-      expect(event.event).toBe('character_created');
+  describe('open/close listener fan-out', () => {
+    it('fires multiple open listeners on connect', () => {
+      const open1 = vi.fn();
+      const open2 = vi.fn();
+      client.addOpenListener(open1);
+      client.addOpenListener(open2);
+
+      const connectPromise = client.connect();
+      // trigger onopen via the mock ws
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onopen?.();
+
+      expect(open1).toHaveBeenCalledTimes(1);
+      expect(open2).toHaveBeenCalledTimes(1);
+
+      // clean up pending promise
+      ws.onerror?.(new Event('error'));
+      return connectPromise.catch(() => undefined);
     });
 
-    it('should validate character_updated events', () => {
-      const event = {
-        event: 'character_updated',
-        event_body: {
-          characterId: '456'
-        }
-      };
-      expect(event.event).toBe('character_updated');
+    it('allows removing open listeners', () => {
+      const open1 = vi.fn();
+      const remove = client.addOpenListener(open1);
+      remove();
+
+      const connectPromise = client.connect();
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onopen?.();
+
+      expect(open1).not.toHaveBeenCalled();
+      ws.onerror?.(new Event('error'));
+      return connectPromise.catch(() => undefined);
     });
 
-    it('should validate character_deleted events', () => {
-      const event = {
-        event: 'character_deleted',
-        event_body: {
-          characterId: '789'
-        }
-      };
-      expect(event.event).toBe('character_deleted');
+    it('fires multiple close listeners on disconnect', () => {
+      const close1 = vi.fn();
+      const close2 = vi.fn();
+      client.addCloseListener(close1);
+      client.addCloseListener(close2);
+
+      const connectPromise = client.connect();
+      const ws = (client as never)['ws'] as MockWebSocket;
+      ws.onopen?.();
+      ws.onclose?.();
+
+      expect(close1).toHaveBeenCalledTimes(1);
+      expect(close2).toHaveBeenCalledTimes(1);
+      return connectPromise.catch(() => undefined);
     });
   });
 
@@ -113,17 +119,77 @@ describe('RoomWebSocketClient', () => {
     });
 
     it('should accept custom reconnect delay', () => {
-      const customClient = new RoomWebSocketClient('room', 'user', {
-        reconnectDelay: 5000,
-      });
+      const customClient = new RoomWebSocketClient('room', 'user', { reconnectDelay: 5000 });
       expect(customClient).toBeDefined();
     });
 
     it('should accept custom max reconnect attempts', () => {
-      const customClient = new RoomWebSocketClient('room', 'user', {
-        maxReconnectAttempts: 10,
-      });
+      const customClient = new RoomWebSocketClient('room', 'user', { maxReconnectAttempts: 10 });
       expect(customClient).toBeDefined();
+    });
+  });
+});
+
+describe('isValidNotificationEvent', () => {
+  describe('character events (regression)', () => {
+    it.each(['character_created', 'character_updated', 'character_deleted'] as const)(
+      'accepts valid %s event',
+      (eventType) => {
+        expect(
+          isValidNotificationEvent({ event: eventType, event_body: { characterId: 'char-1' } })
+        ).toBe(true);
+      }
+    );
+
+    it('rejects character event with missing characterId', () => {
+      expect(
+        isValidNotificationEvent({ event: 'character_created', event_body: {} })
+      ).toBe(false);
+    });
+
+    it('rejects character event with non-string characterId', () => {
+      expect(
+        isValidNotificationEvent({ event: 'character_created', event_body: { characterId: 123 } })
+      ).toBe(false);
+    });
+  });
+
+  describe('battle events', () => {
+    it.each(['battle_started', 'battle_updated', 'battle_concluded', 'battle_discarded'] as const)(
+      'accepts valid %s event',
+      (eventType) => {
+        expect(
+          isValidNotificationEvent({ event: eventType, event_body: { battleId: 'battle-1' } })
+        ).toBe(true);
+      }
+    );
+
+    it('rejects battle event with missing battleId', () => {
+      expect(
+        isValidNotificationEvent({ event: 'battle_started', event_body: {} })
+      ).toBe(false);
+    });
+
+    it('rejects battle event with non-string battleId', () => {
+      expect(
+        isValidNotificationEvent({ event: 'battle_started', event_body: { battleId: null } })
+      ).toBe(false);
+    });
+  });
+
+  describe('rejections', () => {
+    it('rejects null', () => {
+      expect(isValidNotificationEvent(null)).toBe(false);
+    });
+
+    it('rejects unknown event type', () => {
+      expect(
+        isValidNotificationEvent({ event: 'unknown_type', event_body: { characterId: 'char-1' } })
+      ).toBe(false);
+    });
+
+    it('rejects missing event field', () => {
+      expect(isValidNotificationEvent({ event_body: { characterId: 'char-1' } })).toBe(false);
     });
   });
 });

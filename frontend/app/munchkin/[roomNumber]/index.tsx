@@ -64,7 +64,7 @@ const MunchkinIndexView: React.FC = () => {
     isLoading: isBattleLoading,
     errorMessage: battleErrorMessage,
     refresh: refreshBattle,
-  } = useRoomBattle(roomId);
+  } = useRoomBattle(roomId, userProfile);
   const battleActions = useBattleActions(roomId);
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
 
