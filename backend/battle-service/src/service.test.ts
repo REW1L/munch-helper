@@ -6,6 +6,7 @@ vi.mock('./models/Battle', () => ({
     findOne: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    findOneAndUpdate: vi.fn(),
     create: vi.fn()
   }
 }));
@@ -31,6 +32,7 @@ describe('battle-service model wrapper', () => {
     vi.mocked(Battle.findOne as any).mockResolvedValue(document);
     vi.mocked(Battle.findById as any).mockResolvedValue(document);
     vi.mocked(Battle.findByIdAndUpdate as any).mockResolvedValue(document);
+    vi.mocked(Battle.findOneAndUpdate as any).mockResolvedValue(document);
     vi.mocked(Battle.create as any).mockResolvedValue(document);
 
     await expect(model.findOne({ roomId: 'room-1', status: 'active' })).resolves.toMatchObject({ id: 'battle-1' });
@@ -48,5 +50,13 @@ describe('battle-service model wrapper', () => {
       new: true,
       runValidators: true
     })).resolves.toMatchObject({ id: 'battle-1' });
+    await expect(model.findActiveByIdAndConclude('battle-1', 'players_win', now)).resolves.toMatchObject({
+      id: 'battle-1'
+    });
+    expect(Battle.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'battle-1', status: 'active' },
+      { $set: { status: 'concluded', result: 'players_win', concludedAt: now } },
+      { new: true, runValidators: true }
+    );
   });
 });

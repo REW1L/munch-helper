@@ -72,6 +72,29 @@ export function createBattleModel(): BattleModelLike {
         roomId: battle.roomId
       });
       return toBattleLike(battle);
+    },
+    findActiveByIdAndConclude: async (id, result, concludedAt) => {
+      console.info('[battle-service] db conclude active battle', {
+        battleId: id,
+        result,
+        status: 'concluded'
+      });
+      const battle = await Battle.findOneAndUpdate(
+        { _id: id, status: 'active' },
+        { $set: { status: 'concluded', result, concludedAt } },
+        { new: true, runValidators: true }
+      );
+      if (!battle) {
+        console.info('[battle-service] db conclude active battle no match', { battleId: id });
+        return null;
+      }
+      console.info('[battle-service] db conclude active battle success', {
+        battleId: battle.id,
+        roomId: battle.roomId,
+        result: battle.result,
+        status: battle.status
+      });
+      return toBattleLike(battle);
     }
   };
 }

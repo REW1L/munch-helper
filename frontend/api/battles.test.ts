@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getActiveBattle, patchBattle, startBattle } from '@/api/battles';
+import { concludeBattle, getActiveBattle, patchBattle, startBattle } from '@/api/battles';
 import { ApiError, apiRequest } from '@/api/http';
 
 vi.mock('@/api/http', async () => {
@@ -14,6 +14,10 @@ vi.mock('@/api/http', async () => {
 const mockApiRequest = vi.mocked(apiRequest);
 
 describe('battles api', () => {
+  beforeEach(() => {
+    mockApiRequest.mockReset();
+  });
+
   it('starts a battle with the provided required name', async () => {
     mockApiRequest.mockResolvedValueOnce({
       id: 'battle-1',
@@ -85,5 +89,40 @@ describe('battles api', () => {
       status: 409,
       details: { message: 'Battle is not active' },
     });
+  });
+
+  it('concludes a battle with URL-encoded id and selected result', async () => {
+    mockApiRequest.mockResolvedValueOnce({
+      id: 'battle/1',
+      roomId: 'room-1',
+      name: 'Battle 1',
+      status: 'concluded',
+      playerSide: { characterIds: [], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+      result: 'players_win',
+      concludedAt: '2026-05-17T12:00:00.000Z',
+    });
+
+    await concludeBattle('battle/1', 'players_win');
+
+    expect(mockApiRequest).toHaveBeenCalledWith('/battles/battle%2F1/conclude', {
+      method: 'POST',
+      body: { result: 'players_win' },
+    });
+  });
+
+  it('surfaces 409 and 400 ApiErrors for conclude without retrying in the caller', async () => {
+    const conflict = new ApiError('Battle is not active', 409, { message: 'Battle is not active' });
+    const badRequest = new ApiError('Field result is required and must be "players_win" or "monster_wins"', 400, {
+      message: 'Field result is required and must be "players_win" or "monster_wins"',
+    });
+
+    mockApiRequest.mockRejectedValueOnce(conflict);
+    await expect(concludeBattle('battle-1', 'players_win')).rejects.toMatchObject({ status: 409 });
+    expect(mockApiRequest).toHaveBeenCalledTimes(1);
+
+    mockApiRequest.mockRejectedValueOnce(badRequest);
+    await expect(concludeBattle('battle-1', 'monster_wins')).rejects.toMatchObject({ status: 400 });
+    expect(mockApiRequest).toHaveBeenCalledTimes(2);
   });
 });

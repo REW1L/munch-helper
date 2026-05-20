@@ -1,4 +1,4 @@
-import { Battle, PatchBattlePayload, StartBattlePayload, patchBattle, startBattle } from '@/api/battles';
+import { Battle, BattleResult, PatchBattlePayload, StartBattlePayload, concludeBattle, patchBattle, startBattle } from '@/api/battles';
 import { getBattleQueryKey } from '@/hooks/useRoomBattle';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 interface UseBattleActionsResult {
   start: (payload: StartBattlePayload) => Promise<Battle>;
   patch: (battleId: string, payload: PatchBattlePayload) => Promise<Battle>;
+  conclude: (battleId: string, result: BattleResult) => Promise<Battle>;
   isLoading: boolean;
   errorMessage: string | null;
 }
@@ -28,6 +29,13 @@ export function useBattleActions(roomId: string | undefined): UseBattleActionsRe
     },
   });
 
+  const concludeMutation = useMutation({
+    mutationFn: async ({ battleId, result }: { battleId: string; result: BattleResult }) => concludeBattle(battleId, result),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: battleQueryKey });
+    },
+  });
+
   const start = useCallback(
     async (payload: StartBattlePayload) => {
       return startMutation.mutateAsync(payload);
@@ -42,15 +50,34 @@ export function useBattleActions(roomId: string | undefined): UseBattleActionsRe
     [patchMutation]
   );
 
+  const conclude = useCallback(
+    async (battleId: string, result: BattleResult) => {
+      return concludeMutation.mutateAsync({ battleId, result });
+    },
+    [concludeMutation]
+  );
+
   return useMemo(
     () => ({
       start,
       patch,
-      isLoading: startMutation.isPending || patchMutation.isPending,
+      conclude,
+      isLoading: startMutation.isPending || patchMutation.isPending || concludeMutation.isPending,
       errorMessage:
         (startMutation.error instanceof Error ? startMutation.error.message : null) ||
-        (patchMutation.error instanceof Error ? patchMutation.error.message : null),
+        (patchMutation.error instanceof Error ? patchMutation.error.message : null) ||
+        (concludeMutation.error instanceof Error ? concludeMutation.error.message : null),
     }),
-    [patch, patchMutation.error, patchMutation.isPending, start, startMutation.error, startMutation.isPending]
+    [
+      conclude,
+      concludeMutation.error,
+      concludeMutation.isPending,
+      patch,
+      patchMutation.error,
+      patchMutation.isPending,
+      start,
+      startMutation.error,
+      startMutation.isPending
+    ]
   );
 }

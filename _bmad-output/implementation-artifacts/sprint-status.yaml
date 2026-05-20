@@ -84,7 +84,7 @@ development_status:
   5-3-manage-battle-state: done
   5-4-realtime-battle-updates-from-battle-actions: done
   5-5-realtime-battle-updates-from-character-changes: done
-  5-6-conclude-a-battle: ready-for-dev
+  5-6-conclude-a-battle: review
   5-7-discard-a-battle: ready-for-dev
   epic-5-retrospective: optional
 

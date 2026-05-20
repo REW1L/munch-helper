@@ -1,5 +1,6 @@
-import { Battle, MonsterSide, PlayerSide } from '@/api/battles';
+import { Battle, BattleResult, MonsterSide, PlayerSide } from '@/api/battles';
 import { ApiError } from '@/api/http';
+import BattleConcludeAction from '@/components/munchkin/BattleConcludeAction';
 import BattleSidePanel from '@/components/munchkin/BattleSidePanel';
 import { AppTheme } from '@/constants/theme';
 import { useBattleActions } from '@/hooks/useBattleActions';
@@ -8,7 +9,7 @@ import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useUserProfile } from '@/hooks/useUser';
 import { computePlayerTotal, reconcilePlayerParticipants } from '@/utils/battlePlayerSide';
 import { createUuidV4 } from '@/utils/uuid';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +36,7 @@ function areDraftsEqual(left: BattleDraft | null, right: BattleDraft | null): bo
 
 export default function BattleView() {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const { userProfile } = useUserProfile();
   const { battle, isLoading, errorMessage } = useRoomBattle(roomId, userProfile);
@@ -43,15 +45,27 @@ export default function BattleView() {
   const [draft, setDraft] = useState<BattleDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<BattleDraft | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [concludeError, setConcludeError] = useState<string | null>(null);
+  const [selectedResult, setSelectedResult] = useState<BattleResult | null>(null);
+  const [isConcluding, setIsConcluding] = useState(false);
   const initializedBattleIdRef = useRef<string | null>(null);
+  const hadBattleRef = useRef(false);
+  const dismissedAfterNullRef = useRef(false);
 
   useEffect(() => {
     if (!battle) {
+      if (hadBattleRef.current && !dismissedAfterNullRef.current && !isLoading && !errorMessage) {
+        dismissedAfterNullRef.current = true;
+        router.back();
+      }
       initializedBattleIdRef.current = null;
       setDraft(null);
       setSavedDraft(null);
       return;
     }
+
+    hadBattleRef.current = true;
+    dismissedAfterNullRef.current = false;
 
     // First load or switching to a different battle — reset draft to the
     // server-side state. This is the only path that may overwrite local edits.
@@ -61,6 +75,8 @@ export default function BattleView() {
       setDraft(nextDraft);
       setSavedDraft(nextDraft);
       setSaveError(null);
+      setConcludeError(null);
+      setSelectedResult(null);
       return;
     }
 
@@ -73,7 +89,7 @@ export default function BattleView() {
       setDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
     }
     setSavedDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
-  }, [battle, draft, savedDraft]);
+  }, [battle, draft, errorMessage, isLoading, router, savedDraft]);
 
   // Exclude optimistic (temp-) ids from the add picker so users can't add a
   // character that's about to get its id swapped — otherwise the just-added
@@ -118,6 +134,7 @@ export default function BattleView() {
   const isDirty = !areDraftsEqual(draft, savedDraft);
   const isNameValid = !!draft && draft.name.trim().length > 0;
   const canSave = isDirty && isNameValid && !battleActions.isLoading;
+  const concludeDisabled = selectedResult === null || isDirty || isConcluding;
 
   const updatePlayerSide = useCallback((updater: (side: PlayerSide) => PlayerSide) => {
     setDraft((current) => current ? { ...current, playerSide: updater(current.playerSide) } : current);
@@ -146,6 +163,28 @@ export default function BattleView() {
       setSaveError(error instanceof Error ? error.message : 'Failed to save battle');
     }
   }, [battle, battleActions, draft, isDirty, isNameValid]);
+
+  const handleConclude = useCallback(async () => {
+    if (!battle || !selectedResult || concludeDisabled) {
+      return;
+    }
+
+    try {
+      setConcludeError(null);
+      setIsConcluding(true);
+      await battleActions.conclude(battle.id, selectedResult);
+      setSelectedResult(null);
+      router.back();
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setConcludeError('Battle is not active');
+        return;
+      }
+      setConcludeError(error instanceof Error ? error.message : 'Failed to conclude battle');
+    } finally {
+      setIsConcluding(false);
+    }
+  }, [battle, battleActions, concludeDisabled, router, selectedResult]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -251,6 +290,22 @@ export default function BattleView() {
                 monsters: side.monsters.filter((monster) => monster.id !== monsterId),
               }))}
             />
+
+            <BattleConcludeAction
+              dirtyHint={isDirty}
+              disabled={concludeDisabled}
+              isConcluding={isConcluding}
+              selectedResult={selectedResult}
+              onConclude={handleConclude}
+              onSelectResult={(result) => {
+                setSelectedResult(result);
+                setConcludeError(null);
+              }}
+            />
+
+            {concludeError && (
+              <Text style={styles.errorText} testID="battle-conclude-error">{concludeError}</Text>
+            )}
           </View>
         )}
 

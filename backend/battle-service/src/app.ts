@@ -9,6 +9,7 @@ import {
 
 export type BattleStatus = 'active' | 'concluded' | 'discarded';
 export type BattleResult = 'players_win' | 'monster_wins' | null;
+export type ConcludeBattleResult = Exclude<BattleResult, null>;
 
 export interface BonusItem {
   id: string;
@@ -64,6 +65,11 @@ export interface BattleModelLike {
     id: string,
     updates: PatchBattlePayload,
     options: { new: boolean; runValidators: boolean }
+  ) => Promise<BattleLike | null>;
+  findActiveByIdAndConclude: (
+    id: string,
+    result: ConcludeBattleResult,
+    concludedAt: Date
   ) => Promise<BattleLike | null>;
 }
 
@@ -232,6 +238,9 @@ const parseMonsterSide = (value: unknown): MonsterSidePayload | string => {
 
   return { monsters, bonuses };
 };
+
+const parseConcludeResult = (value: unknown): ConcludeBattleResult | null =>
+  value === 'players_win' || value === 'monster_wins' ? value : null;
 
 export function createApp(battleModel: BattleModelLike, options: CreateBattleAppOptions = {}) {
   const app = express();
@@ -417,6 +426,53 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
         );
       } catch (error) {
         console.error('Failed to publish battle_updated event', error);
+      }
+
+      res.status(200).json(battle);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'CastError') {
+        return res.status(404).json({ message: 'Battle not found' });
+      }
+      next(error);
+    }
+  });
+
+  app.post('/battles/:id/conclude', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const battleId = toParamString(req.params.id);
+      const body = isPlainObject(req.body) ? req.body : {};
+      const result = parseConcludeResult(body.result);
+
+      console.info('[battle-service] conclude battle request', {
+        battleId,
+        bodyKeys: Object.keys(body)
+      });
+
+      if (!result) {
+        return res.status(400).json({ message: 'Field result is required and must be "players_win" or "monster_wins"' });
+      }
+
+      const concludedAt = new Date();
+      const battle = await battleModel.findActiveByIdAndConclude(battleId, result, concludedAt);
+
+      if (!battle) {
+        const existing = await battleModel.findById(battleId);
+        if (!existing) {
+          return res.status(404).json({ message: 'Battle not found' });
+        }
+        return res.status(409).json({ message: 'Battle is not active' });
+      }
+
+      try {
+        await publisher.publish(
+          createBattleEventPayload({
+            event: 'battle_concluded',
+            roomId: battle.roomId,
+            battleId: battle.id
+          })
+        );
+      } catch (error) {
+        console.error('Failed to publish battle_concluded event', error);
       }
 
       res.status(200).json(battle);
