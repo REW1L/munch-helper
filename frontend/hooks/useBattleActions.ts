@@ -8,6 +8,7 @@ interface UseBattleActionsResult {
   patch: (battleId: string, payload: PatchBattlePayload) => Promise<Battle>;
   conclude: (battleId: string, result: BattleResult) => Promise<Battle>;
   isLoading: boolean;
+  isSaving: boolean;
   errorMessage: string | null;
 }
 
@@ -63,6 +64,7 @@ export function useBattleActions(roomId: string | undefined): UseBattleActionsRe
       patch,
       conclude,
       isLoading: startMutation.isPending || patchMutation.isPending || concludeMutation.isPending,
+      isSaving: patchMutation.isPending,
       errorMessage:
         (startMutation.error instanceof Error ? startMutation.error.message : null) ||
         (patchMutation.error instanceof Error ? patchMutation.error.message : null) ||

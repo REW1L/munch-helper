@@ -133,7 +133,7 @@ export default function BattleView() {
       : AppTheme.colors.danger;
   const isDirty = !areDraftsEqual(draft, savedDraft);
   const isNameValid = !!draft && draft.name.trim().length > 0;
-  const canSave = isDirty && isNameValid && !battleActions.isLoading;
+  const canSave = isDirty && isNameValid && !battleActions.isSaving;
   const concludeDisabled = selectedResult === null || isDirty || isConcluding;
 
   const updatePlayerSide = useCallback((updater: (side: PlayerSide) => PlayerSide) => {
@@ -145,7 +145,7 @@ export default function BattleView() {
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!battle || !draft || !isDirty || !isNameValid || battleActions.isLoading) {
+    if (!battle || !draft || !isDirty || !isNameValid || battleActions.isSaving) {
       return;
     }
 
@@ -164,6 +164,11 @@ export default function BattleView() {
     }
   }, [battle, battleActions, draft, isDirty, isNameValid]);
 
+  const handleSelectConcludeResult = useCallback((result: BattleResult) => {
+    setSelectedResult(result);
+    setConcludeError(null);
+  }, []);
+
   const handleConclude = useCallback(async () => {
     if (!battle || !selectedResult || concludeDisabled) {
       return;
@@ -174,6 +179,9 @@ export default function BattleView() {
       setIsConcluding(true);
       await battleActions.conclude(battle.id, selectedResult);
       setSelectedResult(null);
+      // Suppress the null-refetch auto-dismiss in useEffect — we dismiss directly
+      // here so the modal closes immediately without waiting for the refetch.
+      dismissedAfterNullRef.current = true;
       router.back();
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
@@ -234,8 +242,8 @@ export default function BattleView() {
               <Text style={styles.comparisonText} testID="battle-comparison-label">{comparisonLabel}</Text>
             </View>
 
-            {(saveError || battleActions.errorMessage) && (
-              <Text style={styles.errorText} testID="battle-save-error">{saveError || battleActions.errorMessage}</Text>
+            {saveError && (
+              <Text style={styles.errorText} testID="battle-save-error">{saveError}</Text>
             )}
 
             <BattleSidePanel
@@ -297,10 +305,7 @@ export default function BattleView() {
               isConcluding={isConcluding}
               selectedResult={selectedResult}
               onConclude={handleConclude}
-              onSelectResult={(result) => {
-                setSelectedResult(result);
-                setConcludeError(null);
-              }}
+              onSelectResult={handleSelectConcludeResult}
             />
 
             {concludeError && (

@@ -44,6 +44,7 @@ const mockBattleActions = vi.hoisted(() => ({
   conclude: vi.fn(),
   current: {
     isLoading: false,
+    isSaving: false,
     errorMessage: null,
   },
 }));
@@ -99,6 +100,7 @@ vi.mock('@/hooks/useBattleActions', () => ({
     patch: mockBattleActions.patch,
     conclude: mockBattleActions.conclude,
     isLoading: mockBattleActions.current.isLoading,
+    isSaving: mockBattleActions.current.isSaving,
     errorMessage: mockBattleActions.current.errorMessage,
     start: vi.fn(),
   }),
@@ -139,7 +141,7 @@ describe('Battle view', () => {
       result,
       concludedAt: '2026-05-17T12:00:00.000Z',
     }));
-    mockBattleActions.current = { isLoading: false, errorMessage: null };
+    mockBattleActions.current = { isLoading: false, isSaving: false, errorMessage: null };
     mockRouter.back.mockReset();
   });
 

@@ -1,6 +1,6 @@
 # Story 5.6: Conclude a Battle
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -164,7 +164,7 @@ in doubt.
     `discard` — Story 5.7).
   - `app/munchkin/[roomNumber]/(battle)/index.tsx`: add the Conclude UI block
     inside 5.3's existing Battle View — an explicit two-option result selector
-    (Players Win / Monster Wins) and a single primary **Conclude** action that
+    (Players Win / Monsters Win) and a single primary **Conclude** action that
     calls `conclude(battle.id, selectedResult)`. **No extra ConfirmDialog** — the
     explicit result choice IS the explicit confirmation (UX-DR13: explicit
     confirmation is required for *Discard*, not Conclude). On success, dismiss
@@ -426,7 +426,7 @@ in doubt.
     `null`). Reset to `null` on successful conclude (component unmount handles
     the rest because the modal dismisses).
   - [x] **Result selector** (controlled, two options): render two
-    presentational toggle controls — "Players Win" and "Monster Wins" — in a
+    presentational toggle controls — "Players Win" and "Monsters Win" — in a
     horizontal segmented row. Use `AppTheme.colors.accent` (player) and
     `AppTheme.colors.danger` (monster) for the **selected** state visuals to
     keep the side colour mapping consistent with 5.3 (player=accent #D4C26E,
@@ -439,8 +439,11 @@ in doubt.
     **Default selection is `null`** (no preselect from the comparison
     indicator) — AC1 / Resolved decisions #4: explicit user choice.
   - [x] **Conclude action** (single primary button below the selector): label
-    `Conclude`, primary tier (`AppTheme.colors.accent` background, `textPrimary`
-    text — matches 5.3's Save primary tier per UX-DR19). `testID="battle-
+    `Conclude`, primary tier (`AppTheme.colors.actionSecondary` background,
+    `textPrimary` text — see Change Log 2026-05-20 amendment; visually distinct
+    from 5.3's Save primary tier so users can read the two enabled-states apart
+    when they sequentially become primary, still satisfies UX-DR19 because only
+    one is enabled at a time). `testID="battle-
     conclude-button"`. **Disabled states (combine with logical OR):**
     1. `selectedResult === null` (no result chosen yet) — disabled.
     2. The 5.3 draft is **dirty** (`hasUnsavedChanges` derived from the local
@@ -523,7 +526,7 @@ in doubt.
     tsx`, co-located, Vitest+jsdom + `@testing-library/react`): renders the
     two-option result selector with `selectedResult={null}` → both options
     unselected; tapping `Players Win` calls `onSelectResult('players_win')`;
-    tapping `Monster Wins` calls `onSelectResult('monster_wins')`; the Conclude
+    tapping `Monsters Win` calls `onSelectResult('monster_wins')`; the Conclude
     primary is disabled while `selectedResult === null`; with `selectedResult=
     'players_win'` and `disabled=false` and `isConcluding=false` it is enabled
     and tapping calls `onConclude`; with `dirtyHint=true` (and disabled) the
@@ -719,7 +722,7 @@ Content-Type: application/json
 
 4. **Result selector — explicit, no preselect, segmented control.** The Conclude
    action requires an explicit `result` per AC1. The UI is an inline two-option
-   segmented control (`Players Win` / `Monster Wins`) with **no default
+   segmented control (`Players Win` / `Monsters Win`) with **no default
    selection** (`selectedResult: null` until the user taps one). The Conclude
    primary button is disabled while `selectedResult === null`. The non-
    authoritative comparison indicator from 5.3 ("Players ahead" / "Monsters
@@ -730,7 +733,7 @@ Content-Type: application/json
    `monster_wins` — same colour mapping 5.3 uses for the two sides, so the
    selector reads like "which side won?". ✅ Locked. **Saved question Q2**
    asks the user to confirm vs. the alternative "two flat primary buttons
-   `Conclude — Players Win` and `Conclude — Monster Wins`" (which would violate
+   `Conclude — Players Win` and `Conclude — Monsters Win`" (which would violate
    UX-DR19 by having two primary actions visible simultaneously).
 
 5. **No extra ConfirmDialog on Conclude.** UX-DR13 explicitly requires explicit
@@ -894,9 +897,10 @@ arrow below it already exists.
 
 - **Two-sided colour mapping** (carry from 5.3): player side / `Players Win`
   selected-state = `AppTheme.colors.accent` (`#D4C26E`); monster side /
-  `Monster Wins` selected-state = `AppTheme.colors.danger` (`#922525`). Read
+  `Monsters Win` selected-state = `AppTheme.colors.danger` (`#922525`). Read
   the visual cue: "the side that won" lights up in its existing 5.3 colour.
-- **Conclude primary button**: `accent` background, `textPrimary` text, height
+- **Conclude primary button**: `actionSecondary` background (see Change Log
+  2026-05-20 amendment), `textPrimary` text, height
   consistent with 5.3's Save (re-use 5.3's primary button style if it exposes
   one; otherwise mirror it via `AppTheme.spacing.lg` vertical padding +
   `AppTheme.radius.md` corner). One **enabled** primary visible at a time
@@ -1143,10 +1147,10 @@ exactly as stated in Resolved decisions #3 and #4 above; no remaining ambiguity:
   visible per layer" reading.
 
 - **Q2 — Result selector pattern:** ✅ **Confirmed.** Inline two-option
-  segmented control (`Players Win` / `Monster Wins`) with **no default
+  segmented control (`Players Win` / `Monsters Win`) with **no default
   selection** + a single primary Conclude button below; selected-state visuals
   = `accent` for player, `danger` for monster. The alternative ("two flat
-  primary buttons `Conclude — Players Win` and `Conclude — Monster Wins`") is
+  primary buttons `Conclude — Players Win` and `Conclude — Monsters Win`") is
   rejected — it would violate UX-DR19's one-primary rule.
 
 - **Q3 — Pre-selection from comparison indicator:** ✅ **Confirmed.** **No**
@@ -1175,7 +1179,7 @@ exactly as stated in Resolved decisions #3 and #4 above; no remaining ambiguity:
 - [Source: frontend/constants/theme.ts] (`AppTheme.colors.{accent, danger, surface, surfaceSubtle, textPrimary, textMuted}`, `spacing`, `radius`, `typography` — token-only styling)
 - [Source: frontend/components/ConfirmDialog.tsx] (cross-platform confirm — referenced ONLY to confirm 5.6 does NOT import it; reserved for 5.7)
 - [Source: _bmad-output/planning-artifacts/ux-design-specification/11-component-strategy.md, 12-ux-consistency-patterns.md (UX-DR13, UX-DR19), 13-responsive-design-accessibility.md (UX-DR21)] (Conclude is primary action / one primary per screen / accessibility roles)
-- [Source: _bmad-output/planning-artifacts/ux-design-specification/10-user-journey-flows.md#104-journey-4-battle-lifecycle] (Conclude — Players Win / Monster Wins flow; Battle banner dismissed after conclude)
+- [Source: _bmad-output/planning-artifacts/ux-design-specification/10-user-journey-flows.md#104-journey-4-battle-lifecycle] (Conclude — Players Win / Monsters Win flow; Battle banner dismissed after conclude)
 - [Source: _bmad-output/planning-artifacts/epics/requirements-inventory.md] (FR25 outcome state, FR26 conclude + preserve outcome, ADR-2 conclude endpoint, ADR-8 status guard, ADR-5 `battle_concluded` is logged eventually — Epic 6 not 5.6)
 - [Source: _bmad-output/project-context.md] (frontend strict TS; backend non-strict; do not bypass realtime contracts; do not change event names/payloads incidentally; service-boundary isolation; minimal-edits rule; 70% coverage floor; no incidental dependency changes; testing rules — co-location, route-tests under `__tests__`)
 
@@ -1232,3 +1236,20 @@ GPT-5 Codex
 - 2026-05-20: Implemented Story 5.6 conclude battle backend, frontend, SAM event, tests, and story/sprint status updates.
 - 2026-05-20: Addressed manual review UI comments and recorded deferred result-prompt improvement.
 - 2026-05-20: Completed local manual smoke and moved story/sprint status to review.
+- 2026-05-20: Ran `/bmad-code-review` (Blind Hunter + Edge Case Hunter + Acceptance Auditor) — see Review Findings below.
+- 2026-05-20: Amended spec (Decisions D1/D2 resolved as "amend spec"): Conclude primary button tier is now `actionSecondary` (not `accent`); monster result label is now `"Monsters Win"` (not `"Monster Wins"`). All in-story references updated; external `ux-design-specification/10-user-journey-flows.md` flagged as out-of-story follow-up.
+- 2026-05-20: Applied review patches: (1) `handleConclude` sets `dismissedAfterNullRef` before `router.back()` so the post-conclude refetch doesn't fire a second back-nav; (2) Battle View save-error slot no longer pulls from `battleActions.errorMessage` (eliminates double-rendering of conclude errors); (3) `useBattleActions` exposes `isSaving` so the Save gate ignores `concludeMutation.isPending`; (4) Conclude `onSelectResult` extracted to a `useCallback` so `BattleConcludeAction`'s `memo()` actually bails out. Backend (53) + frontend (55) tests + both typechecks green.
+
+### Review Findings
+
+- [x] [Review][Decision] Conclude primary button uses `actionSecondary` instead of spec `accent` — RESOLVED: amend spec. Dev's manual review change kept; spec amended in Task 7 and UX-accessibility-specifics sections to specify `actionSecondary`. See Change Log 2026-05-20.
+- [x] [Review][Decision] Monster option label "Monsters Win" vs spec "Monster Wins" — RESOLVED: amend spec. Dev's wording kept; spec amended (all in-story references replaced). External journey-flow doc at `ux-design-specification/10-user-journey-flows.md` may still reference "Monster Wins" — out of scope follow-up.
+- [x] [Review][Patch] Double `router.back()` after a successful local conclude — FIXED: `handleConclude` now sets `dismissedAfterNullRef.current = true` before the manual `router.back()` so the auto-dismiss `useEffect` skips on the subsequent null refetch. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] Conclude errors render twice (save-error + conclude-error) — FIXED: the save-error slot no longer falls back to `battleActions.errorMessage`; it renders only the locally-set `saveError`. Both `setSaveError` and `setConcludeError` paths already cover their respective failures. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] Save disabled while conclude in flight — FIXED: `useBattleActions` now exposes `isSaving: patchMutation.isPending`; the screen's `canSave` and `handleSave` guard against `isSaving` instead of the aggregated `isLoading`. Route test mock extended with `isSaving`. [frontend/hooks/useBattleActions.ts, frontend/app/munchkin/[roomNumber]/(battle)/index.tsx, frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx]
+- [x] [Review][Patch] `BattleConcludeAction` `memo()` defeated by inline arrow — FIXED: `handleSelectConcludeResult` extracted as a `useCallback` so the prop reference is stable across parent renders. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] DISMISSED `concludeBattle` accepts `null` BattleResult — false positive on second look: frontend `BattleResult = 'players_win' | 'monster_wins'` (no null); the backend `BattleResult` includes `null`, but the cross-tier mix-up was the reviewer's. Frontend typing already prevents passing `null`.
+- [x] [Review][Defer] Frontend `apiRequest` retries 5xx on conclude — can surface phantom 409 [frontend/api/battles.ts:82-87] — deferred, behavior is shared with all POSTs and out of scope for 5.6. If 5xx is delivered after the server committed, the retry returns 409 and the user briefly sees "Battle is not active" before the modal auto-dismisses on the refetch. Worth a follow-up to either skip retries on conclude or special-case the "already-concluded-by-self" race.
+- [x] [Review][Defer] Backend conclude logs all client-provided `Object.keys(body)` unbounded [backend/battle-service/src/app.ts:447-449] — deferred, log-volume / log-injection vector via long or hostile key names. Consider truncating to a known whitelist (`['result']`) or hashing/eliding unknown keys.
+- [x] [Review][Defer] `router.back()` has no `router.canGoBack()` fallback for deep-link entry [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:177, :59] — deferred, mirrors the existing 5.1 modal dismiss convention; revisit if/when deep-linking into Battle View is supported.
+- [x] [Review][Defer] Remote conclude + refetch error strands the user [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:57] — deferred, no retry / manual dismiss when `useRoomBattle` returns `battle=null, errorMessage='...'` after a remote `battle_concluded` invalidation; the auto-dismiss guard `!errorMessage` blocks. Low likelihood but no escape hatch.

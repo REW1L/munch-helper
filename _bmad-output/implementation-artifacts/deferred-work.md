@@ -1,3 +1,10 @@
+## Deferred from: code review of 5-6-conclude-a-battle (2026-05-20)
+
+- Frontend `apiRequest` retries 5xx on conclude — can surface phantom 409 [frontend/api/battles.ts:82-87]. If a 5xx is delivered after the server committed, the retry returns 409 and the user briefly sees "Battle is not active" before the modal auto-dismisses on the refetch. Worth a follow-up to either skip retries on conclude or special-case the "already-concluded-by-self" race.
+- Backend conclude logs all client-provided `Object.keys(body)` unbounded [backend/battle-service/src/app.ts:447-449]. Log-volume / log-injection vector via long or hostile key names. Consider truncating to a known whitelist (`['result']`) or hashing/eliding unknown keys.
+- `router.back()` has no `router.canGoBack()` fallback for deep-link entry into Battle View [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:177, :59]. Mirrors the existing 5.1 modal dismiss convention; revisit if/when deep-linking into Battle View is supported.
+- Remote conclude + refetch error strands the user [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:57]. No retry / manual dismiss when `useRoomBattle` returns `battle=null, errorMessage='...'` after a remote `battle_concluded` invalidation; the auto-dismiss guard `!errorMessage` blocks. Low likelihood but no escape hatch.
+
 ## Deferred from: code review of 5-5-realtime-battle-updates-from-character-changes (2026-05-20)
 
 - Battle UI gating blanks the whole view on transient empty-room refetch or characters-query error — `useRoomCharacters.isLoading` ([frontend/hooks/useCharacters.ts:444-446](frontend/hooks/useCharacters.ts:444)) returns true while `isFetching && characters.length === 0` (e.g., after a mass character delete during refetch), and the render gate at [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:152-158](frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:152) hides battle+draft on either the loading or the error path. Pre-existing 5.3 gating; mid-edit edits stay in state but become invisible. Out of scope for 5.5.
