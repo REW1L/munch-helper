@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /battles/{id}/conclude",
+  "rawPath": "/battles/67c24f2ec9b1456aa0d9ea13/conclude",
+  "rawQueryString": "",
+  "headers": {
+    "accept": "application/json",
+    "content-type": "application/json",
+    "host": "localhost"
+  },
+  "pathParameters": {
+    "id": "67c24f2ec9b1456aa0d9ea13"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST",
+      "path": "/battles/67c24f2ec9b1456aa0d9ea13/conclude",
+      "sourceIp": "127.0.0.1",
+      "userAgent": "sam-local"
+    }
+  },
+  "body": "{\"result\":\"players_win\"}",
+  "isBase64Encoded": false
+}

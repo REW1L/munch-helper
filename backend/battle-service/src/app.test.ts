@@ -24,6 +24,7 @@ function buildBattleModel(): BattleModelLike {
     findOne: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    findActiveByIdAndConclude: vi.fn(),
     create: vi.fn()
   };
 }
@@ -351,6 +352,135 @@ describe('battle-service app', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.name).toBe('Updated');
+  });
+
+  it('concludes an active battle with an explicit result and publishes once', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    const concluded = buildBattle({
+      status: 'concluded',
+      result: 'players_win',
+      concludedAt: new Date('2026-05-17T12:05:00.000Z'),
+      name: 'Dungeon Door',
+      playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] }
+    });
+    vi.mocked(model.findActiveByIdAndConclude).mockResolvedValue(concluded);
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles/battle-1/conclude')
+      .send({ result: 'players_win', name: 'Ignored Name', status: 'discarded' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 'battle-1',
+      name: 'Dungeon Door',
+      status: 'concluded',
+      result: 'players_win',
+      playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] }
+    });
+    expect(response.body.concludedAt).toBeTruthy();
+    expect(model.findActiveByIdAndConclude).toHaveBeenCalledWith('battle-1', 'players_win', expect.any(Date));
+    expect(model.findById).not.toHaveBeenCalled();
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'battle_concluded',
+      roomId: 'room-1',
+      event_body: { battleId: 'battle-1' },
+      emittedAt: expect.any(String)
+    }));
+  });
+
+  it.each([
+    ['empty body', undefined],
+    ['missing result', { name: 'Battle' }],
+    ['unknown result', { result: 'maybe' }],
+    ['null result', { result: null }]
+  ])('returns 400 for invalid conclude payload: %s', async (_label, payload) => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn() };
+    const testRequest = request(createApp(model, { publisher })).post('/battles/battle-1/conclude');
+    const response = payload === undefined ? await testRequest.send() : await testRequest.send(payload);
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'Field result is required and must be "players_win" or "monster_wins"' });
+    expect(model.findActiveByIdAndConclude).not.toHaveBeenCalled();
+    expect(publisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when conclude target is missing or malformed', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findActiveByIdAndConclude)
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(Object.assign(new Error('bad id'), { name: 'CastError' }));
+    vi.mocked(model.findById).mockResolvedValueOnce(null);
+    const app = createApp(model);
+
+    const missing = await request(app).post('/battles/missing/conclude').send({ result: 'players_win' });
+    const castError = await request(app).post('/battles/bad-id/conclude').send({ result: 'players_win' });
+
+    expect(missing.status).toBe(404);
+    expect(missing.body).toEqual({ message: 'Battle not found' });
+    expect(castError.status).toBe(404);
+    expect(castError.body).toEqual({ message: 'Battle not found' });
+  });
+
+  it.each(['concluded', 'discarded'] as const)('returns 409 for concluding a %s battle and does not publish', async (status) => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn() };
+    vi.mocked(model.findActiveByIdAndConclude).mockResolvedValue(null);
+    vi.mocked(model.findById).mockResolvedValue(buildBattle({ status }));
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles/battle-1/conclude')
+      .send({ result: 'monster_wins' });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ message: 'Battle is not active' });
+    expect(publisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('maps conclude double-write races to one success and one 409', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findActiveByIdAndConclude)
+      .mockResolvedValueOnce(buildBattle({ status: 'concluded', result: 'players_win', concludedAt: new Date() }))
+      .mockResolvedValueOnce(null);
+    vi.mocked(model.findById).mockResolvedValue(buildBattle({ status: 'concluded', result: 'players_win', concludedAt: new Date() }));
+    const app = createApp(model, { publisher });
+
+    const first = await request(app).post('/battles/battle-1/conclude').send({ result: 'players_win' });
+    const second = await request(app).post('/battles/battle-1/conclude').send({ result: 'players_win' });
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(409);
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 502 for unexpected conclude errors', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findActiveByIdAndConclude).mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(createApp(model)).post('/battles/battle-1/conclude').send({ result: 'players_win' });
+
+    expect(response.status).toBe(502);
+    expect(response.body).toEqual({ message: 'Unexpected error' });
+  });
+
+  it('keeps successful concludes successful when the publisher fails', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish unavailable')) };
+    vi.mocked(model.findActiveByIdAndConclude).mockResolvedValue(
+      buildBattle({ status: 'concluded', result: 'monster_wins', concludedAt: new Date() })
+    );
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles/battle-1/conclude')
+      .send({ result: 'monster_wins' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.result).toBe('monster_wins');
   });
 
   it('strips the configured route prefix', async () => {

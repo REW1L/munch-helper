@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T17:42:48Z
-last_updated: 2026-05-20
+last_updated: 2026-05-20T14:13:00Z
 project: munch-helper
 project_key: NOKEY
 tracking_system: file-system
@@ -84,7 +84,7 @@ development_status:
   5-3-manage-battle-state: done
   5-4-realtime-battle-updates-from-battle-actions: done
   5-5-realtime-battle-updates-from-character-changes: done
-  5-6-conclude-a-battle: ready-for-dev
+  5-6-conclude-a-battle: done
   5-7-discard-a-battle: ready-for-dev
   epic-5-retrospective: optional
 

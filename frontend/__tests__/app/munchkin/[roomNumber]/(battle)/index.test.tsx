@@ -41,10 +41,16 @@ const mockCharactersState = vi.hoisted(() => ({
 
 const mockBattleActions = vi.hoisted(() => ({
   patch: vi.fn(),
+  conclude: vi.fn(),
   current: {
     isLoading: false,
+    isSaving: false,
     errorMessage: null,
   },
+}));
+
+const mockRouter = vi.hoisted(() => ({
+  back: vi.fn(),
 }));
 
 function hexToRgbStyleValue(hex: string): string {
@@ -71,6 +77,7 @@ vi.mock('expo-router', () => ({
   useLocalSearchParams: () => ({
     roomNumber: 'ROOM42',
   }),
+  useRouter: () => mockRouter,
 }));
 
 vi.mock('@/hooks/useRoomBattle', () => ({
@@ -91,7 +98,9 @@ vi.mock('@/hooks/useUser', () => ({
 vi.mock('@/hooks/useBattleActions', () => ({
   useBattleActions: () => ({
     patch: mockBattleActions.patch,
+    conclude: mockBattleActions.conclude,
     isLoading: mockBattleActions.current.isLoading,
+    isSaving: mockBattleActions.current.isSaving,
     errorMessage: mockBattleActions.current.errorMessage,
     start: vi.fn(),
   }),
@@ -121,11 +130,19 @@ describe('Battle view', () => {
       errorMessage: null,
     };
     mockBattleActions.patch.mockReset();
+    mockBattleActions.conclude.mockReset();
     mockBattleActions.patch.mockImplementation(async (_battleId: string, payload: Partial<Battle>) => ({
       ...mockBattleState.current.battle!,
       ...payload,
     }));
-    mockBattleActions.current = { isLoading: false, errorMessage: null };
+    mockBattleActions.conclude.mockImplementation(async (_battleId: string, result: Battle['result']) => ({
+      ...mockBattleState.current.battle!,
+      status: 'concluded',
+      result,
+      concludedAt: '2026-05-17T12:00:00.000Z',
+    }));
+    mockBattleActions.current = { isLoading: false, isSaving: false, errorMessage: null };
+    mockRouter.back.mockReset();
   });
 
   it('renders the loaded active battle state', async () => {
@@ -139,6 +156,7 @@ describe('Battle view', () => {
     expect(screen.getByText('Monster Side')).toBeTruthy();
     expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Even');
     expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(AppTheme.colors.surfaceSubtle));
+    expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).toBe('true');
   });
 
   it('syncs the visible draft when the same battle refetches and there are no local edits', async () => {
@@ -257,6 +275,87 @@ describe('Battle view', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('battle-save-error').textContent).toBe('Battle is not active');
+    });
+  });
+
+  it('concludes a clean battle with an explicit selected result and dismisses the modal', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-conclude-result-players'));
+    fireEvent.click(screen.getByTestId('battle-conclude-button'));
+
+    await waitFor(() => {
+      expect(mockBattleActions.conclude).toHaveBeenCalledWith('battle-1', 'players_win');
+      expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('surfaces non-active conclude conflicts inline without dismissing', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleActions.conclude.mockRejectedValue(new ApiError('Battle is not active', 409, { message: 'Battle is not active' }));
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-conclude-result-monster'));
+    fireEvent.click(screen.getByTestId('battle-conclude-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('battle-conclude-error').textContent).toBe('Battle is not active');
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    });
+  });
+
+  it('disables conclude while the draft is dirty and enables it again after save', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleActions.patch.mockResolvedValue({
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+    });
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-conclude-result-players'));
+    expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).not.toBe('true');
+
+    fireEvent.click(screen.getByTestId('select-character-character-1'));
+    fireEvent.click(screen.getByTestId('add-character'));
+    expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByTestId('battle-conclude-dirty-hint').textContent).toBe('Save your changes before concluding');
+
+    fireEvent.click(screen.getByTestId('save-battle'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).not.toBe('true');
+    });
+  });
+
+  it('dismisses after a previously active battle refetches to null', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    const view = render(<BattleView />);
+    mockBattleState.current.battle = null;
+    view.rerender(<BattleView />);
+
+    await waitFor(() => {
+      expect(mockRouter.back).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('No active battle')).toBeTruthy();
+    });
+  });
+
+  it('disables conclude while the conclude mutation is pending', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleActions.conclude.mockImplementation(() => new Promise(() => undefined));
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-conclude-result-players'));
+    fireEvent.click(screen.getByTestId('battle-conclude-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).toBe('true');
+      expect(screen.getByTestId('battle-conclude-button').textContent).toBe('Concluding...');
     });
   });
 

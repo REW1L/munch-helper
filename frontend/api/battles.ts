@@ -78,3 +78,10 @@ export async function patchBattle(battleId: string, payload: PatchBattlePayload)
     body,
   });
 }
+
+export async function concludeBattle(battleId: string, result: BattleResult): Promise<Battle> {
+  return apiRequest<Battle>(`/battles/${encodeURIComponent(battleId)}/conclude`, {
+    method: 'POST',
+    body: { result },
+  });
+}

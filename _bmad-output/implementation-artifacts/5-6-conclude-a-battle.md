@@ -1,6 +1,6 @@
 # Story 5.6: Conclude a Battle
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -164,7 +164,7 @@ in doubt.
     `discard` — Story 5.7).
   - `app/munchkin/[roomNumber]/(battle)/index.tsx`: add the Conclude UI block
     inside 5.3's existing Battle View — an explicit two-option result selector
-    (Players Win / Monster Wins) and a single primary **Conclude** action that
+    (Players Win / Monsters Win) and a single primary **Conclude** action that
     calls `conclude(battle.id, selectedResult)`. **No extra ConfirmDialog** — the
     explicit result choice IS the explicit confirmation (UX-DR13: explicit
     confirmation is required for *Discard*, not Conclude). On success, dismiss
@@ -251,8 +251,8 @@ in doubt.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Backend: atomic conclude on the battle model wrapper** (AC: 1, 2)
-  - [ ] In `backend/battle-service/src/service.ts`, extend the `BattleModelLike`
+- [x] **Task 1 — Backend: atomic conclude on the battle model wrapper** (AC: 1, 2)
+  - [x] In `backend/battle-service/src/service.ts`, extend the `BattleModelLike`
     interface (5.1 + 5.3 already added `find`/`create`/`findById`/
     `findByIdAndUpdate`). Add a single composed method
     `findActiveByIdAndConclude(id: string, result: 'players_win' | 'monster_wins',
@@ -262,25 +262,25 @@ in doubt.
     Returning `null` is the route's signal to disambiguate `404` vs `409` via a
     follow-up `findById` (see Task 2). This avoids the read-then-write race that
     would let two concurrent concludes both succeed.
-  - [ ] Mirror the existing wrapper's logging style (`console.info` keys
+  - [x] Mirror the existing wrapper's logging style (`console.info` keys
     `battleId`, `roomId`, `result`, `status`) and the response shaping (return the
     Mongoose doc through `toJSON` so the API exposes `id` not `_id`/`__v`,
     matching 5.1's transform). Pass `null` through unchanged when no document
     matches.
-  - [ ] Keep the wrapper type exported so `app.test.ts` / `service.test.ts` can
+  - [x] Keep the wrapper type exported so `app.test.ts` / `service.test.ts` can
     inject a mock model with `vi.fn()` per method (5.1 + 5.3 test pattern).
 
-- [ ] **Task 2 — Backend: `POST /battles/:id/conclude` route** (AC: 1, 2)
-  - [ ] Add `app.post('/battles/:id/conclude', ...)` **inline in `src/app.ts`**
+- [x] **Task 2 — Backend: `POST /battles/:id/conclude` route** (AC: 1, 2)
+  - [x] Add `app.post('/battles/:id/conclude', ...)` **inline in `src/app.ts`**
     (repo convention — no `routes/` folder). Use the same `:id` param style as
     5.3's PATCH (`/battles/:id`), not `{id}`.
-  - [ ] **Validation (all `400 { message }`):** require `req.body.result` to be
+  - [x] **Validation (all `400 { message }`):** require `req.body.result` to be
     `'players_win'` or `'monster_wins'` (strict equality against the enum;
     `400 { message: 'Field result is required and must be \"players_win\" or
     \"monster_wins\"' }`). Reject any other body keys silently — only `result` is
     accepted (mirror 5.3's whitelist discipline). Reject empty body (`req.body
     == null` or `result === undefined`) with the same `400` shape.
-  - [ ] **Conclude path (atomic + status guard):**
+  - [x] **Conclude path (atomic + status guard):**
     1. Compute `concludedAt = new Date()` once at handler start (so the
        `try`/`catch` and the publish payload share the same timestamp).
     2. Call `findActiveByIdAndConclude(id, result, concludedAt)`.
@@ -296,10 +296,10 @@ in doubt.
        service). All other errors → `next(error)` → `502 { message: 'Unexpected
        error' }` (battle-service convention from 5.1; **never** `500`, **never**
        `{ message, details }`).
-  - [ ] Do **not** mutate `name`/`playerSide`/`monsterSide` here (AC1 — Conclude
+  - [x] Do **not** mutate `name`/`playerSide`/`monsterSide` here (AC1 — Conclude
     is not a Save). The PATCH endpoint (5.3) is the only path that writes those
     fields.
-  - [ ] Backend tests (co-located `app.test.ts`, supertest, mock model + mock
+  - [x] Backend tests (co-located `app.test.ts`, supertest, mock model + mock
     publisher injected per 5.1/5.3 pattern). Cover:
     - Success: `POST /battles/:id/conclude` with `result='players_win'` returns
       `200` + JSON containing `id`, `status:'concluded'`, `result:'players_win'`,
@@ -326,32 +326,32 @@ in doubt.
       `findActiveByIdAndConclude` and a doc with `status='concluded'` from
       `findById` → `409` + no publish.
 
-- [ ] **Task 3 — Backend: publish `battle_concluded` on success** (AC: 1, 4)
-  - [ ] After the `200` is computed (battle resolved from the atomic update), call
+- [x] **Task 3 — Backend: publish `battle_concluded` on success** (AC: 1, 4)
+  - [x] After the `200` is computed (battle resolved from the atomic update), call
     `publisher.publish(createBattleEventPayload({ event: 'battle_concluded',
     roomId: battle.roomId, battleId: battle.id, correlationId }))` inside the
     **existing** `try/catch` that `console.error`s but never rethrows. **Mirror
     `character-service/src/app.ts` POST/PATCH/DELETE publish pattern verbatim**
     (the 5.4 reference). Reuse 5.4's `createBattleEventPayload` helper — do NOT
     define a new payload factory.
-  - [ ] `correlationId` may be propagated from `req.header('x-correlation-id')` if
+  - [x] `correlationId` may be propagated from `req.header('x-correlation-id')` if
     the existing battle-service routes do so (check 5.1 `POST` and 5.3 `PATCH`
     handlers — match whatever they do, do not invent a new correlation header).
-  - [ ] Ensure publish is **after** the `200` is sent (or in a `try/catch` that
+  - [x] Ensure publish is **after** the `200` is sent (or in a `try/catch` that
     cannot affect response). Either order is acceptable as long as a publisher
     throw does not turn the response into a `502` — `character-service` calls
     `await publisher.publish(...)` *before* `res.status(...).json(...)` inside a
     try/catch; replicate that. The HTTP success must not depend on publish
     success.
-  - [ ] Sanity-check (no code change needed — verify in completion notes): 5.4
+  - [x] Sanity-check (no code change needed — verify in completion notes): 5.4
     has already added the `sns:Publish` policy on `BattleServiceRole` and the
     `ROOM_CHARACTER_EVENTS_TOPIC_ARN` env on `BattleServiceFunction`, plus
     `BATTLE_EVENTS_REDIS_URL` + `ROOM_CHARACTER_EVENTS_CHANNEL` on the
     `battle-service` `docker-compose` block. **No new env, no new IAM** in 5.6.
     If you find yourself editing IAM or adding env vars, you are out of scope.
 
-- [ ] **Task 4 — SAM: HttpApi event for the conclude sub-route** (AC: 1)
-  - [ ] In `backend/sam/template.yaml`, add a new HttpApi event `BattleConcludePost`
+- [x] **Task 4 — SAM: HttpApi event for the conclude sub-route** (AC: 1)
+  - [x] In `backend/sam/template.yaml`, add a new HttpApi event `BattleConcludePost`
     to `BattleServiceFunction.Events`:
 
     ```yaml
@@ -368,65 +368,65 @@ in doubt.
     declaration; the Express route still uses `:id`). Do **not** introduce a
     `{proxy+}` route — the existing per-method pattern (POST `/battles`, GET
     `/battles`, PATCH `/battles/{id}`) is the established convention.
-  - [ ] Add `backend/sam/events/battle-post-conclude.json`: a HttpApi `POST
+  - [x] Add `backend/sam/events/battle-post-conclude.json`: a HttpApi `POST
     /battles/{id}/conclude` test event modelled on the existing
     `battle-post-battles.json` (5.1) / `battle-patch-battle.json` (5.3) envelope.
     `pathParameters.id` should be a sample ObjectId string; `body` should be the
     JSON string `'{"result":"players_win"}'` (note: HttpApi test events embed the
     body as a JSON-encoded string — match the existing files exactly, do not
     invent a new envelope).
-  - [ ] **No** new IAM, **no** new SNS topic, **no** new env. 5.4 already added
+  - [x] **No** new IAM, **no** new SNS topic, **no** new env. 5.4 already added
     the `sns:Publish` policy on `BattleServiceRole` for
     `RoomCharacterEventsTopic`. If `BattleServiceRole` does not yet exist on
     `main` because 5.4 hasn't merged, that is the HARD PREREQUISITE — HALT, do
     not invent it here.
-  - [ ] `nginx.conf`: 5.1's `/battles` location block (which mirrors `/characters`
+  - [x] `nginx.conf`: 5.1's `/battles` location block (which mirrors `/characters`
     full block — preflight `OPTIONS`, `proxy_set_header`, `add_header` CORS
     list including `POST`) already proxies `POST /battles/:id/conclude`. No
     change expected — note "verified" in completion notes. Do **not** add a more-
     specific location block for `/battles/.*/conclude`.
 
-- [ ] **Task 5 — Frontend `api/battles.ts`: `concludeBattle`** (AC: 1, 2)
-  - [ ] Add (or re-export, if 5.1 already declared it) `BattleResult =
+- [x] **Task 5 — Frontend `api/battles.ts`: `concludeBattle`** (AC: 1, 2)
+  - [x] Add (or re-export, if 5.1 already declared it) `BattleResult =
     'players_win' | 'monster_wins'`. Do **not** redefine `Battle`,
     `BattleStatus`, `BonusItem`, or `MonsterItem` — reuse 5.1's exports.
-  - [ ] `concludeBattle(battleId: string, result: BattleResult): Promise<Battle>`
+  - [x] `concludeBattle(battleId: string, result: BattleResult): Promise<Battle>`
     → `apiRequest<Battle>(\`/battles/${encodeURIComponent(battleId)}/conclude\`,
     { method: 'POST', body: { result } })`. Use `apiRequest` from `@/api/http`
     only — never raw `fetch`/`axios`. (The retry policy in `apiRequest` is fine:
     `409` is **not** retried, only `408/429/≥500` are; a `409` will surface as
     `ApiError` on the first attempt.)
-  - [ ] `ApiError` (status, details) propagates; callers distinguish `409`
+  - [x] `ApiError` (status, details) propagates; callers distinguish `409`
     (already concluded/discarded — recoverable, prompt a refetch) from `400`
     (developer error, should never happen if the UI gates the result selector
     correctly) and `404` (battle deleted).
 
-- [ ] **Task 6 — Frontend `hooks/useBattleActions.ts`: add `conclude`** (AC: 1, 3)
-  - [ ] Add `conclude(battleId: string, result: BattleResult): Promise<Battle>`
+- [x] **Task 6 — Frontend `hooks/useBattleActions.ts`: add `conclude`** (AC: 1, 3)
+  - [x] Add `conclude(battleId: string, result: BattleResult): Promise<Battle>`
     implemented as a `useMutation` calling `concludeBattle`. `onSettled`:
     `queryClient.invalidateQueries({ queryKey: ['battle', roomId] })` (consistent
     with 5.1's `start` and 5.3's `patch`). Keep the existing `start`/`patch`;
     return `{ start, patch, conclude, isLoading, errorMessage }`. Aggregate
     `isLoading`/`errorMessage` across all three mutations the same way 5.3 does
     for `start`+`patch`.
-  - [ ] Do **not** add `discard` (Story 5.7). Do **not** mutate the local
+  - [x] Do **not** add `discard` (Story 5.7). Do **not** mutate the local
     `['battle', roomId]` cache to `concluded` synchronously — let the
     `onSettled` invalidate trigger a refetch; the refetch returns `null`
     (`status=active` no longer matches), which drives AC3 (banner removal +
     Battle View dismissal logic in Task 7).
 
-- [ ] **Task 7 — Frontend Battle View: Conclude UI block + post-success
+- [x] **Task 7 — Frontend Battle View: Conclude UI block + post-success
       navigation** (AC: 1, 2, 3)
-  - [ ] In `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx` (the 5.3 real
+  - [x] In `frontend/app/munchkin/[roomNumber]/(battle)/index.tsx` (the 5.3 real
     UI), add a new **Conclude** UI region below 5.3's existing two-sided
     management UI and the comparison indicator. Do **not** restructure 5.3's
     layout, the draft model, the Save button, the monster/player side
     components, the totals formula, or 5.5's tombstone rendering.
-  - [ ] **State (`useState`):** `selectedResult: BattleResult | null` (default
+  - [x] **State (`useState`):** `selectedResult: BattleResult | null` (default
     `null`). Reset to `null` on successful conclude (component unmount handles
     the rest because the modal dismisses).
-  - [ ] **Result selector** (controlled, two options): render two
-    presentational toggle controls — "Players Win" and "Monster Wins" — in a
+  - [x] **Result selector** (controlled, two options): render two
+    presentational toggle controls — "Players Win" and "Monsters Win" — in a
     horizontal segmented row. Use `AppTheme.colors.accent` (player) and
     `AppTheme.colors.danger` (monster) for the **selected** state visuals to
     keep the side colour mapping consistent with 5.3 (player=accent #D4C26E,
@@ -438,9 +438,12 @@ in doubt.
     `battle-conclude-result-players` and `battle-conclude-result-monster`.
     **Default selection is `null`** (no preselect from the comparison
     indicator) — AC1 / Resolved decisions #4: explicit user choice.
-  - [ ] **Conclude action** (single primary button below the selector): label
-    `Conclude`, primary tier (`AppTheme.colors.accent` background, `textPrimary`
-    text — matches 5.3's Save primary tier per UX-DR19). `testID="battle-
+  - [x] **Conclude action** (single primary button below the selector): label
+    `Conclude`, primary tier (`AppTheme.colors.actionSecondary` background,
+    `textPrimary` text — see Change Log 2026-05-20 amendment; visually distinct
+    from 5.3's Save primary tier so users can read the two enabled-states apart
+    when they sequentially become primary, still satisfies UX-DR19 because only
+    one is enabled at a time). `testID="battle-
     conclude-button"`. **Disabled states (combine with logical OR):**
     1. `selectedResult === null` (no result chosen yet) — disabled.
     2. The 5.3 draft is **dirty** (`hasUnsavedChanges` derived from the local
@@ -456,7 +459,7 @@ in doubt.
        changes to `Concluding…`.
     Do not also disable Save while `isConcluding` (keep Save's existing 5.3
     behaviour); the dirty-vs-clean gate already prevents both being active.
-  - [ ] **On Conclude tap:** call `useBattleActions().conclude(battle.id,
+  - [x] **On Conclude tap:** call `useBattleActions().conclude(battle.id,
     selectedResult)`. On success: dismiss the Battle View modal back to Room
     View (use the same dismiss/back-navigation call 5.1's modal already supports;
     typically `router.back()` for a modal group — match 5.1's actual back-nav
@@ -470,24 +473,24 @@ in doubt.
     battle is `null` (defensive: do not crash on `battle === null` after a
     `409` — render the loading/error state 5.1 already wired). On other errors:
     surface the message inline; do not auto-dismiss; do not retry.
-  - [ ] **Defensive Battle-View-after-null guard:** when `battle` becomes `null`
+  - [x] **Defensive Battle-View-after-null guard:** when `battle` becomes `null`
     on the next refetch (because conclude succeeded — local or remote), the
     existing 5.1 loading/error rendering must not infinite-loop or flash
     spinner; render the normal "no active battle" empty state (already wired by
     5.1 for the cold-load case) and let the modal dismiss. Do not add a new
     empty state for "battle just concluded" — it's the same path.
-  - [ ] **Remote conclude (AC4) — zero new screen code:** if another player
+  - [x] **Remote conclude (AC4) — zero new screen code:** if another player
     concludes while this user has Battle View open, 5.4's WS subscription on
     `useRoomBattle` invalidates `['battle', roomId]`, the refetch returns
     `null`, the Battle View hits the same null-guard above, the modal is
     dismissed back to Room View, and 5.2's `ActiveBattleBanner` (already a pure
     `battle !== null` render of `useRoomBattle().battle`) disappears. **Do not
     add WS handling here**; 5.4 is the single source of truth for that.
-  - [ ] Style strictly via `AppTheme` tokens (`accent`, `danger`, `surface`,
+  - [x] Style strictly via `AppTheme` tokens (`accent`, `danger`, `surface`,
     `surfaceSubtle`, `textPrimary`, `textMuted`, `spacing.{xs,sm,md,lg}`,
     `radius.md`, `typography.labelMd`/`caption`). **No hardcoded hex/px/font-
     size literals** (project rule). No new colour token, no new spacing token.
-  - [ ] Extract the conclude UI block into a presentational component under
+  - [x] Extract the conclude UI block into a presentational component under
     `frontend/components/munchkin/` (suggested name `BattleConcludeAction.tsx`
     — match 5.3's component-naming convention for the side panels). Props
     (explicit interface):
@@ -500,8 +503,8 @@ in doubt.
     create` at bottom referencing `AppTheme`, stable `testID`s + accessibility
     props.
 
-- [ ] **Task 8 — Tests** (AC: 1, 2, 3, 4)
-  - [ ] **Frontend api** (`frontend/api/battles.test.ts`, co-located, jsdom): mock
+- [x] **Task 8 — Tests** (AC: 1, 2, 3, 4)
+  - [x] **Frontend api** (`frontend/api/battles.test.ts`, co-located, jsdom): mock
     `@/api/http` `apiRequest`. Assert `concludeBattle('abc', 'players_win')`
     calls `apiRequest('/battles/abc/conclude', { method: 'POST', body: {
     result: 'players_win' } })` (and that the path is URL-encoded — pass
@@ -510,7 +513,7 @@ in doubt.
     server message. Assert no retry on `409` (the underlying `apiRequest`
     already only retries `408/429/≥500`; a passing test on `409` not being
     retried is an integration check via mock-call-count).
-  - [ ] **Frontend hook** (`frontend/hooks/useBattleActions.test.ts`, co-located,
+  - [x] **Frontend hook** (`frontend/hooks/useBattleActions.test.ts`, co-located,
     jsdom): wrap in `QueryClientProvider`; mock `@/api/battles` `concludeBattle`.
     Assert `conclude('id', 'players_win')` calls `concludeBattle` once with
     those args; on success, `queryClient.invalidateQueries({ queryKey:
@@ -519,11 +522,11 @@ in doubt.
     409 surfaces in `errorMessage` and does NOT throw uncaught. Aggregated
     `isLoading` across `start`/`patch`/`conclude` still works (do not regress
     5.1/5.3 assertions).
-  - [ ] **Component** (`frontend/components/munchkin/BattleConcludeAction.test.
+  - [x] **Component** (`frontend/components/munchkin/BattleConcludeAction.test.
     tsx`, co-located, Vitest+jsdom + `@testing-library/react`): renders the
     two-option result selector with `selectedResult={null}` → both options
     unselected; tapping `Players Win` calls `onSelectResult('players_win')`;
-    tapping `Monster Wins` calls `onSelectResult('monster_wins')`; the Conclude
+    tapping `Monsters Win` calls `onSelectResult('monster_wins')`; the Conclude
     primary is disabled while `selectedResult === null`; with `selectedResult=
     'players_win'` and `disabled=false` and `isConcluding=false` it is enabled
     and tapping calls `onConclude`; with `dirtyHint=true` (and disabled) the
@@ -531,7 +534,7 @@ in doubt.
     `isConcluding=true` Conclude is disabled and renders the `surfaceSubtle`
     background. Assert `accessibilityRole`s on the radio options + the Conclude
     button (`role="button"`).
-  - [ ] **Battle View route test** (`frontend/__tests__/app/munchkin/[roomNumber]/
+  - [x] **Battle View route test** (`frontend/__tests__/app/munchkin/[roomNumber]/
     (battle)/...`, **NOT** under `frontend/app` — Expo Router forbids non-route
     files there). Extend 5.3's harness: `vi.hoisted` mutable refs, `vi.mock`
     for `@/hooks/useRoomBattle`, `@/hooks/useBattleActions`, `@/hooks/
@@ -565,12 +568,12 @@ in doubt.
     - **Conclude-disabled while `isConcluding`:** mock the mutation to a
       pending state; assert Conclude is disabled and (optionally) shows the
       `Concluding…` label.
-  - [ ] **Backend** (Task 2 covers most). Verify `vitest.config.ts` already
+  - [x] **Backend** (Task 2 covers most). Verify `vitest.config.ts` already
     includes `battle-service/src/**/*.test.ts` (5.1 added it) — no config
     change needed. Run `npm test`/`test:coverage` from `backend/`; assert
     **character-service tests still pass unchanged** (no regression — character
     realtime is the gating bar from 5.4).
-  - [ ] Meet the **70% line coverage floor** for both pipelines. The frontend
+  - [x] Meet the **70% line coverage floor** for both pipelines. The frontend
     coverage `include` is `api/**`,`config/**`,`hooks/**`; 5.6's frontend code
     is mostly in `api/` + `hooks/` (covered by Tasks 5+6 + their tests) plus
     a presentational component (not in coverage scope) and a route screen
@@ -578,17 +581,17 @@ in doubt.
     `include` scope** to chase numbers — assert behaviour, coverage is a floor
     not the goal (project rule).
 
-- [ ] **Task 9 — Cross-surface verification** (AC: 1, 2, 3, 4)
-  - [ ] Backend: from `backend/`, `npm run typecheck` and `npm test`/
+- [x] **Task 9 — Cross-surface verification** (AC: 1, 2, 3, 4)
+  - [x] Backend: from `backend/`, `npm run typecheck` and `npm test`/
     `test:coverage` pass with the conclude route + service-wrapper change.
     **Character-service and room-notifications-service existing tests must be
     untouched and still green** (5.6 makes no changes there — any regression =
     out-of-scope edit).
-  - [ ] Frontend: from `frontend/`, strict TS typecheck + `vitest run --coverage`
+  - [x] Frontend: from `frontend/`, strict TS typecheck + `vitest run --coverage`
     pass (≥70% line floor, no regression in existing
     `useCharacters`/`webSocket`/`useRoomWebSocket`/Battle View / Room View /
     `useRoomBattle` / `useBattleActions` tests).
-  - [ ] Local manual smoke (`docker-compose up`, after 5.1 + 5.3 + 5.4 merged),
+  - [x] Local manual smoke (`docker-compose up`, after 5.1 + 5.3 + 5.4 merged),
     two browser tabs (web), same room, two device identities:
     - Tab A starts a battle, opens Battle View, adds participants + a monster +
       a bonus, **Saves**. Tab B opens the same Battle View.
@@ -611,7 +614,7 @@ in doubt.
       flight; assert the character card still flashes/realtime updates (5.4
       "character realtime byte-for-byte unchanged" regression).
     - Verify on web at minimum; note any platform (iOS/Android) not verified.
-  - [ ] No new env, no new IAM, no new SNS topic, no infra/transport surface
+  - [x] No new env, no new IAM, no new SNS topic, no infra/transport surface
     touched. If you find yourself editing `room-notifications-service/`,
     `frontend/api/webSocket.ts`, `frontend/hooks/useRoomWebSocket.ts`,
     `frontend/hooks/useRoomBattle.ts`'s WS subscription, or
@@ -719,7 +722,7 @@ Content-Type: application/json
 
 4. **Result selector — explicit, no preselect, segmented control.** The Conclude
    action requires an explicit `result` per AC1. The UI is an inline two-option
-   segmented control (`Players Win` / `Monster Wins`) with **no default
+   segmented control (`Players Win` / `Monsters Win`) with **no default
    selection** (`selectedResult: null` until the user taps one). The Conclude
    primary button is disabled while `selectedResult === null`. The non-
    authoritative comparison indicator from 5.3 ("Players ahead" / "Monsters
@@ -730,7 +733,7 @@ Content-Type: application/json
    `monster_wins` — same colour mapping 5.3 uses for the two sides, so the
    selector reads like "which side won?". ✅ Locked. **Saved question Q2**
    asks the user to confirm vs. the alternative "two flat primary buttons
-   `Conclude — Players Win` and `Conclude — Monster Wins`" (which would violate
+   `Conclude — Players Win` and `Conclude — Monsters Win`" (which would violate
    UX-DR19 by having two primary actions visible simultaneously).
 
 5. **No extra ConfirmDialog on Conclude.** UX-DR13 explicitly requires explicit
@@ -894,9 +897,10 @@ arrow below it already exists.
 
 - **Two-sided colour mapping** (carry from 5.3): player side / `Players Win`
   selected-state = `AppTheme.colors.accent` (`#D4C26E`); monster side /
-  `Monster Wins` selected-state = `AppTheme.colors.danger` (`#922525`). Read
+  `Monsters Win` selected-state = `AppTheme.colors.danger` (`#922525`). Read
   the visual cue: "the side that won" lights up in its existing 5.3 colour.
-- **Conclude primary button**: `accent` background, `textPrimary` text, height
+- **Conclude primary button**: `actionSecondary` background (see Change Log
+  2026-05-20 amendment), `textPrimary` text, height
   consistent with 5.3's Save (re-use 5.3's primary button style if it exposes
   one; otherwise mirror it via `AppTheme.spacing.lg` vertical padding +
   `AppTheme.radius.md` corner). One **enabled** primary visible at a time
@@ -1143,10 +1147,10 @@ exactly as stated in Resolved decisions #3 and #4 above; no remaining ambiguity:
   visible per layer" reading.
 
 - **Q2 — Result selector pattern:** ✅ **Confirmed.** Inline two-option
-  segmented control (`Players Win` / `Monster Wins`) with **no default
+  segmented control (`Players Win` / `Monsters Win`) with **no default
   selection** + a single primary Conclude button below; selected-state visuals
   = `accent` for player, `danger` for monster. The alternative ("two flat
-  primary buttons `Conclude — Players Win` and `Conclude — Monster Wins`") is
+  primary buttons `Conclude — Players Win` and `Conclude — Monsters Win`") is
   rejected — it would violate UX-DR19's one-primary rule.
 
 - **Q3 — Pre-selection from comparison indicator:** ✅ **Confirmed.** **No**
@@ -1175,7 +1179,7 @@ exactly as stated in Resolved decisions #3 and #4 above; no remaining ambiguity:
 - [Source: frontend/constants/theme.ts] (`AppTheme.colors.{accent, danger, surface, surfaceSubtle, textPrimary, textMuted}`, `spacing`, `radius`, `typography` — token-only styling)
 - [Source: frontend/components/ConfirmDialog.tsx] (cross-platform confirm — referenced ONLY to confirm 5.6 does NOT import it; reserved for 5.7)
 - [Source: _bmad-output/planning-artifacts/ux-design-specification/11-component-strategy.md, 12-ux-consistency-patterns.md (UX-DR13, UX-DR19), 13-responsive-design-accessibility.md (UX-DR21)] (Conclude is primary action / one primary per screen / accessibility roles)
-- [Source: _bmad-output/planning-artifacts/ux-design-specification/10-user-journey-flows.md#104-journey-4-battle-lifecycle] (Conclude — Players Win / Monster Wins flow; Battle banner dismissed after conclude)
+- [Source: _bmad-output/planning-artifacts/ux-design-specification/10-user-journey-flows.md#104-journey-4-battle-lifecycle] (Conclude — Players Win / Monsters Win flow; Battle banner dismissed after conclude)
 - [Source: _bmad-output/planning-artifacts/epics/requirements-inventory.md] (FR25 outcome state, FR26 conclude + preserve outcome, ADR-2 conclude endpoint, ADR-8 status guard, ADR-5 `battle_concluded` is logged eventually — Epic 6 not 5.6)
 - [Source: _bmad-output/project-context.md] (frontend strict TS; backend non-strict; do not bypass realtime contracts; do not change event names/payloads incidentally; service-boundary isolation; minimal-edits rule; 70% coverage floor; no incidental dependency changes; testing rules — co-location, route-tests under `__tests__`)
 
@@ -1183,12 +1187,69 @@ exactly as stated in Resolved decisions #3 and #4 above; no remaining ambiguity:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
+
+- `npm test -- battle-service/src/app.test.ts battle-service/src/service.test.ts` (backend targeted)
+- `npm run test:unit -- api/battles.test.ts hooks/useBattleActions.test.ts components/munchkin/BattleConcludeAction.test.tsx` (frontend targeted)
+- `npm run test:room-route -- '__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx'` (Battle View route targeted)
+- `npm run typecheck` from `backend/`
+- `npm run tsc` from `frontend/`
+- `npm test` from `backend/`
+- `npm run test:coverage` from `frontend/`
+- `npm run test:coverage` from `backend/`
 
 ### Completion Notes List
 
 - Ultimate context engine analysis completed - comprehensive developer guide created.
+- Implemented atomic backend battle conclusion via `findOneAndUpdate({ _id, status: 'active' })`, with explicit result validation, `404`/`409` disambiguation, `502` unexpected-error handling, and publish-on-success-only `battle_concluded` behavior.
+- Added SAM support for `POST /battles/{id}/conclude` plus a SAM event fixture. Verified no new IAM, SNS topic, env vars, realtime allowlist, web socket plumbing, battle schema, or nginx changes were needed.
+- Added `concludeBattle` and `useBattleActions.conclude`, invalidating `['battle', roomId]` on settle without optimistic cache mutation.
+- Added the Battle View conclude region with explicit no-default result selection, dirty-draft disable hint, inline error recovery for `409`, local success modal dismiss, and defensive dismiss after active battle refetches to `null`.
+- Added backend, API, hook, component, and route tests for result validation, race/status guard behavior, publish behavior, mutation invalidation, UI disabled states, success navigation, conflict recovery, and null-refetch dismissal.
+- Manual local smoke passed against `http://127.0.0.1:8080` / `ws://127.0.0.1:8080/ws`: room `SOIL6739`, battle `6a0d8cf2f3258afadc78545d`, two simulated clients received `battle_started`, `battle_updated`, and `battle_concluded`; active-battle query returned `null` after conclude; repeat conclude returned `409`; concurrent race on battle `6a0d8cf2f3258afadc785466` returned `200`/`409`; `character_updated` still delivered over the same room WebSocket path. iOS VoiceOver and Android TalkBack were not run in this environment.
+- Manual review follow-up: enabled Conclude now uses `actionSecondary`, and the monster result label now reads "Monsters Win".
+- Deferred follow-up: when a user is on Battle View and the current battle is concluded or discarded, prompt them about the battle result before closing Battle View.
 
 ### File List
+
+- _bmad-output/implementation-artifacts/5-6-conclude-a-battle.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/battle-service/src/app.ts
+- backend/battle-service/src/app.test.ts
+- backend/battle-service/src/service.ts
+- backend/battle-service/src/service.test.ts
+- backend/sam/template.yaml
+- backend/sam/events/battle-post-conclude.json
+- frontend/api/battles.ts
+- frontend/api/battles.test.ts
+- frontend/hooks/useBattleActions.ts
+- frontend/hooks/useBattleActions.test.ts
+- frontend/components/munchkin/BattleConcludeAction.tsx
+- frontend/components/munchkin/BattleConcludeAction.test.tsx
+- frontend/app/munchkin/[roomNumber]/(battle)/index.tsx
+- frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx
+
+### Change Log
+
+- 2026-05-20: Implemented Story 5.6 conclude battle backend, frontend, SAM event, tests, and story/sprint status updates.
+- 2026-05-20: Addressed manual review UI comments and recorded deferred result-prompt improvement.
+- 2026-05-20: Completed local manual smoke and moved story/sprint status to review.
+- 2026-05-20: Ran `/bmad-code-review` (Blind Hunter + Edge Case Hunter + Acceptance Auditor) — see Review Findings below.
+- 2026-05-20: Amended spec (Decisions D1/D2 resolved as "amend spec"): Conclude primary button tier is now `actionSecondary` (not `accent`); monster result label is now `"Monsters Win"` (not `"Monster Wins"`). All in-story references updated; external `ux-design-specification/10-user-journey-flows.md` flagged as out-of-story follow-up.
+- 2026-05-20: Applied review patches: (1) `handleConclude` sets `dismissedAfterNullRef` before `router.back()` so the post-conclude refetch doesn't fire a second back-nav; (2) Battle View save-error slot no longer pulls from `battleActions.errorMessage` (eliminates double-rendering of conclude errors); (3) `useBattleActions` exposes `isSaving` so the Save gate ignores `concludeMutation.isPending`; (4) Conclude `onSelectResult` extracted to a `useCallback` so `BattleConcludeAction`'s `memo()` actually bails out. Backend (53) + frontend (55) tests + both typechecks green.
+
+### Review Findings
+
+- [x] [Review][Decision] Conclude primary button uses `actionSecondary` instead of spec `accent` — RESOLVED: amend spec. Dev's manual review change kept; spec amended in Task 7 and UX-accessibility-specifics sections to specify `actionSecondary`. See Change Log 2026-05-20.
+- [x] [Review][Decision] Monster option label "Monsters Win" vs spec "Monster Wins" — RESOLVED: amend spec. Dev's wording kept; spec amended (all in-story references replaced). External journey-flow doc at `ux-design-specification/10-user-journey-flows.md` may still reference "Monster Wins" — out of scope follow-up.
+- [x] [Review][Patch] Double `router.back()` after a successful local conclude — FIXED: `handleConclude` now sets `dismissedAfterNullRef.current = true` before the manual `router.back()` so the auto-dismiss `useEffect` skips on the subsequent null refetch. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] Conclude errors render twice (save-error + conclude-error) — FIXED: the save-error slot no longer falls back to `battleActions.errorMessage`; it renders only the locally-set `saveError`. Both `setSaveError` and `setConcludeError` paths already cover their respective failures. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] Save disabled while conclude in flight — FIXED: `useBattleActions` now exposes `isSaving: patchMutation.isPending`; the screen's `canSave` and `handleSave` guard against `isSaving` instead of the aggregated `isLoading`. Route test mock extended with `isSaving`. [frontend/hooks/useBattleActions.ts, frontend/app/munchkin/[roomNumber]/(battle)/index.tsx, frontend/__tests__/app/munchkin/[roomNumber]/(battle)/index.test.tsx]
+- [x] [Review][Patch] `BattleConcludeAction` `memo()` defeated by inline arrow — FIXED: `handleSelectConcludeResult` extracted as a `useCallback` so the prop reference is stable across parent renders. [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx]
+- [x] [Review][Patch] DISMISSED `concludeBattle` accepts `null` BattleResult — false positive on second look: frontend `BattleResult = 'players_win' | 'monster_wins'` (no null); the backend `BattleResult` includes `null`, but the cross-tier mix-up was the reviewer's. Frontend typing already prevents passing `null`.
+- [x] [Review][Defer] Frontend `apiRequest` retries 5xx on conclude — can surface phantom 409 [frontend/api/battles.ts:82-87] — deferred, behavior is shared with all POSTs and out of scope for 5.6. If 5xx is delivered after the server committed, the retry returns 409 and the user briefly sees "Battle is not active" before the modal auto-dismisses on the refetch. Worth a follow-up to either skip retries on conclude or special-case the "already-concluded-by-self" race.
+- [x] [Review][Defer] Backend conclude logs all client-provided `Object.keys(body)` unbounded [backend/battle-service/src/app.ts:447-449] — deferred, log-volume / log-injection vector via long or hostile key names. Consider truncating to a known whitelist (`['result']`) or hashing/eliding unknown keys.
+- [x] [Review][Defer] `router.back()` has no `router.canGoBack()` fallback for deep-link entry [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:177, :59] — deferred, mirrors the existing 5.1 modal dismiss convention; revisit if/when deep-linking into Battle View is supported.
+- [x] [Review][Defer] Remote conclude + refetch error strands the user [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:57] — deferred, no retry / manual dismiss when `useRoomBattle` returns `battle=null, errorMessage='...'` after a remote `battle_concluded` invalidation; the auto-dismiss guard `!errorMessage` blocks. Low likelihood but no escape hatch.
