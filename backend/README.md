@@ -8,6 +8,7 @@ This backend is split into local microservices under `backend`:
 - `character-service`
 - `battle-service`
 - `room-notifications-service`
+- `log-service`
 
 ## Scope
 
@@ -17,6 +18,7 @@ Implemented in this phase:
 - Room management (`POST /rooms`, `POST /rooms/associations`)
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
 - Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`, `PATCH /battles/:id`)
+- Room history log persistence and reader skeleton (`GET /logs?roomId=...`)
 - Room service synchronous call to character service on create/join flow.
 - Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
 - Character events are also published to the room-history log target when `LOG_TOPIC_ARN` (Lambda) or `ROOM_LOG_EVENTS_CHANNEL` (local Redis, default `room-log-events`) is configured.
@@ -51,14 +53,15 @@ Nginx runs on `http://localhost:8080` by default and proxies:
 - `/rooms` -> `room-service`
 - `/characters` -> `character-service`
 - `/battles` -> `battle-service`
+- `/logs` -> `log-service`
 - `/ws` -> `room-notifications-service`
 
 Room notifications are available through `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`.
-The notifications container is also exposed directly on `ws://localhost:8084/ws?roomId=<RoomId>&userId=<UserId>` for debugging.
+The notifications container is also exposed directly on `ws://localhost:8085/ws?roomId=<RoomId>&userId=<UserId>` for debugging.
 
-## AWS SAM option (user/room/character services on Lambda)
+## AWS SAM option (backend services on Lambda)
 
-This repository includes an optional SAM-based flow for deploying `user-service`, `room-service`, and `character-service` to AWS Lambda.
+This repository includes an optional SAM-based flow for deploying the backend services to AWS Lambda.
 
 Prerequisites:
 
@@ -93,6 +96,7 @@ Notes:
 	- `mongodb://host.docker.internal:27022/munch_room_service`
 	- `mongodb://host.docker.internal:27023/munch_character_service`
 	- `mongodb://host.docker.internal:27024/munch_battle_service`
+	- `mongodb://host.docker.internal:27025/munch_log_service`
 - Room-to-character service call URL defaults to `http://host.docker.internal:3000` for local SAM.
 - `sam/samconfig.toml` contains default stack and parameter values. Override `UserMongoUri` if needed.
 

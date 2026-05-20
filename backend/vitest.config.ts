@@ -8,7 +8,8 @@ export default defineConfig({
       'room-service/src/**/*.test.ts',
       'character-service/src/**/*.test.ts',
       'battle-service/src/**/*.test.ts',
-      'room-notifications-service/src/**/*.test.ts'
+      'room-notifications-service/src/**/*.test.ts',
+      'log-service/src/**/*.test.ts'
     ],
     coverage: {
       provider: 'v8',
@@ -18,7 +19,8 @@ export default defineConfig({
         'room-service/src/**/*.ts',
         'character-service/src/**/*.ts',
         'battle-service/src/**/*.ts',
-        'room-notifications-service/src/**/*.ts'
+        'room-notifications-service/src/**/*.ts',
+        'log-service/src/**/*.ts'
       ],
       exclude: [
         '**/*.test.ts',

@@ -1,6 +1,6 @@
 # Story 6.2: Published Events Are Stored and Readable in Room History
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -24,61 +24,61 @@ so that history entries are available when I open the room history view.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Scaffold `backend/log-service/` package (AC: 1, 7)**
-  - [ ] Create `backend/log-service/` scaffolded from `room-notifications-service` (SNS-subscriber shape) **plus** the HTTP bits from `battle-service` (the read API). Files: `package.json`, `tsconfig.json`, `Dockerfile`, `.env.example`, `src/{db.ts,subscriber.ts,service.ts,app.ts,lambda-read.ts,index.ts}`, `src/models/LogEvent.ts`, `src/routes/logs.ts`, plus co-located `*.test.ts` files (see Task 6).
-  - [ ] `tsconfig.json`: copy verbatim from `room-notifications-service/tsconfig.json` (`module`/`moduleResolution`: `NodeNext`, `strict: false`, `target: ES2022`). Do **not** introduce frontend strictness ([Source: _bmad-output/project-context.md] language rules).
-  - [ ] `package.json`: model on `battle-service/package.json` (needs Express read API). Deps: `mongoose ^8.19.1`, `redis ^5.8.2`, `express ^5.1.0`, `@codegenie/serverless-express ^4.17.1`, `cors`, `morgan`, `dotenv`, `tsx`; devDeps `@types/*`, `typescript ^5.9.2`. **Do NOT add `@aws-sdk/client-sns`** — the writer *consumes* SNS via the Lambda trigger; it never publishes (no SNS client needed).
-  - [ ] `Dockerfile`: copy `room-notifications-service/Dockerfile`, change `EXPOSE 8084` → `EXPOSE 8087`.
-  - [ ] `db.ts`: copy verbatim from `room-notifications-service/src/db.ts` / `battle-service/src/db.ts` (identical singleton `connectToMongo` pattern — do not reinvent).
-  - [ ] `.env.example`: `LOG_MONGO_URI`, `LOG_TOPIC_ARN`, `ROOM_LOG_EVENTS_CHANNEL`, `REDIS_URL`, `PORT` (see Dev Notes “Env var contract”).
+- [x] **Task 1 — Scaffold `backend/log-service/` package (AC: 1, 7)**
+  - [x] Create `backend/log-service/` scaffolded from `room-notifications-service` (SNS-subscriber shape) **plus** the HTTP bits from `battle-service` (the read API). Files: `package.json`, `tsconfig.json`, `Dockerfile`, `.env.example`, `src/{db.ts,subscriber.ts,service.ts,app.ts,lambda-read.ts,index.ts}`, `src/models/LogEvent.ts`, `src/routes/logs.ts`, plus co-located `*.test.ts` files (see Task 6).
+  - [x] `tsconfig.json`: copy verbatim from `room-notifications-service/tsconfig.json` (`module`/`moduleResolution`: `NodeNext`, `strict: false`, `target: ES2022`). Do **not** introduce frontend strictness ([Source: _bmad-output/project-context.md] language rules).
+  - [x] `package.json`: model on `battle-service/package.json` (needs Express read API). Deps: `mongoose ^8.19.1`, `redis ^5.8.2`, `express ^5.1.0`, `@codegenie/serverless-express ^4.17.1`, `cors`, `morgan`, `dotenv`, `tsx`; devDeps `@types/*`, `typescript ^5.9.2`. **Do NOT add `@aws-sdk/client-sns`** — the writer *consumes* SNS via the Lambda trigger; it never publishes (no SNS client needed).
+  - [x] `Dockerfile`: copy `room-notifications-service/Dockerfile`, change `EXPOSE 8084` → `EXPOSE 8087`.
+  - [x] `db.ts`: copy verbatim from `room-notifications-service/src/db.ts` / `battle-service/src/db.ts` (identical singleton `connectToMongo` pattern — do not reinvent).
+  - [x] `.env.example`: `LOG_MONGO_URI`, `LOG_TOPIC_ARN`, `ROOM_LOG_EVENTS_CHANNEL`, `REDIS_URL`, `PORT` (see Dev Notes “Env var contract”).
 
-- [ ] **Task 2 — `LogEvent` Mongoose model (AC: 2, 7)**
-  - [ ] `src/models/LogEvent.ts` mirroring `battle-service/src/models/Battle.ts` conventions. Schema fields (camelCase — [Source: architecture/implementation-patterns-consistency-rules.md#Database / Mongoose]):
+- [x] **Task 2 — `LogEvent` Mongoose model (AC: 2, 7)**
+  - [x] `src/models/LogEvent.ts` mirroring `battle-service/src/models/Battle.ts` conventions. Schema fields (camelCase — [Source: architecture/implementation-patterns-consistency-rules.md#Database / Mongoose]):
     - `roomId: { type: String, required: true }`
     - `eventType: { type: String, required: true, enum: [<the 6 supported types>] }`
     - `actorId: { type: String, required: true }`
     - `summary: { type: String, required: true }`
     - `payload: { type: mongoose.Schema.Types.Mixed, required: true }` (raw event for Story 6.7 drill-in; `mongoose` is imported from `../db` exactly as `Battle.ts` does)
     - `occurredAt: { type: Date, required: true }`
-  - [ ] Schema options: `{ timestamps: true, toJSON: { virtuals: true, transform: (_doc, ret) => { delete ret._id; delete ret.__v; } } }` — **never** manually define `createdAt`/`updatedAt`; `_id` is always aliased to `id` in responses ([Source: architecture/implementation-patterns-consistency-rules.md#Enforcement Summary]).
-  - [ ] Index: `logEventSchema.index({ roomId: 1, _id: -1 });` — the compound cursor-pagination index ([Source: architecture/core-architectural-decisions.md#Log Schema, ADR-7]). Define it **here** (model is created here); Story 6.4 consumes it for `GET /logs` and must not need to add it.
-  - [ ] Collection name resolves to `logevents` via `mongoose.model<LogEventDocument>('LogEvent', schema)` (Mongoose default lowercased pluralization — matches architecture’s `logevents`; do not override `collection`).
+  - [x] Schema options: `{ timestamps: true, toJSON: { virtuals: true, transform: (_doc, ret) => { delete ret._id; delete ret.__v; } } }` — **never** manually define `createdAt`/`updatedAt`; `_id` is always aliased to `id` in responses ([Source: architecture/implementation-patterns-consistency-rules.md#Enforcement Summary]).
+  - [x] Index: `logEventSchema.index({ roomId: 1, _id: -1 });` — the compound cursor-pagination index ([Source: architecture/core-architectural-decisions.md#Log Schema, ADR-7]). Define it **here** (model is created here); Story 6.4 consumes it for `GET /logs` and must not need to add it.
+  - [x] Collection name resolves to `logevents` via `mongoose.model<LogEventDocument>('LogEvent', schema)` (Mongoose default lowercased pluralization — matches architecture’s `logevents`; do not override `collection`).
 
-- [ ] **Task 3 — Parse + map + summary logic in `service.ts` (AC: 2, 3, 4)**
-  - [ ] Export `parseLogEvent(payload: unknown): LogEventInput | null` — accepts a JSON string or object (string → `JSON.parse` in try/catch → recurse; on parse failure return `null`). Mirror the defensive style of `room-notifications-service/src/app.ts` `parseNotificationEvent` (guard `null`/non-object, trim, validate against an `EVENT_TYPES` `Set`, return `null` on any miss — never throw).
-  - [ ] Resolve `eventType` from the Story 6.1 superset payload: prefer canonical `eventType`, fall back to legacy `event`. Reject (return `null`) if not in the supported `Set` of 6 types → satisfies AC 3 “unsupported ignored”.
-  - [ ] Resolve `roomId` (required, trimmed), `actorId` (prefer canonical `actorId`; fall back to `event_body.characterId` for character events / `battleId` for battle events), `occurredAt` (prefer canonical `occurredAt`; fall back to `emittedAt`; fall back to `new Date().toISOString()`). Return `null` if `roomId` or `actorId` is empty.
-  - [ ] Export `buildSummary(input): string` — pure, deterministic, **no I/O** (AC 4). Character events use Story 6.1 display context `character: { id, name, avatarId, color }` (+ `changes` map for `character_updated`). Battle events use the battle display context defined in Story 6.3 (`name`, `result`, character names). Use safe fallbacks when optional fields are absent (e.g., name → `actorId`). See Dev Notes “Summary rules” for exact strings.
-  - [ ] Export `persistLogEvent(input): Promise<void>` calling `LogEvent.create({...})` with the mapped fields + the **raw original payload object** stored in `payload`. Keep `app.ts`-style structured `console.info` logging around the write.
-  - [ ] **Do not** mock or call any other service. Summary must render with zero outbound HTTP (ADR-11) — all data comes from the payload that Story 6.1/6.3 enriched.
+- [x] **Task 3 — Parse + map + summary logic in `service.ts` (AC: 2, 3, 4)**
+  - [x] Export `parseLogEvent(payload: unknown): LogEventInput | null` — accepts a JSON string or object (string → `JSON.parse` in try/catch → recurse; on parse failure return `null`). Mirror the defensive style of `room-notifications-service/src/app.ts` `parseNotificationEvent` (guard `null`/non-object, trim, validate against an `EVENT_TYPES` `Set`, return `null` on any miss — never throw).
+  - [x] Resolve `eventType` from the Story 6.1 superset payload: prefer canonical `eventType`, fall back to legacy `event`. Reject (return `null`) if not in the supported `Set` of 6 types → satisfies AC 3 “unsupported ignored”.
+  - [x] Resolve `roomId` (required, trimmed), `actorId` (prefer canonical `actorId`; fall back to `event_body.characterId` for character events / `battleId` for battle events), `occurredAt` (prefer canonical `occurredAt`; fall back to `emittedAt`; fall back to `new Date().toISOString()`). Return `null` if `roomId` or `actorId` is empty.
+  - [x] Export `buildSummary(input): string` — pure, deterministic, **no I/O** (AC 4). Character events use Story 6.1 display context `character: { id, name, avatarId, color }` (+ `changes` map for `character_updated`). Battle events use the battle display context defined in Story 6.3 (`name`, `result`, character names). Use safe fallbacks when optional fields are absent (e.g., name → `actorId`). See Dev Notes “Summary rules” for exact strings.
+  - [x] Export `persistLogEvent(input): Promise<void>` calling `LogEvent.create({...})` with the mapped fields + the **raw original payload object** stored in `payload`. Keep `app.ts`-style structured `console.info` logging around the write.
+  - [x] **Do not** mock or call any other service. Summary must render with zero outbound HTTP (ADR-11) — all data comes from the payload that Story 6.1/6.3 enriched.
 
-- [ ] **Task 4 — `logWriter` entrypoints: SNS Lambda (`subscriber.ts`) + local Redis (`index.ts`) (AC: 1, 5, 6)**
-  - [ ] `src/subscriber.ts`: export `handler` (SNS → result). At **module load** read `process.env.LOG_TOPIC_ARN`; if absent/empty, **throw** an explicit `Error('LOG_TOPIC_ARN is required for log-service logWriter')` (fail-fast, AC 1) — contrast Story 6.1’s `console.warn`+continue; do **not** copy the degraded pattern. Reuse the exact `parseSnsRecords` shape from `room-notifications-service/src/lambda.ts` (`event.Records[].Sns.Message`). For each message: `parseLogEvent` → if `null`, `console.warn('log.sns.invalid_event')` and `continue` (AC 3/5); else `await persistLogEvent(...)`. `await connectToMongo(process.env.LOG_MONGO_URI || 'mongodb://localhost:27017/munch_log_service')` once per invocation before writes (same ordering as `room-notifications-service` handler). Return `{ statusCode: 200, body: JSON.stringify({ processed: n }) }`.
-  - [ ] `src/index.ts`: local entry. `dotenv.config()`. Run **both** the Redis subscriber and the HTTP read server concurrently — `await Promise.all([startSubscriber(), startHttpServer()])` ([Source: architecture/project-structure-boundaries.md] log-service `index.ts`). Subscriber: `createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' })`, `subscribe(process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events', handler)` reusing the **same** `parseLogEvent`/`persistLogEvent` (no logic duplication, AC 6). Connect Mongo before persisting. `start().catch(err => { console.error(...); process.exit(1); })` (mirror `room-notifications-service/src/index.ts`).
-  - [ ] `index.ts` is coverage-excluded — keep it thin orchestration only; all testable logic lives in `service.ts`/`subscriber.ts`.
+- [x] **Task 4 — `logWriter` entrypoints: SNS Lambda (`subscriber.ts`) + local Redis (`index.ts`) (AC: 1, 5, 6)**
+  - [x] `src/subscriber.ts`: export `handler` (SNS → result). At **module load** read `process.env.LOG_TOPIC_ARN`; if absent/empty, **throw** an explicit `Error('LOG_TOPIC_ARN is required for log-service logWriter')` (fail-fast, AC 1) — contrast Story 6.1’s `console.warn`+continue; do **not** copy the degraded pattern. Reuse the exact `parseSnsRecords` shape from `room-notifications-service/src/lambda.ts` (`event.Records[].Sns.Message`). For each message: `parseLogEvent` → if `null`, `console.warn('log.sns.invalid_event')` and `continue` (AC 3/5); else `await persistLogEvent(...)`. `await connectToMongo(process.env.LOG_MONGO_URI || 'mongodb://localhost:27017/munch_log_service')` once per invocation before writes (same ordering as `room-notifications-service` handler). Return `{ statusCode: 200, body: JSON.stringify({ processed: n }) }`.
+  - [x] `src/index.ts`: local entry. `dotenv.config()`. Run **both** the Redis subscriber and the HTTP read server concurrently — `await Promise.all([startSubscriber(), startHttpServer()])` ([Source: architecture/project-structure-boundaries.md] log-service `index.ts`). Subscriber: `createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' })`, `subscribe(process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events', handler)` reusing the **same** `parseLogEvent`/`persistLogEvent` (no logic duplication, AC 6). Connect Mongo before persisting. `start().catch(err => { console.error(...); process.exit(1); })` (mirror `room-notifications-service/src/index.ts`).
+  - [x] `index.ts` is coverage-excluded — keep it thin orchestration only; all testable logic lives in `service.ts`/`subscriber.ts`.
 
-- [ ] **Task 5 — Minimal deployable `logReader` skeleton (AC: 1) — DO NOT build the 6.4 contract**
-  - [ ] `src/app.ts`: Express app factory `buildLogApp({ routePrefix })` mirroring `battle-service/src/app.ts`/`service.ts` structure (cors, morgan, json, router mounted under `ROUTE_PREFIX`). Mount `src/routes/logs.ts`.
-  - [ ] `src/routes/logs.ts`: an Express router exposing `GET /logs` that, **for this story**, returns an empty array `[]` with `200` for a present `roomId` and `400 { message }` for a missing/blank `roomId`. Add an inline `// Story 6.4: cursor pagination + roomId-filtered query + GET /logs/:logId implemented here` seam comment. **Do not** implement pagination, `before`/`limit`, `_id` cursor, real Mongo querying, or `/logs/:logId` — that is Story 6.4’s ACs and tests. Keep this file tiny so it does not drag the 70% coverage floor.
-  - [ ] `src/lambda-read.ts`: HTTP API Gateway entry mirroring `battle-service/src/lambda.ts` (`serverlessExpress({ app })`, `connectToMongo` before `server(event, context)`, `ROUTE_PREFIX`). Export `handler`.
+- [x] **Task 5 — Minimal deployable `logReader` skeleton (AC: 1) — DO NOT build the 6.4 contract**
+  - [x] `src/app.ts`: Express app factory `buildLogApp({ routePrefix })` mirroring `battle-service/src/app.ts`/`service.ts` structure (cors, morgan, json, router mounted under `ROUTE_PREFIX`). Mount `src/routes/logs.ts`.
+  - [x] `src/routes/logs.ts`: an Express router exposing `GET /logs` that, **for this story**, returns an empty array `[]` with `200` for a present `roomId` and `400 { message }` for a missing/blank `roomId`. Add an inline `// Story 6.4: cursor pagination + roomId-filtered query + GET /logs/:logId implemented here` seam comment. **Do not** implement pagination, `before`/`limit`, `_id` cursor, real Mongo querying, or `/logs/:logId` — that is Story 6.4’s ACs and tests. Keep this file tiny so it does not drag the 70% coverage floor.
+  - [x] `src/lambda-read.ts`: HTTP API Gateway entry mirroring `battle-service/src/lambda.ts` (`serverlessExpress({ app })`, `connectToMongo` before `server(event, context)`, `ROUTE_PREFIX`). Export `handler`.
 
-- [ ] **Task 6 — Tests (AC: 2, 3, 4, 5, 6, 7)**
-  - [ ] `src/db.test.ts`: copy the proven `room-notifications-service/src/db.test.ts` (mongoose-mocked: skip-when-connected, in-flight reuse, reset-after-failure).
-  - [ ] `src/service.test.ts`: mock `./models/LogEvent` via `vi.mock('./models/LogEvent', ...)` (pattern from `battle-service/src/service.test.ts` mocking `./models/Battle`). Assert: (a) each of the 6 supported types maps to a correct `LogEvent.create` call (roomId/eventType/actorId/occurredAt/payload exact); (b) `character_updated` `summary` includes every changed field as `prev → next` derived from `changes` (the data Story 6.6 renders originates here); (c) unsupported type (`battle_updated`) and malformed payload → `parseLogEvent` returns `null` and `LogEvent.create` is **not** called (AC 3); (d) `buildSummary` with missing optional fields falls back without throwing (AC 4); (e) string-vs-object payload both parse.
-  - [ ] `src/subscriber.test.ts`: follow the `vi.hoisted` + `vi.mock('./db')` + `vi.mock('./service')` + `delete process.env.*` + `await import('./subscriber.js')` pattern from `room-notifications-service/src/lambda.test.ts`. Cases: missing `LOG_TOPIC_ARN` → importing/handler **throws** (AC 1); valid multi-record batch with one invalid record → only valid records persisted, `processed` count correct, no throw (AC 5); `connectToMongo` invoked with the resolved URI.
-  - [ ] `src/routes/logs.test.ts` (or `app.test.ts`): minimal — `GET /logs?roomId=X` → `200 []`; missing `roomId` → `400 { message }`. (Skeleton-level only; 6.4 expands.)
-  - [ ] Run the gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8, 70% line floor — do not lower). Confirm `log-service` suites actually appear in output (proves Task 7 wiring).
+- [x] **Task 6 — Tests (AC: 2, 3, 4, 5, 6, 7)**
+  - [x] `src/db.test.ts`: copy the proven `room-notifications-service/src/db.test.ts` (mongoose-mocked: skip-when-connected, in-flight reuse, reset-after-failure).
+  - [x] `src/service.test.ts`: mock `./models/LogEvent` via `vi.mock('./models/LogEvent', ...)` (pattern from `battle-service/src/service.test.ts` mocking `./models/Battle`). Assert: (a) each of the 6 supported types maps to a correct `LogEvent.create` call (roomId/eventType/actorId/occurredAt/payload exact); (b) `character_updated` `summary` includes every changed field as `prev → next` derived from `changes` (the data Story 6.6 renders originates here); (c) unsupported type (`battle_updated`) and malformed payload → `parseLogEvent` returns `null` and `LogEvent.create` is **not** called (AC 3); (d) `buildSummary` with missing optional fields falls back without throwing (AC 4); (e) string-vs-object payload both parse.
+  - [x] `src/subscriber.test.ts`: follow the `vi.hoisted` + `vi.mock('./db')` + `vi.mock('./service')` + `delete process.env.*` + `await import('./subscriber.js')` pattern from `room-notifications-service/src/lambda.test.ts`. Cases: missing `LOG_TOPIC_ARN` → importing/handler **throws** (AC 1); valid multi-record batch with one invalid record → only valid records persisted, `processed` count correct, no throw (AC 5); `connectToMongo` invoked with the resolved URI.
+  - [x] `src/routes/logs.test.ts` (or `app.test.ts`): minimal — `GET /logs?roomId=X` → `200 []`; missing `roomId` → `400 { message }`. (Skeleton-level only; 6.4 expands.)
+  - [x] Run the gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8, 70% line floor — do not lower). Confirm `log-service` suites actually appear in output (proves Task 7 wiring).
 
-- [ ] **Task 7 — Register `log-service` in workspace, test, and lint wiring (AC: 7) — easy-to-miss, do first-class**
-  - [ ] `backend/package.json`: add `"log-service"` to `workspaces`; extend `dev` and `start` `concurrently` chains and the `typecheck` chain with a `-w log-service` entry mirroring `battle-service`.
-  - [ ] `backend/vitest.config.ts`: add `'log-service/src/**/*.test.ts'` to `test.include` **and** `'log-service/src/**/*.ts'` to `coverage.include`. Without this, log-service tests silently never run and the coverage gate ignores them entirely (the existing `**/models/**/*.ts` and `**/index.ts` excludes already apply globally — keep them).
+- [x] **Task 7 — Register `log-service` in workspace, test, and lint wiring (AC: 7) — easy-to-miss, do first-class**
+  - [x] `backend/package.json`: add `"log-service"` to `workspaces`; extend `dev` and `start` `concurrently` chains and the `typecheck` chain with a `-w log-service` entry mirroring `battle-service`.
+  - [x] `backend/vitest.config.ts`: add `'log-service/src/**/*.test.ts'` to `test.include` **and** `'log-service/src/**/*.ts'` to `coverage.include`. Without this, log-service tests silently never run and the coverage gate ignores them entirely (the existing `**/models/**/*.ts` and `**/index.ts` excludes already apply globally — keep them).
 
-- [ ] **Task 8 — Infra wiring + docs (AC: 1, 6)**
-  - [ ] `backend/sam/template.yaml`: add (a) Parameter `LogMongoUri`; (b) `LogEventsTopic` (`AWS::SNS::Topic`, `TopicName: !Sub ${AWS::StackName}-log-events`) mirroring `RoomCharacterEventsTopic`; (c) `LogWriterFunction` (`CodeUri: ../log-service`, `Handler: subscriber.handler`, `Events: LogEvent: { Type: SNS, Properties: { Topic: !Ref LogEventsTopic } }`, env `LOG_MONGO_URI: !Ref LogMongoUri` + `LOG_TOPIC_ARN: !Ref LogEventsTopic`, esbuild `EntryPoints: [src/subscriber.ts]`) mirroring `RoomNotificationsFunction`’s SNS-event pattern (SAM auto-creates the subscription + invoke permission — no explicit `sns:Subscribe` IAM needed); (d) `LogReaderFunction` (`Handler: lambda-read.handler`, HttpApi events `GET /logs` and `GET /logs/{logId}`, env `LOG_MONGO_URI` + `ROUTE_PREFIX`, esbuild `EntryPoints: [src/lambda-read.ts]`) mirroring `BattleServiceFunction`; (e) **close Story 6.1’s deferred infra item**: add `LOG_TOPIC_ARN: !Ref LogEventsTopic` to `CharacterServiceFunction` env and a `sns:Publish` statement on `!Ref LogEventsTopic` to `CharacterServiceRole` Policies (additive to `PublishRoomCharacterEvents`). The dangling-`!Ref` risk that 6.1 called out is now resolved because `LogEventsTopic` exists in the same template. **Leave `battle-service`’s `LOG_TOPIC_ARN`/IAM to Story 6.3** (its natural owner) — note this in Completion Notes.
-  - [ ] `backend/docker-compose.local.yml`: add `log-service` (build `./log-service`, port `8087:8087`, env `PORT: 8087`, `LOG_MONGO_URI: mongodb://mongo-log:27017/munch_log_service`, `REDIS_URL: redis://redis:6379`, `ROOM_LOG_EVENTS_CHANNEL: room-log-events`, `depends_on: [mongo-log, redis]`); add `mongo-log` (`image: mongo:7`, `27025:27017`, volume `mongo-log-data`); add `mongo-log-data` to `volumes:`; add `log-service` to `nginx.depends_on`. Also add `ROOM_LOG_EVENTS_CHANNEL: room-log-events` to the existing `character-service` env block so the local fan-out from Story 6.1 lands on the channel this subscriber listens to (idempotent if 6.1 already added it).
-  - [ ] `backend/nginx/nginx.conf`: add `upstream log_service { server log-service:8087; }` and a `location /logs { ... }` block mirroring the `/battles`/`/characters` proxy block (copy headers/OPTIONS handling exactly).
-  - [ ] `backend/.env.example`: add `LOG_SERVICE_PORT=8087`, `LOG_MONGO_URI=mongodb://localhost:27025/munch_log_service`, `LOG_SERVICE_URL=http://localhost:8087`, `ROOM_LOG_EVENTS_CHANNEL=room-log-events`.
-  - [ ] `backend/README.md`: add `log-service` to the services list and add `/logs -> log-service` to the nginx proxy list (docs-in-same-change rule, [Source: _bmad-output/project-context.md]).
+- [x] **Task 8 — Infra wiring + docs (AC: 1, 6)**
+  - [x] `backend/sam/template.yaml`: add (a) Parameter `LogMongoUri`; (b) `LogEventsTopic` (`AWS::SNS::Topic`, `TopicName: !Sub ${AWS::StackName}-log-events`) mirroring `RoomCharacterEventsTopic`; (c) `LogWriterFunction` (`CodeUri: ../log-service`, `Handler: subscriber.handler`, `Events: LogEvent: { Type: SNS, Properties: { Topic: !Ref LogEventsTopic } }`, env `LOG_MONGO_URI: !Ref LogMongoUri` + `LOG_TOPIC_ARN: !Ref LogEventsTopic`, esbuild `EntryPoints: [src/subscriber.ts]`) mirroring `RoomNotificationsFunction`’s SNS-event pattern (SAM auto-creates the subscription + invoke permission — no explicit `sns:Subscribe` IAM needed); (d) `LogReaderFunction` (`Handler: lambda-read.handler`, HttpApi events `GET /logs` and `GET /logs/{logId}`, env `LOG_MONGO_URI` + `ROUTE_PREFIX`, esbuild `EntryPoints: [src/lambda-read.ts]`) mirroring `BattleServiceFunction`; (e) **close Story 6.1’s deferred infra item**: add `LOG_TOPIC_ARN: !Ref LogEventsTopic` to `CharacterServiceFunction` env and a `sns:Publish` statement on `!Ref LogEventsTopic` to `CharacterServiceRole` Policies (additive to `PublishRoomCharacterEvents`). The dangling-`!Ref` risk that 6.1 called out is now resolved because `LogEventsTopic` exists in the same template. **Leave `battle-service`’s `LOG_TOPIC_ARN`/IAM to Story 6.3** (its natural owner) — note this in Completion Notes.
+  - [x] `backend/docker-compose.local.yml`: add `log-service` (build `./log-service`, port `8087:8087`, env `PORT: 8087`, `LOG_MONGO_URI: mongodb://mongo-log:27017/munch_log_service`, `REDIS_URL: redis://redis:6379`, `ROOM_LOG_EVENTS_CHANNEL: room-log-events`, `depends_on: [mongo-log, redis]`); add `mongo-log` (`image: mongo:7`, `27025:27017`, volume `mongo-log-data`); add `mongo-log-data` to `volumes:`; add `log-service` to `nginx.depends_on`. Also add `ROOM_LOG_EVENTS_CHANNEL: room-log-events` to the existing `character-service` env block so the local fan-out from Story 6.1 lands on the channel this subscriber listens to (idempotent if 6.1 already added it).
+  - [x] `backend/nginx/nginx.conf`: add `upstream log_service { server log-service:8087; }` and a `location /logs { ... }` block mirroring the `/battles`/`/characters` proxy block (copy headers/OPTIONS handling exactly).
+  - [x] `backend/.env.example`: add `LOG_SERVICE_PORT=8087`, `LOG_MONGO_URI=mongodb://localhost:27025/munch_log_service`, `LOG_SERVICE_URL=http://localhost:8087`, `ROOM_LOG_EVENTS_CHANNEL=room-log-events`.
+  - [x] `backend/README.md`: add `log-service` to the services list and add `/logs -> log-service` to the nginx proxy list (docs-in-same-change rule, [Source: _bmad-output/project-context.md]).
 
 ## Dev Notes
 
@@ -225,8 +225,55 @@ Note: in cloud the SNS trigger delivers events regardless, but AC 1 still requir
 
 ### Agent Model Used
 
+GPT-5 Codex
+
 ### Debug Log References
+
+- `cd backend && npm install`
+- `cd backend && npm test -- log-service/src`
+- `cd backend && npm run typecheck -w log-service`
+- `cd backend && npm test`
+- `cd backend && npm run typecheck`
+- `cd backend && npm run test:coverage`
 
 ### Completion Notes List
 
+- Implemented `backend/log-service` with SNS `logWriter`, local Redis subscriber, `LogEvent` model, pure parse/map/summary logic, and a minimal deployable `logReader` skeleton.
+- Persisted supported `character_*` and battle lifecycle events with `eventType`, `actorId`, `summary`, raw `payload`, and `occurredAt`; unsupported or malformed events are skipped with a warning and do not fail batches.
+- Preserved documented variances: epic `type`/`createdAt` wording is implemented as architecture-authoritative `eventType` plus Mongoose timestamps; local log channel uses `ROOM_LOG_EVENTS_CHANNEL=room-log-events`; subscriber Redis URL is `REDIS_URL`.
+- Added SAM/local/nginx/docs wiring for log-service and closed Story 6.1's deferred character-service log topic env/IAM wiring. Battle-service `LOG_TOPIC_ARN`/IAM remains intentionally owned by Story 6.3.
+- Added and ran log-service unit/route/lambda tests plus full backend tests, typecheck, and coverage. Coverage completed at 85.76% lines overall and 91.43% lines for `log-service/src`.
+
 ### File List
+
+- _bmad-output/implementation-artifacts/6-2-published-events-are-stored-and-readable-in-room-history.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+- backend/.env.example
+- backend/README.md
+- backend/docker-compose.local.yml
+- backend/log-service/.env.example
+- backend/log-service/Dockerfile
+- backend/log-service/package.json
+- backend/log-service/src/app.ts
+- backend/log-service/src/db.test.ts
+- backend/log-service/src/db.ts
+- backend/log-service/src/index.ts
+- backend/log-service/src/lambda-read.test.ts
+- backend/log-service/src/lambda-read.ts
+- backend/log-service/src/models/LogEvent.ts
+- backend/log-service/src/routes/logs.test.ts
+- backend/log-service/src/routes/logs.ts
+- backend/log-service/src/service.test.ts
+- backend/log-service/src/service.ts
+- backend/log-service/src/subscriber.test.ts
+- backend/log-service/src/subscriber.ts
+- backend/log-service/tsconfig.json
+- backend/nginx/nginx.conf
+- backend/package-lock.json
+- backend/package.json
+- backend/sam/template.yaml
+- backend/vitest.config.ts
+
+### Change Log
+
+- 2026-05-20: Implemented story 6.2 log-service persistence/read skeleton, tests, workspace wiring, infra wiring, and docs.
