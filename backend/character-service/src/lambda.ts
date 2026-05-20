@@ -5,8 +5,8 @@ import { FanoutCharacterEventPublisher, NoopCharacterEventPublisher, SnsCharacte
 import { buildCharacterApp } from './service';
 
 const routePrefix = process.env.ROUTE_PREFIX || '/';
-const topicArn = process.env.ROOM_CHARACTER_EVENTS_TOPIC_ARN;
-const logTopicArn = process.env.LOG_TOPIC_ARN;
+const topicArn = process.env.ROOM_CHARACTER_EVENTS_TOPIC_ARN?.trim();
+const logTopicArn = process.env.LOG_TOPIC_ARN?.trim();
 const notificationsPublisher = topicArn
   ? new SnsCharacterEventPublisher(new SNSClient({}), topicArn)
   : new NoopCharacterEventPublisher();
@@ -29,6 +29,8 @@ console.info('[character-service] lambda bootstrap config', {
   routePrefix,
   mongoUri,
   publisher: publisher.constructor.name,
+  notificationsPublisher: notificationsPublisher.constructor.name,
+  logPublisher: logPublisher.constructor.name,
   topicArnConfigured: Boolean(topicArn),
   logTopicArnConfigured: Boolean(logTopicArn)
 });

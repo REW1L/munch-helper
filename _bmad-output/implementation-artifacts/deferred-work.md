@@ -1,3 +1,9 @@
+## Deferred from: code review of 6-1-character-events-are-published-for-room-history (2026-05-20)
+
+- PATCH does not validate `level`/`power`/`class`/`race`/`gender`/`userId` — pre-existing input-validation gap; only `name`/`avatarId`/`color` are validated, so clients can persist arbitrary types and ship them through `changes`. [backend/character-service/src/app.ts:292, 300-304]
+- `RedisCharacterEventPublisher.ensureConnected` does not recover from post-connect disconnects — `isOpen` flips false on error but the cached `connectPromise` is never reset; subsequent publishes silently fail through `Promise.allSettled`. [backend/character-service/src/publisher.ts:117-134]
+- `correlationId` plumbed through `CharacterEventPayload` and `createCharacterEventPayload` but never extracted from request headers (`x-correlation-id`/`x-request-id`) — every event ships with `correlationId: undefined`, leaving downstream consumers with no request trace. [backend/character-service/src/app.ts:267-274, 344-351, 385-391]
+
 ## Deferred from: code review of 5-6-conclude-a-battle (2026-05-20)
 
 - Frontend `apiRequest` retries 5xx on conclude — can surface phantom 409 [frontend/api/battles.ts:82-87]. If a 5xx is delivered after the server committed, the retry returns 409 and the user briefly sees "Battle is not active" before the modal auto-dismisses on the refetch. Worth a follow-up to either skip retries on conclude or special-case the "already-concluded-by-self" race.

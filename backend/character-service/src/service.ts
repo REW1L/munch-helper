@@ -12,21 +12,27 @@ type CharacterDocumentLike = Omit<CharacterLike, 'id'> & {
   _id?: { toString: () => string };
 };
 
-const mapCharacter = (character: CharacterDocumentLike): CharacterLike => ({
-  id: character.id || character._id?.toString() || '',
-  roomId: character.roomId,
-  userId: character.userId,
-  name: character.name,
-  avatarId: character.avatarId,
-  color: character.color,
-  level: character.level,
-  power: character.power,
-  class: character.class,
-  race: character.race,
-  gender: character.gender,
-  createdAt: character.createdAt,
-  updatedAt: character.updatedAt
-});
+const mapCharacter = (character: CharacterDocumentLike): CharacterLike => {
+  const id = character.id || character._id?.toString();
+  if (!id) {
+    throw new Error('[character-service] character document is missing both id and _id');
+  }
+  return {
+    id,
+    roomId: character.roomId,
+    userId: character.userId,
+    name: character.name,
+    avatarId: character.avatarId,
+    color: character.color,
+    level: character.level,
+    power: character.power,
+    class: character.class,
+    race: character.race,
+    gender: character.gender,
+    createdAt: character.createdAt,
+    updatedAt: character.updatedAt
+  };
+};
 
 export function createCharacterModel(): CharacterModelLike {
   return {

@@ -36,7 +36,9 @@ export class FanoutCharacterEventPublisher implements CharacterEventPublisher {
   constructor(public readonly legs: CharacterEventPublisherLeg[]) { }
 
   async publish(payload: CharacterEventPayload): Promise<void> {
-    const results = await Promise.allSettled(this.legs.map((leg) => leg.publisher.publish(payload)));
+    const results = await Promise.allSettled(
+      this.legs.map((leg) => Promise.resolve().then(() => leg.publisher.publish(payload)))
+    );
 
     results.forEach((result, index) => {
       if (result.status === 'rejected') {

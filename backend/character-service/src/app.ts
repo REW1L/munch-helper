@@ -143,11 +143,11 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       return undefined;
     }
 
-    const changes = Object.entries(updates).reduce<Record<string, { prev: unknown; next: unknown }>>((result, [key, next]) => {
+    const changes = Object.keys(updates).reduce<Record<string, { prev: unknown; next: unknown }>>((result, key) => {
       const prev = getComparableCharacterValue(previousCharacter, key);
-      const normalizedNext = key === 'color' ? getCharacterColor(updatedCharacter) : next;
-      if (!Object.is(prev, normalizedNext)) {
-        result[key] = { prev, next: normalizedNext };
+      const next = getComparableCharacterValue(updatedCharacter, key);
+      if (!Object.is(prev, next)) {
+        result[key] = { prev, next };
       }
       return result;
     }, {});
@@ -324,7 +324,16 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         updates.color = normalizeHexColor(updates.color);
       }
 
-      const previousCharacter = await characterModel.findById(characterId);
+      let previousCharacter: CharacterLike | null = null;
+      try {
+        previousCharacter = await characterModel.findById(characterId);
+      } catch (error) {
+        // Pre-update read is enrichment-only (for changes diff); a failure must not abort the update.
+        console.error('[character-service] failed to read previous character for changes diff', {
+          characterId,
+          error
+        });
+      }
       const character = await characterModel.findByIdAndUpdate(characterId, updates, {
         new: true,
         runValidators: true

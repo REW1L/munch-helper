@@ -4,7 +4,7 @@ import { FanoutCharacterEventPublisher, NoopCharacterEventPublisher, RedisCharac
 import { buildCharacterApp } from './service';
 
 dotenv.config();
-const redisUrl = process.env.CHARACTER_EVENTS_REDIS_URL;
+const redisUrl = process.env.CHARACTER_EVENTS_REDIS_URL?.trim();
 const eventsChannel = process.env.ROOM_CHARACTER_EVENTS_CHANNEL || 'room-character-events';
 const logEventsChannel = process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events';
 const notificationsPublisher = redisUrl
@@ -15,7 +15,9 @@ const logPublisher = redisUrl
   : new NoopCharacterEventPublisher();
 
 if (!redisUrl) {
-  console.warn('[character-service] CHARACTER_EVENTS_REDIS_URL is not configured; room-history logging is disabled');
+  console.warn(
+    '[character-service] CHARACTER_EVENTS_REDIS_URL is not configured; both notifications publishing and room-history logging are disabled'
+  );
 }
 
 const publisher = new FanoutCharacterEventPublisher([
@@ -30,10 +32,12 @@ console.info('[character-service] local bootstrap config', {
   port,
   mongoUri,
   publisher: publisher.constructor.name,
+  notificationsPublisher: notificationsPublisher.constructor.name,
+  logPublisher: logPublisher.constructor.name,
   eventsChannel,
   redisConfigured: Boolean(redisUrl),
   logEventsChannel,
-  logConfigured: Boolean(redisUrl)
+  logConfigured: !(logPublisher instanceof NoopCharacterEventPublisher)
 });
 
 connectToMongo(mongoUri)

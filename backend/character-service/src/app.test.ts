@@ -110,7 +110,7 @@ describe('character-service app', () => {
   it('keeps create response successful when publishing fails', async () => {
     const model = buildCharacterModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish failed')) };
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c2', roomId: 'r2' }));
 
     const app = createApp(model, { publisher });
@@ -119,6 +119,8 @@ describe('character-service app', () => {
       .send({ roomId: 'r2', userId: 'u2', name: 'Mage', avatarId: 4, color: '#00aaff' });
 
     expect(response.status).toBe(201);
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
+    errorSpy.mockRestore();
   });
 
   it('rejects create without color', async () => {
@@ -218,7 +220,7 @@ describe('character-service app', () => {
   it('keeps update and delete responses successful when publishing fails', async () => {
     const model = buildCharacterModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish failed')) };
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.findById).mockResolvedValue(buildCharacter({ id: 'c6', level: 1 }));
     vi.mocked(model.findByIdAndUpdate).mockResolvedValue(buildCharacter({ id: 'c6', level: 2 }));
     vi.mocked(model.findByIdAndDelete).mockResolvedValue(buildCharacter({ id: 'c6' }));
@@ -227,5 +229,7 @@ describe('character-service app', () => {
 
     await expect(request(app).patch('/characters/c6').send({ level: 2 })).resolves.toMatchObject({ status: 200 });
     await expect(request(app).delete('/characters/c6')).resolves.toMatchObject({ status: 204 });
+    expect(publisher.publish).toHaveBeenCalledTimes(2);
+    errorSpy.mockRestore();
   });
 });

@@ -1,6 +1,6 @@
 # Story 6.1: Character Events Are Published for Room History
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -49,6 +49,22 @@ so that the group can understand how the session state changed over time.
   - [x] `app.test.ts`: create/delete publish a payload containing `character` display context; update publishes `changes` with correct `prev → next` for changed fields only; a publisher that throws does NOT change the HTTP status (create still `201`, update `200`, delete `204`) — regression guard for AC 4. Inject a spy publisher via the existing `createApp(model, { publisher })` option.
   - [x] Add/extend a `findById` test in `service.test.ts` if the existing model-mapping tests assert method coverage there.
   - [x] Run backend test + coverage gate: `cd backend/character-service && npm test` (Vitest 3.2.4, v8 coverage, 70% line floor — do not lower).
+
+### Review Findings
+
+- [x] [Review][Patch] Surface per-leg transport in bootstrap log — Composite `publisher.constructor.name` now always logs `'FanoutCharacterEventPublisher'`, hiding which leg is SNS vs Noop. Add `notificationsPublisher`/`logPublisher` constructor names to the bootstrap `console.info`. [backend/character-service/src/lambda.ts:30-35, backend/character-service/src/index.ts:30-37]
+- [x] [Review][Patch] PATCH `findById` errors leak to HTTP 500 — pre-update read is enrichment-only but its throw bypasses the publish swallow and reaches `next(error)`. Wrap in try/catch and degrade to `previousCharacter = null`. [backend/character-service/src/app.ts:327]
+- [x] [Review][Patch] Fan-out swallows only async rejections, not sync throws — `Promise.allSettled(legs.map(l => l.publisher.publish(p)))` rejects the whole composite if any leg's `publish` synchronously throws before returning a promise. Wrap each invocation in `Promise.resolve().then(() => leg.publisher.publish(payload))`. [backend/character-service/src/publisher.ts:38-53]
+- [x] [Review][Patch] `changes.next` uses raw `updates[key]` instead of post-persistence value — trim/normalization asymmetry: `prev` comes from the stored doc but `next` is the request payload, so legacy untrimmed DB values or schema-side normalizers can produce false changes (or miss real ones). Compute `next` via `getComparableCharacterValue(updatedCharacter, key)` symmetrically with `prev`. [backend/character-service/src/app.ts:137-156]
+- [x] [Review][Patch] `mapCharacter` empty-string id fallback hides corrupt docs — `id: character.id || character._id?.toString() || ''` silently emits `event_body.characterId: ''` when both are missing. Throw or reject instead of synthesizing an empty id. [backend/character-service/src/service.ts]
+- [x] [Review][Patch] Whitespace env vars treated as configured — `Boolean(' ')` and similar whitespace strings skip the degraded-mode warning and instantiate broken SNS/Redis clients. Trim before the conditional. [backend/character-service/src/lambda.ts:8-19, backend/character-service/src/index.ts:7-19]
+- [x] [Review][Patch] Local degraded-mode warning misnames the cause — when `CHARACTER_EVENTS_REDIS_URL` is unset, both notifications **and** log legs become Noop, but the warning mentions only "room-history logging is disabled." Reword (or split into two conditionals) to surface that notifications is also disabled. [backend/character-service/src/index.ts:14-16]
+- [x] [Review][Patch] `logConfigured: Boolean(redisUrl)` is a misleading mirror of `redisConfigured` — the log leg's configured-ness should reflect the actual log publisher (e.g., `!(logPublisher instanceof NoopCharacterEventPublisher)`), not the shared Redis URL. [backend/character-service/src/index.ts:36]
+- [x] [Review][Patch] `console.error` spies in app.test.ts are not restored — `vi.spyOn(console, 'error').mockImplementation(...)` in the two "publishing fails" tests leaks across tests in the same file. Add `mockRestore()` or move to `afterEach`. [backend/character-service/src/app.test.ts]
+- [x] [Review][Patch] Publish-failure tests do not assert the publisher was actually called — only HTTP status is checked, so a regression that skipped publishing entirely on the failure path would still pass. Add `expect(publisher.publish).toHaveBeenCalled()`. [backend/character-service/src/app.test.ts]
+- [x] [Review][Defer] PATCH does not validate `level`/`power`/`class`/`race`/`gender`/`userId` — pre-existing input-validation gap; clients can persist arbitrary types and ship them through `changes`. [backend/character-service/src/app.ts:292, 300-304] — deferred, pre-existing
+- [x] [Review][Defer] `RedisCharacterEventPublisher.ensureConnected` does not recover from post-connect disconnects — `isOpen` flips false and the cached `connectPromise` is stale. [backend/character-service/src/publisher.ts:117-134] — deferred, pre-existing
+- [x] [Review][Defer] `correlationId` plumbed through types but never extracted from request headers — published payload has `correlationId: undefined` for every event. [backend/character-service/src/app.ts:267-274, 344-351, 385-391] — deferred, pre-existing
 
 ## Dev Notes
 
