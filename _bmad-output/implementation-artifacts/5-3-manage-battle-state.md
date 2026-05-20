@@ -172,10 +172,14 @@ realtime flow).
   type MonsterItem = { id: string; name: string; level: number }
   ```
 - **Effective strength (AC1, architecture "Effective strength calculation"):**
-  - Player = `Σ(level of room characters whose id ∈ playerSide.characterIds)` + `Σ(playerSide.bonuses[].value)`
+  - Player = `Σ(level + power of room characters whose id ∈ playerSide.characterIds)` + `Σ(playerSide.bonuses[].value)`.
+    Dev note, 2026-05-20: PR #94 corrected the implementation and tests so
+    battle participants contribute their full character strength (`level + power`),
+    not level alone. Participant rows display this combined contribution as
+    `Power <sum>` rather than separate Level and Power labels.
   - Monster = `Σ(monsterSide.monsters[].level)` + `Σ(monsterSide.bonuses[].value)`
   - The battle persists only `characterIds` (a snapshot of IDs) — **not** character
-    levels. Levels are resolved client-side from the room's current characters
+    levels or power. Level and power are resolved client-side from the room's current characters
     (`useRoomCharacters`). This is intentional: ADR-9 (battle retains original
     `characterIds`; no backend cascade); live reconciliation of character edits is
     Story 5.5, not 5.3.
