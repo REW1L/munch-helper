@@ -1,0 +1,46 @@
+type: object
+required:
+  - id
+  - roomId
+  - name
+  - status
+  - playerSide
+  - monsterSide
+  - result
+  - concludedAt
+properties:
+  id:
+    type: string
+  roomId:
+    type: string
+  name:
+    type: string
+  status:
+    type: string
+    enum:
+      - active
+      - concluded
+      - discarded
+  playerSide:
+    $ref: ./BattlePlayerSide.yaml
+  monsterSide:
+    $ref: ./BattleMonsterSide.yaml
+  result:
+    type:
+      - string
+      - "null"
+    enum:
+      - players_win
+      - monster_wins
+      - null
+  concludedAt:
+    type:
+      - string
+      - "null"
+    format: date-time
+  createdAt:
+    type: string
+    format: date-time
+  updatedAt:
+    type: string
+    format: date-time

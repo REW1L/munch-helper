@@ -1,0 +1,13 @@
+type: object
+required:
+  - characterIds
+  - bonuses
+properties:
+  characterIds:
+    type: array
+    items:
+      type: string
+  bonuses:
+    type: array
+    items:
+      $ref: ./BattleSideBonus.yaml

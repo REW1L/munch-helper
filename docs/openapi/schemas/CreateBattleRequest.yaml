@@ -1,0 +1,9 @@
+type: object
+required:
+  - roomId
+  - name
+properties:
+  roomId:
+    type: string
+  name:
+    type: string

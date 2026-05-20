@@ -95,6 +95,27 @@ export function createBattleModel(): BattleModelLike {
         status: battle.status
       });
       return toBattleLike(battle);
+    },
+    findActiveByIdAndDiscard: async (id) => {
+      console.info('[battle-service] db discard active battle', {
+        battleId: id,
+        status: 'discarded'
+      });
+      const battle = await Battle.findOneAndUpdate(
+        { _id: id, status: 'active' },
+        { $set: { status: 'discarded' } },
+        { new: true, runValidators: true }
+      );
+      if (!battle) {
+        console.info('[battle-service] db discard active battle no match', { battleId: id });
+        return null;
+      }
+      console.info('[battle-service] db discard active battle success', {
+        battleId: battle.id,
+        roomId: battle.roomId,
+        status: battle.status
+      });
+      return toBattleLike(battle);
     }
   };
 }

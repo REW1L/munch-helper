@@ -85,3 +85,9 @@ export async function concludeBattle(battleId: string, result: BattleResult): Pr
     body: { result },
   });
 }
+
+export async function discardBattle(battleId: string): Promise<Battle> {
+  return apiRequest<Battle>(`/battles/${encodeURIComponent(battleId)}`, {
+    method: 'DELETE',
+  });
+}

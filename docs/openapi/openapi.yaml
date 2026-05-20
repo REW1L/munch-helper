@@ -10,6 +10,7 @@ info:
     - User Management
     - Room Management
     - Character Management
+    - Battle Management
     - Room Notifications (documented as WebSocket upgrade + message schemas)
 servers:
   - url: https://api.munch-helper.local
@@ -22,6 +23,8 @@ tags:
     description: Endpoints for creating rooms and managing room types.
   - name: Character Management
     description: Endpoints for creating, updating, and deleting characters.
+  - name: Battle Management
+    description: Endpoints for starting, reading, updating, concluding, and discarding battles.
   - name: Room Notifications
     description: Endpoints for managing room notifications via WebSocket.
 paths:
@@ -43,3 +46,10 @@ paths:
     $ref: paths/characters.yaml
   /characters/{characterId}:
     $ref: paths/characters_{characterId}.yaml
+  # Battle Management
+  /battles:
+    $ref: paths/battles.yaml
+  /battles/{id}:
+    $ref: paths/battles_{id}.yaml
+  /battles/{id}/conclude:
+    $ref: paths/battles_{id}_conclude.yaml

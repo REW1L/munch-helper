@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { concludeBattle, getActiveBattle, patchBattle, startBattle } from '@/api/battles';
+import { concludeBattle, discardBattle, getActiveBattle, patchBattle, startBattle } from '@/api/battles';
 import { ApiError, apiRequest } from '@/api/http';
 
 vi.mock('@/api/http', async () => {
@@ -124,5 +124,33 @@ describe('battles api', () => {
     mockApiRequest.mockRejectedValueOnce(badRequest);
     await expect(concludeBattle('battle-1', 'monster_wins')).rejects.toMatchObject({ status: 400 });
     expect(mockApiRequest).toHaveBeenCalledTimes(2);
+  });
+
+  it('discards a battle with URL-encoded id and no body', async () => {
+    mockApiRequest.mockResolvedValueOnce({
+      id: 'battle/1',
+      roomId: 'room-1',
+      name: 'Battle 1',
+      status: 'discarded',
+      playerSide: { characterIds: [], bonuses: [] },
+      monsterSide: { monsters: [], bonuses: [] },
+      result: null,
+      concludedAt: null,
+    });
+
+    await discardBattle('battle/1');
+
+    expect(mockApiRequest).toHaveBeenCalledWith('/battles/battle%2F1', {
+      method: 'DELETE',
+    });
+    expect(mockApiRequest.mock.calls[0][1]).not.toHaveProperty('body');
+  });
+
+  it('surfaces 409 ApiErrors for discard without retrying in the caller', async () => {
+    const conflict = new ApiError('Battle is not active', 409, { message: 'Battle is not active' });
+    mockApiRequest.mockRejectedValueOnce(conflict);
+
+    await expect(discardBattle('battle-1')).rejects.toMatchObject({ status: 409 });
+    expect(mockApiRequest).toHaveBeenCalledTimes(1);
   });
 });

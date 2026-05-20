@@ -1,0 +1,53 @@
+get:
+  tags:
+    - Battle Management
+  summary: Get active battle
+  description: Returns the active battle for a room, or null when no active battle exists.
+  operationId: getActiveBattle
+  parameters:
+    - name: roomId
+      in: query
+      required: true
+      schema:
+        type: string
+    - name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - active
+  responses:
+    "200":
+      description: Active battle or null
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: ../schemas/Battle.yaml
+              - type: "null"
+    "400":
+      description: Bad request
+post:
+  tags:
+    - Battle Management
+  summary: Start battle
+  description: Creates a new active battle in a room.
+  operationId: startBattle
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/CreateBattleRequest.yaml
+  responses:
+    "201":
+      description: Battle created
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Battle.yaml
+    "400":
+      description: Bad request
+    "409":
+      description: A battle is already active for this room

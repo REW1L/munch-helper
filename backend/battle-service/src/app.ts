@@ -71,6 +71,7 @@ export interface BattleModelLike {
     result: ConcludeBattleResult,
     concludedAt: Date
   ) => Promise<BattleLike | null>;
+  findActiveByIdAndDiscard: (id: string) => Promise<BattleLike | null>;
 }
 
 export interface PlayerSidePayload {
@@ -473,6 +474,45 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
         );
       } catch (error) {
         console.error('Failed to publish battle_concluded event', error);
+      }
+
+      res.status(200).json(battle);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'CastError') {
+        return res.status(404).json({ message: 'Battle not found' });
+      }
+      next(error);
+    }
+  });
+
+  app.delete('/battles/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const battleId = toParamString(req.params.id);
+
+      console.info('[battle-service] discard battle request', {
+        battleId
+      });
+
+      const battle = await battleModel.findActiveByIdAndDiscard(battleId);
+
+      if (!battle) {
+        const existing = await battleModel.findById(battleId);
+        if (!existing) {
+          return res.status(404).json({ message: 'Battle not found' });
+        }
+        return res.status(409).json({ message: 'Battle is not active' });
+      }
+
+      try {
+        await publisher.publish(
+          createBattleEventPayload({
+            event: 'battle_discarded',
+            roomId: battle.roomId,
+            battleId: battle.id
+          })
+        );
+      } catch (error) {
+        console.error('Failed to publish battle_discarded event', error);
       }
 
       res.status(200).json(battle);

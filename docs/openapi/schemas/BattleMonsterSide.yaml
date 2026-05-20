@@ -1,0 +1,13 @@
+type: object
+required:
+  - monsters
+  - bonuses
+properties:
+  monsters:
+    type: array
+    items:
+      $ref: ./BattleMonster.yaml
+  bonuses:
+    type: array
+    items:
+      $ref: ./BattleSideBonus.yaml

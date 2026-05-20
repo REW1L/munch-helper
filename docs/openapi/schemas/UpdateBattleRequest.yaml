@@ -1,0 +1,8 @@
+type: object
+properties:
+  name:
+    type: string
+  playerSide:
+    $ref: ./BattlePlayerSide.yaml
+  monsterSide:
+    $ref: ./BattleMonsterSide.yaml
