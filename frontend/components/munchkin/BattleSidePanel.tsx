@@ -102,7 +102,7 @@ function BattleSidePanel({
           <Text style={styles.sectionTitle}>Characters</Text>
           {selectedParticipants.map(({ id, character }) => (
             <View key={id} style={styles.row} testID="battle-participant-active">
-              <Text style={styles.rowText}>{character.nickname} · Level {character.level}</Text>
+              <Text style={styles.rowText}>{character.nickname} · Power {character.level + character.power}</Text>
               <TouchableOpacity
                 accessibilityLabel={`Remove ${character.nickname}`}
                 accessibilityRole="button"

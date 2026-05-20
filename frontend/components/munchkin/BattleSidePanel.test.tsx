@@ -6,8 +6,8 @@ import BattleSidePanel from '@/components/munchkin/BattleSidePanel';
 import { AppTheme } from '@/constants/theme';
 
 const characters = [
-  { id: 'character-1', roomId: 'room-1', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
-  { id: 'character-2', roomId: 'room-1', userId: 'user-2', nickname: 'Bob', avatar: 1, level: 2, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+  { id: 'character-1', roomId: 'room-1', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 6, class: [], race: [], gender: [], color: '#FFFFFF' },
+  { id: 'character-2', roomId: 'room-1', userId: 'user-2', nickname: 'Bob', avatar: 1, level: 2, power: 3, class: [], race: [], gender: [], color: '#FFFFFF' },
 ];
 
 describe('BattleSidePanel', () => {
@@ -24,7 +24,7 @@ describe('BattleSidePanel', () => {
         side="players"
         title="Player Side"
         toneColor={AppTheme.colors.accent}
-        total={4}
+        total={10}
         onAddBonus={vi.fn()}
         onAddCharacter={onAddCharacter}
         onRemoveBonus={vi.fn()}
@@ -52,7 +52,7 @@ describe('BattleSidePanel', () => {
         side="players"
         title="Player Side"
         toneColor={AppTheme.colors.accent}
-        total={4}
+        total={10}
         onAddBonus={vi.fn()}
         onAddCharacter={vi.fn()}
         onRemoveBonus={vi.fn()}
@@ -60,14 +60,14 @@ describe('BattleSidePanel', () => {
       />
     );
 
-    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Level 4');
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Power 10');
     expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
     expect(screen.queryByText(/character-removed/)).toBeNull();
     expect(screen.getByLabelText('character-removed - removed from room')).toBeTruthy();
     expect(screen.getByLabelText('Drop removed character from draft')).toBeTruthy();
     expect(screen.getByTestId('discard-removed-character-character-removed')).toBeTruthy();
     expect(screen.queryByTestId('remove-character-character-removed')).toBeNull();
-    expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('10');
     expect(screen.queryByText('Unavailable · character-removed')).toBeNull();
   });
 
@@ -81,7 +81,7 @@ describe('BattleSidePanel', () => {
         side="players"
         title="Player Side"
         toneColor={AppTheme.colors.accent}
-        total={4}
+        total={10}
         onAddBonus={vi.fn()}
         onAddCharacter={vi.fn()}
         onRemoveBonus={vi.fn()}
@@ -89,10 +89,10 @@ describe('BattleSidePanel', () => {
       />
     );
 
-    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Level 4');
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice · Power 10');
 
     const updatedCharacters = [
-      { ...characters[0], nickname: 'Alice Updated', level: 8 },
+      { ...characters[0], nickname: 'Alice Updated', level: 8, power: 9 },
       characters[1],
     ];
     rerender(
@@ -104,7 +104,7 @@ describe('BattleSidePanel', () => {
         side="players"
         title="Player Side"
         toneColor={AppTheme.colors.accent}
-        total={8}
+        total={17}
         onAddBonus={vi.fn()}
         onAddCharacter={vi.fn()}
         onRemoveBonus={vi.fn()}
@@ -112,9 +112,9 @@ describe('BattleSidePanel', () => {
       />
     );
 
-    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice Updated · Level 8');
-    expect(screen.getByTestId('battle-players-total').textContent).toBe('8');
-    expect(screen.queryByText('Bob · Level 2')).toBeNull();
+    expect(screen.getByTestId('battle-participant-active').textContent).toContain('Alice Updated · Power 17');
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('17');
+    expect(screen.queryByText('Bob · Power 5')).toBeNull();
   });
 
   it('opens a Figma-inspired dialog to add monsters and displays total', () => {
