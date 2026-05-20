@@ -11,10 +11,46 @@ export interface CharacterEventPayload {
   };
   emittedAt: string;
   correlationId?: string;
+  eventType: CharacterEventType;
+  actorId: string;
+  occurredAt: string;
+  character: {
+    id: string;
+    name: string;
+    avatarId: number;
+    color: string;
+  };
+  changes?: Record<string, { prev: unknown; next: unknown }>;
 }
 
 export interface CharacterEventPublisher {
   publish: (payload: CharacterEventPayload) => Promise<void>;
+}
+
+export interface CharacterEventPublisherLeg {
+  target: string;
+  publisher: CharacterEventPublisher;
+}
+
+export class FanoutCharacterEventPublisher implements CharacterEventPublisher {
+  constructor(public readonly legs: CharacterEventPublisherLeg[]) { }
+
+  async publish(payload: CharacterEventPayload): Promise<void> {
+    const results = await Promise.allSettled(this.legs.map((leg) => leg.publisher.publish(payload)));
+
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error('[character-events] publisher leg failed', {
+          target: this.legs[index]?.target || 'unknown',
+          event: payload.event,
+          roomId: payload.roomId,
+          characterId: payload.event_body.characterId,
+          correlationId: payload.correlationId,
+          error: result.reason
+        });
+      }
+    });
+  }
 }
 
 export class NoopCharacterEventPublisher implements CharacterEventPublisher {
@@ -120,14 +156,33 @@ export class RedisCharacterEventPublisher implements CharacterEventPublisher {
 export const createCharacterEventPayload = (input: {
   event: CharacterEventType;
   roomId: string;
-  characterId: string;
+  character: {
+    id: string;
+    name: string;
+    avatarId: number;
+    color: string;
+  };
+  changes?: Record<string, { prev: unknown; next: unknown }>;
   correlationId?: string;
-}): CharacterEventPayload => ({
-  event: input.event,
-  roomId: input.roomId,
-  event_body: {
-    characterId: input.characterId
-  },
-  emittedAt: new Date().toISOString(),
-  correlationId: input.correlationId
-});
+}): CharacterEventPayload => {
+  const emittedAt = new Date().toISOString();
+  const payload: CharacterEventPayload = {
+    event: input.event,
+    roomId: input.roomId,
+    event_body: {
+      characterId: input.character.id
+    },
+    emittedAt,
+    correlationId: input.correlationId,
+    eventType: input.event,
+    actorId: input.character.id,
+    occurredAt: emittedAt,
+    character: input.character
+  };
+
+  if (input.event === 'character_updated' && input.changes) {
+    payload.changes = input.changes;
+  }
+
+  return payload;
+};

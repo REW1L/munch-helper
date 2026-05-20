@@ -1,5 +1,5 @@
 # generated: 2026-03-26T17:42:48Z
-# last_updated: 2026-03-26T19:34:57Z
+# last_updated: 2026-05-20T17:45:00Z
 # project: munch-helper
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-26T17:42:48Z
-last_updated: 2026-05-20T16:30:00Z
+last_updated: 2026-05-20T17:45:00Z
 project: munch-helper
 project_key: NOKEY
 tracking_system: file-system
@@ -89,7 +89,7 @@ development_status:
   epic-5-retrospective: optional
 
   epic-6: in-progress
-  6-1-character-events-are-published-for-room-history: ready-for-dev
+  6-1-character-events-are-published-for-room-history: review
   6-2-published-events-are-stored-and-readable-in-room-history: ready-for-dev
   6-3-battle-lifecycle-events-are-published-for-room-history: ready-for-dev
   6-4-room-history-api-returns-paginated-events: ready-for-dev

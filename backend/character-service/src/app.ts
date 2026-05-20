@@ -26,6 +26,7 @@ export interface CharacterLike {
 export interface CharacterModelLike {
   find: (query: { roomId: string }) => { sort: (sortBy: { createdAt: 1 }) => Promise<CharacterLike[]> };
   create: (payload: Omit<CharacterLike, 'id' | 'createdAt' | 'updatedAt'>) => Promise<CharacterLike>;
+  findById: (id: string) => Promise<CharacterLike | null>;
   findByIdAndUpdate: (
     id: string,
     updates: Record<string, unknown>,
@@ -114,6 +115,45 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   });
+
+  const toPayloadCharacter = (character: CharacterLike) => {
+    const responseCharacter = toResponseCharacter(character);
+    return {
+      id: responseCharacter.id,
+      name: responseCharacter.name,
+      avatarId: responseCharacter.avatarId,
+      color: responseCharacter.color
+    };
+  };
+
+  const getComparableCharacterValue = (character: CharacterLike, key: string): unknown => {
+    if (key === 'color') {
+      return getCharacterColor(character);
+    }
+
+    return character[key as keyof CharacterLike];
+  };
+
+  const buildCharacterChanges = (
+    previousCharacter: CharacterLike | null,
+    updatedCharacter: CharacterLike,
+    updates: Record<string, unknown>
+  ): Record<string, { prev: unknown; next: unknown }> | undefined => {
+    if (!previousCharacter) {
+      return undefined;
+    }
+
+    const changes = Object.entries(updates).reduce<Record<string, { prev: unknown; next: unknown }>>((result, [key, next]) => {
+      const prev = getComparableCharacterValue(previousCharacter, key);
+      const normalizedNext = key === 'color' ? getCharacterColor(updatedCharacter) : next;
+      if (!Object.is(prev, normalizedNext)) {
+        result[key] = { prev, next: normalizedNext };
+      }
+      return result;
+    }, {});
+
+    return Object.keys(changes).length > 0 ? changes : undefined;
+  };
 
   const toParamString = (value: string | string[] | undefined): string => {
     if (Array.isArray(value)) {
@@ -229,7 +269,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_created',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character)
           })
         );
         console.info('[character-service] character_created event queued', {
@@ -284,6 +324,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         updates.color = normalizeHexColor(updates.color);
       }
 
+      const previousCharacter = await characterModel.findById(characterId);
       const character = await characterModel.findByIdAndUpdate(characterId, updates, {
         new: true,
         runValidators: true
@@ -304,7 +345,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_updated',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character),
+            changes: buildCharacterChanges(previousCharacter, character, updates)
           })
         );
         console.info('[character-service] character_updated event queued', {
@@ -344,7 +386,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_deleted',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character)
           })
         );
         console.info('[character-service] character_deleted event queued', {

@@ -51,6 +51,7 @@ services:
       CHARACTER_MONGO_URI: mongodb://mongo-character:27017/munch_character_service
       CHARACTER_EVENTS_REDIS_URL: redis://redis:6379
       ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
+      ROOM_LOG_EVENTS_CHANNEL: room-log-events
     depends_on:
       - mongo-character
       - redis
