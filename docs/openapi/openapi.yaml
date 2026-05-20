@@ -24,7 +24,9 @@ tags:
   - name: Character Management
     description: Endpoints for creating, updating, and deleting characters.
   - name: Battle Management
-    description: Endpoints for starting, reading, updating, concluding, and discarding battles.
+    description: Endpoints for discarding battles. (Story 5.7 documented DELETE only;
+      GET / POST / PATCH / conclude are implemented but not yet documented — see the
+      deferred-work backlog: "OpenAPI backfill for battle endpoints 5.1 / 5.3 / 5.6".)
   - name: Room Notifications
     description: Endpoints for managing room notifications via WebSocket.
 paths:
@@ -46,10 +48,6 @@ paths:
     $ref: paths/characters.yaml
   /characters/{characterId}:
     $ref: paths/characters_{characterId}.yaml
-  # Battle Management
-  /battles:
-    $ref: paths/battles.yaml
+  # Battle Management (Story 5.7 — DELETE only; remaining endpoints deferred)
   /battles/{id}:
     $ref: paths/battles_{id}.yaml
-  /battles/{id}/conclude:
-    $ref: paths/battles_{id}_conclude.yaml

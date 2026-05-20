@@ -1,6 +1,6 @@
 # Story 5.7: Discard a Battle
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -1208,6 +1208,43 @@ GPT-5
 - Updated OpenAPI/backend contract docs for battle endpoints, including the new discard route.
 - Verified `backend/nginx/nginx.conf` already allows/proxies `DELETE` for `/battles`; verified existing SAM IAM/env wiring for battle event publishing and local Redis channel needed no changes.
 - Manual two-client browser smoke was not run in this turn; automated package tests, typechecks, and coverage gates passed.
+
+### Review Findings
+
+_Adversarial code review of d124010 (Blind Hunter + Edge Case Hunter + Acceptance Auditor), 2026-05-20._
+
+**Decision needed**
+
+- [x] [Review][Decision] `ConfirmDialog` modified to add `cancelLabel` prop — _Resolved 2026-05-20: accepted as a small additive, backward-compatible scope deviation required to honour Resolved Q2 ("Keep battle" cancel copy). The pre-existing component hardcoded `'Cancel'` with no override path._ [`frontend/components/ConfirmDialog.tsx:10,25,38,58-74`]
+
+**Patch**
+
+- [x] [Review][Patch] Race: WS-arrives-before-HTTP causes a double `router.back()` after a successful local discard — when `useRoomBattle`'s WS subscription invalidates `['battle', roomId]` before `mutateAsync` resolves, the `useEffect` at lines 59-69 sets `dismissedAfterNullRef.current = true` and calls `router.back()`, then the awaited `handleConfirmDiscard` continues to line 222-223 and calls `router.back()` a second time. Pop pops the user two screens back. Fix: guard the success branch with `if (!dismissedAfterNullRef.current)` before calling `router.back()`. [`frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:212-233`]
+- [x] [Review][Patch] DELETE retries on transient 5xx surface a spurious 409 "Battle is not active" when the first attempt actually committed but the response was lost — `apiRequest`'s `isRetriableStatus` includes 5xx and retries once by default. Idempotent destructive operations should not auto-retry, or the retry must treat 409 as a successful outcome. Fix: pass `retryCount: 0` in `discardBattle` (and ideally `conclude`/other terminal mutations), OR special-case 409-on-retried-DELETE as success in `apiRequest`. [`frontend/api/battles.ts:90-94`, `frontend/api/http.ts:25-69`]
+- [x] [Review][Patch] Out-of-scope docs scope creep — diff adds OpenAPI scaffolding and `api-contracts-backend.md` rows for `GET /battles`, `POST /battles`, `PATCH /battles/{id}`, `POST /battles/{id}/conclude` in addition to `DELETE /battles/{id}`. Spec explicitly forbids: _"Update `backend/README.md` only if 5.1/5.3/5.6 already added a `/battles` endpoint table … If no such table exists, do not introduce a new docs section."_ The OpenAPI directory already existed for `characters`, but no battle entries existed — the prior stories should have shipped their own OpenAPI. Fix: narrow this diff to the DELETE-only entries (one row in `api-contracts-backend.md`, the `delete:` block in `paths/battles_{id}.yaml`, and `Battle` schema add for `status: discarded` only). Backfill for 5.1/5.3/5.6 belongs in a separate docs ticket. [`docs/openapi/**`, `docs/api-contracts-backend.md:16-44`]
+
+**Deferred (pre-existing or out-of-scope for this story)**
+
+- [x] [Review][Defer] `ConfirmDialog` `useEffect` has `[visible]` dep with `eslint-disable-next-line react-hooks/exhaustive-deps` — stale-closure risk on native Alert if `onConfirm` reference changes after the Alert is shown. Pre-existing in the component (not introduced by 5.7). [`frontend/components/ConfirmDialog.tsx:29-44`] — deferred, pre-existing
+- [x] [Review][Defer] Server-side PATCH-vs-DELETE race: 5.3's `findByIdAndUpdate` is not status-scoped, so a PATCH arriving between the discard's atomic update and its publish can mutate a `discarded` document and emit a stale `battle_updated` event. Pre-existing 5.3 behaviour; DELETE merely widens the time window. [`backend/battle-service/src/app.ts` PATCH handler] — deferred, pre-existing
+- [x] [Review][Defer] `useCallback(discard, [discardMutation])` dep churn — `useMutation` returns a new object each render so the `useCallback` provides no stability. Mirrors existing `start`/`patch`/`conclude` pattern in the hook; addressing here would require touching pre-5.7 code. [`frontend/hooks/useBattleActions.ts`] — deferred, pre-existing
+- [x] [Review][Defer] Publisher-failure has no retry / dead-letter — if `publisher.publish('battle_discarded')` rejects, the deleting client refetches via `onSettled`, but other room members never learn the battle was discarded until manual refresh. Architectural decision per ADR-6 / 5.4 (`console.error` only); proper fix is Epic 6's log-service + dual-publish. [`backend/battle-service/src/app.ts:506-516`] — deferred, Epic 6
+- [x] [Review][Defer] Backend test "keeps successful discards successful when the publisher fails" does not assert `console.error` was called nor that no second response is emitted — a regression that silently swallowed the publisher call entirely would pass. Test-quality nit, not a behaviour gap. [`backend/battle-service/src/app.test.ts:510-519`] — deferred, test-quality nit
+- [x] [Review][Defer] `setIsDiscarding(false)` in the `finally` of `handleConfirmDiscard` runs after `router.back()` has unmounted the screen — React 18 silently no-ops this, but it generates a dev warning in StrictMode. [`frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:230-232`] — deferred, dev-warning only
+- [x] [Review][Defer] Rapid `confirmVisible` toggling on native could stack Alerts (the dismissed Alert is not programmatically retracted before showing a new one). Edge case, no observed trigger in 5.7's flow. [`frontend/components/ConfirmDialog.tsx:29-44`] — deferred, edge case
+- [x] [Review][Defer] Accessibility label collision between the discard trigger (`accessibilityLabel="Discard battle"`) and the dialog confirm (`accessibilityLabel="Discard"`) — both visible to screen readers when the dialog is open; no `accessibilityViewIsModal` on the underlying screen. [`frontend/components/ConfirmDialog.tsx:67`, `frontend/components/munchkin/BattleDiscardAction.tsx:23`] — deferred, a11y polish
+
+**Dismissed as noise**
+
+- Hard-coded inline `'Battle is not active'` on 409 — exactly per spec contract (table line 727 + Resolved #6); the dev followed instructions.
+- `cancelLabel` "breaks native localization" — backward-compatible default of `'Cancel'`; behaviour identical for existing callers.
+- `BattleDiscardAction` missing `battle.status === 'active'` gate — implicit via the `useRoomBattle`/`?status=active` API filter; the parent only renders the block when `battle` is non-null.
+- "Missing route test for null-refetch dismissal (AC4)" — test does exist (`'dismisses after a previously active battle refetches to null'`, `index.test.tsx:343-354`).
+- "OpenAPI 3.1 enum with literal `null`" — repo's existing character schemas use the same pattern; presumed compatible.
+- `'Discarding...'` vs `'Discarding…'` ellipsis — cosmetic typography preference; spec used `…` glyph as a recommendation not a requirement.
+- Double-tap on confirm button firing two DELETEs — `setDiscardConfirmVisible(false)` removes the modal synchronously before `await`, so a second tap on the same element is not physically possible; the server's atomic guard would 409 the second anyway.
+- 404-vs-409 message ambiguity — server returns the same `'Battle is not active'` for any non-active state, by spec.
+- Test "missing or malformed" leftover mock — test passes regardless, but assertions are not weaker than required.
 
 ### File List
 

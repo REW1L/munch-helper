@@ -142,6 +142,7 @@ describe('battles api', () => {
 
     expect(mockApiRequest).toHaveBeenCalledWith('/battles/battle%2F1', {
       method: 'DELETE',
+      retryCount: 0,
     });
     expect(mockApiRequest.mock.calls[0][1]).not.toHaveProperty('body');
   });

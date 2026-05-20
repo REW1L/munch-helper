@@ -219,8 +219,13 @@ export default function BattleView() {
       setIsDiscarding(true);
       setDiscardConfirmVisible(false);
       await battleActions.discard(battle.id);
-      dismissedAfterNullRef.current = true;
-      router.back();
+      // Guard against double `router.back()` when the WS-driven refetch (see useEffect
+      // at lines 59-69) has already nulled `battle` and dismissed the modal before our
+      // HTTP response resolved.
+      if (!dismissedAfterNullRef.current) {
+        dismissedAfterNullRef.current = true;
+        router.back();
+      }
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
         setDiscardError('Battle is not active');

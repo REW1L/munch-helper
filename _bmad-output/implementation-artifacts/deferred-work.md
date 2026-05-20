@@ -32,3 +32,15 @@
 ## Deferred from: code review of 4-4-reconnecting-banner.md (2026-05-17)
 
 - Stale manual reconnect can update the wrong room/state: `reconnect()` awaits the current client and then only checks `isMountedRef.current` before mutating state. If the room/user changes or the hook disables while a manual reconnect is pending, the stale promise can update the new/disabled connection state. This race existed before Story 4.4 because the reconnect implementation was already present.
+
+## Deferred from: code review of 5-7-discard-a-battle (2026-05-20)
+
+- `ConfirmDialog` `useEffect` has `[visible]` dep with `eslint-disable` — stale-closure risk on native Alert if `onConfirm` reference changes after the Alert is shown. Pre-existing in the component, not introduced by 5.7 [frontend/components/ConfirmDialog.tsx:29-44].
+- Server-side PATCH-vs-DELETE race: 5.3's `findByIdAndUpdate` is not status-scoped, so a PATCH arriving between the discard's atomic update and its publish can mutate a `discarded` document and emit a stale `battle_updated`. Pre-existing 5.3 behaviour; DELETE merely widens the time window.
+- `useCallback(discard, [discardMutation])` dep churn — `useMutation` returns a new object each render so the `useCallback` provides no stability. Mirrors existing `start`/`patch`/`conclude` pattern; addressing here would require touching pre-5.7 code [frontend/hooks/useBattleActions.ts].
+- Publisher-failure has no retry / dead-letter — if `publisher.publish('battle_discarded')` rejects, other room members never learn until manual refresh. Architectural decision per ADR-6 / 5.4; Epic 6 territory (log-service + dual-publish) [backend/battle-service/src/app.ts:506-516].
+- Backend test "keeps successful discards successful when the publisher fails" does not assert `console.error` was called nor that no second response is emitted — a silent-swallow regression would pass [backend/battle-service/src/app.test.ts:510-519].
+- `setIsDiscarding(false)` in the `finally` of `handleConfirmDiscard` runs after `router.back()` unmounts — silent no-op on React 18 but StrictMode warning [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx:230-232].
+- Rapid `confirmVisible` toggling on native could stack Alerts — the dismissed Alert is not programmatically retracted before showing a new one [frontend/components/ConfirmDialog.tsx:29-44].
+- Accessibility label collision between the discard trigger and the dialog confirm — both visible to screen readers when the dialog is open; no `accessibilityViewIsModal` on the underlying screen [frontend/components/ConfirmDialog.tsx:67, frontend/components/munchkin/BattleDiscardAction.tsx:23].
+- OpenAPI / `api-contracts-backend.md` backfill for battle endpoints owned by prior stories — narrowed out of 5.7's scope during code review. Remaining work: document `GET /battles` (5.1), `POST /battles` (5.1), `PATCH /battles/{id}` (5.3), `POST /battles/{id}/conclude` (5.6), and WebSocket events `battle_started` / `battle_updated` / `battle_concluded` in `docs/openapi/` and `docs/api-contracts-backend.md`.
