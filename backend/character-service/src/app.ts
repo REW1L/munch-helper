@@ -26,6 +26,7 @@ export interface CharacterLike {
 export interface CharacterModelLike {
   find: (query: { roomId: string }) => { sort: (sortBy: { createdAt: 1 }) => Promise<CharacterLike[]> };
   create: (payload: Omit<CharacterLike, 'id' | 'createdAt' | 'updatedAt'>) => Promise<CharacterLike>;
+  findById: (id: string) => Promise<CharacterLike | null>;
   findByIdAndUpdate: (
     id: string,
     updates: Record<string, unknown>,
@@ -114,6 +115,45 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   });
+
+  const toPayloadCharacter = (character: CharacterLike) => {
+    const responseCharacter = toResponseCharacter(character);
+    return {
+      id: responseCharacter.id,
+      name: responseCharacter.name,
+      avatarId: responseCharacter.avatarId,
+      color: responseCharacter.color
+    };
+  };
+
+  const getComparableCharacterValue = (character: CharacterLike, key: string): unknown => {
+    if (key === 'color') {
+      return getCharacterColor(character);
+    }
+
+    return character[key as keyof CharacterLike];
+  };
+
+  const buildCharacterChanges = (
+    previousCharacter: CharacterLike | null,
+    updatedCharacter: CharacterLike,
+    updates: Record<string, unknown>
+  ): Record<string, { prev: unknown; next: unknown }> | undefined => {
+    if (!previousCharacter) {
+      return undefined;
+    }
+
+    const changes = Object.keys(updates).reduce<Record<string, { prev: unknown; next: unknown }>>((result, key) => {
+      const prev = getComparableCharacterValue(previousCharacter, key);
+      const next = getComparableCharacterValue(updatedCharacter, key);
+      if (!Object.is(prev, next)) {
+        result[key] = { prev, next };
+      }
+      return result;
+    }, {});
+
+    return Object.keys(changes).length > 0 ? changes : undefined;
+  };
 
   const toParamString = (value: string | string[] | undefined): string => {
     if (Array.isArray(value)) {
@@ -229,7 +269,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_created',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character)
           })
         );
         console.info('[character-service] character_created event queued', {
@@ -284,6 +324,16 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         updates.color = normalizeHexColor(updates.color);
       }
 
+      let previousCharacter: CharacterLike | null = null;
+      try {
+        previousCharacter = await characterModel.findById(characterId);
+      } catch (error) {
+        // Pre-update read is enrichment-only (for changes diff); a failure must not abort the update.
+        console.error('[character-service] failed to read previous character for changes diff', {
+          characterId,
+          error
+        });
+      }
       const character = await characterModel.findByIdAndUpdate(characterId, updates, {
         new: true,
         runValidators: true
@@ -304,7 +354,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_updated',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character),
+            changes: buildCharacterChanges(previousCharacter, character, updates)
           })
         );
         console.info('[character-service] character_updated event queued', {
@@ -344,7 +395,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_deleted',
             roomId: character.roomId,
-            characterId: character.id
+            character: toPayloadCharacter(character)
           })
         );
         console.info('[character-service] character_deleted event queued', {

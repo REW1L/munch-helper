@@ -1,6 +1,6 @@
 # Story 6.1: Character Events Are Published for Room History
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,35 +20,51 @@ so that the group can understand how the session state changed over time.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — Enrich the character event payload contract (AC: 3, 5)**
-  - [ ] In `backend/character-service/src/publisher.ts`, extend `CharacterEventPayload` with an **additive** display-context section. Do NOT rename or remove existing fields (`event`, `roomId`, `event_body.characterId`, `emittedAt`, `correlationId`) — `room-notifications-service` depends on them.
-  - [ ] Add `character: { id: string; name: string; avatarId: number; color: string }`.
-  - [ ] Add optional `changes?: Record<string, { prev: unknown; next: unknown }>` — present **only** for `character_updated`, containing exactly the fields whose value changed.
-  - [ ] Add canonical mirror fields to forward-align with the architecture event contract (these are duplicates of existing data, additive only): `eventType` (= `event`), `actorId` (= `character.id`), `occurredAt` (= `emittedAt`).
-  - [ ] Update `createCharacterEventPayload(...)` to accept the full character snapshot and an optional `changes` map and build the enriched payload. Keep `emittedAt`/`occurredAt` deterministic via `new Date().toISOString()` (existing pattern; fake-timer testable).
-- [ ] **Task 2 — Dual-target fan-out publisher (AC: 1, 4)**
-  - [ ] Introduce a composite/fan-out publisher in `publisher.ts` that wraps an ordered list of leg publishers (notifications leg + log leg) and publishes via `await Promise.allSettled(legs.map(p => p.publish(payload)))`. Each rejected leg is logged with the failing target; no rejection is rethrown.
-  - [ ] Reuse the existing `SnsCharacterEventPublisher` / `RedisCharacterEventPublisher` / `NoopCharacterEventPublisher` classes as legs — do NOT duplicate SNS/Redis client logic.
-  - [ ] The `CharacterEventPublisher` interface (`publish(payload): Promise<void>`) is unchanged; the composite implements the same interface so `app.ts` / `service.ts` wiring stays as-is.
-- [ ] **Task 3 — Capture prev→next for updates (AC: 3)**
-  - [ ] In `backend/character-service/src/app.ts` PATCH handler, obtain the pre-update character so changed-field `prev` values are available. Add `findById(id): Promise<CharacterLike | null>` to `CharacterModelLike` and implement it in `createCharacterModel()` (`backend/character-service/src/service.ts`) mirroring the existing method style (logging + field mapping). Read the character before calling `findByIdAndUpdate`.
-  - [ ] Compute `changes` as only the keys present in the validated `updates` object whose normalized value differs from the pre-update value. Do not include unchanged fields. Do not emit `changes` for create/delete.
-  - [ ] Concurrency note: read-before-update is last-write-wins (consistent with the system's existing concurrency posture); acceptable for display context — do not add locking.
-  - [ ] Pass the post-update character snapshot + `changes` into `createCharacterEventPayload` for `character_updated`; pass the created/deleted character snapshot for `character_created` / `character_deleted`.
-- [ ] **Task 4 — Lambda wiring: notifications + log SNS legs with degraded mode (AC: 1, 2, 4)**
-  - [ ] In `backend/character-service/src/lambda.ts`, build the notifications leg from the existing `ROOM_CHARACTER_EVENTS_TOPIC_ARN` env var (unchanged — see Project Structure Notes) and a new log leg from `LOG_TOPIC_ARN`.
-  - [ ] If `LOG_TOPIC_ARN` is absent/empty: `console.warn` once at bootstrap (degraded — log history will be absent) and use `NoopCharacterEventPublisher` for the log leg. Service must NOT throw or `process.exit`.
-  - [ ] Compose both legs into the fan-out publisher and pass it to `buildCharacterApp`. Keep the existing bootstrap-config `console.info` and add `logTopicArnConfigured: Boolean(process.env.LOG_TOPIC_ARN)`.
-- [ ] **Task 5 — Local server wiring: notifications + log Redis legs with degraded mode (AC: 1, 2, 4)**
-  - [ ] In `backend/character-service/src/index.ts`, keep the existing notifications Redis leg (`CHARACTER_EVENTS_REDIS_URL` + `ROOM_CHARACTER_EVENTS_CHANNEL`, default `room-character-events`). Add a log Redis leg on a new channel env `ROOM_LOG_EVENTS_CHANNEL` (default `room-log-events`) using the same `CHARACTER_EVENTS_REDIS_URL`.
-  - [ ] If `CHARACTER_EVENTS_REDIS_URL` is unset (already the Noop path) OR the log channel cannot be configured, `console.warn` once and use `NoopCharacterEventPublisher` for the log leg. Do not crash.
-  - [ ] Compose both legs into the fan-out publisher; extend the existing bootstrap `console.info` with `logEventsChannel` + `logConfigured`.
-- [ ] **Task 6 — Tests (AC: 1, 2, 3, 4, 5)**
-  - [ ] `publisher.test.ts`: fan-out calls every leg; uses `Promise.allSettled` (assert both legs invoked even when one rejects); a rejecting leg does not cause the composite `publish` to reject; `createCharacterEventPayload` produces the enriched superset incl. `changes` for updates and omits `changes` for create/delete; legacy fields preserved exactly (regression guard for AC 5).
-  - [ ] `lambda.test.ts`: both env vars set → composite with two SNS legs; `LOG_TOPIC_ARN` absent → startup `console.warn` + notifications leg still active + handler still boots and responds (no throw); follow existing `vi.hoisted` mock + `delete process.env.*` reset pattern, and add `delete process.env.LOG_TOPIC_ARN` to `beforeEach`.
-  - [ ] `app.test.ts`: create/delete publish a payload containing `character` display context; update publishes `changes` with correct `prev → next` for changed fields only; a publisher that throws does NOT change the HTTP status (create still `201`, update `200`, delete `204`) — regression guard for AC 4. Inject a spy publisher via the existing `createApp(model, { publisher })` option.
-  - [ ] Add/extend a `findById` test in `service.test.ts` if the existing model-mapping tests assert method coverage there.
-  - [ ] Run backend test + coverage gate: `cd backend/character-service && npm test` (Vitest 3.2.4, v8 coverage, 70% line floor — do not lower).
+- [x] **Task 1 — Enrich the character event payload contract (AC: 3, 5)**
+  - [x] In `backend/character-service/src/publisher.ts`, extend `CharacterEventPayload` with an **additive** display-context section. Do NOT rename or remove existing fields (`event`, `roomId`, `event_body.characterId`, `emittedAt`, `correlationId`) — `room-notifications-service` depends on them.
+  - [x] Add `character: { id: string; name: string; avatarId: number; color: string }`.
+  - [x] Add optional `changes?: Record<string, { prev: unknown; next: unknown }>` — present **only** for `character_updated`, containing exactly the fields whose value changed.
+  - [x] Add canonical mirror fields to forward-align with the architecture event contract (these are duplicates of existing data, additive only): `eventType` (= `event`), `actorId` (= `character.id`), `occurredAt` (= `emittedAt`).
+  - [x] Update `createCharacterEventPayload(...)` to accept the full character snapshot and an optional `changes` map and build the enriched payload. Keep `emittedAt`/`occurredAt` deterministic via `new Date().toISOString()` (existing pattern; fake-timer testable).
+- [x] **Task 2 — Dual-target fan-out publisher (AC: 1, 4)**
+  - [x] Introduce a composite/fan-out publisher in `publisher.ts` that wraps an ordered list of leg publishers (notifications leg + log leg) and publishes via `await Promise.allSettled(legs.map(p => p.publish(payload)))`. Each rejected leg is logged with the failing target; no rejection is rethrown.
+  - [x] Reuse the existing `SnsCharacterEventPublisher` / `RedisCharacterEventPublisher` / `NoopCharacterEventPublisher` classes as legs — do NOT duplicate SNS/Redis client logic.
+  - [x] The `CharacterEventPublisher` interface (`publish(payload): Promise<void>`) is unchanged; the composite implements the same interface so `app.ts` / `service.ts` wiring stays as-is.
+- [x] **Task 3 — Capture prev→next for updates (AC: 3)**
+  - [x] In `backend/character-service/src/app.ts` PATCH handler, obtain the pre-update character so changed-field `prev` values are available. Add `findById(id): Promise<CharacterLike | null>` to `CharacterModelLike` and implement it in `createCharacterModel()` (`backend/character-service/src/service.ts`) mirroring the existing method style (logging + field mapping). Read the character before calling `findByIdAndUpdate`.
+  - [x] Compute `changes` as only the keys present in the validated `updates` object whose normalized value differs from the pre-update value. Do not include unchanged fields. Do not emit `changes` for create/delete.
+  - [x] Concurrency note: read-before-update is last-write-wins (consistent with the system's existing concurrency posture); acceptable for display context — do not add locking.
+  - [x] Pass the post-update character snapshot + `changes` into `createCharacterEventPayload` for `character_updated`; pass the created/deleted character snapshot for `character_created` / `character_deleted`.
+- [x] **Task 4 — Lambda wiring: notifications + log SNS legs with degraded mode (AC: 1, 2, 4)**
+  - [x] In `backend/character-service/src/lambda.ts`, build the notifications leg from the existing `ROOM_CHARACTER_EVENTS_TOPIC_ARN` env var (unchanged — see Project Structure Notes) and a new log leg from `LOG_TOPIC_ARN`.
+  - [x] If `LOG_TOPIC_ARN` is absent/empty: `console.warn` once at bootstrap (degraded — log history will be absent) and use `NoopCharacterEventPublisher` for the log leg. Service must NOT throw or `process.exit`.
+  - [x] Compose both legs into the fan-out publisher and pass it to `buildCharacterApp`. Keep the existing bootstrap-config `console.info` and add `logTopicArnConfigured: Boolean(process.env.LOG_TOPIC_ARN)`.
+- [x] **Task 5 — Local server wiring: notifications + log Redis legs with degraded mode (AC: 1, 2, 4)**
+  - [x] In `backend/character-service/src/index.ts`, keep the existing notifications Redis leg (`CHARACTER_EVENTS_REDIS_URL` + `ROOM_CHARACTER_EVENTS_CHANNEL`, default `room-character-events`). Add a log Redis leg on a new channel env `ROOM_LOG_EVENTS_CHANNEL` (default `room-log-events`) using the same `CHARACTER_EVENTS_REDIS_URL`.
+  - [x] If `CHARACTER_EVENTS_REDIS_URL` is unset (already the Noop path) OR the log channel cannot be configured, `console.warn` once and use `NoopCharacterEventPublisher` for the log leg. Do not crash.
+  - [x] Compose both legs into the fan-out publisher; extend the existing bootstrap `console.info` with `logEventsChannel` + `logConfigured`.
+- [x] **Task 6 — Tests (AC: 1, 2, 3, 4, 5)**
+  - [x] `publisher.test.ts`: fan-out calls every leg; uses `Promise.allSettled` (assert both legs invoked even when one rejects); a rejecting leg does not cause the composite `publish` to reject; `createCharacterEventPayload` produces the enriched superset incl. `changes` for updates and omits `changes` for create/delete; legacy fields preserved exactly (regression guard for AC 5).
+  - [x] `lambda.test.ts`: both env vars set → composite with two SNS legs; `LOG_TOPIC_ARN` absent → startup `console.warn` + notifications leg still active + handler still boots and responds (no throw); follow existing `vi.hoisted` mock + `delete process.env.*` reset pattern, and add `delete process.env.LOG_TOPIC_ARN` to `beforeEach`.
+  - [x] `app.test.ts`: create/delete publish a payload containing `character` display context; update publishes `changes` with correct `prev → next` for changed fields only; a publisher that throws does NOT change the HTTP status (create still `201`, update `200`, delete `204`) — regression guard for AC 4. Inject a spy publisher via the existing `createApp(model, { publisher })` option.
+  - [x] Add/extend a `findById` test in `service.test.ts` if the existing model-mapping tests assert method coverage there.
+  - [x] Run backend test + coverage gate: `cd backend/character-service && npm test` (Vitest 3.2.4, v8 coverage, 70% line floor — do not lower).
+
+### Review Findings
+
+- [x] [Review][Patch] Surface per-leg transport in bootstrap log — Composite `publisher.constructor.name` now always logs `'FanoutCharacterEventPublisher'`, hiding which leg is SNS vs Noop. Add `notificationsPublisher`/`logPublisher` constructor names to the bootstrap `console.info`. [backend/character-service/src/lambda.ts:30-35, backend/character-service/src/index.ts:30-37]
+- [x] [Review][Patch] PATCH `findById` errors leak to HTTP 500 — pre-update read is enrichment-only but its throw bypasses the publish swallow and reaches `next(error)`. Wrap in try/catch and degrade to `previousCharacter = null`. [backend/character-service/src/app.ts:327]
+- [x] [Review][Patch] Fan-out swallows only async rejections, not sync throws — `Promise.allSettled(legs.map(l => l.publisher.publish(p)))` rejects the whole composite if any leg's `publish` synchronously throws before returning a promise. Wrap each invocation in `Promise.resolve().then(() => leg.publisher.publish(payload))`. [backend/character-service/src/publisher.ts:38-53]
+- [x] [Review][Patch] `changes.next` uses raw `updates[key]` instead of post-persistence value — trim/normalization asymmetry: `prev` comes from the stored doc but `next` is the request payload, so legacy untrimmed DB values or schema-side normalizers can produce false changes (or miss real ones). Compute `next` via `getComparableCharacterValue(updatedCharacter, key)` symmetrically with `prev`. [backend/character-service/src/app.ts:137-156]
+- [x] [Review][Patch] `mapCharacter` empty-string id fallback hides corrupt docs — `id: character.id || character._id?.toString() || ''` silently emits `event_body.characterId: ''` when both are missing. Throw or reject instead of synthesizing an empty id. [backend/character-service/src/service.ts]
+- [x] [Review][Patch] Whitespace env vars treated as configured — `Boolean(' ')` and similar whitespace strings skip the degraded-mode warning and instantiate broken SNS/Redis clients. Trim before the conditional. [backend/character-service/src/lambda.ts:8-19, backend/character-service/src/index.ts:7-19]
+- [x] [Review][Patch] Local degraded-mode warning misnames the cause — when `CHARACTER_EVENTS_REDIS_URL` is unset, both notifications **and** log legs become Noop, but the warning mentions only "room-history logging is disabled." Reword (or split into two conditionals) to surface that notifications is also disabled. [backend/character-service/src/index.ts:14-16]
+- [x] [Review][Patch] `logConfigured: Boolean(redisUrl)` is a misleading mirror of `redisConfigured` — the log leg's configured-ness should reflect the actual log publisher (e.g., `!(logPublisher instanceof NoopCharacterEventPublisher)`), not the shared Redis URL. [backend/character-service/src/index.ts:36]
+- [x] [Review][Patch] `console.error` spies in app.test.ts are not restored — `vi.spyOn(console, 'error').mockImplementation(...)` in the two "publishing fails" tests leaks across tests in the same file. Add `mockRestore()` or move to `afterEach`. [backend/character-service/src/app.test.ts]
+- [x] [Review][Patch] Publish-failure tests do not assert the publisher was actually called — only HTTP status is checked, so a regression that skipped publishing entirely on the failure path would still pass. Add `expect(publisher.publish).toHaveBeenCalled()`. [backend/character-service/src/app.test.ts]
+- [x] [Review][Defer] PATCH does not validate `level`/`power`/`class`/`race`/`gender`/`userId` — pre-existing input-validation gap; clients can persist arbitrary types and ship them through `changes`. [backend/character-service/src/app.ts:292, 300-304] — deferred, pre-existing
+- [x] [Review][Defer] `RedisCharacterEventPublisher.ensureConnected` does not recover from post-connect disconnects — `isOpen` flips false and the cached `connectPromise` is stale. [backend/character-service/src/publisher.ts:117-134] — deferred, pre-existing
+- [x] [Review][Defer] `correlationId` plumbed through types but never extracted from request headers — published payload has `correlationId: undefined` for every event. [backend/character-service/src/app.ts:267-274, 344-351, 385-391] — deferred, pre-existing
 
 ## Dev Notes
 
@@ -150,9 +166,34 @@ Use `Promise.allSettled` over the legs. Never sequential `await publishA; await 
 ## Dev Agent Record
 
 ### Agent Model Used
+GPT-5
 
 ### Debug Log References
+- `npm test -- --run character-service/src/publisher.test.ts character-service/src/app.test.ts character-service/src/lambda.test.ts character-service/src/service.test.ts` — passed (19 tests).
+- `npm test` from `backend/` — passed (21 files, 140 tests).
+- `npm run typecheck` from `backend/` — passed all backend workspaces.
+- `npm run test:coverage` from `backend/` — passed (all files line coverage 85.2%, above 70% floor).
 
 ### Completion Notes List
+- Added an additive character event payload superset: legacy notification fields are unchanged, canonical mirror fields are present, and create/update/delete events include display-ready character context.
+- Added update diff capture using a read-before-update model call; `changes` contains only normalized fields that actually changed and is emitted only for `character_updated`.
+- Added a reusable fan-out publisher that runs notification and log legs with `Promise.allSettled`, logs failed legs, and never propagates publish failures into request handling.
+- Wired Lambda to publish to existing `ROOM_CHARACTER_EVENTS_TOPIC_ARN` plus optional `LOG_TOPIC_ARN`; missing `LOG_TOPIC_ARN` warns once and degrades to a noop log leg.
+- Wired local character-service startup to publish notifications and log events through Redis, adding `ROOM_LOG_EVENTS_CHANNEL` with default `room-log-events`; missing Redis warns once and degrades to noop log publishing.
+- Updated backend local docs/config for the new room-history log channel. SAM/IAM `LOG_TOPIC_ARN` wiring remains deferred to Story 6.2 when the log topic resource exists, avoiding dangling infra references.
 
 ### File List
+- backend/README.md
+- backend/character-service/src/app.test.ts
+- backend/character-service/src/app.ts
+- backend/character-service/src/index.ts
+- backend/character-service/src/lambda.test.ts
+- backend/character-service/src/lambda.ts
+- backend/character-service/src/publisher.test.ts
+- backend/character-service/src/publisher.ts
+- backend/character-service/src/service.test.ts
+- backend/character-service/src/service.ts
+- backend/docker-compose.local.yml
+
+### Change Log
+- 2026-05-20 — Implemented Story 6.1 character event fan-out and enriched room-history payloads; added tests, docs, and local env wiring.

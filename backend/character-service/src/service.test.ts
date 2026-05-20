@@ -5,6 +5,7 @@ const { mockCreateApp, mockCharacter } = vi.hoisted(() => ({
   mockCharacter: {
     find: vi.fn(),
     create: vi.fn(),
+    findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
     findByIdAndDelete: vi.fn(),
   },
@@ -25,6 +26,7 @@ describe('character-service service', () => {
     mockCreateApp.mockClear();
     mockCharacter.find.mockReset();
     mockCharacter.create.mockReset();
+    mockCharacter.findById.mockReset();
     mockCharacter.findByIdAndUpdate.mockReset();
     mockCharacter.findByIdAndDelete.mockReset();
   });
@@ -78,12 +80,15 @@ describe('character-service service', () => {
       updatedAt,
     };
     mockCharacter.create.mockResolvedValueOnce(mappedCharacter);
+    mockCharacter.findById.mockResolvedValueOnce(mappedCharacter).mockResolvedValueOnce(null);
     mockCharacter.findByIdAndUpdate.mockResolvedValueOnce(mappedCharacter).mockResolvedValueOnce(null);
     mockCharacter.findByIdAndDelete.mockResolvedValueOnce(mappedCharacter).mockResolvedValueOnce(null);
 
     const model = createCharacterModel();
 
     await expect(model.create({ roomId: 'room-1', name: 'Mage', avatarId: 2, color: '#123456' } as never)).resolves.toEqual(mappedCharacter);
+    await expect(model.findById('char-1')).resolves.toEqual(mappedCharacter);
+    await expect(model.findById('char-2')).resolves.toBeNull();
     await expect(model.findByIdAndUpdate('char-1', { name: 'Mage+' }, { new: true, runValidators: true } as never)).resolves.toEqual(mappedCharacter);
     await expect(model.findByIdAndUpdate('char-2', {}, { new: true, runValidators: true } as never)).resolves.toBeNull();
     await expect(model.findByIdAndDelete('char-1')).resolves.toEqual(mappedCharacter);
@@ -99,6 +104,7 @@ describe('character-service service', () => {
       expect.objectContaining({
         find: expect.any(Function),
         create: expect.any(Function),
+        findById: expect.any(Function),
         findByIdAndUpdate: expect.any(Function),
         findByIdAndDelete: expect.any(Function),
       }),

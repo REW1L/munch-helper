@@ -20,6 +20,7 @@ vi.mock('redis', () => ({
 
 import {
   createCharacterEventPayload,
+  FanoutCharacterEventPublisher,
   NoopCharacterEventPublisher,
   RedisCharacterEventPublisher,
   SnsCharacterEventPublisher,
@@ -34,28 +35,106 @@ describe('character publisher', () => {
     mockCreateClient.mockClear();
   });
 
-  it('creates a serialized character event payload', () => {
+  it('creates an enriched serialized character event payload', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-13T00:00:00.000Z'));
 
     const payload = createCharacterEventPayload({
       event: 'character_created',
       roomId: 'ROOM01',
-      characterId: 'char-1',
+      character: {
+        id: 'char-1',
+        name: 'Thief',
+        avatarId: 3,
+        color: '#AABBCC',
+      },
       correlationId: 'corr-1',
     });
 
     expect(payload).toEqual({
       event: 'character_created',
+      eventType: 'character_created',
       roomId: 'ROOM01',
       event_body: {
         characterId: 'char-1',
       },
+      actorId: 'char-1',
       emittedAt: '2026-03-13T00:00:00.000Z',
+      occurredAt: '2026-03-13T00:00:00.000Z',
       correlationId: 'corr-1',
+      character: {
+        id: 'char-1',
+        name: 'Thief',
+        avatarId: 3,
+        color: '#AABBCC',
+      },
     });
 
     vi.useRealTimers();
+  });
+
+  it('adds update changes and omits changes for create/delete payloads', () => {
+    const updated = createCharacterEventPayload({
+      event: 'character_updated',
+      roomId: 'ROOM01',
+      character: {
+        id: 'char-1',
+        name: 'Thief',
+        avatarId: 3,
+        color: '#AABBCC',
+      },
+      changes: {
+        level: { prev: 1, next: 2 },
+      },
+    });
+
+    const deleted = createCharacterEventPayload({
+      event: 'character_deleted',
+      roomId: 'ROOM01',
+      character: {
+        id: 'char-1',
+        name: 'Thief',
+        avatarId: 3,
+        color: '#AABBCC',
+      },
+      changes: {
+        level: { prev: 1, next: 2 },
+      },
+    });
+
+    expect(updated.changes).toEqual({ level: { prev: 1, next: 2 } });
+    expect(deleted).not.toHaveProperty('changes');
+  });
+
+  it('fans out to every publisher and swallows rejected legs', async () => {
+    const first = { publish: vi.fn().mockRejectedValue(new Error('sns down')) };
+    const second = { publish: vi.fn().mockResolvedValue(undefined) };
+    const warn = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const publisher = new FanoutCharacterEventPublisher([
+      { target: 'notifications', publisher: first },
+      { target: 'log', publisher: second },
+    ]);
+    const payload = createCharacterEventPayload({
+      event: 'character_updated',
+      roomId: 'ROOM01',
+      character: {
+        id: 'char-1',
+        name: 'Thief',
+        avatarId: 3,
+        color: '#AABBCC',
+      },
+    });
+
+    await expect(publisher.publish(payload)).resolves.toBeUndefined();
+
+    expect(first.publish).toHaveBeenCalledWith(payload);
+    expect(second.publish).toHaveBeenCalledWith(payload);
+    expect(warn).toHaveBeenCalledWith(
+      '[character-events] publisher leg failed',
+      expect.objectContaining({ target: 'notifications', event: 'character_updated', roomId: 'ROOM01' })
+    );
+
+    warn.mockRestore();
   });
 
   it('publishes events to SNS', async () => {
@@ -64,9 +143,13 @@ describe('character publisher', () => {
 
     await publisher.publish({
       event: 'character_updated',
+      eventType: 'character_updated',
       roomId: 'ROOM01',
       event_body: { characterId: 'char-1' },
+      actorId: 'char-1',
       emittedAt: '2026-03-13T00:00:00.000Z',
+      occurredAt: '2026-03-13T00:00:00.000Z',
+      character: { id: 'char-1', name: 'Thief', avatarId: 3, color: '#AABBCC' },
     });
 
     expect(send).toHaveBeenCalledTimes(1);
@@ -74,9 +157,13 @@ describe('character publisher', () => {
       TopicArn: 'arn:aws:sns:topic',
       Message: JSON.stringify({
         event: 'character_updated',
+        eventType: 'character_updated',
         roomId: 'ROOM01',
         event_body: { characterId: 'char-1' },
+        actorId: 'char-1',
         emittedAt: '2026-03-13T00:00:00.000Z',
+        occurredAt: '2026-03-13T00:00:00.000Z',
+        character: { id: 'char-1', name: 'Thief', avatarId: 3, color: '#AABBCC' },
       }),
     });
   });
@@ -90,9 +177,13 @@ describe('character publisher', () => {
     const publisher = new RedisCharacterEventPublisher('redis://localhost:6379', 'room-events');
     const payload = {
       event: 'character_deleted' as const,
+      eventType: 'character_deleted' as const,
       roomId: 'ROOM01',
       event_body: { characterId: 'char-1' },
+      actorId: 'char-1',
       emittedAt: '2026-03-13T00:00:00.000Z',
+      occurredAt: '2026-03-13T00:00:00.000Z',
+      character: { id: 'char-1', name: 'Thief', avatarId: 3, color: '#AABBCC' },
     };
 
     await publisher.publish(payload);
@@ -111,9 +202,13 @@ describe('character publisher', () => {
     await expect(
       publisher.publish({
         event: 'character_created',
+        eventType: 'character_created',
         roomId: 'ROOM01',
         event_body: { characterId: 'char-1' },
+        actorId: 'char-1',
         emittedAt: '2026-03-13T00:00:00.000Z',
+        occurredAt: '2026-03-13T00:00:00.000Z',
+        character: { id: 'char-1', name: 'Thief', avatarId: 3, color: '#AABBCC' },
       })
     ).resolves.toBeUndefined();
   });

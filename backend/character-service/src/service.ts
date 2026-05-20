@@ -1,4 +1,4 @@
-import { createApp, type CharacterModelLike } from './app';
+import { createApp, type CharacterLike, type CharacterModelLike } from './app';
 import { Character } from './models/Character';
 import { type CharacterEventPublisher } from './publisher';
 
@@ -7,6 +7,33 @@ interface BuildCharacterAppOptions {
   publisher?: CharacterEventPublisher;
 }
 
+type CharacterDocumentLike = Omit<CharacterLike, 'id'> & {
+  id?: string;
+  _id?: { toString: () => string };
+};
+
+const mapCharacter = (character: CharacterDocumentLike): CharacterLike => {
+  const id = character.id || character._id?.toString();
+  if (!id) {
+    throw new Error('[character-service] character document is missing both id and _id');
+  }
+  return {
+    id,
+    roomId: character.roomId,
+    userId: character.userId,
+    name: character.name,
+    avatarId: character.avatarId,
+    color: character.color,
+    level: character.level,
+    power: character.power,
+    class: character.class,
+    race: character.race,
+    gender: character.gender,
+    createdAt: character.createdAt,
+    updatedAt: character.updatedAt
+  };
+};
+
 export function createCharacterModel(): CharacterModelLike {
   return {
     find: (query) => ({
@@ -14,21 +41,7 @@ export function createCharacterModel(): CharacterModelLike {
         console.info('[character-service] db find characters', { query, sortBy });
         const characters = await Character.find(query).sort(sortBy);
         console.info('[character-service] db find characters success', { count: characters.length });
-        return characters.map((character) => ({
-          id: character.id,
-          roomId: character.roomId,
-          userId: character.userId,
-          name: character.name,
-          avatarId: character.avatarId,
-          color: character.color,
-          level: character.level,
-          power: character.power,
-          class: character.class,
-          race: character.race,
-          gender: character.gender,
-          createdAt: character.createdAt,
-          updatedAt: character.updatedAt
-        }));
+        return characters.map(mapCharacter);
       }
     }),
     create: async (payload) => {
@@ -43,21 +56,20 @@ export function createCharacterModel(): CharacterModelLike {
         characterId: character.id,
         roomId: character.roomId
       });
-      return {
-        id: character.id,
-        roomId: character.roomId,
-        userId: character.userId,
-        name: character.name,
-        avatarId: character.avatarId,
-        color: character.color,
-        level: character.level,
-        power: character.power,
-        class: character.class,
-        race: character.race,
-        gender: character.gender,
-        createdAt: character.createdAt,
-        updatedAt: character.updatedAt
-      };
+      return mapCharacter(character);
+    },
+    findById: async (id) => {
+      console.info('[character-service] db find character by id', { characterId: id });
+      const character = await Character.findById(id);
+      if (!character) {
+        console.info('[character-service] db find character by id not found', { characterId: id });
+        return null;
+      }
+      console.info('[character-service] db find character by id success', {
+        characterId: character.id,
+        roomId: character.roomId
+      });
+      return mapCharacter(character);
     },
     findByIdAndUpdate: async (id, updates, options) => {
       console.info('[character-service] db update character', {
@@ -73,21 +85,7 @@ export function createCharacterModel(): CharacterModelLike {
         characterId: character.id,
         roomId: character.roomId
       });
-      return {
-        id: character.id,
-        roomId: character.roomId,
-        userId: character.userId,
-        name: character.name,
-        avatarId: character.avatarId,
-        color: character.color,
-        level: character.level,
-        power: character.power,
-        class: character.class,
-        race: character.race,
-        gender: character.gender,
-        createdAt: character.createdAt,
-        updatedAt: character.updatedAt
-      };
+      return mapCharacter(character);
     },
     findByIdAndDelete: async (id) => {
       console.info('[character-service] db delete character', { characterId: id });
@@ -100,21 +98,7 @@ export function createCharacterModel(): CharacterModelLike {
         characterId: character.id,
         roomId: character.roomId
       });
-      return {
-        id: character.id,
-        roomId: character.roomId,
-        userId: character.userId,
-        name: character.name,
-        avatarId: character.avatarId,
-        color: character.color,
-        level: character.level,
-        power: character.power,
-        class: character.class,
-        race: character.race,
-        gender: character.gender,
-        createdAt: character.createdAt,
-        updatedAt: character.updatedAt
-      };
+      return mapCharacter(character);
     }
   };
 }
