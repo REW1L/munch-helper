@@ -224,6 +224,27 @@ describe('Battle view', () => {
     expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(borderColor));
   });
 
+  it('includes character power in the player-side battle total', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockCharactersState.current = {
+      ...mockCharactersState.current,
+      characters: [
+        { ...mockCharactersState.current.characters[0], level: 2, power: 4 },
+        mockCharactersState.current.characters[1],
+      ],
+    };
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] },
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
+    expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Players ahead');
+  });
+
   it('renders error and empty states', async () => {
     const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
 
@@ -396,7 +417,7 @@ describe('Battle view', () => {
     };
 
     const view = render(<BattleView />);
-    expect(screen.getByText('Alice · Level 4')).toBeTruthy();
+    expect(screen.getByText('Alice · Power 4')).toBeTruthy();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('5');
     expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
 
@@ -409,7 +430,7 @@ describe('Battle view', () => {
     };
     view.rerender(<BattleView />);
 
-    expect(screen.getByText('Alice Prime · Level 9')).toBeTruthy();
+    expect(screen.getByText('Alice Prime · Power 9')).toBeTruthy();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('10');
     expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
     expect(mockBattleActions.patch).not.toHaveBeenCalled();
@@ -432,7 +453,7 @@ describe('Battle view', () => {
     };
     view.rerender(<BattleView />);
 
-    expect(screen.getByText('Alice · Level 4')).toBeTruthy();
+    expect(screen.getByText('Alice · Power 4')).toBeTruthy();
     expect(screen.getByTestId('battle-participant-removed').textContent).toContain('Removed character');
     expect(screen.queryByText(/character-2/)).toBeNull();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('4');
@@ -506,8 +527,8 @@ describe('Battle view', () => {
 
     const view = render(<BattleView />);
 
-    expect(screen.getByText('Alice Latest · Level 6')).toBeTruthy();
-    expect(screen.queryByText('Alice · Level 4')).toBeNull();
+    expect(screen.getByText('Alice Latest · Power 6')).toBeTruthy();
+    expect(screen.queryByText('Alice · Power 4')).toBeNull();
     expect(screen.getAllByTestId('battle-participant-active')).toHaveLength(1);
     expect(screen.getAllByTestId('battle-participant-removed')).toHaveLength(1);
     expect(screen.getByTestId('battle-players-total').textContent).toBe('6');
