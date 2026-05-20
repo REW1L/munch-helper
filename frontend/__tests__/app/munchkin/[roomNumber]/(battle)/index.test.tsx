@@ -42,9 +42,11 @@ const mockCharactersState = vi.hoisted(() => ({
 const mockBattleActions = vi.hoisted(() => ({
   patch: vi.fn(),
   conclude: vi.fn(),
+  discard: vi.fn(),
   current: {
     isLoading: false,
     isSaving: false,
+    isDiscarding: false,
     errorMessage: null,
   },
 }));
@@ -99,8 +101,10 @@ vi.mock('@/hooks/useBattleActions', () => ({
   useBattleActions: () => ({
     patch: mockBattleActions.patch,
     conclude: mockBattleActions.conclude,
+    discard: mockBattleActions.discard,
     isLoading: mockBattleActions.current.isLoading,
     isSaving: mockBattleActions.current.isSaving,
+    isDiscarding: mockBattleActions.current.isDiscarding,
     errorMessage: mockBattleActions.current.errorMessage,
     start: vi.fn(),
   }),
@@ -131,6 +135,7 @@ describe('Battle view', () => {
     };
     mockBattleActions.patch.mockReset();
     mockBattleActions.conclude.mockReset();
+    mockBattleActions.discard.mockReset();
     mockBattleActions.patch.mockImplementation(async (_battleId: string, payload: Partial<Battle>) => ({
       ...mockBattleState.current.battle!,
       ...payload,
@@ -141,7 +146,11 @@ describe('Battle view', () => {
       result,
       concludedAt: '2026-05-17T12:00:00.000Z',
     }));
-    mockBattleActions.current = { isLoading: false, isSaving: false, errorMessage: null };
+    mockBattleActions.discard.mockImplementation(async (_battleId: string) => ({
+      ...mockBattleState.current.battle!,
+      status: 'discarded',
+    }));
+    mockBattleActions.current = { isLoading: false, isSaving: false, isDiscarding: false, errorMessage: null };
     mockRouter.back.mockReset();
   });
 
@@ -528,5 +537,80 @@ describe('Battle view', () => {
     expect(screen.getByTestId('select-character-character-2')).toBeTruthy();
     expect(screen.queryByTestId('select-character-temp-1700000000000')).toBeNull();
     expect(screen.queryByText('Pending')).toBeNull();
+  });
+
+  it('confirm-gates discarding and cancel leaves the battle open', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-discard-button'));
+    expect(screen.getByText('Discard battle?')).toBeTruthy();
+    expect(mockBattleActions.discard).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep battle' }));
+
+    await waitFor(() => {
+      expect(mockBattleActions.discard).not.toHaveBeenCalled();
+      expect(mockRouter.back).not.toHaveBeenCalled();
+      expect(screen.getByDisplayValue('Dungeon Door')).toBeTruthy();
+    });
+  });
+
+  it('discards a clean battle after confirmation and dismisses the modal', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-discard-button'));
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+
+    await waitFor(() => {
+      expect(mockBattleActions.discard).toHaveBeenCalledWith('battle-1');
+      expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('keeps discard enabled for a dirty draft without saving it', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+
+    render(<BattleView />);
+
+    fireEvent.change(screen.getByTestId('battle-name-input'), { target: { value: 'Unsaved Name' } });
+    expect(screen.getByTestId('battle-discard-button').getAttribute('aria-disabled')).not.toBe('true');
+
+    fireEvent.click(screen.getByTestId('battle-discard-button'));
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+
+    await waitFor(() => {
+      expect(mockBattleActions.discard).toHaveBeenCalledWith('battle-1');
+      expect(mockBattleActions.patch).not.toHaveBeenCalled();
+      expect(mockRouter.back).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('surfaces non-active discard conflicts inline without dismissing', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleActions.discard.mockRejectedValue(new ApiError('Battle is not active', 409, { message: 'Battle is not active' }));
+
+    render(<BattleView />);
+
+    fireEvent.click(screen.getByTestId('battle-discard-button'));
+    fireEvent.click(screen.getByTestId('confirm-dialog-confirm'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('battle-discard-error').textContent).toBe('Battle is not active');
+      expect(mockRouter.back).not.toHaveBeenCalled();
+    });
+  });
+
+  it('disables discard while the discard mutation is pending', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleActions.current = { isLoading: false, isSaving: false, isDiscarding: true, errorMessage: null };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('battle-discard-button').getAttribute('aria-disabled')).toBe('true');
+    expect(screen.getByTestId('battle-discard-button').textContent).toBe('Discarding...');
   });
 });

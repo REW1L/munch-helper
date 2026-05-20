@@ -397,6 +397,12 @@ Resources:
             ApiId: !Ref CloudHttpApi
             Path: /battles/{id}
             Method: PATCH
+        BattleDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /battles/{id}
+            Method: DELETE
         BattleConcludePost:
           Type: HttpApi
           Properties:

@@ -58,5 +58,13 @@ describe('battle-service model wrapper', () => {
       { $set: { status: 'concluded', result: 'players_win', concludedAt: now } },
       { new: true, runValidators: true }
     );
+    await expect(model.findActiveByIdAndDiscard('battle-1')).resolves.toMatchObject({
+      id: 'battle-1'
+    });
+    expect(Battle.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'battle-1', status: 'active' },
+      { $set: { status: 'discarded' } },
+      { new: true, runValidators: true }
+    );
   });
 });

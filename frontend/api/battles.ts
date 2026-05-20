@@ -85,3 +85,13 @@ export async function concludeBattle(battleId: string, result: BattleResult): Pr
     body: { result },
   });
 }
+
+export async function discardBattle(battleId: string): Promise<Battle> {
+  // Disable retry: a 5xx delivered after the server committed the soft-delete would
+  // cause the retry to see no active battle and return 409 ("Battle is not active"),
+  // surfacing a spurious error to a user whose discard actually succeeded.
+  return apiRequest<Battle>(`/battles/${encodeURIComponent(battleId)}`, {
+    method: 'DELETE',
+    retryCount: 0,
+  });
+}

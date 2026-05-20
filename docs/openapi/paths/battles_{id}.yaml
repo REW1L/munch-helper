@@ -1,0 +1,19 @@
+delete:
+  tags:
+    - Battle Management
+  summary: Discard active battle
+  description: Soft-deletes an active battle by setting its status to discarded.
+  operationId: discardBattle
+  parameters:
+    - $ref: ../parameters/BattleId.yaml
+  responses:
+    "200":
+      description: Battle discarded
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Battle.yaml
+    "404":
+      description: Battle not found
+    "409":
+      description: Battle is not active

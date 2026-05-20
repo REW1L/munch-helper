@@ -1,0 +1,9 @@
+type: object
+required:
+  - id
+  - value
+properties:
+  id:
+    type: string
+  value:
+    type: integer

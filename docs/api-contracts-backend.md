@@ -16,6 +16,10 @@ Source of truth for this summary: `docs/openapi/`.
 | `PUT` | `/characters` | Create a character |
 | `POST` | `/characters/{characterId}` | Update a character |
 | `DELETE` | `/characters/{characterId}` | Delete a character |
+| `DELETE` | `/battles/{id}` | Discard an active battle (Story 5.7 — soft delete) |
+
+<!-- Battle endpoints owned by Stories 5.1 / 5.3 / 5.6 (GET, POST, PATCH, POST conclude)
+     are implemented but not yet captured here. See deferred-work backlog for backfill. -->
 
 ## WebSocket Contract
 
@@ -29,8 +33,12 @@ Server-to-client event schemas:
 - `character_created`
 - `character_updated`
 - `character_deleted`
+- `battle_discarded` (Story 5.7)
 
-Each event contains `event` and `event_body.characterId`.
+Character events contain `event` and `event_body.characterId`. Battle events contain `event` and `event_body.battleId`.
+
+<!-- battle_started / battle_updated / battle_concluded are emitted by stories 5.1 /
+     5.3 / 5.6 but not yet documented here. See deferred-work backlog. -->
 
 ## Notes
 

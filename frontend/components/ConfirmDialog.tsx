@@ -7,6 +7,7 @@ interface ConfirmDialogProps {
   title: string;
   message: string;
   confirmLabel: string;
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -21,6 +22,7 @@ export default function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -33,7 +35,7 @@ export default function ConfirmDialog({
       title,
       message,
       [
-        { text: 'Cancel', style: 'cancel', onPress: onCancel },
+        { text: cancelLabel, style: 'cancel', onPress: onCancel },
         { text: confirmLabel, style: 'destructive', onPress: onConfirm },
       ],
       { cancelable: true, onDismiss: onCancel }
@@ -53,10 +55,21 @@ export default function ConfirmDialog({
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.message}>{message}</Text>
             <View style={styles.buttons}>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
-                <Text style={styles.cancelText}>Cancel</Text>
+              <TouchableOpacity
+                accessibilityLabel={cancelLabel}
+                accessibilityRole="button"
+                style={[styles.button, styles.cancelButton]}
+                onPress={onCancel}
+              >
+                <Text style={styles.cancelText}>{cancelLabel}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={onConfirm} testID="confirm-dialog-confirm">
+              <TouchableOpacity
+                accessibilityLabel={confirmLabel}
+                accessibilityRole="button"
+                style={[styles.button, styles.confirmButton]}
+                onPress={onConfirm}
+                testID="confirm-dialog-confirm"
+              >
                 <Text style={styles.confirmText}>{confirmLabel}</Text>
               </TouchableOpacity>
             </View>

@@ -1,6 +1,7 @@
 import { Battle, BattleResult, MonsterSide, PlayerSide } from '@/api/battles';
 import { ApiError } from '@/api/http';
 import BattleConcludeAction from '@/components/munchkin/BattleConcludeAction';
+import BattleDiscardAction from '@/components/munchkin/BattleDiscardAction';
 import BattleSidePanel from '@/components/munchkin/BattleSidePanel';
 import { AppTheme } from '@/constants/theme';
 import { useBattleActions } from '@/hooks/useBattleActions';
@@ -46,8 +47,11 @@ export default function BattleView() {
   const [savedDraft, setSavedDraft] = useState<BattleDraft | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [concludeError, setConcludeError] = useState<string | null>(null);
+  const [discardError, setDiscardError] = useState<string | null>(null);
+  const [discardConfirmVisible, setDiscardConfirmVisible] = useState(false);
   const [selectedResult, setSelectedResult] = useState<BattleResult | null>(null);
   const [isConcluding, setIsConcluding] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
   const initializedBattleIdRef = useRef<string | null>(null);
   const hadBattleRef = useRef(false);
   const dismissedAfterNullRef = useRef(false);
@@ -76,6 +80,8 @@ export default function BattleView() {
       setSavedDraft(nextDraft);
       setSaveError(null);
       setConcludeError(null);
+      setDiscardError(null);
+      setDiscardConfirmVisible(false);
       setSelectedResult(null);
       return;
     }
@@ -194,6 +200,43 @@ export default function BattleView() {
     }
   }, [battle, battleActions, concludeDisabled, router, selectedResult]);
 
+  const handleRequestDiscardConfirm = useCallback(() => {
+    setDiscardError(null);
+    setDiscardConfirmVisible(true);
+  }, []);
+
+  const handleCancelDiscardConfirm = useCallback(() => {
+    setDiscardConfirmVisible(false);
+  }, []);
+
+  const handleConfirmDiscard = useCallback(async () => {
+    if (!battle || isDiscarding) {
+      return;
+    }
+
+    try {
+      setDiscardError(null);
+      setIsDiscarding(true);
+      setDiscardConfirmVisible(false);
+      await battleActions.discard(battle.id);
+      // Guard against double `router.back()` when the WS-driven refetch (see useEffect
+      // at lines 59-69) has already nulled `battle` and dismissed the modal before our
+      // HTTP response resolved.
+      if (!dismissedAfterNullRef.current) {
+        dismissedAfterNullRef.current = true;
+        router.back();
+      }
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setDiscardError('Battle is not active');
+        return;
+      }
+      setDiscardError(error instanceof Error ? error.message : 'Failed to discard battle');
+    } finally {
+      setIsDiscarding(false);
+    }
+  }, [battle, battleActions, isDiscarding, router]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -310,6 +353,18 @@ export default function BattleView() {
 
             {concludeError && (
               <Text style={styles.errorText} testID="battle-conclude-error">{concludeError}</Text>
+            )}
+
+            <BattleDiscardAction
+              confirmVisible={discardConfirmVisible}
+              isDiscarding={isDiscarding || battleActions.isDiscarding}
+              onCancelConfirm={handleCancelDiscardConfirm}
+              onConfirmDiscard={handleConfirmDiscard}
+              onRequestConfirm={handleRequestDiscardConfirm}
+            />
+
+            {discardError && (
+              <Text style={styles.errorText} testID="battle-discard-error">{discardError}</Text>
             )}
           </View>
         )}

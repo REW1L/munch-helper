@@ -1,4 +1,4 @@
-import { Battle, BattleResult, PatchBattlePayload, StartBattlePayload, concludeBattle, patchBattle, startBattle } from '@/api/battles';
+import { Battle, BattleResult, PatchBattlePayload, StartBattlePayload, concludeBattle, discardBattle, patchBattle, startBattle } from '@/api/battles';
 import { getBattleQueryKey } from '@/hooks/useRoomBattle';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
@@ -7,8 +7,10 @@ interface UseBattleActionsResult {
   start: (payload: StartBattlePayload) => Promise<Battle>;
   patch: (battleId: string, payload: PatchBattlePayload) => Promise<Battle>;
   conclude: (battleId: string, result: BattleResult) => Promise<Battle>;
+  discard: (battleId: string) => Promise<Battle>;
   isLoading: boolean;
   isSaving: boolean;
+  isDiscarding: boolean;
   errorMessage: string | null;
 }
 
@@ -37,6 +39,13 @@ export function useBattleActions(roomId: string | undefined): UseBattleActionsRe
     },
   });
 
+  const discardMutation = useMutation({
+    mutationFn: async (battleId: string) => discardBattle(battleId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: battleQueryKey });
+    },
+  });
+
   const start = useCallback(
     async (payload: StartBattlePayload) => {
       return startMutation.mutateAsync(payload);
@@ -58,22 +67,35 @@ export function useBattleActions(roomId: string | undefined): UseBattleActionsRe
     [concludeMutation]
   );
 
+  const discard = useCallback(
+    async (battleId: string) => {
+      return discardMutation.mutateAsync(battleId);
+    },
+    [discardMutation]
+  );
+
   return useMemo(
     () => ({
       start,
       patch,
       conclude,
-      isLoading: startMutation.isPending || patchMutation.isPending || concludeMutation.isPending,
+      discard,
+      isLoading: startMutation.isPending || patchMutation.isPending || concludeMutation.isPending || discardMutation.isPending,
       isSaving: patchMutation.isPending,
+      isDiscarding: discardMutation.isPending,
       errorMessage:
         (startMutation.error instanceof Error ? startMutation.error.message : null) ||
         (patchMutation.error instanceof Error ? patchMutation.error.message : null) ||
-        (concludeMutation.error instanceof Error ? concludeMutation.error.message : null),
+        (concludeMutation.error instanceof Error ? concludeMutation.error.message : null) ||
+        (discardMutation.error instanceof Error ? discardMutation.error.message : null),
     }),
     [
       conclude,
       concludeMutation.error,
       concludeMutation.isPending,
+      discard,
+      discardMutation.error,
+      discardMutation.isPending,
       patch,
       patchMutation.error,
       patchMutation.isPending,

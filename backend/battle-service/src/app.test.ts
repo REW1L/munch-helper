@@ -25,6 +25,7 @@ function buildBattleModel(): BattleModelLike {
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
     findActiveByIdAndConclude: vi.fn(),
+    findActiveByIdAndDiscard: vi.fn(),
     create: vi.fn()
   };
 }
@@ -481,6 +482,117 @@ describe('battle-service app', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.result).toBe('monster_wins');
+  });
+
+  it('discards an active battle by soft-deleting status and publishes once', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    const discarded = buildBattle({
+      status: 'discarded',
+      name: 'Dungeon Door',
+      playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] },
+      result: null,
+      concludedAt: null
+    });
+    vi.mocked(model.findActiveByIdAndDiscard).mockResolvedValue(discarded);
+
+    const response = await request(createApp(model, { publisher }))
+      .delete('/battles/battle-1')
+      .send({ result: 'players_win', name: 'Ignored Name' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 'battle-1',
+      name: 'Dungeon Door',
+      status: 'discarded',
+      result: null,
+      concludedAt: null,
+      playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] }
+    });
+    expect(model.findActiveByIdAndDiscard).toHaveBeenCalledWith('battle-1');
+    expect(model.findById).not.toHaveBeenCalled();
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
+      event: 'battle_discarded',
+      roomId: 'room-1',
+      event_body: { battleId: 'battle-1' },
+      emittedAt: expect.any(String)
+    }));
+  });
+
+  it('returns 404 when discard target is missing or malformed', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findActiveByIdAndDiscard)
+      .mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(Object.assign(new Error('bad id'), { name: 'CastError' }));
+    vi.mocked(model.findById).mockResolvedValueOnce(null);
+    const app = createApp(model);
+
+    const missing = await request(app).delete('/battles/missing');
+    const castError = await request(app).delete('/battles/bad-id');
+
+    expect(missing.status).toBe(404);
+    expect(missing.body).toEqual({ message: 'Battle not found' });
+    expect(castError.status).toBe(404);
+    expect(castError.body).toEqual({ message: 'Battle not found' });
+  });
+
+  it.each(['concluded', 'discarded'] as const)('returns 409 for discarding a %s battle and does not publish', async (status) => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn() };
+    vi.mocked(model.findActiveByIdAndDiscard).mockResolvedValue(null);
+    vi.mocked(model.findById).mockResolvedValue(buildBattle({ status }));
+
+    const response = await request(createApp(model, { publisher })).delete('/battles/battle-1');
+
+    expect(response.status).toBe(409);
+    expect(response.body).toEqual({ message: 'Battle is not active' });
+    expect(publisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('maps discard double-write races to one success and one 409', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findActiveByIdAndDiscard)
+      .mockResolvedValueOnce(buildBattle({ status: 'discarded' }))
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+    vi.mocked(model.findById)
+      .mockResolvedValueOnce(buildBattle({ status: 'discarded' }))
+      .mockResolvedValueOnce(buildBattle({ status: 'concluded', result: 'players_win', concludedAt: new Date() }));
+    const app = createApp(model, { publisher });
+
+    const first = await request(app).delete('/battles/battle-1');
+    const second = await request(app).delete('/battles/battle-1');
+    const concludeRace = await request(app).delete('/battles/battle-1');
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(409);
+    expect(concludeRace.status).toBe(409);
+    expect(publisher.publish).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 502 for unexpected discard errors', async () => {
+    const model = buildBattleModel();
+    vi.mocked(model.findActiveByIdAndDiscard).mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(createApp(model)).delete('/battles/battle-1');
+
+    expect(response.status).toBe(502);
+    expect(response.body).toEqual({ message: 'Unexpected error' });
+  });
+
+  it('keeps successful discards successful when the publisher fails', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish unavailable')) };
+    vi.mocked(model.findActiveByIdAndDiscard).mockResolvedValue(buildBattle({ status: 'discarded' }));
+
+    const response = await request(createApp(model, { publisher })).delete('/battles/battle-1');
+
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe('discarded');
   });
 
   it('strips the configured route prefix', async () => {
