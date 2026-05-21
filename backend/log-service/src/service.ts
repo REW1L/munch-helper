@@ -1,3 +1,4 @@
+import { mongoose } from './db';
 import { LogEvent, type LogEventType } from './models/LogEvent';
 
 export interface LogEventInput {
@@ -7,6 +8,33 @@ export interface LogEventInput {
   summary: string;
   payload: Record<string, unknown>;
   occurredAt: Date;
+}
+
+export interface LogEventResource {
+  id: string;
+  roomId: string;
+  eventType: LogEventType;
+  actorId: string;
+  summary: string;
+  payload: Record<string, unknown>;
+  occurredAt: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+interface LogEventJsonLike {
+  toJSON?: () => Record<string, unknown>;
+  _id?: unknown;
+  id?: unknown;
+  roomId?: unknown;
+  eventType?: unknown;
+  actorId?: unknown;
+  summary?: unknown;
+  payload?: unknown;
+  occurredAt?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  __v?: unknown;
 }
 
 export const SUPPORTED_LOG_EVENT_TYPES: LogEventType[] = [
@@ -33,6 +61,18 @@ const readNestedString = (value: unknown, key: string): string => {
 };
 
 const isLogEventType = (value: string): value is LogEventType => supportedLogEventTypes.has(value);
+
+const toLogEventResource = (document: LogEventJsonLike): LogEventResource => {
+  const json = typeof document.toJSON === 'function' ? document.toJSON() : { ...document };
+  const id = json.id ?? json._id;
+  delete json._id;
+  delete json.__v;
+
+  return {
+    ...json,
+    id: String(id)
+  } as LogEventResource;
+};
 
 const isCharacterEvent = (eventType: LogEventType): boolean => eventType.startsWith('character_');
 
@@ -177,4 +217,35 @@ export async function persistLogEvent(input: LogEventInput): Promise<void> {
     roomId: input.roomId,
     actorId: input.actorId
   });
+}
+
+export async function listLogEvents(input: {
+  roomId: string;
+  limit: number;
+  before?: string;
+}): Promise<LogEventResource[]> {
+  const filter: Record<string, unknown> = { roomId: input.roomId };
+
+  if (input.before) {
+    filter._id = { $lt: new mongoose.Types.ObjectId(input.before) };
+  }
+
+  const documents = await LogEvent.find(filter)
+    .sort({ _id: -1 })
+    .limit(input.limit)
+    .exec();
+
+  return documents.map((document) => toLogEventResource(document));
+}
+
+export async function getLogEvent(input: {
+  roomId: string;
+  logId: string;
+}): Promise<LogEventResource | null> {
+  const document = await LogEvent.findOne({
+    _id: new mongoose.Types.ObjectId(input.logId),
+    roomId: input.roomId
+  }).exec();
+
+  return document ? toLogEventResource(document) : null;
 }
