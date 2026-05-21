@@ -1,6 +1,6 @@
 # Story 6.3: Battle Lifecycle Events Are Published for Room History
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -28,50 +28,50 @@ so that the group has a durable record of battle outcomes during the session.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 0 — Verify prerequisites before any edits (blocking gate)**
-  - [ ] Confirm `battle-service/src/app.ts` (or `routes/battles.ts` if Epic 5 extracted routes) exposes the create, `POST /battles/:id/conclude`, `DELETE /battles/:id` (discard), and `PATCH /battles/:id` handlers, and that each already publishes its event to the notifications target via an injected `BattleEventPublisher`.
-  - [ ] Confirm `publisher.ts` already has working `SnsBattleEventPublisher` + `RedisBattleEventPublisher` (notifications leg) wired in `lambda.ts` (`NOTIFICATIONS_TOPIC_ARN` / Epic 5's notifications topic env) and `index.ts` (Redis), mirroring `character-service`.
-  - [ ] If any of the above is missing → **STOP**. Record in Completion Notes that Story 6.3 is blocked on Epic 5 (Stories 5.3/5.4/5.6/5.7) and do not proceed. Do not build Epic 5 scope here.
+- [x] **Task 0 — Verify prerequisites before any edits (blocking gate)**
+  - [x] Confirm `battle-service/src/app.ts` (or `routes/battles.ts` if Epic 5 extracted routes) exposes the create, `POST /battles/:id/conclude`, `DELETE /battles/:id` (discard), and `PATCH /battles/:id` handlers, and that each already publishes its event to the notifications target via an injected `BattleEventPublisher`.
+  - [x] Confirm `publisher.ts` already has working `SnsBattleEventPublisher` + `RedisBattleEventPublisher` (notifications leg) wired in `lambda.ts` (`NOTIFICATIONS_TOPIC_ARN` / Epic 5's notifications topic env) and `index.ts` (Redis), mirroring `character-service`.
+  - [x] If any of the above is missing → **STOP**. Record in Completion Notes that Story 6.3 is blocked on Epic 5 (Stories 5.3/5.4/5.6/5.7) and do not proceed. Do not build Epic 5 scope here.
 
-- [ ] **Task 1 — Enrich the battle event payload contract (AC: 3, 5, 6)**
-  - [ ] In `backend/battle-service/src/publisher.ts`, extend `BattleEventPayload` with an **additive** display-context section. Do **NOT** rename or remove any field the notifications consumer (`room-notifications-service`, wired by Epic 5) already reads (`event`, `roomId`, `battleId`, `emittedAt`, and any other Epic-5-established field) — additive only.
-  - [ ] Add canonical mirror fields to forward-align with the architecture event contract (duplicates of existing data, additive): `eventType` (= `event`), `actorId` (= `battleId`), `occurredAt` (= `emittedAt`) ([Source: architecture/implementation-patterns-consistency-rules.md#Event Payload Contract]).
-  - [ ] Add a `battle` display-context object: `{ id: string; name: string; status: 'active' | 'concluded' | 'discarded'; result: 'players_win' | 'monster_wins' | null; playerSide: { characterIds: string[]; bonuses: BonusItem[] }; monsterSide: { monsters: MonsterItem[]; bonuses: BonusItem[] } }`. This is the battle snapshot at the moment of the lifecycle event — the raw context Story 6.7 drill-in renders, and the source for Story 6.2's `buildSummary` battle branch (`battle.name`, `battle.result`).
-  - [ ] Add typed payload creators mirroring the existing `createBattleStartedEventPayload`: extend it to carry the full battle snapshot, and add `createBattleConcludedEventPayload` and `createBattleDiscardedEventPayload` (and `createBattleUpdatedEventPayload` if Epic 5 did not already add it). Each accepts the post-transition `BattleLike` snapshot and builds the enriched superset. Keep `emittedAt`/`occurredAt` deterministic via `new Date().toISOString()` (existing pattern; fake-timer testable).
-  - [ ] Reuse the existing `BonusItem` / `MonsterItem` types from `app.ts` — do not redefine them in `publisher.ts`; import the shared types so the snapshot shape cannot drift from the model.
+- [x] **Task 1 — Enrich the battle event payload contract (AC: 3, 5, 6)**
+  - [x] In `backend/battle-service/src/publisher.ts`, extend `BattleEventPayload` with an **additive** display-context section. Do **NOT** rename or remove any field the notifications consumer (`room-notifications-service`, wired by Epic 5) already reads (`event`, `roomId`, `battleId`, `emittedAt`, and any other Epic-5-established field) — additive only.
+  - [x] Add canonical mirror fields to forward-align with the architecture event contract (duplicates of existing data, additive): `eventType` (= `event`), `actorId` (= `battleId`), `occurredAt` (= `emittedAt`) ([Source: architecture/implementation-patterns-consistency-rules.md#Event Payload Contract]).
+  - [x] Add a `battle` display-context object: `{ id: string; name: string; status: 'active' | 'concluded' | 'discarded'; result: 'players_win' | 'monster_wins' | null; playerSide: { characterIds: string[]; bonuses: BonusItem[] }; monsterSide: { monsters: MonsterItem[]; bonuses: BonusItem[] } }`. This is the battle snapshot at the moment of the lifecycle event — the raw context Story 6.7 drill-in renders, and the source for Story 6.2's `buildSummary` battle branch (`battle.name`, `battle.result`).
+  - [x] Add typed payload creators mirroring the existing `createBattleStartedEventPayload`: extend it to carry the full battle snapshot, and add `createBattleConcludedEventPayload` and `createBattleDiscardedEventPayload` (and `createBattleUpdatedEventPayload` if Epic 5 did not already add it). Each accepts the post-transition `BattleLike` snapshot and builds the enriched superset. Keep `emittedAt`/`occurredAt` deterministic via `new Date().toISOString()` (existing pattern; fake-timer testable).
+  - [x] Reuse the existing `BonusItem` / `MonsterItem` types from `app.ts` — do not redefine them in `publisher.ts`; import the shared types so the snapshot shape cannot drift from the model.
 
-- [ ] **Task 2 — Event-type-aware dual-target fan-out publisher (AC: 1, 4, 5)**
-  - [ ] Introduce a composite/fan-out publisher in `publisher.ts` that wraps an ordered list of leg publishers (notifications leg + log leg) and publishes via `await Promise.allSettled(legs.map(p => p.publish(payload)))`. Each rejected leg is logged with the failing target; no rejection is rethrown (AC 4).
-  - [ ] **Event-type routing rule (battle-specific, differs from Story 6.1):** the **log leg must be skipped for `battle_updated`** (AC 5 / ADR-5). Lifecycle events (`battle_started`, `battle_concluded`, `battle_discarded`) fan out to **both** legs; `battle_updated` goes to the **notifications leg only**. Implement this as a single rule inside the composite (e.g., the log leg is a no-op/short-circuit when `payload.eventType !==` one of the three lifecycle types) so call sites stay unaware of routing — never duplicate the decision at each route handler.
-  - [ ] Reuse the existing/Epic-5 `SnsBattleEventPublisher` / `RedisBattleEventPublisher` / `NoopBattleEventPublisher` classes as legs — do **NOT** duplicate SNS/Redis client logic. The `BattleEventPublisher` interface (`publish(payload): Promise<void>`) is unchanged; the composite implements the same interface so `app.ts` / `service.ts` wiring stays as-is (still `options.publisher`).
+- [x] **Task 2 — Event-type-aware dual-target fan-out publisher (AC: 1, 4, 5)**
+  - [x] Introduce a composite/fan-out publisher in `publisher.ts` that wraps an ordered list of leg publishers (notifications leg + log leg) and publishes via `await Promise.allSettled(legs.map(p => p.publish(payload)))`. Each rejected leg is logged with the failing target; no rejection is rethrown (AC 4).
+  - [x] **Event-type routing rule (battle-specific, differs from Story 6.1):** the **log leg must be skipped for `battle_updated`** (AC 5 / ADR-5). Lifecycle events (`battle_started`, `battle_concluded`, `battle_discarded`) fan out to **both** legs; `battle_updated` goes to the **notifications leg only**. Implement this as a single rule inside the composite (e.g., the log leg is a no-op/short-circuit when `payload.eventType !==` one of the three lifecycle types) so call sites stay unaware of routing — never duplicate the decision at each route handler.
+  - [x] Reuse the existing/Epic-5 `SnsBattleEventPublisher` / `RedisBattleEventPublisher` / `NoopBattleEventPublisher` classes as legs — do **NOT** duplicate SNS/Redis client logic. The `BattleEventPublisher` interface (`publish(payload): Promise<void>`) is unchanged; the composite implements the same interface so `app.ts` / `service.ts` wiring stays as-is (still `options.publisher`).
 
-- [ ] **Task 3 — Pass the battle snapshot into payload creation at each lifecycle call site (AC: 3, 5)**
-  - [ ] In the create handler (`POST /battles`), pass the created `BattleLike` snapshot into the (now snapshot-aware) `createBattleStartedEventPayload`.
-  - [ ] In the conclude handler (`POST /battles/:id/conclude`, Epic 5 / Story 5.6), pass the post-conclude `BattleLike` snapshot (status `concluded`, the chosen `result`, `concludedAt`) into `createBattleConcludedEventPayload`.
-  - [ ] In the discard handler (`DELETE /battles/:id`, Epic 5 / Story 5.7), pass the post-discard `BattleLike` snapshot (status `discarded`) into `createBattleDiscardedEventPayload`.
-  - [ ] In the PATCH handler (`PATCH /battles/:id`, Epic 5 / Story 5.3), continue publishing `battle_updated` via the same injected publisher — the composite's routing rule (Task 2) ensures it never reaches the log leg. **Do not add a separate publisher or special-case the route.**
-  - [ ] Preserve the existing per-call-site `try/catch` that logs and **swallows** publish errors (already present at the `battle_started` call site in `app.ts`; replicate the same swallow at the conclude/discard/patch call sites if Epic 5 has not). This swallow is the AC 4 request-flow guarantee — a publish failure must never change the HTTP status (`201` create / `200` conclude / `200`/`204` discard / `200` patch).
+- [x] **Task 3 — Pass the battle snapshot into payload creation at each lifecycle call site (AC: 3, 5)**
+  - [x] In the create handler (`POST /battles`), pass the created `BattleLike` snapshot into the (now snapshot-aware) `createBattleStartedEventPayload`.
+  - [x] In the conclude handler (`POST /battles/:id/conclude`, Epic 5 / Story 5.6), pass the post-conclude `BattleLike` snapshot (status `concluded`, the chosen `result`, `concludedAt`) into `createBattleConcludedEventPayload`.
+  - [x] In the discard handler (`DELETE /battles/:id`, Epic 5 / Story 5.7), pass the post-discard `BattleLike` snapshot (status `discarded`) into `createBattleDiscardedEventPayload`.
+  - [x] In the PATCH handler (`PATCH /battles/:id`, Epic 5 / Story 5.3), continue publishing `battle_updated` via the same injected publisher — the composite's routing rule (Task 2) ensures it never reaches the log leg. **Do not add a separate publisher or special-case the route.**
+  - [x] Preserve the existing per-call-site `try/catch` that logs and **swallows** publish errors (already present at the `battle_started` call site in `app.ts`; replicate the same swallow at the conclude/discard/patch call sites if Epic 5 has not). This swallow is the AC 4 request-flow guarantee — a publish failure must never change the HTTP status (`201` create / `200` conclude / `200`/`204` discard / `200` patch).
 
-- [ ] **Task 4 — Lambda wiring: notifications + log SNS legs with degraded mode (AC: 1, 2, 4)**
-  - [ ] In `backend/battle-service/src/lambda.ts`, build the notifications leg from Epic 5's existing notifications topic env var (use the exact env name Epic 5 wired — do **not** rename it; see Project Structure Notes) and a new log leg from `LOG_TOPIC_ARN`.
-  - [ ] If `LOG_TOPIC_ARN` is absent/empty: `console.warn` **once** at bootstrap ("degraded — battle log history will be absent") and use `NoopBattleEventPublisher` for the log leg. The service must **NOT** throw or `process.exit` (ADR-12; contrast log-service's fail-fast subscriber in Story 6.2 — publishers degrade, subscribers hard-fail).
-  - [ ] Compose both legs into the event-type-aware fan-out publisher and pass it to `buildBattleApp({ routePrefix, publisher })`. Extend the existing `[battle-service] lambda bootstrap config` `console.info` with `logTopicArnConfigured: Boolean(process.env.LOG_TOPIC_ARN)` and the resolved publisher class name (follow the `character-service/src/lambda.ts` pattern exactly).
+- [x] **Task 4 — Lambda wiring: notifications + log SNS legs with degraded mode (AC: 1, 2, 4)**
+  - [x] In `backend/battle-service/src/lambda.ts`, build the notifications leg from Epic 5's existing notifications topic env var (use the exact env name Epic 5 wired — do **not** rename it; see Project Structure Notes) and a new log leg from `LOG_TOPIC_ARN`.
+  - [x] If `LOG_TOPIC_ARN` is absent/empty: `console.warn` **once** at bootstrap ("degraded — battle log history will be absent") and use `NoopBattleEventPublisher` for the log leg. The service must **NOT** throw or `process.exit` (ADR-12; contrast log-service's fail-fast subscriber in Story 6.2 — publishers degrade, subscribers hard-fail).
+  - [x] Compose both legs into the event-type-aware fan-out publisher and pass it to `buildBattleApp({ routePrefix, publisher })`. Extend the existing `[battle-service] lambda bootstrap config` `console.info` with `logTopicArnConfigured: Boolean(process.env.LOG_TOPIC_ARN)` and the resolved publisher class name (follow the `character-service/src/lambda.ts` pattern exactly).
 
-- [ ] **Task 5 — Local server wiring: notifications + log Redis legs with degraded mode (AC: 1, 2, 4)**
-  - [ ] In `backend/battle-service/src/index.ts`, keep Epic 5's notifications Redis leg as-is. Add a log Redis leg on a new channel env `ROOM_LOG_EVENTS_CHANNEL` (default `room-log-events`) — **this default must exactly match Story 6.1's publisher channel and Story 6.2's `logWriter` subscriber channel** (cross-service contract; do not invent a new name).
-  - [ ] If the Redis URL is unset (Noop path) or the log channel cannot be configured, `console.warn` **once** and use `NoopBattleEventPublisher` for the log leg. Do not crash.
-  - [ ] Compose both legs into the fan-out publisher; extend the existing `[battle-service] local bootstrap config` `console.info` with `logEventsChannel` + `logConfigured` (mirror `character-service/src/index.ts`).
+- [x] **Task 5 — Local server wiring: notifications + log Redis legs with degraded mode (AC: 1, 2, 4)**
+  - [x] In `backend/battle-service/src/index.ts`, keep Epic 5's notifications Redis leg as-is. Add a log Redis leg on a new channel env `ROOM_LOG_EVENTS_CHANNEL` (default `room-log-events`) — **this default must exactly match Story 6.1's publisher channel and Story 6.2's `logWriter` subscriber channel** (cross-service contract; do not invent a new name).
+  - [x] If the Redis URL is unset (Noop path) or the log channel cannot be configured, `console.warn` **once** and use `NoopBattleEventPublisher` for the log leg. Do not crash.
+  - [x] Compose both legs into the fan-out publisher; extend the existing `[battle-service] local bootstrap config` `console.info` with `logEventsChannel` + `logConfigured` (mirror `character-service/src/index.ts`).
 
-- [ ] **Task 6 — Tests (AC: 1, 2, 3, 4, 5, 6)**
-  - [ ] `publisher.test.ts`: fan-out invokes every leg and uses `Promise.allSettled` (assert both legs invoked even when one rejects; a rejecting leg does **not** cause the composite `publish` to reject — AC 4); `createBattleStartedEventPayload` / `createBattleConcludedEventPayload` / `createBattleDiscardedEventPayload` each produce the enriched superset incl. `battle` snapshot and canonical mirrors; legacy notifications fields preserved exactly (regression guard for AC 6); **`battle_updated` payload is delivered to the notifications leg but NOT to the log leg** (explicit AC 5 guard — assert the log leg's `publish` is never called for `battle_updated`).
-  - [ ] `lambda.test.ts`: both env vars set → composite with two SNS legs; `LOG_TOPIC_ARN` absent → startup `console.warn` + notifications leg still active + handler still boots and responds (no throw). Follow the existing `vi.mock('./db')` / `vi.mock('./service')` / `vi.mock('@codegenie/serverless-express')` + `await import('./lambda.js')` pattern; add `delete process.env.LOG_TOPIC_ARN` (and Epic 5's notifications env) to `beforeEach`.
-  - [ ] `app.test.ts`: create/conclude/discard publish a payload containing the `battle` display context with correct `name`/`status`/`result`; a publisher that throws does **NOT** change the HTTP status (regression guard for AC 4); `battle_updated` from PATCH is published but the log leg never sees it (AC 5). Inject a spy publisher via the existing `createApp(model, { publisher })` / `buildBattleApp({ publisher })` option.
-  - [ ] Run the backend test + coverage gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8 coverage, **70% line floor is a CI hard gate — do not lower**). `battle-service` primary coverage target is state-machine transitions + the fan-out/degraded/error-swallow behavior — assert real behavior, not filler.
+- [x] **Task 6 — Tests (AC: 1, 2, 3, 4, 5, 6)**
+  - [x] `publisher.test.ts`: fan-out invokes every leg and uses `Promise.allSettled` (assert both legs invoked even when one rejects; a rejecting leg does **not** cause the composite `publish` to reject — AC 4); `createBattleStartedEventPayload` / `createBattleConcludedEventPayload` / `createBattleDiscardedEventPayload` each produce the enriched superset incl. `battle` snapshot and canonical mirrors; legacy notifications fields preserved exactly (regression guard for AC 6); **`battle_updated` payload is delivered to the notifications leg but NOT to the log leg** (explicit AC 5 guard — assert the log leg's `publish` is never called for `battle_updated`).
+  - [x] `lambda.test.ts`: both env vars set → composite with two SNS legs; `LOG_TOPIC_ARN` absent → startup `console.warn` + notifications leg still active + handler still boots and responds (no throw). Follow the existing `vi.mock('./db')` / `vi.mock('./service')` / `vi.mock('@codegenie/serverless-express')` + `await import('./lambda.js')` pattern; add `delete process.env.LOG_TOPIC_ARN` (and Epic 5's notifications env) to `beforeEach`.
+  - [x] `app.test.ts`: create/conclude/discard publish a payload containing the `battle` display context with correct `name`/`status`/`result`; a publisher that throws does **NOT** change the HTTP status (regression guard for AC 4); `battle_updated` from PATCH is published but the log leg never sees it (AC 5). Inject a spy publisher via the existing `createApp(model, { publisher })` / `buildBattleApp({ publisher })` option.
+  - [x] Run the backend test + coverage gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8 coverage, **70% line floor is a CI hard gate — do not lower**). `battle-service` primary coverage target is state-machine transitions + the fan-out/degraded/error-swallow behavior — assert real behavior, not filler.
 
-- [ ] **Task 7 — Infra wiring + docs (AC: 1, 2)**
-  - [ ] `backend/sam/template.yaml`: add `LOG_TOPIC_ARN: !Ref LogEventsTopic` to `BattleServiceFunction`'s `Environment` and a `sns:Publish` statement on `!Ref LogEventsTopic` to `BattleServiceRole` Policies (additive — do not remove/rename Epic 5's notifications `sns:Publish`). `LogEventsTopic` is created by Story 6.2's SAM work; if it is not yet present in the template, follow Story 6.1's deferral guidance: either defer this env+IAM until `LogEventsTopic` exists (note it in Completion Notes) or use a SAM parameter defaulting to empty + conditional IAM so `sam` still deploys with no log topic. Either way the running service must satisfy AC 2 with no `LOG_TOPIC_ARN` set. ([Source: architecture/core-architectural-decisions.md#IAM Policy Additions] — "`battle-service`: `sns:Publish` on `NOTIFICATIONS_TOPIC_ARN` + `LOG_TOPIC_ARN`".)
-  - [ ] `backend/docker-compose.local.yml`: add `ROOM_LOG_EVENTS_CHANNEL: room-log-events` to the `battle-service` service env block (idempotent if Epic 5 already added Redis envs) so local fan-out lands on the channel Story 6.2's `logWriter` subscribes to.
-  - [ ] Update the nearest docs in the same change: `backend/.env.example` (add `ROOM_LOG_EVENTS_CHANNEL=room-log-events` for battle-service if absent) and any `battle-service` README/env reference if present. Do not hardcode ARNs/endpoints; do not change dependency versions or lockfiles ([Source: _bmad-output/project-context.md] docs-in-same-change + scoped-changes rules).
+- [x] **Task 7 — Infra wiring + docs (AC: 1, 2)**
+  - [x] `backend/sam/template.yaml`: add `LOG_TOPIC_ARN: !Ref LogEventsTopic` to `BattleServiceFunction`'s `Environment` and a `sns:Publish` statement on `!Ref LogEventsTopic` to `BattleServiceRole` Policies (additive — do not remove/rename Epic 5's notifications `sns:Publish`). `LogEventsTopic` is created by Story 6.2's SAM work; if it is not yet present in the template, follow Story 6.1's deferral guidance: either defer this env+IAM until `LogEventsTopic` exists (note it in Completion Notes) or use a SAM parameter defaulting to empty + conditional IAM so `sam` still deploys with no log topic. Either way the running service must satisfy AC 2 with no `LOG_TOPIC_ARN` set. ([Source: architecture/core-architectural-decisions.md#IAM Policy Additions] — "`battle-service`: `sns:Publish` on `NOTIFICATIONS_TOPIC_ARN` + `LOG_TOPIC_ARN`".)
+  - [x] `backend/docker-compose.local.yml`: add `ROOM_LOG_EVENTS_CHANNEL: room-log-events` to the `battle-service` service env block (idempotent if Epic 5 already added Redis envs) so local fan-out lands on the channel Story 6.2's `logWriter` subscribes to.
+  - [x] Update the nearest docs in the same change: `backend/.env.example` (add `ROOM_LOG_EVENTS_CHANNEL=room-log-events` for battle-service if absent) and any `battle-service` README/env reference if present. Do not hardcode ARNs/endpoints; do not change dependency versions or lockfiles ([Source: _bmad-output/project-context.md] docs-in-same-change + scoped-changes rules).
 
 ## Dev Notes
 
@@ -209,8 +209,38 @@ Use `Promise.allSettled` over the legs. Never sequential `await publishNotificat
 
 ### Agent Model Used
 
+GPT-5
+
 ### Debug Log References
+
+- 2026-05-21: Verified Epic 5 prerequisites in `backend/battle-service/src/app.ts`, `publisher.ts`, `lambda.ts`, and `index.ts` before implementation.
+- 2026-05-21: Ran `cd backend && npm test` after installing local dependencies: 27 files, 164 tests passed.
+- 2026-05-21: Ran `cd backend && npm run test:coverage`: 27 files, 164 tests passed; all-files line coverage 86.18%.
 
 ### Completion Notes List
 
+- Implemented additive battle event payload enrichment with canonical mirrors (`eventType`, `actorId`, `occurredAt`) and a durable `battle` snapshot while preserving legacy notifications fields (`event`, `roomId`, `battleId`, `event_body.battleId`, `emittedAt`).
+- Added event-type-aware fan-out publishing via `Promise.allSettled`; lifecycle events publish to notifications and log legs, while `battle_updated` remains realtime-only and never targets the log leg.
+- Updated create, patch, conclude, and discard handlers to publish post-transition battle snapshots while preserving publish-error swallow behavior so request HTTP statuses are unaffected by publish failures.
+- Wired Lambda and local bootstraps with notifications plus log publishers, degraded-mode warnings, `LOG_TOPIC_ARN`, and `ROOM_LOG_EVENTS_CHANNEL=room-log-events`.
+- Added SAM IAM/env wiring for `BattleServiceFunction`, local compose env wiring, and README documentation. `backend/.env.example` already contained `ROOM_LOG_EVENTS_CHANNEL=room-log-events`, so no file change was needed there.
+- Documented variance: player-side character names are not resolved in `battle-service`; payload includes `playerSide.characterIds` plus monster snapshots to satisfy ADR-11 without outbound HTTP, with name rendering deferred to already-loaded client room state.
+
 ### File List
+
+- `backend/battle-service/src/publisher.ts`
+- `backend/battle-service/src/app.ts`
+- `backend/battle-service/src/lambda.ts`
+- `backend/battle-service/src/index.ts`
+- `backend/battle-service/src/publisher.test.ts`
+- `backend/battle-service/src/app.test.ts`
+- `backend/battle-service/src/lambda.test.ts`
+- `backend/sam/template.yaml`
+- `backend/docker-compose.local.yml`
+- `backend/README.md`
+- `_bmad-output/implementation-artifacts/6-3-battle-lifecycle-events-are-published-for-room-history.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+
+### Change Log
+
+- 2026-05-21: Implemented Story 6.3 battle lifecycle room-history publisher extension and moved story to review.

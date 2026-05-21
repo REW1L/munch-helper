@@ -21,7 +21,7 @@ Implemented in this phase:
 - Room history log persistence and reader skeleton (`GET /logs?roomId=...`)
 - Room service synchronous call to character service on create/join flow.
 - Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
-- Character events are also published to the room-history log target when `LOG_TOPIC_ARN` (Lambda) or `ROOM_LOG_EVENTS_CHANNEL` (local Redis, default `room-log-events`) is configured.
+- Character and battle lifecycle events are also published to the room-history log target when `LOG_TOPIC_ARN` (Lambda) or `ROOM_LOG_EVENTS_CHANNEL` (local Redis, default `room-log-events`) is configured.
 
 Transport by environment:
 

@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp, type BattleLike, type BattleModelLike } from './app';
+import { FanOutBattleEventPublisher } from './publisher';
 
 function buildBattle(overrides: Partial<BattleLike> = {}): BattleLike {
   const now = new Date('2026-05-17T12:00:00.000Z');
@@ -56,7 +57,16 @@ describe('battle-service app', () => {
     expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'room-1', name: 'Dungeon Door' }));
     expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
       event: 'battle_started',
-      event_body: { battleId: 'battle-1' }
+      eventType: 'battle_started',
+      battleId: 'battle-1',
+      actorId: 'battle-1',
+      event_body: { battleId: 'battle-1' },
+      battle: expect.objectContaining({
+        id: 'battle-1',
+        name: 'Dungeon Door',
+        status: 'active',
+        result: null
+      })
     }));
   });
 
@@ -251,8 +261,37 @@ describe('battle-service app', () => {
     );
     expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
       event: 'battle_updated',
-      event_body: { battleId: 'battle-1' }
+      eventType: 'battle_updated',
+      battleId: 'battle-1',
+      event_body: { battleId: 'battle-1' },
+      battle: expect.objectContaining({
+        name: 'Updated Battle',
+        status: 'active',
+        playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [{ id: 'bonus-1', value: 3 }] },
+        monsterSide: {
+          monsters: [{ id: 'monster-1', name: 'Goblin', level: 6 }],
+          bonuses: [{ id: 'monster-bonus-1', value: -1 }]
+        }
+      })
     }));
+  });
+
+  it('publishes battle_updated to the notifications fan-out leg only', async () => {
+    const model = buildBattleModel();
+    const notifications = { publish: vi.fn().mockResolvedValue(undefined) };
+    const log = { publish: vi.fn().mockResolvedValue(undefined) };
+    const publisher = new FanOutBattleEventPublisher([
+      { target: 'notifications', publisher: notifications },
+      { target: 'log', publisher: log }
+    ]);
+    vi.mocked(model.findById).mockResolvedValue(buildBattle());
+    vi.mocked(model.findByIdAndUpdate).mockResolvedValue(buildBattle({ name: 'Updated' }));
+
+    const response = await request(createApp(model, { publisher })).patch('/battles/battle-1').send({ name: 'Updated' });
+
+    expect(response.status).toBe(200);
+    expect(notifications.publish).toHaveBeenCalledWith(expect.objectContaining({ event: 'battle_updated' }));
+    expect(log.publish).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -387,9 +426,19 @@ describe('battle-service app', () => {
     expect(publisher.publish).toHaveBeenCalledTimes(1);
     expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
       event: 'battle_concluded',
+      eventType: 'battle_concluded',
       roomId: 'room-1',
+      battleId: 'battle-1',
       event_body: { battleId: 'battle-1' },
-      emittedAt: expect.any(String)
+      emittedAt: expect.any(String),
+      occurredAt: expect.any(String),
+      battle: expect.objectContaining({
+        name: 'Dungeon Door',
+        status: 'concluded',
+        result: 'players_win',
+        playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+        monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] }
+      })
     }));
   });
 
@@ -516,9 +565,18 @@ describe('battle-service app', () => {
     expect(publisher.publish).toHaveBeenCalledTimes(1);
     expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({
       event: 'battle_discarded',
+      eventType: 'battle_discarded',
       roomId: 'room-1',
+      battleId: 'battle-1',
       event_body: { battleId: 'battle-1' },
-      emittedAt: expect.any(String)
+      emittedAt: expect.any(String),
+      battle: expect.objectContaining({
+        name: 'Dungeon Door',
+        status: 'discarded',
+        result: null,
+        playerSide: { characterIds: ['character-1'], bonuses: [{ id: 'bonus-1', value: 2 }] },
+        monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 5 }], bonuses: [] }
+      })
     }));
   });
 
