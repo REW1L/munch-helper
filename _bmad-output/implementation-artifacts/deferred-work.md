@@ -1,3 +1,6 @@
+## Deferred from: code review of 6-6-room-history-view-shows-character-events (2026-05-21)
+
+- `formatDisplayValue` renders nested-object diffs as `[object Object]` — `LogEntry`'s value formatter falls through to `String(value)` for plain objects, so a `payload.changes` entry where `prev`/`next` is an object renders the JS default. Story 6.1's character payload only carries flat scalar/array values today, so this is not exercised; revisit when event sources start emitting object-valued diffs (e.g. equipment maps, status objects). [frontend/components/munchkin/LogEntry.tsx — `formatDisplayValue` final `return String(value)` branch]
 ## Deferred from: code review of 6-2-published-events-are-stored-and-readable-in-room-history (2026-05-21)
 
 - `connectToMongo` does not reconnect after a dropped connection — the singleton caches `connectionPromise` and never clears it; after a transient Mongo disconnect (`readyState` 0/2/3) it awaits the already-resolved promise and returns without reconnecting, so subsequent `LogEvent.create` calls fail. `db.ts` was copied verbatim from `room-notifications-service`/`battle-service` per Task 1 — repo-wide pre-existing pattern. [backend/log-service/src/db.ts]

@@ -1,4 +1,4 @@
-import type { LogEvent } from '@/api/logs';
+import LogEntry from '@/components/munchkin/LogEntry';
 import { AppTheme } from '@/constants/theme';
 import { useRoomLogs } from '@/hooks/useRoomLogs';
 import { useLocalSearchParams } from 'expo-router';
@@ -39,12 +39,8 @@ export default function RoomHistoryLogScreen() {
     void loadNextPage();
   }, [hasNextPage, isFetchingNextPage, isNextPageError, loadNextPage]);
 
-  const renderLogPlaceholder = useCallback(({ item }: { item: LogEvent }) => (
-    <View style={styles.placeholderRow}>
-      {/* Story 6.6/6.7 replace this placeholder render seam with LogEntry variants. */}
-      <Text style={styles.placeholderSummary}>{item.summary}</Text>
-      <Text style={styles.placeholderMeta}>{item.eventType}</Text>
-    </View>
+  const renderLogEntry = useCallback(({ item }: { item: (typeof entries)[number] }) => (
+    <LogEntry entry={item} />
   ), []);
 
   const renderFooter = useCallback(() => {
@@ -104,11 +100,11 @@ export default function RoomHistoryLogScreen() {
           contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
           data={entries}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={null}
+          ListEmptyComponent={<Text style={styles.emptyText}>No events recorded yet.</Text>}
           ListFooterComponent={renderFooter}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}
-          renderItem={renderLogPlaceholder}
+          renderItem={renderLogEntry}
         />
       )}
     </SafeAreaView>
@@ -128,21 +124,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: AppTheme.spacing.lg,
   },
-  placeholderRow: {
-    backgroundColor: AppTheme.colors.elevated,
-    borderColor: AppTheme.colors.surfaceSubtle,
-    borderRadius: AppTheme.radius.sm,
-    borderWidth: 1,
-    gap: AppTheme.spacing.xs,
-    padding: AppTheme.spacing.md,
-  },
-  placeholderSummary: {
-    color: AppTheme.colors.textPrimary,
+  emptyText: {
+    color: AppTheme.colors.textMuted,
+    textAlign: 'center',
     ...AppTheme.typography.labelMd,
-  },
-  placeholderMeta: {
-    color: AppTheme.colors.textAccentSoft,
-    ...AppTheme.typography.caption,
   },
   stateBlock: {
     flex: 1,
