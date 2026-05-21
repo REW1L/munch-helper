@@ -62,8 +62,32 @@ vi.mock('@/components/munchkin/LogEntry', async () => {
   const ReactRuntime = await import('react');
 
   return {
-    default: ({ entry }: { entry: LogEvent }) =>
-      ReactRuntime.createElement('div', { 'data-testid': 'mock-log-entry' }, entry.summary),
+    default: ({ entry, onPress }: { entry: LogEvent; onPress?: (entry: LogEvent) => void }) =>
+      ReactRuntime.createElement(
+        'button',
+        {
+          'data-testid': 'mock-log-entry',
+          onClick: () => onPress?.(entry),
+          type: 'button',
+        },
+        entry.summary,
+      ),
+  };
+});
+
+vi.mock('@/components/munchkin/BattleHistoryModal', async () => {
+  const ReactRuntime = await import('react');
+
+  return {
+    default: ({ entry, onClose }: { entry: LogEvent | null; onClose: () => void }) =>
+      entry
+        ? ReactRuntime.createElement(
+          'div',
+          { 'data-testid': 'mock-battle-history-modal' },
+          ReactRuntime.createElement('span', null, entry.summary),
+          ReactRuntime.createElement('button', { onClick: onClose, type: 'button' }, 'Close battle history'),
+        )
+        : null,
   };
 });
 
@@ -109,6 +133,31 @@ describe('Room history log route', () => {
     expect(screen.getByTestId('mock-log-entry')).toBeTruthy();
   });
 
+  it('opens and closes the battle history modal from the LogEntry press seam', async () => {
+    mockLogsState.current = {
+      ...mockLogsState.current,
+      entries: [{
+        id: 'log-battle',
+        roomId: 'ROOM42',
+        eventType: 'battle_concluded',
+        actorId: 'user-1',
+        summary: 'Battle Cave Dragon concluded',
+        payload: { battle: { id: 'battle-1', name: 'Cave Dragon' } },
+        occurredAt: '2026-05-21T10:00:00.000Z',
+      }],
+    };
+    const { default: LogScreen } = await import('../../../../app/munchkin/[roomNumber]/log');
+
+    render(<LogScreen />);
+    fireEvent.click(screen.getByTestId('mock-log-entry'));
+
+    expect(screen.getByTestId('mock-battle-history-modal')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close battle history' }));
+
+    expect(screen.queryByTestId('mock-battle-history-modal')).toBeNull();
+  });
+
   it('renders the 6.6 empty state copy when no history exists', async () => {
     mockLogsState.current = {
       ...mockLogsState.current,
@@ -119,7 +168,7 @@ describe('Room history log route', () => {
     render(<LogScreen />);
 
     expect(screen.getByText('No events recorded yet.')).toBeTruthy();
-    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry loading room history' })).toBeNull();
   });
 
   it('renders a next-page spinner in the list footer', async () => {

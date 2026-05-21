@@ -1,6 +1,6 @@
 import type { LogEvent } from '@/api/logs';
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -39,11 +39,11 @@ const baseEntry: LogEvent = {
   occurredAt: '2026-05-21T11:57:00.000Z',
 };
 
-function renderLogEntry(entry: LogEvent) {
+function renderLogEntry(entry: LogEvent, onPress?: (entry: LogEvent) => void) {
   let renderer: any;
 
   act(() => {
-    renderer = TestRenderer.create(<LogEntry entry={entry} />);
+    renderer = TestRenderer.create(<LogEntry entry={entry} onPress={onPress} />);
   });
 
   return renderer!;
@@ -210,19 +210,141 @@ describe('LogEntry', () => {
     expect(wrapperStyle.backgroundColor).toContain('170,187,204');
   });
 
-  it('renders a neutral summary fallback for battle events without pinning battle layout', () => {
-    const renderer = renderLogEntry({
+  it('renders battle-started as a non-interactive battle row', () => {
+    const onPress = vi.fn();
+    const entry: LogEvent = {
       ...baseEntry,
       eventType: 'battle_started',
       summary: 'Battle started against the Plutonium Dragon',
       payload: {
         battle: { id: 'battle-1', name: 'Plutonium Dragon' },
       },
+    };
+    const renderer = renderLogEntry(entry, onPress);
+
+    expect(findTextNode(renderer, '⚔️')).toBeTruthy();
+    expect(findTextNode(renderer, 'Plutonium Dragon')).toBeTruthy();
+    expect(findTextNode(renderer, 'started')).toBeTruthy();
+    expect(renderer.root.findAllByProps({ testID: 'log-entry-diff-row' })).toHaveLength(0);
+    expect(getRow(renderer).props.accessibilityRole).toBeUndefined();
+    expect(getRow(renderer).props.accessibilityLabel).toBe('Battle Plutonium Dragon, started, 3m ago.');
+    expect(renderer.root.findAllByType(TouchableOpacity)).toHaveLength(0);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('renders a tappable players-win battle-concluded row', () => {
+    const onPress = vi.fn();
+    const entry: LogEvent = {
+      ...baseEntry,
+      eventType: 'battle_concluded',
+      summary: 'Battle concluded',
+      payload: {
+        battle: {
+          id: 'battle-1',
+          name: 'Cave Dragon',
+          result: 'players_win',
+          playerSide: { characterIds: ['char-1'], bonuses: [] },
+        },
+      },
+    };
+    const renderer = renderLogEntry(entry, onPress);
+    const row = getRow(renderer);
+
+    expect(findTextNode(renderer, '⚔️')).toBeTruthy();
+    expect(findTextNode(renderer, 'Cave Dragon')).toBeTruthy();
+    expect(findTextNode(renderer, 'Players Win')).toBeTruthy();
+    expect(row.type).toBe(TouchableOpacity);
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityLabel).toBe(
+      'Battle Cave Dragon, Players Win, 3m ago. Double-tap to open battle record.',
+    );
+
+    act(() => {
+      row.props.onPress();
     });
 
-    expect(findTextNode(renderer, 'Battle started against the Plutonium Dragon')).toBeTruthy();
-    expect(renderer.root.findAllByProps({ testID: 'log-entry-diff-row' })).toHaveLength(0);
-    expect(getRow(renderer).props.accessibilityLabel).toBe('Battle started against the Plutonium Dragon, 3m ago');
+    expect(onPress).toHaveBeenCalledOnce();
+    expect(onPress).toHaveBeenCalledWith(entry);
+  });
+
+  it('renders monster-win and neutral battle-concluded result labels', () => {
+    const monsterWinRenderer = renderLogEntry({
+      ...baseEntry,
+      eventType: 'battle_concluded',
+      summary: 'Battle concluded',
+      payload: { battle: { id: 'battle-1', name: 'Squidzilla', result: 'monster_wins' } },
+    });
+    const neutralRenderer = renderLogEntry({
+      ...baseEntry,
+      eventType: 'battle_concluded',
+      summary: 'Battle concluded',
+      payload: { battle: { id: 'battle-2', name: 'Unknown Result', result: null } },
+    });
+
+    expect(findTextNode(monsterWinRenderer, 'Monster Wins')).toBeTruthy();
+    expect(findTextNode(neutralRenderer, 'Concluded')).toBeTruthy();
+  });
+
+  it('renders battle-discarded as tappable without a result chip', () => {
+    const onPress = vi.fn();
+    const entry: LogEvent = {
+      ...baseEntry,
+      eventType: 'battle_discarded',
+      summary: 'Battle discarded',
+      payload: {
+        battle: {
+          id: 'battle-1',
+          name: 'Abandoned Fight',
+          monsterSide: { monsters: [], bonuses: [] },
+        },
+      },
+    };
+    const renderer = renderLogEntry(entry, onPress);
+    const row = getRow(renderer);
+
+    expect(findTextNode(renderer, 'Abandoned Fight')).toBeTruthy();
+    expect(findTextNode(renderer, 'discarded')).toBeTruthy();
+    expect(renderer.root.findAllByProps({ testID: 'log-entry-battle-result' })).toHaveLength(0);
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityLabel).toBe(
+      'Battle Abandoned Fight, discarded, 3m ago. Double-tap to open battle record.',
+    );
+
+    act(() => {
+      row.props.onPress();
+    });
+
+    expect(onPress).toHaveBeenCalledWith(entry);
+  });
+
+  it('keeps concluded and discarded rows non-interactive when battle payload is unusable', () => {
+    const onPress = vi.fn();
+    const missingPayloadRenderer = renderLogEntry({
+      ...baseEntry,
+      eventType: 'battle_concluded',
+      summary: 'Battle concluded from summary',
+      payload: {},
+    }, onPress);
+    const missingIdRenderer = renderLogEntry({
+      ...baseEntry,
+      eventType: 'battle_discarded',
+      summary: 'Battle discarded from summary',
+      payload: { battle: { name: 'No id' } },
+    }, onPress);
+
+    expect(findTextNode(missingPayloadRenderer, 'Battle concluded from summary')).toBeTruthy();
+    expect(findTextNode(missingPayloadRenderer, 'Concluded')).toBeTruthy();
+    expect(getRow(missingPayloadRenderer).props.accessibilityRole).toBeUndefined();
+    expect(getRow(missingPayloadRenderer).props.accessibilityLabel).toBe(
+      'Battle Battle concluded from summary, Concluded, 3m ago.',
+    );
+    expect(getRow(missingIdRenderer).props.accessibilityRole).toBeUndefined();
+    expect(getRow(missingIdRenderer).props.accessibilityLabel).toBe(
+      'Battle Battle discarded from summary, discarded, 3m ago.',
+    );
+    expect(missingPayloadRenderer.root.findAllByType(TouchableOpacity)).toHaveLength(0);
+    expect(missingIdRenderer.root.findAllByType(TouchableOpacity)).toHaveLength(0);
+    expect(onPress).not.toHaveBeenCalled();
   });
 
   it('hides avatar image from independent accessibility traversal', () => {

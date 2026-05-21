@@ -100,9 +100,10 @@ function consumeSuppressibleEcho(markers: Map<string, PendingLocalUpdateMarker>,
   });
 }
 
-export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
+export function useRoomCharacters(roomId: string | undefined, userProfile?: UserProfileInterface): UseRoomCharactersResult {
   const queryClient = useQueryClient();
   const charactersQueryKey = useMemo(() => getCharactersQueryKey(roomId), [roomId]);
+  const currentUserId = userProfile?.id ?? '';
   const webSocketOptions = useMemo(
     () => ({
       onOpen: () => {
@@ -122,8 +123,8 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   // Set up WebSocket connection for real-time updates
   const { isConnected, isReconnecting, isTimedOut, reconnect, subscribe } = useRoomWebSocket(
     roomId,
-    userProfile.id,
-    Boolean(roomId && userProfile.id),
+    currentUserId,
+    Boolean(roomId && currentUserId),
     webSocketOptions
   );
 
@@ -176,7 +177,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       }
     },
     onSuccess: (createdCharacter) => {
-      if (createdCharacter.userId === userProfile.id) {
+      if (createdCharacter.userId === currentUserId) {
         autoCreateSuppressedForCurrentUserRef.current = false;
         lastEnsureAttemptAtRef.current = Date.now();
       }
@@ -251,7 +252,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       const deletedCharacterIndex = previousCharacters.findIndex((character) => character.id === characterId);
       const previousAutoCreateSuppressedForCurrentUser = autoCreateSuppressedForCurrentUserRef.current;
 
-      if (deletedCharacter?.userId === userProfile.id) {
+      if (deletedCharacter?.userId === currentUserId) {
         autoCreateSuppressedForCurrentUserRef.current = true;
         pendingCurrentUserDeleteCountRef.current += 1;
         setIsCreateBlocked(true);
@@ -293,7 +294,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       }
     },
     onSettled: (_data, _error, _variables, context) => {
-      if (context?.deletedCharacter?.userId === userProfile.id) {
+      if (context?.deletedCharacter?.userId === currentUserId) {
         pendingCurrentUserDeleteCountRef.current = Math.max(0, pendingCurrentUserDeleteCountRef.current - 1);
         setIsCreateBlocked(pendingCurrentUserDeleteCountRef.current > 0);
       } else if (context === undefined) {
@@ -350,7 +351,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
     });
 
     return unsubscribe;
-  }, [charactersQueryKey, isConnected, queryClient, subscribe, userProfile.id]);
+  }, [charactersQueryKey, currentUserId, isConnected, queryClient, subscribe]);
 
   useEffect(() => {
     setRealtimeUpdateSignals({});
@@ -363,7 +364,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const create = useCallback(
     async (payload: Omit<CharacterWritePayload, 'roomId'>) => {
       if (
-        payload.userId === userProfile.id &&
+        payload.userId === currentUserId &&
         pendingCurrentUserDeleteCountRef.current > 0
       ) {
         throw new Error('Please wait for character removal to finish before creating a new one');
@@ -371,7 +372,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
       return createMutation.mutateAsync(payload);
     },
-    [createMutation, userProfile.id]
+    [createMutation, currentUserId]
   );
 
   const update = useCallback(async (characterId: string, payload: CharacterUpdatePayload) => {
@@ -386,7 +387,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const hasCompletedInitialFetch = charactersQuery.isFetchedAfterMount && !charactersQuery.isFetching;
 
   useEffect(() => {
-    if (!roomId || !userProfile.id || !hasCompletedInitialFetch) {
+    if (!roomId || !currentUserId || !userProfile || !hasCompletedInitialFetch) {
       return;
     }
 
@@ -394,7 +395,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       return;
     }
 
-    const hasCurrentCharacter = characters.some((character) => character.userId === userProfile.id);
+    const hasCurrentCharacter = characters.some((character) => character.userId === currentUserId);
     if (hasCurrentCharacter || isEnsuringCurrentCharacterRef.current) {
       return;
     }
@@ -409,7 +410,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
 
     void createMutation
       .mutateAsync({
-        userId: userProfile.id,
+        userId: currentUserId,
         nickname: userProfile.nickname,
         avatar: userProfile.avatar,
         color: '#9966FF',
@@ -429,7 +430,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       .finally(() => {
         isEnsuringCurrentCharacterRef.current = false;
       });
-  }, [characters, createMutation, hasCompletedInitialFetch, roomId, userProfile.avatar, userProfile.id, userProfile.nickname]);
+  }, [characters, createMutation, currentUserId, hasCompletedInitialFetch, roomId, userProfile]);
 
   const refresh = useCallback(async () => {
     await charactersQuery.refetch();
