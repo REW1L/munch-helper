@@ -70,7 +70,7 @@ describe('log-service logs routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0]).toEqual(expect.objectContaining({
+    expect(response.body[0]).toEqual({
       id: '64f000000000000000000001',
       roomId: 'room-1',
       eventType: 'character_created',
@@ -80,7 +80,7 @@ describe('log-service logs routes', () => {
       occurredAt: '2026-05-20T10:00:00.000Z',
       createdAt: '2026-05-20T10:00:01.000Z',
       updatedAt: '2026-05-20T10:00:01.000Z',
-    }));
+    });
     expect(response.body[0]._id).toBeUndefined();
     expect(mockLogEventFind).toHaveBeenCalledWith({ roomId: 'room-1' });
     expect(query.sort).toHaveBeenCalledWith({ _id: -1 });
@@ -109,6 +109,14 @@ describe('log-service logs routes', () => {
     expect(missingResponse.body).toEqual({ message: 'roomId is required' });
     expect(blankResponse.status).toBe(400);
     expect(blankResponse.body).toEqual({ message: 'roomId is required' });
+    expect(mockLogEventFind).not.toHaveBeenCalled();
+  });
+
+  it('rejects an operator-shaped roomId without querying', async () => {
+    const response = await request(buildLogApp()).get('/logs').query('roomId[$ne]=room-1');
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'roomId is required' });
     expect(mockLogEventFind).not.toHaveBeenCalled();
   });
 
@@ -174,10 +182,17 @@ describe('log-service logs routes', () => {
     const response = await request(buildLogApp()).get(`/logs/${logId}`).query({ roomId: 'room-1' });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(expect.objectContaining({
+    expect(response.body).toEqual({
       id: logId,
       roomId: 'room-1',
-    }));
+      eventType: 'character_created',
+      actorId: 'char-1',
+      summary: 'Ada created',
+      payload: { character: { id: 'char-1', name: 'Ada' } },
+      occurredAt: '2026-05-20T10:00:00.000Z',
+      createdAt: '2026-05-20T10:00:01.000Z',
+      updatedAt: '2026-05-20T10:00:01.000Z',
+    });
     expect(response.body._id).toBeUndefined();
     expect(mockLogEventFindOne).toHaveBeenCalledWith({
       _id: new mongoose.Types.ObjectId(logId),

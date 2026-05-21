@@ -22,19 +22,8 @@ export interface LogEventResource {
   updatedAt?: Date | string;
 }
 
-interface LogEventJsonLike {
-  toJSON?: () => Record<string, unknown>;
-  _id?: unknown;
-  id?: unknown;
-  roomId?: unknown;
-  eventType?: unknown;
-  actorId?: unknown;
-  summary?: unknown;
-  payload?: unknown;
-  occurredAt?: unknown;
-  createdAt?: unknown;
-  updatedAt?: unknown;
-  __v?: unknown;
+interface LogEventDocumentLike {
+  toJSON(): Record<string, unknown>;
 }
 
 export const SUPPORTED_LOG_EVENT_TYPES: LogEventType[] = [
@@ -62,15 +51,12 @@ const readNestedString = (value: unknown, key: string): string => {
 
 const isLogEventType = (value: string): value is LogEventType => supportedLogEventTypes.has(value);
 
-const toLogEventResource = (document: LogEventJsonLike): LogEventResource => {
-  const json = typeof document.toJSON === 'function' ? document.toJSON() : { ...document };
-  const id = json.id ?? json._id;
-  delete json._id;
-  delete json.__v;
+const toLogEventResource = (document: LogEventDocumentLike): LogEventResource => {
+  const json = document.toJSON();
 
   return {
     ...json,
-    id: String(id)
+    id: String(json.id)
   } as LogEventResource;
 };
 

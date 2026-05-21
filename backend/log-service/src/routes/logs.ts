@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response, Router } from 'express';
-import { mongoose } from '../db';
 import { getLogEvent, listLogEvents } from '../service';
 
 export const logsRouter = Router();
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
+const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
 
 const readTrimmedQuery = (value: unknown): string => typeof value === 'string' ? value.trim() : '';
+
+const isObjectIdHex = (value: string): boolean => OBJECT_ID_PATTERN.test(value);
 
 const parseLimit = (value: unknown): { limit: number } | { message: string } => {
   if (value === undefined || value === null || value === '') {
@@ -53,7 +55,7 @@ logsRouter.get('/logs', async (request: Request, response: Response, next: NextF
     response.status(400).json({ message: 'before must be a valid ObjectId' });
     return;
   }
-  if (before && !mongoose.Types.ObjectId.isValid(before)) {
+  if (before && !isObjectIdHex(before)) {
     response.status(400).json({ message: 'before must be a valid ObjectId' });
     return;
   }
@@ -78,7 +80,7 @@ logsRouter.get('/logs/:logId', async (request: Request, response: Response, next
   }
 
   const logId = readTrimmedQuery(request.params.logId);
-  if (!mongoose.Types.ObjectId.isValid(logId)) {
+  if (!isObjectIdHex(logId)) {
     response.status(400).json({ message: 'logId must be a valid ObjectId' });
     return;
   }

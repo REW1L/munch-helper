@@ -1,6 +1,6 @@
 # Story 6.4: Room History API Returns Paginated Events
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -196,3 +196,12 @@ GPT-5
 
 ### Change Log
 - 2026-05-21: Implemented room history paginated reader and detail endpoint; added reader tests and docs; marked story ready for review.
+
+### Review Findings
+
+_Code review 2026-05-21 (bmad-code-review, 3 layers: Blind Hunter / Edge Case Hunter / Acceptance Auditor). All 11 ACs verified satisfied; Scope Guard clean; 4 documented variances followed. No Critical/High findings._
+
+- [x] [Review][Patch] `before`/`logId` accept 12-char non-hex strings — `mongoose.Types.ObjectId.isValid()` returns `true` for any 12-char string (treated as a 12-byte buffer), so a non-24-hex `before` or `:logId` passes validation, is silently coerced to a different ObjectId, and yields `200`/`404` instead of the AC7-mandated `400` for a non-24-hex cursor. Tighten to a 24-hex check (`/^[a-f\d]{24}$/i`). Low practical impact (real cursors are always 24-hex). [backend/log-service/src/routes/logs.ts:56, backend/log-service/src/routes/logs.ts:81]
+- [x] [Review][Patch] No regression test for NoSQL-operator-shaped `roomId` — `?roomId[$ne]=` makes `qs` parse `request.query.roomId` into an object; the `typeof === 'string'` guard rejects it with `400` (roomId isolation stays intact), but this security boundary has no test. Add a test asserting operator-shaped `roomId` → `400` with the data layer never invoked. [backend/log-service/src/routes/logs.test.ts]
+- [x] [Review][Patch] `toLogEventResource` has an unreachable fallback branch — the `{ ...document }` path and `json.id ?? json._id` / `String(id)` exist for non-Mongoose inputs that never occur (`find`/`findOne` always return hydrated docs with the `toJSON` `id` virtual); the dead path can produce `id: 'undefined'`. Simplify to assume a Mongoose document. [backend/log-service/src/service.ts:65]
+- [x] [Review][Patch] List & detail tests assert resource shape with `objectContaining` — AC1 enumerates the exact entry field set, but `objectContaining` only proves fields are present, not that no extra fields leak. Tighten the list and detail body assertions to `toEqual`. [backend/log-service/src/routes/logs.test.ts:73, backend/log-service/src/routes/logs.test.ts:177]
