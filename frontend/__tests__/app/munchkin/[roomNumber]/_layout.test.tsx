@@ -96,6 +96,10 @@ describe('Room route layout', () => {
           name: '(battle)',
           options: expect.objectContaining({ presentation: 'modal', headerShown: false }),
         },
+        {
+          name: 'log',
+          options: expect.objectContaining({ headerShown: false }),
+        },
       ]),
     );
   });
@@ -115,6 +119,32 @@ describe('Room route layout', () => {
         headerTitle: undefined,
         title: 'Dungeon Door',
       }),
+    );
+  });
+
+  it('uses the stable parent header as the history header on the log route', async () => {
+    mockSegments.current = ['munchkin', '[roomNumber]', 'log'];
+    const { default: RoomLayout } = await import('../../../../app/munchkin/[roomNumber]/_layout');
+
+    render(<RoomLayout />);
+
+    expect(stackScreens.current[0]?.options).toEqual(
+      expect.objectContaining({
+        headerShown: true,
+        headerBackButtonDisplayMode: 'minimal',
+        headerBackVisible: false,
+        headerLeft: expect.any(Function),
+        headerTitle: undefined,
+        title: 'History',
+      }),
+    );
+    expect(stackScreens.current).toEqual(
+      expect.arrayContaining([
+        {
+          name: 'log',
+          options: expect.objectContaining({ headerShown: false }),
+        },
+      ]),
     );
   });
 

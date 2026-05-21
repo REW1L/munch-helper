@@ -261,6 +261,17 @@ const MunchkinIndexView: React.FC = () => {
     });
   }, [roomId, router]);
 
+  const navigateToLog = useCallback(() => {
+    if (!roomId) {
+      return;
+    }
+
+    router.push({
+      pathname: '/munchkin/[roomNumber]/log',
+      params: { roomNumber: roomId },
+    });
+  }, [roomId, router]);
+
   const handleViewBattle = useCallback(() => {
     navigateToBattle();
   }, [navigateToBattle]);
@@ -377,7 +388,13 @@ const MunchkinIndexView: React.FC = () => {
             >
               <Text style={styles.battleButtonText}>Battle</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.logButton, { opacity: 0 }]}>
+            <TouchableOpacity
+              accessibilityLabel="Open room history"
+              accessibilityRole="button"
+              disabled={!roomId}
+              onPress={navigateToLog}
+              style={[styles.logButton, !roomId && styles.actionButtonDisabled]}
+            >
               <Text style={styles.logButtonText}>Log</Text>
             </TouchableOpacity>
           </View>
