@@ -1,6 +1,6 @@
 # Story 6.4: Room History API Returns Paginated Events
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,39 +33,39 @@ so that I can review older session events without waiting for the full history t
 
 ## Tasks / Subtasks
 
-- [ ] **Task 0 — Verify Story 6.2 prerequisites (blocking gate; AC: 4, 8, 11)**
-  - [ ] Confirm `backend/log-service/src/routes/logs.ts` exists with a `GET /logs` handler and the Story 6.4 seam comment, currently returning `200 []` for a present `roomId` and `400 { message }` for missing/blank `roomId`.
-  - [ ] Confirm `backend/log-service/src/models/LogEvent.ts` exists and declares the compound index `logEventSchema.index({ roomId: 1, _id: -1 })`, `{ timestamps: true }`, and the `_id → id` `toJSON` transform (AC 4). Note the exact model export name and document field names actually delivered.
-  - [ ] Confirm the read app/wiring delivered by 6.2: the Express app factory (`app.ts`/`buildLogApp`), how the router obtains its data access (a `LogModelLike` DI seam à la `battle-service` `createApp(model, …)`, **or** a `service.ts` model adapter, **or** the router importing `LogEvent` directly) — **read the actual file; do not assume.** Record which pattern 6.2 chose; conform to it (see Dev Notes “Conform to 6.2’s delivered seam”).
-  - [ ] Confirm `backend/vitest.config.ts` `test.include` + `coverage.include` list `log-service/src/**` and `backend/package.json` `workspaces` lists `log-service` (Story 6.2 Task 7). If absent, the new reader tests will silently not run / not count toward the 70% gate — **flag it in Completion Notes** (it is a 6.2 wiring gap; do not re-do 6.2’s wiring as part of 6.4 unless trivially confirming).
-  - [ ] Confirm the SAM `LogReaderFunction` routes the detail path (either `/logs/{proxy+}` or an explicit `GET /logs/{logId}`) to the Express app so `GET /logs/:logId` is reachable in cloud.
-  - [ ] **If `backend/log-service/` or the `routes/logs.ts` seam is missing → STOP.** Record in Completion Notes: “Story 6.4 blocked on Story 6.2 (log-service scaffold/model/router seam not yet delivered).” Do not scaffold `log-service`, do not create the model/index, do not wire vitest/SAM here.
+- [x] **Task 0 — Verify Story 6.2 prerequisites (blocking gate; AC: 4, 8, 11)**
+  - [x] Confirm `backend/log-service/src/routes/logs.ts` exists with a `GET /logs` handler and the Story 6.4 seam comment, currently returning `200 []` for a present `roomId` and `400 { message }` for missing/blank `roomId`.
+  - [x] Confirm `backend/log-service/src/models/LogEvent.ts` exists and declares the compound index `logEventSchema.index({ roomId: 1, _id: -1 })`, `{ timestamps: true }`, and the `_id → id` `toJSON` transform (AC 4). Note the exact model export name and document field names actually delivered.
+  - [x] Confirm the read app/wiring delivered by 6.2: the Express app factory (`app.ts`/`buildLogApp`), how the router obtains its data access (a `LogModelLike` DI seam à la `battle-service` `createApp(model, …)`, **or** a `service.ts` model adapter, **or** the router importing `LogEvent` directly) — **read the actual file; do not assume.** Record which pattern 6.2 chose; conform to it (see Dev Notes “Conform to 6.2’s delivered seam”).
+  - [x] Confirm `backend/vitest.config.ts` `test.include` + `coverage.include` list `log-service/src/**` and `backend/package.json` `workspaces` lists `log-service` (Story 6.2 Task 7). If absent, the new reader tests will silently not run / not count toward the 70% gate — **flag it in Completion Notes** (it is a 6.2 wiring gap; do not re-do 6.2’s wiring as part of 6.4 unless trivially confirming).
+  - [x] Confirm the SAM `LogReaderFunction` routes the detail path (either `/logs/{proxy+}` or an explicit `GET /logs/{logId}`) to the Express app so `GET /logs/:logId` is reachable in cloud.
+  - [x] **If `backend/log-service/` or the `routes/logs.ts` seam is missing → STOP.** Record in Completion Notes: “Story 6.4 blocked on Story 6.2 (log-service scaffold/model/router seam not yet delivered).” Do not scaffold `log-service`, do not create the model/index, do not wire vitest/SAM here.
 
-- [ ] **Task 1 — Implement the roomId-filtered, `_id`-cursor query (AC: 1, 2, 3, 5, 6, 7)**
-  - [ ] In whatever data-access layer 6.2 delivered (the `LogModelLike` adapter / `service.ts` / direct `LogEvent` use — per Task 0), add a paginated query: filter `{ roomId, ...(before ? { _id: { $lt: new mongoose.Types.ObjectId(before) } } : {}) }`, `.sort({ _id: -1 })`, `.limit(effectiveLimit)`. Map results through the model `toJSON` (or an explicit `toLogLike` mapper mirroring `battle-service/src/service.ts` `toBattleLike`) so responses expose `id`, never raw `_id`/`__v`.
-  - [ ] Parse + validate query params **before** touching Mongo: `roomId` required non-blank trimmed string → else `400` (AC 6); `limit` → default `50`, parse as integer, reject non-numeric / `<= 0` with `400`, clamp to max `100` (AC 3); `before` → if present must satisfy `mongoose.Types.ObjectId.isValid(before)` else `400` (AC 7). Reuse `mongoose` from `../db` (the established `export { mongoose }` singleton — same import style as `battle-service/src/models/Battle.ts`); do **not** add a new `mongodb`/`bson` dependency.
-  - [ ] Empty result set → return `[]` with `200` (AC 5) — no special-casing, the query simply yields zero docs.
-  - [ ] `roomId` isolation is enforced **at the query level** (`roomId` is always in the filter object); never issue an unfiltered or cross-room query ([Source: architecture/core-architectural-decisions.md#Auth & Security]).
+- [x] **Task 1 — Implement the roomId-filtered, `_id`-cursor query (AC: 1, 2, 3, 5, 6, 7)**
+  - [x] In whatever data-access layer 6.2 delivered (the `LogModelLike` adapter / `service.ts` / direct `LogEvent` use — per Task 0), add a paginated query: filter `{ roomId, ...(before ? { _id: { $lt: new mongoose.Types.ObjectId(before) } } : {}) }`, `.sort({ _id: -1 })`, `.limit(effectiveLimit)`. Map results through the model `toJSON` (or an explicit `toLogLike` mapper mirroring `battle-service/src/service.ts` `toBattleLike`) so responses expose `id`, never raw `_id`/`__v`.
+  - [x] Parse + validate query params **before** touching Mongo: `roomId` required non-blank trimmed string → else `400` (AC 6); `limit` → default `50`, parse as integer, reject non-numeric / `<= 0` with `400`, clamp to max `100` (AC 3); `before` → if present must satisfy `mongoose.Types.ObjectId.isValid(before)` else `400` (AC 7). Reuse `mongoose` from `../db` (the established `export { mongoose }` singleton — same import style as `battle-service/src/models/Battle.ts`); do **not** add a new `mongodb`/`bson` dependency.
+  - [x] Empty result set → return `[]` with `200` (AC 5) — no special-casing, the query simply yields zero docs.
+  - [x] `roomId` isolation is enforced **at the query level** (`roomId` is always in the filter object); never issue an unfiltered or cross-room query ([Source: architecture/core-architectural-decisions.md#Auth & Security]).
 
-- [ ] **Task 2 — Wire the query into the `GET /logs` route, replacing the 6.2 skeleton (AC: 1, 2, 3, 5, 6, 7, 9, 10)**
-  - [ ] In `routes/logs.ts`, replace the skeleton’s `res.json([])` body with: validate params (Task 1) → on validation failure `res.status(400).json({ message })` → else `await` the paginated query → `res.status(200).json(entries)` as a **bare array** (no `{ data }`/`{ items, nextCursor }` envelope — AC 1/9, [Source: architecture/implementation-patterns-consistency-rules.md#API Responses — direct (no envelope)]).
-  - [ ] Keep the existing 6.2 error-handling/`502` path and `ROUTE_PREFIX` stripping **as-is** — they live in 6.2’s `app.ts`; do **not** re-implement prefix stripping or the `502` handler in the router. Route handler errors propagate via `next(error)` to the existing app-level `502 { message: 'Unexpected error' }` handler (mirror `battle-service/src/app.ts` `try { … } catch (error) { next(error); }`).
-  - [ ] Remove the now-satisfied portion of the `// Story 6.4: …` seam comment (leave the file clean — no “TODO/Story 6.4” marker once implemented).
+- [x] **Task 2 — Wire the query into the `GET /logs` route, replacing the 6.2 skeleton (AC: 1, 2, 3, 5, 6, 7, 9, 10)**
+  - [x] In `routes/logs.ts`, replace the skeleton’s `res.json([])` body with: validate params (Task 1) → on validation failure `res.status(400).json({ message })` → else `await` the paginated query → `res.status(200).json(entries)` as a **bare array** (no `{ data }`/`{ items, nextCursor }` envelope — AC 1/9, [Source: architecture/implementation-patterns-consistency-rules.md#API Responses — direct (no envelope)]).
+  - [x] Keep the existing 6.2 error-handling/`502` path and `ROUTE_PREFIX` stripping **as-is** — they live in 6.2’s `app.ts`; do **not** re-implement prefix stripping or the `502` handler in the router. Route handler errors propagate via `next(error)` to the existing app-level `502 { message: 'Unexpected error' }` handler (mirror `battle-service/src/app.ts` `try { … } catch (error) { next(error); }`).
+  - [x] Remove the now-satisfied portion of the `// Story 6.4: …` seam comment (leave the file clean — no “TODO/Story 6.4” marker once implemented).
 
-- [ ] **Task 3 — Add `GET /logs/:logId` single-entry detail (AC: 8, 10)**
-  - [ ] Add a `GET /logs/:logId` handler in `routes/logs.ts`. Require `roomId` query param (non-blank) and a valid-ObjectId `:logId` → else `400 { message }`. Query `{ _id: ObjectId(logId), roomId }` (strict roomId isolation — never look up by `_id` alone, [Source: architecture/core-architectural-decisions.md#Auth & Security]). Found → `200` direct resource (mapped to expose `id`). Not found for that `(_id, roomId)` pair → `404 { message }`.
-  - [ ] **Route ordering:** register `GET /logs/:logId` such that it does not shadow / is not shadowed by `GET /logs` (Express matches `/logs` and `/logs/:logId` distinctly; just ensure both are mounted on the same router 6.2 created and the literal collection route is not accidentally captured by the param route). Add a one-line comment only if the ordering is non-obvious.
+- [x] **Task 3 — Add `GET /logs/:logId` single-entry detail (AC: 8, 10)**
+  - [x] Add a `GET /logs/:logId` handler in `routes/logs.ts`. Require `roomId` query param (non-blank) and a valid-ObjectId `:logId` → else `400 { message }`. Query `{ _id: ObjectId(logId), roomId }` (strict roomId isolation — never look up by `_id` alone, [Source: architecture/core-architectural-decisions.md#Auth & Security]). Found → `200` direct resource (mapped to expose `id`). Not found for that `(_id, roomId)` pair → `404 { message }`.
+  - [x] **Route ordering:** register `GET /logs/:logId` such that it does not shadow / is not shadowed by `GET /logs` (Express matches `/logs` and `/logs/:logId` distinctly; just ensure both are mounted on the same router 6.2 created and the literal collection route is not accidentally captured by the param route). Add a one-line comment only if the ordering is non-obvious.
 
-- [ ] **Task 4 — Reader tests (AC: 1–3, 5–11)**
-  - [ ] Co-locate tests as `<source>.test.ts` with **casing matching the source 6.2 delivered** (e.g. `routes/logs.test.ts`, and/or `service.test.ts` — match 6.2’s layout exactly; [Source: architecture/implementation-patterns-consistency-rules.md#Test co-location rule]). Use `supertest` + Vitest (the established stack — see `battle-service/src/app.test.ts`); the repo has **no `mongodb-memory-server`** — **mock the model/data layer** (inject a `LogModelLike` mock with `vi.fn()` like `battle-service` `buildBattleModel()`, or `vi.mock('../models/LogEvent', …)` with a chainable `find().sort().limit()` mock — whichever matches 6.2’s seam).
-  - [ ] **HTTP reader filtering behavior** (AC 1,2,6,7,9): `GET /logs?roomId=room-1` → `200`, array, each item has `id` and no `_id`; the query layer was called with `roomId: 'room-1'` and **no** `_id` filter (page 1). `GET /logs?roomId=room-1&before=<validOid>` → query called with `{ roomId, _id: { $lt: ObjectId(<validOid>) } }`, sort `{ _id: -1 }`. Missing/blank `roomId` → `400`, query layer **never invoked** (AC 6). Invalid `before` (`'not-an-oid'`) → `400`, query never invoked (AC 7).
-  - [ ] **Pagination / limit** (AC 3): default → `limit 50`; `?limit=10` → `limit 10`; `?limit=9999` → clamped `100`; `?limit=0` / `?limit=abc` → `400`. **Exclusive cursor** (AC 2): assert the `_id` filter is `$lt` (strictly less-than), not `$lte` — the boundary item is not repeated.
-  - [ ] **Empty + detail + error** (AC 5,8,10): query yields `[]` → `200 []`. `GET /logs/:logId?roomId=X` hit → `200` resource; not-found `(_id,roomId)` → `404`; valid `_id` but wrong `roomId` → `404` (cross-room isolation, explicit highest-value security assertion); bad `:logId` / missing `roomId` → `400`. Model throws → `502 { message: 'Unexpected error' }` (mirror `battle-service` `app.test.ts` “returns 502 for unexpected errors”).
-  - [ ] Deterministic: no real Mongo/network, no timing reliance. Run the gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8, **70% line floor — do not lower**). Confirm `log-service` reader suites appear in output (proves Task 0’s 6.2 vitest wiring).
+- [x] **Task 4 — Reader tests (AC: 1–3, 5–11)**
+  - [x] Co-locate tests as `<source>.test.ts` with **casing matching the source 6.2 delivered** (e.g. `routes/logs.test.ts`, and/or `service.test.ts` — match 6.2’s layout exactly; [Source: architecture/implementation-patterns-consistency-rules.md#Test co-location rule]). Use `supertest` + Vitest (the established stack — see `battle-service/src/app.test.ts`); the repo has **no `mongodb-memory-server`** — **mock the model/data layer** (inject a `LogModelLike` mock with `vi.fn()` like `battle-service` `buildBattleModel()`, or `vi.mock('../models/LogEvent', …)` with a chainable `find().sort().limit()` mock — whichever matches 6.2’s seam).
+  - [x] **HTTP reader filtering behavior** (AC 1,2,6,7,9): `GET /logs?roomId=room-1` → `200`, array, each item has `id` and no `_id`; the query layer was called with `roomId: 'room-1'` and **no** `_id` filter (page 1). `GET /logs?roomId=room-1&before=<validOid>` → query called with `{ roomId, _id: { $lt: ObjectId(<validOid>) } }`, sort `{ _id: -1 }`. Missing/blank `roomId` → `400`, query layer **never invoked** (AC 6). Invalid `before` (`'not-an-oid'`) → `400`, query never invoked (AC 7).
+  - [x] **Pagination / limit** (AC 3): default → `limit 50`; `?limit=10` → `limit 10`; `?limit=9999` → clamped `100`; `?limit=0` / `?limit=abc` → `400`. **Exclusive cursor** (AC 2): assert the `_id` filter is `$lt` (strictly less-than), not `$lte` — the boundary item is not repeated.
+  - [x] **Empty + detail + error** (AC 5,8,10): query yields `[]` → `200 []`. `GET /logs/:logId?roomId=X` hit → `200` resource; not-found `(_id,roomId)` → `404`; valid `_id` but wrong `roomId` → `404` (cross-room isolation, explicit highest-value security assertion); bad `:logId` / missing `roomId` → `400`. Model throws → `502 { message: 'Unexpected error' }` (mirror `battle-service` `app.test.ts` “returns 502 for unexpected errors”).
+  - [x] Deterministic: no real Mongo/network, no timing reliance. Run the gate from repo `backend/`: `cd backend && npm test` then `npm run test:coverage` (Vitest 3.2.4, v8, **70% line floor — do not lower**). Confirm `log-service` reader suites appear in output (proves Task 0’s 6.2 vitest wiring).
 
-- [ ] **Task 5 — Docs in the same change (AC: 1, 8, 9)**
-  - [ ] Update the nearest docs for the now-real endpoints (docs-in-same-change rule, [Source: _bmad-output/project-context.md]): if Story 6.2 added a `log-service` row / `/logs` proxy line to `backend/README.md`, extend it to document the real `GET /logs?roomId=X&limit=&before=` + `GET /logs/:logId?roomId=X` contract and the **client-derived cursor** rule (last entry’s `id` = next `before`; short/empty array = end). Do not invent a new doc file; do not duplicate what 6.2 already wrote — only reflect the contract this story makes real.
-  - [ ] Do **not** add/modify env vars, dependencies, or lockfiles (this story is pure read logic over what 6.2 wired). If none exist to update, note “no doc deltas required” in Completion Notes.
+- [x] **Task 5 — Docs in the same change (AC: 1, 8, 9)**
+  - [x] Update the nearest docs for the now-real endpoints (docs-in-same-change rule, [Source: _bmad-output/project-context.md]): if Story 6.2 added a `log-service` row / `/logs` proxy line to `backend/README.md`, extend it to document the real `GET /logs?roomId=X&limit=&before=` + `GET /logs/:logId?roomId=X` contract and the **client-derived cursor** rule (last entry’s `id` = next `before`; short/empty array = end). Do not invent a new doc file; do not duplicate what 6.2 already wrote — only reflect the contract this story makes real.
+  - [x] Do **not** add/modify env vars, dependencies, or lockfiles (this story is pure read logic over what 6.2 wired). If none exist to update, note “no doc deltas required” in Completion Notes.
 
 ## Dev Notes
 
@@ -171,9 +171,37 @@ Honor the security rule for it: **all log queries enforce roomId isolation at th
 ## Dev Agent Record
 
 ### Agent Model Used
+GPT-5
 
 ### Debug Log References
+- 2026-05-21: Verified Story 6.2 prerequisites: `backend/log-service/src/routes/logs.ts` skeleton existed with the Story 6.4 seam; `LogEvent` exports `LogEvent`, declares `{ roomId: 1, _id: -1 }`, timestamps, and `_id`/`__v` JSON cleanup; `buildLogApp` mounts `logsRouter`; route data access uses `service.ts` functions over the `LogEvent` model.
+- 2026-05-21: Confirmed `backend/vitest.config.ts` includes `log-service/src/**/*.test.ts` and `log-service/src/**/*.ts`, `backend/package.json` workspaces includes `log-service`, and SAM routes both `/logs` and `/logs/{logId}` to `LogReaderFunction`.
+- 2026-05-21: Installed backend workspace dependencies with `npm install` because `vitest` was missing in the worktree; no dependency versions or lockfile content changed.
+- 2026-05-21: Validation commands from `backend/`: `npm test -- log-service/src/routes/logs.test.ts` passed (13 tests); `npm test` passed (27 files, 174 tests); `npm run test:coverage` passed (all files 86.7% lines; `log-service/src/routes/logs.ts` 95% lines); `npm run typecheck` passed.
 
 ### Completion Notes List
+- Implemented the `GET /logs` paginated reader over the Story 6.2 `service.ts` seam: roomId-required filter, `_id` `$lt` exclusive cursor, `_id` descending sort, default `limit=50`, max `limit=100`, and `400` validation before any Mongo query.
+- Added the architecture-deferred `GET /logs/:logId?roomId=X` detail endpoint with strict `{ _id, roomId }` lookup, `400` validation, `404` miss/cross-room behavior, direct resource response, and app-level `502 { message: 'Unexpected error' }` propagation for unexpected failures.
+- Kept Story 6.2-owned model/index/SAM/workspace wiring intact; 6.4 consumes `LogEvent` and does not redefine the `{ roomId: 1, _id: -1 }` index.
+- Preserved the bare-array list contract for Story 6.5: the next cursor is the last returned entry's `id`; a short or empty array means end-of-history. No `nextCursor` or `hasMore` envelope fields were added.
+- Updated `backend/README.md` with the real log reader list/detail contract and client-derived cursor rule.
 
 ### File List
+- backend/log-service/src/service.ts
+- backend/log-service/src/routes/logs.ts
+- backend/log-service/src/routes/logs.test.ts
+- backend/README.md
+- _bmad-output/implementation-artifacts/6-4-room-history-api-returns-paginated-events.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
+
+### Change Log
+- 2026-05-21: Implemented room history paginated reader and detail endpoint; added reader tests and docs; marked story ready for review.
+
+### Review Findings
+
+_Code review 2026-05-21 (bmad-code-review, 3 layers: Blind Hunter / Edge Case Hunter / Acceptance Auditor). All 11 ACs verified satisfied; Scope Guard clean; 4 documented variances followed. No Critical/High findings._
+
+- [x] [Review][Patch] `before`/`logId` accept 12-char non-hex strings — `mongoose.Types.ObjectId.isValid()` returns `true` for any 12-char string (treated as a 12-byte buffer), so a non-24-hex `before` or `:logId` passes validation, is silently coerced to a different ObjectId, and yields `200`/`404` instead of the AC7-mandated `400` for a non-24-hex cursor. Tighten to a 24-hex check (`/^[a-f\d]{24}$/i`). Low practical impact (real cursors are always 24-hex). [backend/log-service/src/routes/logs.ts:56, backend/log-service/src/routes/logs.ts:81]
+- [x] [Review][Patch] No regression test for NoSQL-operator-shaped `roomId` — `?roomId[$ne]=` makes `qs` parse `request.query.roomId` into an object; the `typeof === 'string'` guard rejects it with `400` (roomId isolation stays intact), but this security boundary has no test. Add a test asserting operator-shaped `roomId` → `400` with the data layer never invoked. [backend/log-service/src/routes/logs.test.ts]
+- [x] [Review][Patch] `toLogEventResource` has an unreachable fallback branch — the `{ ...document }` path and `json.id ?? json._id` / `String(id)` exist for non-Mongoose inputs that never occur (`find`/`findOne` always return hydrated docs with the `toJSON` `id` virtual); the dead path can produce `id: 'undefined'`. Simplify to assume a Mongoose document. [backend/log-service/src/service.ts:65]
+- [x] [Review][Patch] List & detail tests assert resource shape with `objectContaining` — AC1 enumerates the exact entry field set, but `objectContaining` only proves fields are present, not that no extra fields leak. Tighten the list and detail body assertions to `toEqual`. [backend/log-service/src/routes/logs.test.ts:73, backend/log-service/src/routes/logs.test.ts:177]

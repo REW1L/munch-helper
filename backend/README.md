@@ -18,7 +18,7 @@ Implemented in this phase:
 - Room management (`POST /rooms`, `POST /rooms/associations`)
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
 - Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`, `PATCH /battles/:id`)
-- Room history log persistence and reader skeleton (`GET /logs?roomId=...`)
+- Room history log persistence and reader API (`GET /logs?roomId=...&limit=...&before=...`, `GET /logs/:logId?roomId=...`)
 - Room service synchronous call to character service on create/join flow.
 - Room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`).
 - Character and battle lifecycle events are also published to the room-history log target when `LOG_TOPIC_ARN` (Lambda) or `ROOM_LOG_EVENTS_CHANNEL` (local Redis, default `room-log-events`) is configured.
@@ -55,6 +55,8 @@ Nginx runs on `http://localhost:8080` by default and proxies:
 - `/battles` -> `battle-service`
 - `/logs` -> `log-service`
 - `/ws` -> `room-notifications-service`
+
+Room history responses are direct resources with no envelope. `GET /logs?roomId=<RoomId>` returns newest events first, defaults to `limit=50`, clamps `limit` to `100`, and accepts `before=<LogEvent id>` to load entries older than that id. Clients derive the next cursor from the last returned entry's `id`; a shorter-than-limit array, including `[]`, means the history is exhausted. `GET /logs/:logId?roomId=<RoomId>` returns a single log event only when the id belongs to that room.
 
 Room notifications are available through `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`.
 The notifications container is also exposed directly on `ws://localhost:8085/ws?roomId=<RoomId>&userId=<UserId>` for debugging.
