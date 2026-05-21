@@ -2,15 +2,17 @@ import type { LogEvent } from '@/api/logs';
 import BattleHistoryModal from '@/components/munchkin/BattleHistoryModal';
 import LogEntry from '@/components/munchkin/LogEntry';
 import { AppTheme } from '@/constants/theme';
+import { userProfileContext } from '@/context/UserContext';
 import { useRoomLogs } from '@/hooks/useRoomLogs';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RoomHistoryLogScreen() {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
+  const { userProfile } = useContext(userProfileContext);
   const [selectedEntry, setSelectedEntry] = useState<LogEvent | null>(null);
   const {
     entries,
@@ -115,11 +117,14 @@ export default function RoomHistoryLogScreen() {
         />
       )}
 
-      <BattleHistoryModal
-        entry={selectedEntry}
-        roomId={roomId}
-        onClose={handleCloseBattleHistory}
-      />
+      {selectedEntry !== null && (
+        <BattleHistoryModal
+          entry={selectedEntry}
+          roomId={roomId}
+          userProfile={userProfile}
+          onClose={handleCloseBattleHistory}
+        />
+      )}
     </SafeAreaView>
   );
 }

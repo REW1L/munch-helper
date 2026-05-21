@@ -336,11 +336,11 @@ describe('LogEntry', () => {
     expect(findTextNode(missingPayloadRenderer, 'Concluded')).toBeTruthy();
     expect(getRow(missingPayloadRenderer).props.accessibilityRole).toBeUndefined();
     expect(getRow(missingPayloadRenderer).props.accessibilityLabel).toBe(
-      'Battle Battle concluded from summary, Concluded, 3m ago.',
+      'Battle concluded from summary, Concluded, 3m ago.',
     );
     expect(getRow(missingIdRenderer).props.accessibilityRole).toBeUndefined();
     expect(getRow(missingIdRenderer).props.accessibilityLabel).toBe(
-      'Battle Battle discarded from summary, discarded, 3m ago.',
+      'Battle discarded from summary, discarded, 3m ago.',
     );
     expect(missingPayloadRenderer.root.findAllByType(TouchableOpacity)).toHaveLength(0);
     expect(missingIdRenderer.root.findAllByType(TouchableOpacity)).toHaveLength(0);

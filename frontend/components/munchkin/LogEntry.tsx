@@ -5,7 +5,6 @@ import React, { memo, useMemo } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
-  getBattleDisplayName,
   getBattleResultLabel,
   hasUsableBattlePayload,
   narrowBattlePayload,
@@ -146,9 +145,11 @@ function getBattleAccessibilityLabel(
   statusPhrase: string,
   relativeTime: string,
   isInteractive: boolean,
+  hasStructuredName: boolean,
 ): string {
   const suffix = isInteractive ? ' Double-tap to open battle record.' : '';
-  return `Battle ${name}, ${statusPhrase}, ${relativeTime}.${suffix}`;
+  const prefix = hasStructuredName ? 'Battle ' : '';
+  return `${prefix}${name}, ${statusPhrase}, ${relativeTime}.${suffix}`;
 }
 
 function getResultColor(result: unknown): string {
@@ -249,12 +250,14 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
   }
 
   if (entry.eventType === 'battle_started') {
-    const name = getBattleDisplayName(entry.payload, entry.summary);
+    const startedBattle = narrowBattlePayload(entry.payload);
+    const name = startedBattle?.name || entry.summary || 'Battle';
+    const hasStructuredName = Boolean(startedBattle?.name);
 
     return (
       <View
         accessible
-        accessibilityLabel={getBattleAccessibilityLabel(name, 'started', relativeTime, false)}
+        accessibilityLabel={getBattleAccessibilityLabel(name, 'started', relativeTime, false, hasStructuredName)}
         style={styles.row}
         testID="log-entry-row"
       >
@@ -282,6 +285,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
   if (entry.eventType === 'battle_concluded' || entry.eventType === 'battle_discarded') {
     const battle = narrowBattlePayload(entry.payload);
     const name = battle?.name || entry.summary || 'Battle';
+    const hasStructuredName = Boolean(battle?.name);
     const isConcluded = entry.eventType === 'battle_concluded';
     const isInteractive = hasUsableBattlePayload(entry.payload);
     const statusPhrase = isConcluded ? getBattleResultLabel(battle?.result) : 'discarded';
@@ -320,6 +324,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
       statusPhrase,
       relativeTime,
       isInteractive,
+      hasStructuredName,
     );
 
     if (isInteractive) {
@@ -435,12 +440,17 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     color: AppTheme.colors.textMuted,
-    ...AppTheme.typography.labelSm,
+    ...AppTheme.typography.caption,
   },
   resultLabel: {
-    fontSize: AppTheme.typography.labelSm.fontSize,
+    alignSelf: 'flex-start',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.sm,
+    fontSize: 12,
     fontWeight: '700',
-    lineHeight: AppTheme.typography.labelSm.lineHeight,
+    overflow: 'hidden',
+    paddingHorizontal: AppTheme.spacing.sm,
+    paddingVertical: AppTheme.spacing.xs,
   },
   diffList: {
     gap: AppTheme.spacing.xs,

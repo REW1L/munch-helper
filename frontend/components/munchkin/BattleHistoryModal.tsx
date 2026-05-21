@@ -1,6 +1,7 @@
 import type { LogEvent } from '@/api/logs';
 import { AppTheme } from '@/constants/theme';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import type { UserProfileInterface } from '@/hooks/useUser';
 import React, { memo, useMemo } from 'react';
 import {
   Modal,
@@ -22,6 +23,7 @@ import { formatRelativeTime } from './logEntryTime';
 interface BattleHistoryModalProps {
   entry: LogEvent | null;
   roomId: string | undefined;
+  userProfile: UserProfileInterface;
   onClose: () => void;
 }
 
@@ -42,9 +44,9 @@ function resultColor(result: unknown): string {
   return AppTheme.colors.textMuted;
 }
 
-function BattleHistoryModal({ entry, roomId, onClose }: BattleHistoryModalProps) {
+function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHistoryModalProps) {
   const isVisible = entry !== null;
-  const { characters } = useRoomCharacters(isVisible ? roomId : undefined);
+  const { characters } = useRoomCharacters(roomId, userProfile);
   const characterById = useMemo(
     () => new Map(characters.map((character) => [character.id, character])),
     [characters],
@@ -66,9 +68,11 @@ function BattleHistoryModal({ entry, roomId, onClose }: BattleHistoryModalProps)
       transparent
       visible={isVisible}
     >
-      <View accessibilityViewIsModal style={styles.root} testID="battle-history-modal">
+      <View style={styles.root} testID="battle-history-modal">
         <Pressable
-          accessibilityLabel="Close battle history backdrop"
+          accessibilityElementsHidden
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
           onPress={onClose}
           style={styles.backdrop}
           testID="battle-history-backdrop"
@@ -91,11 +95,11 @@ function BattleHistoryModal({ entry, roomId, onClose }: BattleHistoryModalProps)
             </TouchableOpacity>
           </View>
 
-          {battle ? (
+          {battle && (
             <ScrollView contentContainerStyle={styles.scrollContent}>
               {isConcluded && (
                 <Text
-                  style={[styles.resultLabel, { color: resultColor(battle.result) }]}
+                  style={[styles.resultChip, { color: resultColor(battle.result) }]}
                   testID="battle-history-result"
                 >
                   {getBattleResultLabel(battle.result, '—')}
@@ -106,14 +110,18 @@ function BattleHistoryModal({ entry, roomId, onClose }: BattleHistoryModalProps)
                 <Text style={styles.playerHeading}>Player Side</Text>
                 {playerIds.length > 0 ? playerIds.map((characterId) => {
                   const character = characterById.get(characterId);
+                  const hasLevel = character && Number.isFinite(character.level);
+                  const hasPower = character && Number.isFinite(character.power);
                   return (
                     <View key={characterId} style={styles.rowLine}>
                       <Text style={styles.bodyText}>
                         {character?.nickname ?? 'Removed character'}
                       </Text>
-                      {character && (
+                      {character && (hasLevel || hasPower) && (
                         <Text style={styles.captionText}>
-                          Level {character.level} · Power {character.power}
+                          {hasLevel ? `Level ${character.level}` : null}
+                          {hasLevel && hasPower ? ' · ' : null}
+                          {hasPower ? `Power ${character.power}` : null}
                         </Text>
                       )}
                     </View>
@@ -150,8 +158,6 @@ function BattleHistoryModal({ entry, roomId, onClose }: BattleHistoryModalProps)
 
               <Text style={styles.footerText}>{relativeTime}</Text>
             </ScrollView>
-          ) : (
-            <Text style={styles.captionText}>Battle record unavailable</Text>
           )}
         </View>
       </View>
@@ -224,10 +230,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: AppTheme.spacing.md,
   },
-  resultLabel: {
-    fontSize: 14,
+  resultChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.sm,
+    fontSize: 12,
     fontWeight: '700',
-    lineHeight: 18,
+    overflow: 'hidden',
+    paddingHorizontal: AppTheme.spacing.sm,
+    paddingVertical: AppTheme.spacing.xs,
   },
   section: {
     borderColor: AppTheme.colors.surfaceSubtle,

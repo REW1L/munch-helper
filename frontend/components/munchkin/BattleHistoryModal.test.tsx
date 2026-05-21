@@ -1,12 +1,19 @@
 import type { Character } from '@/api/characters';
 import type { LogEvent } from '@/api/logs';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import type { UserProfileInterface } from '@/hooks/useUser';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BattleHistoryModal from './BattleHistoryModal';
+
+const userProfile: UserProfileInterface = {
+  id: 'user-1',
+  nickname: 'Tester',
+  avatar: 0,
+};
 
 vi.mock('@/hooks/useCharacters', () => ({
   useRoomCharacters: vi.fn(),
@@ -101,7 +108,7 @@ function renderModal(entry: LogEvent | null = baseEntry, onClose = vi.fn()) {
 
   act(() => {
     renderer = TestRenderer.create(
-      <BattleHistoryModal entry={entry} roomId="ROOM42" onClose={onClose} />
+      <BattleHistoryModal entry={entry} roomId="ROOM42" userProfile={userProfile} onClose={onClose} />
     );
   });
 
@@ -200,9 +207,12 @@ describe('BattleHistoryModal', () => {
     expect(findTextNode(renderer, 'Unknown monster · Level —')).toBeTruthy();
   });
 
-  it('renders no modal tree when entry is null', () => {
-    const { renderer } = renderModal(null);
+  it('hides the dismiss-backdrop from accessibility traversal', () => {
+    const { renderer } = renderModal();
+    const backdrop = renderer.root.findByProps({ testID: 'battle-history-backdrop' });
 
-    expect(renderer.toJSON()).toBeNull();
+    expect(backdrop.props.accessible).toBe(false);
+    expect(backdrop.props.accessibilityElementsHidden).toBe(true);
+    expect(backdrop.props.importantForAccessibility).toBe('no-hide-descendants');
   });
 });

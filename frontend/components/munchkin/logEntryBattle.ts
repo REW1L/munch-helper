@@ -36,12 +36,14 @@ function narrowBonuses(value: unknown): BonusItem[] | undefined {
     return undefined;
   }
 
+  const seenIds = new Set<string>();
   return value.flatMap((item) => {
-    if (!isRecord(item) || !nonEmptyString(item.id) || typeof item.value !== 'number') {
+    if (!isRecord(item) || !nonEmptyString(item.id) || !Number.isFinite(item.value) || seenIds.has(item.id)) {
       return [];
     }
 
-    return [{ id: item.id, value: item.value }];
+    seenIds.add(item.id);
+    return [{ id: item.id, value: item.value as number }];
   });
 }
 
@@ -50,7 +52,7 @@ function narrowCharacterIds(value: unknown): string[] | undefined {
     return undefined;
   }
 
-  return value.filter(nonEmptyString);
+  return Array.from(new Set(value.filter(nonEmptyString)));
 }
 
 function narrowMonsters(value: unknown): MonsterItem[] | undefined {
@@ -58,11 +60,13 @@ function narrowMonsters(value: unknown): MonsterItem[] | undefined {
     return undefined;
   }
 
+  const seenIds = new Set<string>();
   return value.flatMap((item) => {
-    if (!isRecord(item) || !nonEmptyString(item.id)) {
+    if (!isRecord(item) || !nonEmptyString(item.id) || seenIds.has(item.id)) {
       return [];
     }
 
+    seenIds.add(item.id);
     return [{
       id: item.id,
       name: nonEmptyString(item.name) ? item.name : '',
@@ -113,10 +117,6 @@ export function hasUsableBattlePayload(payload: unknown): boolean {
   }
 
   return Boolean(battle.name || battle.playerSide || battle.monsterSide);
-}
-
-export function getBattleDisplayName(payload: unknown, summary: string): string {
-  return narrowBattlePayload(payload)?.name || summary || 'Battle';
 }
 
 export function getBattleResultLabel(result: unknown, emptyLabel = 'Concluded'): string {
