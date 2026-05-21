@@ -60,6 +60,36 @@ describe('log-service subscriber', () => {
     expect(response).toEqual({ statusCode: 200, body: JSON.stringify({ processed: 2 }) });
   });
 
+  it('continues the batch when a record fails to persist', async () => {
+    process.env.LOG_TOPIC_ARN = 'arn:aws:sns:log-topic';
+    const firstParsed = {
+      roomId: 'room-1',
+      eventType: 'character_created',
+      actorId: 'char-1',
+      summary: 'Ada created',
+      payload: {},
+      occurredAt: new Date('2026-05-20T10:00:00.000Z'),
+    };
+    const secondParsed = { ...firstParsed, actorId: 'char-2' };
+    mockParseLogEvent
+      .mockReturnValueOnce(firstParsed)
+      .mockReturnValueOnce(secondParsed);
+    mockPersistLogEvent
+      .mockRejectedValueOnce(new Error('mongo write failed'))
+      .mockResolvedValueOnce(undefined);
+
+    const { handler } = await import('./subscriber.js');
+    const response = await handler({
+      Records: [
+        { Sns: { Message: 'fails' } },
+        { Sns: { Message: 'succeeds' } },
+      ],
+    });
+
+    expect(mockPersistLogEvent).toHaveBeenCalledTimes(2);
+    expect(response).toEqual({ statusCode: 200, body: JSON.stringify({ processed: 1 }) });
+  });
+
   it('connects to the configured log Mongo URI', async () => {
     process.env.LOG_TOPIC_ARN = 'arn:aws:sns:log-topic';
     process.env.LOG_MONGO_URI = 'mongodb://mongo/logs';

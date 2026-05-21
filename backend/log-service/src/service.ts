@@ -139,10 +139,8 @@ export function parseLogEvent(payload: unknown): LogEventInput | null {
   }
 
   const occurredAtValue = trimString(payload.occurredAt) || trimString(payload.emittedAt) || new Date().toISOString();
-  const occurredAt = new Date(occurredAtValue);
-  if (Number.isNaN(occurredAt.getTime())) {
-    return null;
-  }
+  const parsedOccurredAt = new Date(occurredAtValue);
+  const occurredAt = Number.isNaN(parsedOccurredAt.getTime()) ? new Date() : parsedOccurredAt;
 
   const baseInput = {
     roomId,

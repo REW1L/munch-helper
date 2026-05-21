@@ -1,3 +1,8 @@
+## Deferred from: code review of 6-2-published-events-are-stored-and-readable-in-room-history (2026-05-21)
+
+- `connectToMongo` does not reconnect after a dropped connection — the singleton caches `connectionPromise` and never clears it; after a transient Mongo disconnect (`readyState` 0/2/3) it awaits the already-resolved promise and returns without reconnecting, so subsequent `LogEvent.create` calls fail. `db.ts` was copied verbatim from `room-notifications-service`/`battle-service` per Task 1 — repo-wide pre-existing pattern. [backend/log-service/src/db.ts]
+- `morgan('dev')` used on the deployed logReader path — `buildLogApp` mounts the dev-only `morgan` formatter, used by `lambda-read.ts` in production (verbose colored CloudWatch logs). Task 5 instructed mirroring `battle-service`'s app structure, so this is a propagated repo-wide convention. [backend/log-service/src/app.ts]
+
 ## Deferred from: code review of 6-1-character-events-are-published-for-room-history (2026-05-20)
 
 - PATCH does not validate `level`/`power`/`class`/`race`/`gender`/`userId` — pre-existing input-validation gap; only `name`/`avatarId`/`color` are validated, so clients can persist arbitrary types and ship them through `changes`. [backend/character-service/src/app.ts:292, 300-304]

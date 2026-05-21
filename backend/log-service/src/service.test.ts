@@ -124,6 +124,23 @@ describe('log-service service', () => {
     expect(parsed?.occurredAt).toEqual(new Date('2026-05-20T12:00:00.000Z'));
   });
 
+  it('falls back to the current time when occurredAt is unparseable', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-20T12:00:00.000Z'));
+    const { parseLogEvent } = await import('./service.js');
+
+    const parsed = parseLogEvent({
+      eventType: 'character_created',
+      roomId: 'room-1',
+      actorId: 'char-1',
+      occurredAt: 'not-a-real-date',
+      character: { id: 'char-1', name: 'Ada', avatarId: 1, color: '#fff' },
+    });
+
+    expect(parsed).not.toBeNull();
+    expect(parsed?.occurredAt).toEqual(new Date('2026-05-20T12:00:00.000Z'));
+  });
+
   it('renders character change summaries with every changed field', async () => {
     const { parseLogEvent } = await import('./service.js');
 

@@ -1,6 +1,6 @@
 # Story 6.2: Published Events Are Stored and Readable in Room History
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -277,3 +277,13 @@ GPT-5 Codex
 ### Change Log
 
 - 2026-05-20: Implemented story 6.2 log-service persistence/read skeleton, tests, workspace wiring, infra wiring, and docs.
+
+### Review Findings
+
+_Code review 2026-05-21 (commit b89714f) — 3 adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor). All 7 ACs satisfied; the items below are robustness gaps._
+
+- [x] [Review][Patch] SNS batch aborts on first persist failure [backend/log-service/src/subscriber.ts] — In `handler`, parse failures are caught (warn + continue) but a thrown error from `persistLogEvent` (transient Mongo error, validation, duplicate) is unguarded: it aborts the loop, rejects the handler, and SNS redelivers the whole batch — re-persisting already-written records (no idempotency key → duplicates) and skipping later records. AC5 is satisfied for parse failures only. Decision (2026-05-21): resolved to catch + warn + continue — wrap each `persistLogEvent` in try/catch, `console.warn` the failure, keep processing the batch (matches the existing parse-failure pattern; accepts at-most-once on a transient Mongo failure).
+- [x] [Review][Patch] parseLogEvent drops valid events on an unparseable occurredAt [backend/log-service/src/service.ts] — A present-but-malformed timestamp string (e.g. `"yesterday"`, `"2026-13-99"`) makes `new Date()` Invalid and the `Number.isNaN` check returns `null`, discarding an otherwise-supported event. The Dev Notes mapping rule ends the fallback chain in `new Date().toISOString()` — intent is that a bad/missing timestamp never drops the event. Fix: fall back to current time on an unparseable value instead of returning `null`.
+- [x] [Review][Patch] Redis subscriber callback has no error handling [backend/log-service/src/index.ts] — The async message callback passed to `subscriber.subscribe()` is not awaited/caught by node-redis. A throw inside (`connectToMongo` or `persistLogEvent` rejection) becomes an unhandled promise rejection — the event is lost silently and the process can crash. Redis pub/sub has no redelivery, so the fix is to wrap the callback body in try/catch with a `console.error`/`warn` (consistent with the project's "do not swallow operational errors / try-catch at I/O boundaries" rule).
+- [x] [Review][Defer] connectToMongo does not reconnect after a dropped connection [backend/log-service/src/db.ts] — deferred, pre-existing — The singleton caches `connectionPromise` and never clears it; after a transient Mongo disconnect (`readyState` 0/2/3) it awaits the already-resolved promise and returns without reconnecting. `db.ts` was copied verbatim from `room-notifications-service`/`battle-service` per Task 1; the limitation is a repo-wide pre-existing pattern, not introduced here.
+- [x] [Review][Defer] morgan('dev') used on the deployed logReader path [backend/log-service/src/app.ts] — deferred, pre-existing — `buildLogApp` mounts the dev-only `morgan` formatter, which is the same app used by `lambda-read.ts` in production (verbose colored CloudWatch logs). Task 5 instructed mirroring `battle-service`'s app structure, so this is a propagated repo-wide convention rather than a defect unique to this story.

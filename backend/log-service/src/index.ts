@@ -34,20 +34,27 @@ const startSubscriber = async (): Promise<void> => {
 
   await subscriber.connect();
   await subscriber.subscribe(eventsChannel, async (message) => {
-    console.info('[log-service] local event received', {
-      channel: eventsChannel
-    });
-
-    const parsedEvent = parseLogEvent(message);
-    if (!parsedEvent) {
-      console.warn('log.redis.invalid_event', {
+    try {
+      console.info('[log-service] local event received', {
         channel: eventsChannel
       });
-      return;
-    }
 
-    await connectToMongo(mongoUri);
-    await persistLogEvent(parsedEvent);
+      const parsedEvent = parseLogEvent(message);
+      if (!parsedEvent) {
+        console.warn('log.redis.invalid_event', {
+          channel: eventsChannel
+        });
+        return;
+      }
+
+      await connectToMongo(mongoUri);
+      await persistLogEvent(parsedEvent);
+    } catch (error) {
+      console.error('[log-service] failed to process local event', {
+        channel: eventsChannel,
+        error
+      });
+    }
   });
 
   console.info('[log-service] subscribed to Redis channel', {

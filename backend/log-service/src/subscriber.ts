@@ -36,8 +36,17 @@ export const handler = async (event: unknown) => {
       continue;
     }
 
-    await persistLogEvent(parsed);
-    processed += 1;
+    try {
+      await persistLogEvent(parsed);
+      processed += 1;
+    } catch (error) {
+      console.warn('log.sns.persist_failed', {
+        eventType: parsed.eventType,
+        roomId: parsed.roomId,
+        actorId: parsed.actorId,
+        error
+      });
+    }
   }
 
   return {
