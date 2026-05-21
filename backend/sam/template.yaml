@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: "Munch Helper backend SAM template (user, room, character, battle, and room notification services)"
+Description: "Munch Helper backend SAM template (user, room, character, battle, room notification, and log services)"
 
 Parameters:
   UserMongoUri:
@@ -23,6 +23,10 @@ Parameters:
     Type: String
     Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/notifications?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
     Description: MongoDB connection URI used by room-notifications-service Lambda
+  LogMongoUri:
+    Type: String
+    Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/log?authSource=%24external&authMechanism=MONGODB-AWS&appName=Sandbox
+    Description: MongoDB connection URI used by log-service Lambda
   CharacterServiceUrl:
     Type: String
     Description: Base URL for character-service called by room-service
@@ -113,6 +117,14 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref RoomCharacterEventsTopic
+        - PolicyName: PublishLogEvents
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref LogEventsTopic
 
   BattleServiceRole:
     Type: AWS::IAM::Role
@@ -168,6 +180,11 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub ${AWS::StackName}-room-character-events
+
+  LogEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub ${AWS::StackName}-log-events
 
   CloudWebSocketApi:
     Type: AWS::ApiGatewayV2::Api
@@ -304,6 +321,7 @@ Resources:
         Variables:
           CHARACTER_MONGO_URI: !Ref CharacterMongoUri
           ROOM_CHARACTER_EVENTS_TOPIC_ARN: !Ref RoomCharacterEventsTopic
+          LOG_TOPIC_ARN: !Ref LogEventsTopic
           ROUTE_PREFIX: !Ref RoutePrefix
       Events:
         CharacterListGet:
@@ -419,6 +437,64 @@ Resources:
         Sourcemap: false
         Format: cjs
 
+  LogWriterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-log-writer
+      CodeUri: ../log-service
+      Handler: subscriber.handler
+      Environment:
+        Variables:
+          LOG_MONGO_URI: !Ref LogMongoUri
+          LOG_TOPIC_ARN: !Ref LogEventsTopic
+      Events:
+        LogEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref LogEventsTopic
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/subscriber.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
+  LogReaderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-log-reader
+      CodeUri: ../log-service
+      Handler: lambda-read.handler
+      Environment:
+        Variables:
+          LOG_MONGO_URI: !Ref LogMongoUri
+          ROUTE_PREFIX: !Ref RoutePrefix
+      Events:
+        LogListGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /logs
+            Method: GET
+        LogReadGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /logs/{logId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/lambda-read.ts
+        Minify: true
+        Target: es2022
+        Sourcemap: false
+        Format: cjs
+
   RoomNotificationsLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -437,3 +513,6 @@ Outputs:
   RoomCharacterEventsTopicArn:
     Description: SNS topic used to fan out room character lifecycle notifications
     Value: !Ref RoomCharacterEventsTopic
+  LogEventsTopicArn:
+    Description: SNS topic used to store room history events
+    Value: !Ref LogEventsTopic

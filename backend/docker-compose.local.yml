@@ -12,6 +12,7 @@ services:
       - character-service
       - battle-service
       - room-notifications-service
+      - log-service
 
   user-service:
     build:
@@ -84,6 +85,21 @@ services:
     depends_on:
       - redis
 
+  log-service:
+    build:
+      context: ./log-service
+    container_name: munch-log-service
+    ports:
+      - "8087:8087"
+    environment:
+      PORT: 8087
+      LOG_MONGO_URI: mongodb://mongo-log:27017/munch_log_service
+      REDIS_URL: redis://redis:6379
+      ROOM_LOG_EVENTS_CHANNEL: room-log-events
+    depends_on:
+      - mongo-log
+      - redis
+
   redis:
     image: redis:7-alpine
     container_name: munch-redis
@@ -122,8 +138,17 @@ services:
     volumes:
       - mongo-battle-data:/data/db
 
+  mongo-log:
+    image: mongo:7
+    container_name: munch-mongo-log
+    ports:
+      - "27025:27017"
+    volumes:
+      - mongo-log-data:/data/db
+
 volumes:
   mongo-user-data:
   mongo-room-data:
   mongo-character-data:
   mongo-battle-data:
+  mongo-log-data:
