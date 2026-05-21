@@ -16,6 +16,8 @@ export default function RoomLayout() {
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
   const { battle } = useRoomBattle(roomId);
   const isBattleRoute = segments.some((segment) => String(segment) === '(battle)');
+  const isLogRoute = segments.some((segment) => String(segment) === 'log');
+  const usesDetailHeader = isBattleRoute || isLogRoute;
 
   return (
     <>
@@ -23,8 +25,8 @@ export default function RoomLayout() {
         options={{
           headerShown: true,
           headerBackButtonDisplayMode: 'minimal',
-          headerBackVisible: isBattleRoute ? false : undefined,
-          headerLeft: isBattleRoute
+          headerBackVisible: usesDetailHeader ? false : undefined,
+          headerLeft: usesDetailHeader
             ? () => (
                 <TouchableOpacity
                   accessibilityLabel="Back to room"
@@ -46,7 +48,7 @@ export default function RoomLayout() {
                 </TouchableOpacity>
               )
             : undefined,
-          headerTitle: isBattleRoute
+          headerTitle: usesDetailHeader
             ? undefined
             : () => (
                 <RoomHeaderTitle
@@ -58,7 +60,7 @@ export default function RoomLayout() {
                   }}
                 />
               ),
-          title: isBattleRoute ? battle?.name ?? 'Battle' : undefined,
+          title: isBattleRoute ? battle?.name ?? 'Battle' : isLogRoute ? 'History' : undefined,
         }}
       />
       <Stack
@@ -68,6 +70,7 @@ export default function RoomLayout() {
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(battle)" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="log" options={{ headerShown: false }} />
       </Stack>
     </>
   );

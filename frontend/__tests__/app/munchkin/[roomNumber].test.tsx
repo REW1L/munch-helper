@@ -1122,6 +1122,36 @@ describe('Munchkin room header', () => {
     expect(screen.getByRole('button', { name: 'Open battle' })).toBeTruthy();
   });
 
+  it('opens the room history log from the visible Log button', async () => {
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider
+          value={{
+            userProfile: {
+              id: 'user-1',
+              nickname: 'Player One',
+              avatar: 1,
+            },
+            setUserProfile: vi.fn(),
+          }}
+        >
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Open room history' }));
+    });
+
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      pathname: '/munchkin/[roomNumber]/log',
+      params: { roomNumber: 'ROOM42' },
+    });
+  });
+
   it('opens an existing active battle without creating another', async () => {
     mockBattleState.current.battle = activeBattle;
     const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
