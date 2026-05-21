@@ -1,14 +1,25 @@
 import dotenv from 'dotenv';
 import { connectToMongo } from './db';
-import { NoopBattleEventPublisher, RedisBattleEventPublisher } from './publisher';
+import { FanOutBattleEventPublisher, NoopBattleEventPublisher, RedisBattleEventPublisher } from './publisher';
 import { buildBattleApp } from './service';
 
 dotenv.config();
 const redisUrl = process.env.BATTLE_EVENTS_REDIS_URL;
 const eventsChannel = process.env.ROOM_CHARACTER_EVENTS_CHANNEL || 'room-character-events';
-const publisher = redisUrl
+const logEventsChannel = process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events';
+const notificationsPublisher = redisUrl
   ? new RedisBattleEventPublisher(redisUrl, eventsChannel)
   : new NoopBattleEventPublisher();
+const logPublisher = redisUrl
+  ? new RedisBattleEventPublisher(redisUrl, logEventsChannel)
+  : new NoopBattleEventPublisher();
+if (!redisUrl) {
+  console.warn('[battle-service] log Redis publisher not configured; degraded - battle log history will be absent');
+}
+const publisher = new FanOutBattleEventPublisher([
+  { target: 'notifications', publisher: notificationsPublisher },
+  { target: 'log', publisher: logPublisher }
+]);
 const app = buildBattleApp({ publisher });
 const port = Number(process.env.PORT || 8086);
 const mongoUri = process.env.BATTLE_MONGO_URI || 'mongodb://localhost:27024/munch_battle_service';
@@ -18,7 +29,9 @@ console.info('[battle-service] local bootstrap config', {
   mongoUri,
   publisher: publisher.constructor.name,
   eventsChannel,
-  redisConfigured: Boolean(redisUrl)
+  logEventsChannel,
+  redisConfigured: Boolean(redisUrl),
+  logConfigured: Boolean(redisUrl)
 });
 
 connectToMongo(mongoUri)

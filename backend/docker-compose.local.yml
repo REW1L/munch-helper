@@ -68,6 +68,7 @@ services:
       BATTLE_MONGO_URI: mongodb://mongo-battle:27017/munch_battle_service
       BATTLE_EVENTS_REDIS_URL: redis://redis:6379
       ROOM_CHARACTER_EVENTS_CHANNEL: room-character-events
+      ROOM_LOG_EVENTS_CHANNEL: room-log-events
     depends_on:
       - mongo-battle
       - redis

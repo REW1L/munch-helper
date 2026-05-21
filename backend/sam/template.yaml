@@ -149,6 +149,14 @@ Resources:
                 Action:
                   - sns:Publish
                 Resource: !Ref RoomCharacterEventsTopic
+        - PolicyName: PublishLogEvents
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref LogEventsTopic
 
   RoomNotificationsRole:
     Type: AWS::IAM::Role
@@ -396,6 +404,7 @@ Resources:
           BATTLE_MONGO_URI: !Ref BattleMongoUri
           ROUTE_PREFIX: !Ref RoutePrefix
           ROOM_CHARACTER_EVENTS_TOPIC_ARN: !Ref RoomCharacterEventsTopic
+          LOG_TOPIC_ARN: !Ref LogEventsTopic
       Events:
         BattleListGet:
           Type: HttpApi

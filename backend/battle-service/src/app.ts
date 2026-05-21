@@ -4,7 +4,10 @@ import morgan from 'morgan';
 import {
   type BattleEventPublisher,
   NoopBattleEventPublisher,
-  createBattleEventPayload
+  createBattleConcludedEventPayload,
+  createBattleDiscardedEventPayload,
+  createBattleStartedEventPayload,
+  createBattleUpdatedEventPayload
 } from './publisher';
 
 export type BattleStatus = 'active' | 'concluded' | 'discarded';
@@ -345,13 +348,7 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(
-          createBattleEventPayload({
-            event: 'battle_started',
-            roomId: battle.roomId,
-            battleId: battle.id
-          })
-        );
+        await publisher.publish(createBattleStartedEventPayload({ battle }));
       } catch (error) {
         console.error('Failed to publish battle_started event', error);
       }
@@ -418,13 +415,7 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(
-          createBattleEventPayload({
-            event: 'battle_updated',
-            roomId: battle.roomId,
-            battleId: battle.id
-          })
-        );
+        await publisher.publish(createBattleUpdatedEventPayload({ battle }));
       } catch (error) {
         console.error('Failed to publish battle_updated event', error);
       }
@@ -465,13 +456,7 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(
-          createBattleEventPayload({
-            event: 'battle_concluded',
-            roomId: battle.roomId,
-            battleId: battle.id
-          })
-        );
+        await publisher.publish(createBattleConcludedEventPayload({ battle }));
       } catch (error) {
         console.error('Failed to publish battle_concluded event', error);
       }
@@ -504,13 +489,7 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(
-          createBattleEventPayload({
-            event: 'battle_discarded',
-            roomId: battle.roomId,
-            battleId: battle.id
-          })
-        );
+        await publisher.publish(createBattleDiscardedEventPayload({ battle }));
       } catch (error) {
         console.error('Failed to publish battle_discarded event', error);
       }
