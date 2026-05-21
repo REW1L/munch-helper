@@ -235,6 +235,8 @@ GPT-5 Codex
 - `cd backend && npm test`
 - `cd backend && npm run typecheck`
 - `cd backend && npm run test:coverage`
+- `cd backend && npm test -- log-service/src/aws-deployment-dependencies.test.ts`
+- `cd backend && npm run sam:build`
 
 ### Completion Notes List
 
@@ -243,6 +245,7 @@ GPT-5 Codex
 - Preserved documented variances: epic `type`/`createdAt` wording is implemented as architecture-authoritative `eventType` plus Mongoose timestamps; local log channel uses `ROOM_LOG_EVENTS_CHANNEL=room-log-events`; subscriber Redis URL is `REDIS_URL`.
 - Added SAM/local/nginx/docs wiring for log-service and closed Story 6.1's deferred character-service log topic env/IAM wiring. Battle-service `LOG_TOPIC_ARN`/IAM remains intentionally owned by Story 6.3.
 - Added and ran log-service unit/route/lambda tests plus full backend tests, typecheck, and coverage. Coverage completed at 85.76% lines overall and 91.43% lines for `log-service/src`.
+- Post-merge deployment fix: added `aws4` as a production dependency of `log-service` because the deployed SAM Mongo URI uses `authMechanism=MONGODB-AWS`; without it, Mongoose/MongoDB throws `MongoMissingDependencyError` during AWS authentication. Added a deployment dependency regression test that checks every SAM service using a `MONGODB-AWS` Mongo URI declares `aws4`.
 
 ### File List
 
@@ -255,6 +258,7 @@ GPT-5 Codex
 - backend/log-service/Dockerfile
 - backend/log-service/package.json
 - backend/log-service/src/app.ts
+- backend/log-service/src/aws-deployment-dependencies.test.ts
 - backend/log-service/src/db.test.ts
 - backend/log-service/src/db.ts
 - backend/log-service/src/index.ts
@@ -277,6 +281,7 @@ GPT-5 Codex
 ### Change Log
 
 - 2026-05-20: Implemented story 6.2 log-service persistence/read skeleton, tests, workspace wiring, infra wiring, and docs.
+- 2026-05-21: Added missing `aws4` production dependency for log-service AWS Mongo authentication and a SAM dependency guard test to prevent future AWS deployment missing-dependency regressions.
 
 ### Review Findings
 

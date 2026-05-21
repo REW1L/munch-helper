@@ -7,6 +7,10 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/backend-ci-cd.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci-cd.yml"
 
 permissions:
   contents: read
@@ -30,6 +34,8 @@ jobs:
           - service: character-service
             has_tests: true
           - service: room-notifications-service
+            has_tests: true
+          - service: log-service
             has_tests: true
 
     defaults:
