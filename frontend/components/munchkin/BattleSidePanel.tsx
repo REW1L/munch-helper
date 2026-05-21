@@ -1,5 +1,5 @@
-import { Character as RoomCharacter } from '@/api/characters';
 import { BonusItem, MonsterItem } from '@/api/battles';
+import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import type { ActivePlayerParticipant } from '@/utils/battlePlayerSide';
 import React, { memo, useCallback, useMemo, useState } from 'react';
@@ -28,7 +28,7 @@ const BONUS_VALUES = [-10, -5, -2, -1, 1, 2, 5, 10] as const;
 const DEFAULT_MONSTER_NAME = 'Fungeater';
 const DEFAULT_MONSTER_LEVEL = '25';
 
-const monsterImage = require('../../assets/images/munchkin-cat.png');
+const monsterImage = require('../../assets/images/monster.png');
 
 function BattleSidePanel({
   side,
