@@ -94,7 +94,7 @@ development_status:
   6-3-battle-lifecycle-events-are-published-for-room-history: done
   6-4-room-history-api-returns-paginated-events: done
   6-5-room-history-loads-in-the-app: done
-  6-6-room-history-view-shows-character-events: ready-for-dev
+  6-6-room-history-view-shows-character-events: review
   6-7-room-history-view-shows-battle-events-and-opens-completed-battles: ready-for-dev
   epic-6-retrospective: optional
 

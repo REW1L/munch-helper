@@ -58,6 +58,15 @@ vi.mock('@/hooks/useRoomLogs', () => ({
   useRoomLogs: () => mockLogsState.current,
 }));
 
+vi.mock('@/components/munchkin/LogEntry', async () => {
+  const ReactRuntime = await import('react');
+
+  return {
+    default: ({ entry }: { entry: LogEvent }) =>
+      ReactRuntime.createElement('div', { 'data-testid': 'mock-log-entry' }, entry.summary),
+  };
+});
+
 describe('Room history log route', () => {
   beforeEach(() => {
     mockLogsState.current = mockLogsState.createState();
@@ -91,13 +100,26 @@ describe('Room history log route', () => {
     expect(mockLogsState.current.refresh).toHaveBeenCalledOnce();
   });
 
-  it('renders the placeholder entry seam for loaded entries', async () => {
+  it('renders loaded entries through the LogEntry seam', async () => {
     const { default: LogScreen } = await import('../../../../app/munchkin/[roomNumber]/log');
 
     render(<LogScreen />);
 
     expect(screen.getByText('Created Alice')).toBeTruthy();
-    expect(screen.getByText('character_created')).toBeTruthy();
+    expect(screen.getByTestId('mock-log-entry')).toBeTruthy();
+  });
+
+  it('renders the 6.6 empty state copy when no history exists', async () => {
+    mockLogsState.current = {
+      ...mockLogsState.current,
+      entries: [],
+    };
+    const { default: LogScreen } = await import('../../../../app/munchkin/[roomNumber]/log');
+
+    render(<LogScreen />);
+
+    expect(screen.getByText('No events recorded yet.')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('renders a next-page spinner in the list footer', async () => {
