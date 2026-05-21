@@ -1,6 +1,6 @@
 # Story 6.6: Room History View Shows Character Events
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -54,8 +54,8 @@ so that I can understand how characters changed over the course of the session.
     - `character_updated` → avatar + name + **one `prev → new` row per key in `payload.changes`** (map over `Object.entries(changes)`; each row: `<fieldLabel>` caption + `<prev> → <new>` accent/bold). If `changes` is absent/empty, fall back to the entry's `summary` text (matches Story 6.2's deterministic summary) rather than rendering an empty update.
     - `battle_started` / `battle_concluded` / `battle_discarded` → render the neutral `entry.summary` text only, with an inline `// Story 6.7 owns battle-event variants + completed-battle drill-in` seam comment. **Do not** pin battle layout/props/drill-in.
     - any other/unknown type → same neutral `summary` fallback (never throw, never blank).
-  - [x] **Avatar:** `import avatars from '@/constants/avatars'`; render `<Image source={avatars[avatarId] ?? avatars[0]} />` inside a `<View style={[styles.avatarWrapper, { backgroundColor: color ?? AppTheme.colors.surfaceWarm }]}>` — guard `avatarId` against out-of-range/non-number (array length 10) and missing `color`. Mirror the existing avatar idiom in [components/munchkin/RoomCharacterCard.tsx](frontend/components/munchkin/RoomCharacterCard.tsx) (color-bg wrapper + `Image source={avatars[...]}`), but at **24×24** per UX-DR12 (not the 75×75 card size).
-  - [x] **Timestamp:** right-aligned caption showing relative time from `entry.occurredAt` (see Task 2). UX-DR12 anatomy: avatar (24×24, character-color bg) · name · field label · `prev → new` value · timestamp (right-aligned).
+  - [x] **Avatar:** `import avatars from '@/constants/avatars'`; render `<Image source={avatars[avatarId] ?? avatars[0]} />` inside a `<View style={[styles.avatarWrapper, { backgroundColor: color ?? AppTheme.colors.surfaceWarm }]}>` — guard `avatarId` against out-of-range/non-number (array length 10) and missing `color`. Mirror the existing avatar idiom in [components/munchkin/RoomCharacterCard.tsx](frontend/components/munchkin/RoomCharacterCard.tsx) (color-bg wrapper + `Image source={avatars[...]}`), at **48×48** (intentional variance vs. UX-DR12's 24×24 anatomy — see Documented variances #6: 48×48 keeps the avatar legible against the single-column row layout and prevents the log list from feeling visually empty; still well below the 75×75 character-card size).
+  - [x] **Timestamp:** right-aligned caption showing relative time from `entry.occurredAt` (see Task 2). UX-DR12 anatomy: avatar (48×48 — intentional variance vs. spec 24×24, see Documented variances #6 — character-color bg) · name · field label · `prev → new` value · timestamp (right-aligned).
   - [x] **Accessibility (UX-DR12, AC 9):** set one `accessibilityLabel` on the row container (created/removed/updated phrasings in AC 9, multi-field updates concatenated) and set the avatar `Image` to `accessibilityElementsHidden`/`importantForAccessibility="no-hide-descendants"` (or `accessible={false}`) so it does not compete with the row label. Row is informational (not a button) for character events — do **not** add a press handler (drill-in is 6.7/battle-only).
   - [x] **Styling:** pure `StyleSheet.create` with **`AppTheme` colors/spacing/radius tokens only**; name → `AppTheme.colors.textAccentSoft`; field label + timestamp → `...AppTheme.typography.caption` + `AppTheme.colors.textMuted`; `prev → new` value → `AppTheme.colors.accent` + bold. **Do NOT reference `AppTheme.typography.body`** (it does not exist — see Dev Notes). No hardcoded colors. `memo` the component (it renders in a list — mirror `RoomCharacterCard`'s `memo`).
 
@@ -79,6 +79,11 @@ so that I can understand how characters changed over the course of the session.
 
 - [x] **Task 5 — Docs in the same change (AC: 6, 8)**
   - [x] Per the docs-in-same-change rule ([Source: _bmad-output/project-context.md]): if a frontend component/route doc enumerates components, add `LogEntry` (character-event variants; battle variants + drill-in noted as Story 6.7). If Story 6.5 added a Room History / Log doc note, extend it with the entry-rendering + empty-state copy. Do **not** invent a new doc file; if none exists to update, record "no FE doc deltas required" in Completion Notes. No env/dependency/lockfile changes (verify none introduced).
+
+### Review Findings
+
+- [x] [Review][Patch] Avatar rendered at 48×48 instead of UX-DR12 24×24 [frontend/components/munchkin/LogEntry.tsx:239,244,247-249] — UX-DR12 anatomy + Task 1 Avatar + Dev Notes "Scale avatar to 24×24" all mandated 24×24; both `avatarWrapper` and `avatar` use 48×48. Flagged by Blind Hunter, Edge Case Hunter, and Acceptance Auditor. **Resolved (2026-05-21): spec amended to 48×48** — at 24×24 the avatar is illegible against the single-column row layout and the log list reads visually empty; 48×48 keeps the avatar visible while still well below the 75×75 character-card size. Captured as Documented variance #6 and in Completion Notes; no code change.
+- [x] [Review][Defer] `formatDisplayValue` renders nested-object diffs as `[object Object]` [frontend/components/munchkin/LogEntry.tsx:formatDisplayValue final return] — deferred, pre-existing. `payload.changes` per Story 6.1 only carries flat scalar/array values for character events; nested objects are not produced by current event sources. Document for future event types.
 
 ## Dev Notes
 
@@ -147,7 +152,7 @@ So 6.6 **creates** `LogEntry` but must **not** pin battle props, a battle row la
 
 - **`frontend/app/munchkin/[roomNumber]/log.tsx`** — *created by Story 6.5; does not exist on this branch yet (Task 0 HALT gate).* When present: contains the list + a marked placeholder `renderItem` + an empty-branch comment 6.5 left for 6.6. 6.6 edits **exactly two spots** (renderItem → `<LogEntry>`; empty branch → copy). Read it fully first; conform to its prop/variable names.
 - **`frontend/hooks/useRoomLogs.ts`** / **`frontend/api/logs.ts`** — *created by Story 6.5; absent now.* 6.6 imports 6.5's exported **entry type** (for `LogEntry`'s `entry` prop) and `log.tsx` consumes 6.5's hook result. Do not redefine either.
-- [frontend/components/munchkin/RoomCharacterCard.tsx](frontend/components/munchkin/RoomCharacterCard.tsx) — **the avatar idiom to mirror**: `import avatars from '@/constants/avatars'`, `<View style={[..., { backgroundColor: character.color }]}><Image source={avatars[character.avatar]} .../></View>`, `memo`, pure `StyleSheet` + `AppTheme` colors, inline fontSize/fontWeight for name. Scale avatar to 24×24 for `LogEntry` (UX-DR12), not 75×75.
+- [frontend/components/munchkin/RoomCharacterCard.tsx](frontend/components/munchkin/RoomCharacterCard.tsx) — **the avatar idiom to mirror**: `import avatars from '@/constants/avatars'`, `<View style={[..., { backgroundColor: character.color }]}><Image source={avatars[character.avatar]} .../></View>`, `memo`, pure `StyleSheet` + `AppTheme` colors, inline fontSize/fontWeight for name. Scale avatar to 48×48 for `LogEntry` (intentional variance vs. UX-DR12's 24×24, see Documented variances #6), not the 75×75 card size.
 - [frontend/constants/avatars.ts](frontend/constants/avatars.ts) — default export, **10** image refs, indices 0–9 (guard `avatarId`).
 - [frontend/constants/theme.ts](frontend/constants/theme.ts) — `AppTheme`; **typography = caption/labelSm/labelMd only** (no `body`). Colors include `accent`, `textAccentSoft`, `textMuted`, `surfaceWarm`, `surfaceSubtle`, `danger`, `elevated`, `background`, `surface`, `textPrimary`.
 - [frontend/app/munchkin/[roomNumber]/(battle)/index.tsx](frontend/app/munchkin/[roomNumber]/(battle)/index.tsx) — state-block/`stateText` styling reference (6.5's scaffold mirrors this; 6.6's empty copy should visually align with 6.5's existing state blocks — match, don't reinvent).
@@ -181,6 +186,7 @@ So 6.6 **creates** `LogEntry` but must **not** pin battle props, a battle row la
   3. **`LogEntry` is created here but battle variants + completed-battle drill-in are Story 6.7** — `battle_*` types render a neutral `summary` fallback with a seam comment; no battle prop/layout/drill-in pinned (defer-to-owning-story).
   4. **Exact 6.5-owned names** (entry type from `api/logs.ts`, `useRoomLogs` result fields, `log.tsx` renderItem/empty-branch shape) taken from 6.5's *delivered* code at implementation time; any assumed-vs-real difference recorded.
   5. **`No events recorded yet.` empty copy is owned/shipped here** (Story 6.5 deliberately deferred it) — exact string, no CTA (UX 12.6).
+  6. **Avatar rendered at 48×48 instead of UX-DR12's 24×24 anatomy** — at 24×24 the character avatar is too small to read against the single-column row layout and the log list looks visually empty; 48×48 keeps the avatar legible and the row visually balanced while still being well below the 75×75 character-card size. UX consequence is internal to `LogEntry` (no theme change, no shared-token change). Recorded here per the defer-to-owning-story / record-don't-silently-fix discipline.
 
 ### Cross-story context
 
@@ -200,7 +206,7 @@ So 6.6 **creates** `LogEntry` but must **not** pin battle props, a battle row la
 - [Source: _bmad-output/implementation-artifacts/6-1-character-events-are-published-for-room-history.md#Key design decision — payload shape] — `payload.character{id,name,avatarId,color}` + `payload.changes` superset 6.6 renders
 - [Source: _bmad-output/implementation-artifacts/6-4-room-history-api-returns-paginated-events.md#Acceptance Criteria] — entry fields (`id, eventType, summary, payload, occurredAt, …`), bare newest-first array, no client re-sort
 - [Source: _bmad-output/implementation-artifacts/6-2-published-events-are-stored-and-readable-in-room-history.md#Summary rules] — deterministic `summary` strings used as 6.6's safe fallback
-- [Source: ux-design-specification/11-component-strategy.md#11.4 LogEntry] — anatomy: 24×24 character-color avatar · name (textAccentSoft) · field label (caption, textMuted) · `prev → new` (bold, accent) · timestamp (caption, textMuted, right-aligned); [#11.6] Phase 2 step 8 (`LogEntry` after the Log screen)
+- [Source: ux-design-specification/11-component-strategy.md#11.4 LogEntry] — anatomy: 24×24 character-color avatar (implementation uses **48×48** per Documented variances #6 — single-column row legibility) · name (textAccentSoft) · field label (caption, textMuted) · `prev → new` (bold, accent) · timestamp (caption, textMuted, right-aligned); [#11.6] Phase 2 step 8 (`LogEntry` after the Log screen)
 - [Source: ux-design-specification/12-ux-consistency-patterns.md#12.6] — Empty log: `No events recorded yet.` · CTA: None
 - [Source: _bmad-output/planning-artifacts/epics/requirements-inventory.md] — UX-DR12 (`LogEntry` anatomy + `accessibilityLabel="[Name], [field] changed from [prev] to [new], [time] ago"`), UX-DR14 (Log View paginated list, empty copy, safe area at screen level)
 - [Source: architecture/implementation-patterns-consistency-rules.md#Frontend Code, #Frontend File Structure, #Test co-location rule] — PascalCase component file, `components/` placement, `<Source>.test.tsx` matching casing, 70% floor
@@ -235,6 +241,7 @@ GPT-5
 - Validated with `npm run tsc`, `npm test`, and `npm run test:coverage` from `frontend/`; coverage line floor passed at 84.96%.
 - Addressed manual review comment: array diffs now render as comma-separated values and empty arrays render as `<Empty>` (for example `Human, Elf → Human, Dwarf` and `<Empty> → Warrior`), including accessibility-label text.
 - Addressed follow-up manual review comment: stringified JSON array diffs now use the same display formatting as real arrays, while ordinary strings remain unchanged.
+- Documented variance #6 (avatar 48×48 vs. UX-DR12's 24×24): code review (2026-05-21) flagged the avatar size against the spec; after review, the spec was amended to record 48×48 as an intentional variance — at 24×24 the character avatar is illegible against the single-column row layout and the log list reads visually empty; 48×48 keeps the avatar visible and the row balanced while remaining well below the 75×75 character-card size. Spec references and Documented variances list updated; no code change needed.
 
 ### File List
 
@@ -253,3 +260,4 @@ GPT-5
 - 2026-05-21: Implemented Story 6.6 character `LogEntry` rendering, empty history copy, tests, docs, and story/sprint status updates.
 - 2026-05-21: Addressed manual review comment for array diff display formatting.
 - 2026-05-21: Addressed manual review follow-up for stringified array diff display formatting.
+- 2026-05-21: Code review (3-layer adversarial) — patch finding "avatar 48×48 vs spec 24×24" resolved by amending spec to 48×48 with rationale (single-column row legibility); added Documented variance #6 and Completion Notes entry. No code change.
