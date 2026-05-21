@@ -2,12 +2,18 @@ import type { LogEvent } from '@/api/logs';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import React, { memo, useMemo } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import {
+  getBattleResultLabel,
+  hasUsableBattlePayload,
+  narrowBattlePayload,
+} from './logEntryBattle';
 import { formatRelativeTime } from './logEntryTime';
 
 interface LogEntryProps {
   entry: LogEvent;
+  onPress?: (entry: LogEvent) => void;
 }
 
 interface CharacterDisplay {
@@ -134,7 +140,31 @@ function getNeutralAccessibilityLabel(summary: string, relativeTime: string): st
   return appendTime(summary || 'Log entry', relativeTime);
 }
 
-function LogEntry({ entry }: LogEntryProps) {
+function getBattleAccessibilityLabel(
+  name: string,
+  statusPhrase: string,
+  relativeTime: string,
+  isInteractive: boolean,
+  hasStructuredName: boolean,
+): string {
+  const suffix = isInteractive ? ' Double-tap to open battle record.' : '';
+  const prefix = hasStructuredName ? 'Battle ' : '';
+  return `${prefix}${name}, ${statusPhrase}, ${relativeTime}.${suffix}`;
+}
+
+function getResultColor(result: unknown): string {
+  if (result === 'players_win') {
+    return AppTheme.colors.accent;
+  }
+
+  if (result === 'monster_wins') {
+    return AppTheme.colors.danger;
+  }
+
+  return AppTheme.colors.textMuted;
+}
+
+function LogEntry({ entry, onPress }: LogEntryProps) {
   const relativeTime = formatRelativeTime(entry.occurredAt);
   const character = useMemo(
     () => getCharacterDisplay(entry.payload, entry.summary),
@@ -219,7 +249,112 @@ function LogEntry({ entry }: LogEntryProps) {
     );
   }
 
-  // Story 6.7 owns battle-event variants + completed-battle drill-in.
+  if (entry.eventType === 'battle_started') {
+    const startedBattle = narrowBattlePayload(entry.payload);
+    const name = startedBattle?.name || entry.summary || 'Battle';
+    const hasStructuredName = Boolean(startedBattle?.name);
+
+    return (
+      <View
+        accessible
+        accessibilityLabel={getBattleAccessibilityLabel(name, 'started', relativeTime, false, hasStructuredName)}
+        style={styles.row}
+        testID="log-entry-row"
+      >
+        <View style={styles.battleGlyphWrapper}>
+          <Text
+            accessibilityElementsHidden
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={styles.battleGlyph}
+          >
+            ⚔️
+          </Text>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.timestamp}>{relativeTime}</Text>
+          </View>
+          <Text style={styles.actionLabel}>started</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (entry.eventType === 'battle_concluded' || entry.eventType === 'battle_discarded') {
+    const battle = narrowBattlePayload(entry.payload);
+    const name = battle?.name || entry.summary || 'Battle';
+    const hasStructuredName = Boolean(battle?.name);
+    const isConcluded = entry.eventType === 'battle_concluded';
+    const isInteractive = hasUsableBattlePayload(entry.payload);
+    const statusPhrase = isConcluded ? getBattleResultLabel(battle?.result) : 'discarded';
+    const rowContents = (
+      <>
+        <View style={styles.battleGlyphWrapper}>
+          <Text
+            accessibilityElementsHidden
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={styles.battleGlyph}
+          >
+            ⚔️
+          </Text>
+        </View>
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.timestamp}>{relativeTime}</Text>
+          </View>
+          {isConcluded ? (
+            <Text
+              style={[styles.resultLabel, { color: getResultColor(battle?.result) }]}
+              testID="log-entry-battle-result"
+            >
+              {statusPhrase}
+            </Text>
+          ) : (
+            <Text style={styles.actionLabel}>discarded</Text>
+          )}
+        </View>
+      </>
+    );
+    const accessibilityLabel = getBattleAccessibilityLabel(
+      name,
+      statusPhrase,
+      relativeTime,
+      isInteractive,
+      hasStructuredName,
+    );
+
+    if (isInteractive) {
+      return (
+        <TouchableOpacity
+          accessible
+          accessibilityLabel={accessibilityLabel}
+          accessibilityRole="button"
+          activeOpacity={0.82}
+          onPress={() => onPress?.(entry)}
+          style={styles.row}
+          testID="log-entry-row"
+        >
+          {rowContents}
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View
+        accessible
+        accessibilityLabel={accessibilityLabel}
+        style={styles.row}
+        testID="log-entry-row"
+      >
+        {rowContents}
+      </View>
+    );
+  }
+
   return (
     <View
       accessible
@@ -266,6 +401,18 @@ const styles = StyleSheet.create({
     height: 48,
     width: 48,
   },
+  battleGlyphWrapper: {
+    alignItems: 'center',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.pill,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  battleGlyph: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
   content: {
     flex: 1,
     gap: AppTheme.spacing.xs,
@@ -294,6 +441,16 @@ const styles = StyleSheet.create({
   actionLabel: {
     color: AppTheme.colors.textMuted,
     ...AppTheme.typography.caption,
+  },
+  resultLabel: {
+    alignSelf: 'flex-start',
+    backgroundColor: AppTheme.colors.surfaceSubtle,
+    borderRadius: AppTheme.radius.sm,
+    fontSize: 12,
+    fontWeight: '700',
+    overflow: 'hidden',
+    paddingHorizontal: AppTheme.spacing.sm,
+    paddingVertical: AppTheme.spacing.xs,
   },
   diffList: {
     gap: AppTheme.spacing.xs,
