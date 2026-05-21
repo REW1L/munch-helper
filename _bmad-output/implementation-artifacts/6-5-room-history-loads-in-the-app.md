@@ -1,6 +1,6 @@
 # Story 6.5: Room History Loads in the App
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -64,6 +64,19 @@ so that I can move through recent and older session events without leaving the r
 
 - [x] **Task 5 — Docs in the same change (AC: 7, 8)**
   - [x] Per the docs-in-same-change rule ([Source: _bmad-output/project-context.md]): if a frontend README / route doc enumerates routes or `frontend/api` modules, add the Room History (Log) route + `frontend/api/logs.ts` + `useRoomLogs` and note the **client-derived cursor** rule (last entry `id` → next `before`; short/empty page = end). Do not invent a new doc file. If none exists to update, record "no FE doc deltas required" in Completion Notes. No env/dependency/lockfile changes (verify none introduced).
+
+### Review Findings
+
+_Code review 2026-05-21 — 3 adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor). 5 patch, 3 deferred, 19 dismissed as noise/spec-mandated._
+
+- [x] [Review][Patch] `loadNextPage` `useCallback` depends on the whole `roomLogsQuery` object — recreated every render, defeating the hook's memoized-result contract; `useRoomBattle` correctly depends on individual fields [frontend/hooks/useRoomLogs.ts:52] — fixed: deps narrowed to `fetchNextPage`/`hasNextPage`/`isFetchingNextPage`.
+- [x] [Review][Patch] `handleEndReached` lacks an error guard — scrolling to the end after a next-page failure auto-retries the failing request, competing with the explicit Retry button [frontend/app/munchkin/[roomNumber]/log.tsx:31-37] — fixed: `handleEndReached` now bails when `isNextPageError`.
+- [x] [Review][Patch] `isNextPageError` can be true at the same time as `isFetchingNextPage` during a next-page retry — render order masks it, but state derivation is not strictly mutually exclusive per AC 6 [frontend/app/munchkin/[roomNumber]/log.tsx:21] — fixed: `isNextPageError` now also requires `!isFetchingNextPage`.
+- [x] [Review][Patch] `useRoomLogs.test.ts` cursor test fixture is degenerate — only one page is loaded before paginating, so it cannot prove the cursor is the last *held* entry's id across 3+ pages (AC 9 highest-value assertion) [frontend/hooks/useRoomLogs.test.ts] — fixed: test now paginates across 3 pages and asserts page-3's cursor is page-2's last id.
+- [x] [Review][Patch] No test asserts AC 2's "exactly one" first-page request — the mount test checks call args but not `toHaveBeenCalledTimes(1)` [frontend/hooks/useRoomLogs.test.ts] — fixed: added `toHaveBeenCalledTimes(1)` to the first-page test.
+- [x] [Review][Defer] `refresh()` does `invalidateQueries` + `refetchQueries` (double refetch; on an infinite query `refetchQueries` refetches every cached page) [frontend/hooks/useRoomLogs.ts:54-57] — deferred, pre-existing: copied verbatim from the spec-mandated `useRoomBattle.refresh` pattern; latent because first-page Retry only fires with zero entries loaded.
+- [x] [Review][Defer] `apiRequest` returns `undefined` for a 200 response lacking a JSON content-type — `getRoomLogs`→`getNextPageParam` would then crash on `undefined.length` [frontend/api/logs.ts:21-25] — deferred, pre-existing: `api/`-layer-wide gap shared by all `apiRequest` consumers; unreachable under the Story 6.4 JSON-array contract.
+- [x] [Review][Defer] `navigateToLog` has no double-tap guard — rapid taps could push duplicate Log screens onto the stack [frontend/app/munchkin/[roomNumber]/index.tsx:264-274] — deferred, pre-existing: faithfully mirrors the existing `navigateToBattle` pattern, which has the same exposure.
 
 ## Dev Notes
 

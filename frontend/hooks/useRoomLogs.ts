@@ -49,7 +49,7 @@ export function useRoomLogs(roomId: string | undefined): UseRoomLogsResult {
     } finally {
       nextPageInFlightRef.current = false;
     }
-  }, [roomLogsQuery]);
+  }, [roomLogsQuery.fetchNextPage, roomLogsQuery.hasNextPage, roomLogsQuery.isFetchingNextPage]);
 
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: roomLogsQueryKey });

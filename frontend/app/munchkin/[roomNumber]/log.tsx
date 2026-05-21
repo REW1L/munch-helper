@@ -19,7 +19,9 @@ export default function RoomHistoryLogScreen() {
     refresh,
   } = useRoomLogs(roomId);
   const isFirstPageError = Boolean(errorMessage && entries.length === 0 && !isLoading);
-  const isNextPageError = Boolean(errorMessage && entries.length > 0 && !isLoading);
+  const isNextPageError = Boolean(
+    errorMessage && entries.length > 0 && !isLoading && !isFetchingNextPage,
+  );
 
   const handleInitialRetry = useCallback(() => {
     void refresh();
@@ -30,12 +32,12 @@ export default function RoomHistoryLogScreen() {
   }, [loadNextPage]);
 
   const handleEndReached = useCallback(() => {
-    if (!hasNextPage || isFetchingNextPage) {
+    if (!hasNextPage || isFetchingNextPage || isNextPageError) {
       return;
     }
 
     void loadNextPage();
-  }, [hasNextPage, isFetchingNextPage, loadNextPage]);
+  }, [hasNextPage, isFetchingNextPage, isNextPageError, loadNextPage]);
 
   const renderLogPlaceholder = useCallback(({ item }: { item: LogEvent }) => (
     <View style={styles.placeholderRow}>

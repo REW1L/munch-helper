@@ -61,14 +61,19 @@ describe('useRoomLogs', () => {
     await waitFor(() => {
       expect(result.current.entries.map((entry) => entry.id)).toEqual(['newest', 'older']);
     });
+    expect(mockGetRoomLogs).toHaveBeenCalledTimes(1);
     expect(mockGetRoomLogs).toHaveBeenCalledWith('room-1', null, expect.any(AbortSignal));
     expect(result.current.hasNextPage).toBe(false);
   });
 
-  it('requests the next page using the last held entry id and appends without reordering', async () => {
+  it('requests each next page using the last held entry id across multiple pages and appends without reordering', async () => {
     const firstPage = makeFullPage('page-1');
-    const secondPage = [makeLogEntry('page-2-0'), makeLogEntry('page-2-1')];
-    mockGetRoomLogs.mockResolvedValueOnce(firstPage).mockResolvedValueOnce(secondPage);
+    const secondPage = makeFullPage('page-2');
+    const thirdPage = [makeLogEntry('page-3-0')];
+    mockGetRoomLogs
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(secondPage)
+      .mockResolvedValueOnce(thirdPage);
 
     const { result } = renderHook(() => useRoomLogs('room-1'), { wrapper });
     await waitFor(() => expect(result.current.entries).toHaveLength(ROOM_LOGS_PAGE_SIZE));
@@ -77,16 +82,31 @@ describe('useRoomLogs', () => {
       await result.current.loadNextPage();
     });
 
-    expect(mockGetRoomLogs).toHaveBeenLastCalledWith(
+    expect(mockGetRoomLogs).toHaveBeenNthCalledWith(
+      2,
       'room-1',
       firstPage[firstPage.length - 1].id,
+      expect.any(AbortSignal),
+    );
+    await waitFor(() => expect(result.current.entries).toHaveLength(ROOM_LOGS_PAGE_SIZE * 2));
+
+    await act(async () => {
+      await result.current.loadNextPage();
+    });
+
+    // Highest-value assertion: page 3's cursor must be the last entry of page 2,
+    // not page 1 — proves the cursor tracks the most recent held page.
+    expect(mockGetRoomLogs).toHaveBeenNthCalledWith(
+      3,
+      'room-1',
+      secondPage[secondPage.length - 1].id,
       expect.any(AbortSignal),
     );
     await waitFor(() => {
       expect(result.current.entries.map((entry) => entry.id)).toEqual([
         ...firstPage.map((entry) => entry.id),
-        'page-2-0',
-        'page-2-1',
+        ...secondPage.map((entry) => entry.id),
+        'page-3-0',
       ]);
     });
     expect(result.current.hasNextPage).toBe(false);
