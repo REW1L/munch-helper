@@ -10,10 +10,10 @@ const logEventsChannel = process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events
 const notificationsPublisher = redisUrl
   ? new RedisBattleEventPublisher(redisUrl, eventsChannel)
   : new NoopBattleEventPublisher();
-const logPublisher = redisUrl && logEventsChannel
+const logPublisher = redisUrl
   ? new RedisBattleEventPublisher(redisUrl, logEventsChannel)
   : new NoopBattleEventPublisher();
-if (!redisUrl || !logEventsChannel) {
+if (!redisUrl) {
   console.warn('[battle-service] log Redis publisher not configured; degraded - battle log history will be absent');
 }
 const publisher = new FanOutBattleEventPublisher([
@@ -31,7 +31,7 @@ console.info('[battle-service] local bootstrap config', {
   eventsChannel,
   logEventsChannel,
   redisConfigured: Boolean(redisUrl),
-  logConfigured: Boolean(redisUrl && logEventsChannel)
+  logConfigured: Boolean(redisUrl)
 });
 
 connectToMongo(mongoUri)

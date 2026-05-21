@@ -1,6 +1,6 @@
 # Story 6.3: Battle Lifecycle Events Are Published for Room History
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -244,3 +244,8 @@ GPT-5
 ### Change Log
 
 - 2026-05-21: Implemented Story 6.3 battle lifecycle room-history publisher extension and moved story to review.
+
+### Review Findings
+
+- [x] [Review][Decision] Should `concludedAt` be carried in the published `battle` snapshot? — Task 3 names `concludedAt` as part of the post-conclude `BattleLike` snapshot, but the authoritative `BattleEventPayload['battle']` interface in Dev Notes and `toBattleSnapshot()` (`backend/battle-service/src/publisher.ts`) omit it. `occurredAt`/`emittedAt` already carry a publish-time timestamp (≈ conclude time) and Story 6.2 `buildSummary` needs only `name`/`result`, so the implementation matches the authoritative interface — but Story 6.7 drill-in renders from the raw stored payload and could surface a true conclude time. **Resolved: leave as-is** — implementation matches the authoritative interface; no current consumer needs `concludedAt`.
+- [x] [Review][Patch] Dead/misleading log-channel guards in local bootstrap [backend/battle-service/src/index.ts:13,16,34] — `logEventsChannel` is `process.env.ROOM_LOG_EVENTS_CHANNEL || 'room-log-events'`, so it is always truthy. As a result `redisUrl && logEventsChannel` (line 13), `!redisUrl || !logEventsChannel` (line 16) and `Boolean(redisUrl && logEventsChannel)` (line 34) all collapse to depend on `redisUrl` alone. The `logEventsChannel` terms are inert and imply a configuration path that cannot occur. Simplify to gate on `redisUrl` only, mirroring `lambda.ts`.
