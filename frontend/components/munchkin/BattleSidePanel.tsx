@@ -503,6 +503,7 @@ const styles = StyleSheet.create({
   monsterDialogImage: {
     height: 75,
     width: 75,
+    borderRadius: AppTheme.radius.md,
   },
   monsterDialogField: {
     alignItems: 'center',
