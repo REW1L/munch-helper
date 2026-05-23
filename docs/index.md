@@ -41,6 +41,7 @@ Generated: 2026-03-19T22:50:33Z
 - [Development Guide - Frontend](./development-guide-frontend.md)
 - [Development Guide - Infrastructure](./development-guide-infrastructure.md)
 - [Deployment Guide](./deployment-guide.md)
+- [Release Readiness Checklist](./release-readiness-checklist.md)
 - [Integration Architecture](./integration-architecture.md)
 - [API Contracts - Backend](./api-contracts-backend.md)
 - [Data Models - Backend](./data-models-backend.md)

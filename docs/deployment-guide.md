@@ -58,3 +58,9 @@ The routes are owned by Expo Router files at `frontend/app/privacy.tsx` and
 
 - CloudFront routes `/api/*` to the backend HTTP API and `/ws*` to the backend WebSocket API.
 - Static content is served from a private S3 bucket through CloudFront.
+
+## Release Readiness
+
+Before any iOS, Play, or web release is approved, run the
+[Release Readiness Checklist](./release-readiness-checklist.md) against the
+candidate release and preserve the completed evidence record for that release.
