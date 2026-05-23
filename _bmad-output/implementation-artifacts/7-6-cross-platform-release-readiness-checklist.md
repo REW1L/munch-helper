@@ -1,6 +1,6 @@
 # Story 7.6: Cross-Platform Release Readiness Checklist
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -44,61 +44,77 @@ so that we can decide whether a release is shippable based on defined criteria i
 
 > **Task 0 — Prerequisite gate (HALT if not satisfied):** Stories 1.1–6.7 and 7.1–7.5 must be implementable from the repo today. If a referenced behaviour does not exist (e.g., 7.5 privacy/support content has not landed), the checklist items that depend on it must be marked `[Pending — Story X.Y]` in the document with a one-line note pointing to the owning story — do NOT silently omit them and do NOT fabricate a placeholder behaviour. The checklist is not a story-tracker; it is a release artifact, so unimplemented items are valid as long as they're flagged.
 
-- [ ] Task 1: Create `docs/release-readiness-checklist.md` as the single release-readiness artifact (AC: 1, 2, 6, 7)
-  - [ ] Add the file at exactly `docs/release-readiness-checklist.md` — this filename is the contract referenced by future stories (7.7, 7.8, 7.9) and by `docs/deployment-guide.md` (Task 5 below)
-  - [ ] Start with a short "How to use this checklist" preamble: (a) one checklist per release, copy/snapshot the file per release or record outcomes in a linked review issue, (b) every checkable line records Pass / Fail / N/A per platform, (c) a release is `Go` only when all required items are Pass on all applicable platforms and any known exceptions have a named sign-off
-  - [ ] Add a "Release Identity" block at the top with explicit fields the reviewer fills in: release version (e.g. expo app version + native build numbers from iOS/Android), git ref / commit SHA, web deploy artifact / CloudFront distribution, TestFlight build number, Play internal build number, reviewer name(s), review date
-  - [ ] Use Markdown task-list checkboxes (`- [ ]`) for every checkable item so the file can be copied and ticked through in a PR or review issue
-  - [ ] Tag every item with the platforms it applies to using a prefix convention: `[All]`, `[iOS]`, `[Android]`, `[Web]`, `[iOS+Android]` — this is the contract for AC 2
+- [x] Task 1: Create `docs/release-readiness-checklist.md` as the single release-readiness artifact (AC: 1, 2, 6, 7)
+  - [x] Add the file at exactly `docs/release-readiness-checklist.md` — this filename is the contract referenced by future stories (7.7, 7.8, 7.9) and by `docs/deployment-guide.md` (Task 5 below)
+  - [x] Start with a short "How to use this checklist" preamble: (a) one checklist per release, copy/snapshot the file per release or record outcomes in a linked review issue, (b) every checkable line records Pass / Fail / N/A per platform, (c) a release is `Go` only when all required items are Pass on all applicable platforms and any known exceptions have a named sign-off
+  - [x] Add a "Release Identity" block at the top with explicit fields the reviewer fills in: release version (e.g. expo app version + native build numbers from iOS/Android), git ref / commit SHA, web deploy artifact / CloudFront distribution, TestFlight build number, Play internal build number, reviewer name(s), review date
+  - [x] Use Markdown task-list checkboxes (`- [ ]`) for every checkable item so the file can be copied and ticked through in a PR or review issue
+  - [x] Tag every item with the platforms it applies to using a prefix convention: `[All]`, `[iOS]`, `[Android]`, `[Web]`, `[iOS+Android]` — this is the contract for AC 2
 
-- [ ] Task 2: Author the "Pipelines & Distribution" section (AC: 1, 7)
-  - [ ] `[Web]` `frontend-infra-cd.yml` succeeded for the candidate release commit and Pulumi published the new artifact (`infrastructure/index.ts` distribution served from `helpamunch.click`); validation step in the workflow reported `EXPO_PUBLIC_API_URL` resolved (Story 7.3 fix carries through)
-  - [ ] `[iOS]` `ios-app-store-cd.yml` succeeded; Fastlane `beta` lane produced a signed `.ipa` and `upload_to_testflight` reported the build was accepted; build number is recorded in the Release Identity block
-  - [ ] `[Android]` `android-play-store-cd.yml` succeeded; Fastlane `deploy` lane uploaded the signed `.aab` to the Play internal track (`release_status: "draft"` is the current default per Story 7.4); build number is recorded
-  - [ ] `[All]` `backend-ci-cd.yml` succeeded for the same commit and SAM deploy produced no failed Lambdas (`battle-service`, `log-service`, `character-service`, `room-service`, `user-service`, `room-notifications-service`)
-  - [ ] `[All]` Required workflow secrets present (verified by each workflow's `Validate Required Inputs` step passing) — explicitly: `MATCH_*`, `APP_STORE_CONNECT_*`, `EXPO_PUBLIC_API_URL`, `ANDROID_SIGNING_KEY*`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
+- [x] Task 2: Author the "Pipelines & Distribution" section (AC: 1, 7)
+  - [x] `[Web]` `frontend-infra-cd.yml` succeeded for the candidate release commit and Pulumi published the new artifact (`infrastructure/index.ts` distribution served from `helpamunch.click`); validation step in the workflow reported `EXPO_PUBLIC_API_URL` resolved (Story 7.3 fix carries through)
+  - [x] `[iOS]` `ios-app-store-cd.yml` succeeded; Fastlane `beta` lane produced a signed `.ipa` and `upload_to_testflight` reported the build was accepted; build number is recorded in the Release Identity block
+  - [x] `[Android]` `android-play-store-cd.yml` succeeded; Fastlane `deploy` lane uploaded the signed `.aab` to the Play internal track (`release_status: "draft"` is the current default per Story 7.4); build number is recorded
+  - [x] `[All]` `backend-ci-cd.yml` succeeded for the same commit and SAM deploy produced no failed Lambdas (`battle-service`, `log-service`, `character-service`, `room-service`, `user-service`, `room-notifications-service`)
+  - [x] `[All]` Required workflow secrets present (verified by each workflow's `Validate Required Inputs` step passing) — explicitly: `MATCH_*`, `APP_STORE_CONNECT_*`, `EXPO_PUBLIC_API_URL`, `ANDROID_SIGNING_KEY*`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, `GCP_SERVICE_ACCOUNT`
 
-- [ ] Task 3: Author the "Core Session Flow" section — items per epic, with explicit observable behaviours (AC: 3)
-  - [ ] **Room management** items, each `[All]` unless noted: room creation succeeds within 3 s and lands on Room View; room code visible in header; "copy room code" header button copies to clipboard; rejoining an existing room from a second session does not duplicate the player (verified by viewing the participant list)
-  - [ ] **Character management** items: a character auto-creates on room join (Story 3.3); character card renders with avatar, name, level, power, class, race, gender (Story 3.6); quick edit sheet adjusts level/power and saves (Story 3.7); full edit modal accepts all attribute changes (Story 3.9); character removal removes the card and emits a log entry (Story 3.10); realtime flash signal fires on remote character updates (Story 3.8); reduced-motion path verified by toggling the OS setting before joining (Story 4.6)
-  - [ ] **Battle management** items: start a battle from Room View — only one active battle per room is allowed (the server returns `409` if a second is attempted; the UI surfaces this without crashing); active battle indicator appears on Room View (`useRoomBattle` HTTP-on-mount + WS subscription, Story 5.2); battle name, player side, monster side editable via PATCH (full-replace, Story 5.3); conclude with `result` lands the battle in `concluded` state (Story 5.6); discard sets `discarded` and clears the active indicator (Story 5.7); realtime updates propagate when a character involved in the battle changes (Story 5.5)
-  - [ ] **Room history** items: character events appear in history after the corresponding action (Stories 6.1, 6.2, 6.6); battle lifecycle events appear (Story 6.3) and tapping a concluded-battle entry opens the completed battle (Story 6.7); history loads and paginates via cursor (Story 6.4) without duplicate entries or lost cursor on scroll-back; the latest event appears at the top of the list
-  - [ ] **Session continuity** items: backgrounding and re-foregrounding the app within ≤5 s restores the room without re-navigation (Story 4.3); the reconnecting banner appears when the WebSocket drops and clears when it reconnects (Story 4.4); a late-joining client sees the current room state without manual refresh (Story 4.5); the locally persisted `user` AsyncStorage key restores the player identity on cold start (Stories 1.2, 2.4)
-  - [ ] For each bullet above, the checklist line in the doc must end with a short user-observable assertion (e.g., "expected: the participant list shows exactly one entry for the rejoining player") — do not write items as "verify the room works"; write them as "the user sees X"
+- [x] Task 3: Author the "Core Session Flow" section — items per epic, with explicit observable behaviours (AC: 3)
+  - [x] **Room management** items, each `[All]` unless noted: room creation succeeds within 3 s and lands on Room View; room code visible in header; "copy room code" header button copies to clipboard; rejoining an existing room from a second session does not duplicate the player (verified by viewing the participant list)
+  - [x] **Character management** items: a character auto-creates on room join (Story 3.3); character card renders with avatar, name, level, power, class, race, gender (Story 3.6); quick edit sheet adjusts level/power and saves (Story 3.7); full edit modal accepts all attribute changes (Story 3.9); character removal removes the card and emits a log entry (Story 3.10); realtime flash signal fires on remote character updates (Story 3.8); reduced-motion path verified by toggling the OS setting before joining (Story 4.6)
+  - [x] **Battle management** items: start a battle from Room View — only one active battle per room is allowed (the server returns `409` if a second is attempted; the UI surfaces this without crashing); active battle indicator appears on Room View (`useRoomBattle` HTTP-on-mount + WS subscription, Story 5.2); battle name, player side, monster side editable via PATCH (full-replace, Story 5.3); conclude with `result` lands the battle in `concluded` state (Story 5.6); discard sets `discarded` and clears the active indicator (Story 5.7); realtime updates propagate when a character involved in the battle changes (Story 5.5)
+  - [x] **Room history** items: character events appear in history after the corresponding action (Stories 6.1, 6.2, 6.6); battle lifecycle events appear (Story 6.3) and tapping a concluded-battle entry opens the completed battle (Story 6.7); history loads and paginates via cursor (Story 6.4) without duplicate entries or lost cursor on scroll-back; the latest event appears at the top of the list
+  - [x] **Session continuity** items: backgrounding and re-foregrounding the app within ≤5 s restores the room without re-navigation (Story 4.3); the reconnecting banner appears when the WebSocket drops and clears when it reconnects (Story 4.4); a late-joining client sees the current room state without manual refresh (Story 4.5); the locally persisted `user` AsyncStorage key restores the player identity on cold start (Stories 1.2, 2.4)
+  - [x] For each bullet above, the checklist line in the doc must end with a short user-observable assertion (e.g., "expected: the participant list shows exactly one entry for the rejoining player") — do not write items as "verify the room works"; write them as "the user sees X"
 
-- [ ] Task 4: Author the "Failure Mode & Release Blockers" section grouped by the five supportability subsystems (AC: 4)
-  - [ ] Use the five subsystem categories named verbatim in Epic 7 Story 7.7 AC: **room state**, **character state**, **battle state**, **log history**, **session continuity** — do NOT rename them; Story 7.7 owns the final taxonomy and 7.6's job is to cite it consistently
-  - [ ] For each subsystem, list at least one observable failure signature the reviewer can match against during testing, phrased so a reviewer can answer Yes/No. Examples (use these as a starting point, not the full list — expand to cover the most likely breakages):
+- [x] Task 4: Author the "Failure Mode & Release Blockers" section grouped by the five supportability subsystems (AC: 4)
+  - [x] Use the five subsystem categories named verbatim in Epic 7 Story 7.7 AC: **room state**, **character state**, **battle state**, **log history**, **session continuity** — do NOT rename them; Story 7.7 owns the final taxonomy and 7.6's job is to cite it consistently
+  - [x] For each subsystem, list at least one observable failure signature the reviewer can match against during testing, phrased so a reviewer can answer Yes/No. Examples (use these as a starting point, not the full list — expand to cover the most likely breakages):
     - **Room state:** a created room is not visible in the URL after creation OR joining a valid room code returns a non-actionable error
     - **Character state:** the auto-created character does not appear after joining OR a saved edit reverts on the next render
     - **Battle state:** a second battle can be started while one is already active (409 not surfaced) OR conclude/discard leaves the active-battle indicator on Room View
     - **Log history:** a character or battle action does not appear in history within a reasonable refresh OR history pagination loses position or duplicates entries
     - **Session continuity:** the app fails to restore the room after backgrounding OR the reconnecting banner does not clear after the socket reconnects
-  - [ ] Each failure signature line is a release blocker by default; the checklist must say so explicitly. Waivers require a named sign-off line (mirrors the AC 5 sign-off pattern)
-  - [ ] Add a forward-link note: "When Stories 7.7 (Supportability Signals) and 7.8 (Diagnostic Validation Matrix) land, the failure-signature lines here will be replaced or augmented with the structured failure codes / correlation IDs they emit, and 7.8 will provide the injected-failure validation matrix that proves these signals are observable. Until then, this section relies on user-visible behaviour."
+  - [x] Each failure signature line is a release blocker by default; the checklist must say so explicitly. Waivers require a named sign-off line (mirrors the AC 5 sign-off pattern)
+  - [x] Add a forward-link note: "When Stories 7.7 (Supportability Signals) and 7.8 (Diagnostic Validation Matrix) land, the failure-signature lines here will be replaced or augmented with the structured failure codes / correlation IDs they emit, and 7.8 will provide the injected-failure validation matrix that proves these signals are observable. Until then, this section relies on user-visible behaviour."
 
-- [ ] Task 5: Author the "Accessibility & Compliance Exceptions" section with the explicit WCAG exception sign-off (AC: 5)
-  - [ ] `[All]` The `accent` on `surfaceWarm` contrast exception is listed verbatim: `accent` `#D4C26E` on `surfaceWarm` `#8A6150` ≈ 4.2:1, below 4.5:1 WCAG AA for normal text. Mitigations on record: bold weight on stat values, text shadow `rgba(0,0,0,0.4)` on character names, `surfaceWarm` darkened from `#A67560` to `#8A6150` (Story 3.6). Cite `_bmad-output/planning-artifacts/ux-design-specification/13-responsive-design-accessibility.md#13.3-13.4` as the source
-  - [ ] `[All]` The exception line is followed by an explicit named sign-off field (e.g., "Accepted by: ____ Date: ____") — the release cannot be marked Go without this being filled in
-  - [ ] `[All]` Spot-check the other documented contrast ratios (`textPrimary`/`background` ~9.5:1 AAA, `accent`/`background` ~5.8:1 AA, `textMuted`/`surface` ~5.2:1 AA, `textMuted`/`elevated` ~4.8:1 AA) still hold — if any have drifted because of theme changes since 2026-03-26, that is a release blocker, not a waivable item
-  - [ ] `[iOS+Android]` VoiceOver / TalkBack spot-check on the Room View + QuickEditSheet path (UX spec 13.5, 13.8) — reviewer notes any accessibility labels that no longer match the rendered element
-  - [ ] `[iOS]` Colourblindness spot-check via Xcode Accessibility Inspector (Deuteranopia + Protanopia filters) on Room View + QuickEditSheet (UX spec 13.7)
-  - [ ] `[All]` Privacy and Support pages (Story 7.5) render the current effective date and correct content on the deployed web build at `https://helpamunch.click/privacy` and `https://helpamunch.click/support` — these are the URLs iOS/Play submissions reference
+- [x] Task 5: Author the "Accessibility & Compliance Exceptions" section with the explicit WCAG exception sign-off (AC: 5)
+  - [x] `[All]` The `accent` on `surfaceWarm` contrast exception is listed verbatim: `accent` `#D4C26E` on `surfaceWarm` `#8A6150` ≈ 4.2:1, below 4.5:1 WCAG AA for normal text. Mitigations on record: bold weight on stat values, text shadow `rgba(0,0,0,0.4)` on character names, `surfaceWarm` darkened from `#A67560` to `#8A6150` (Story 3.6). Cite `_bmad-output/planning-artifacts/ux-design-specification/13-responsive-design-accessibility.md#13.3-13.4` as the source
+  - [x] `[All]` The exception line is followed by an explicit named sign-off field (e.g., "Accepted by: ____ Date: ____") — the release cannot be marked Go without this being filled in
+  - [x] `[All]` Spot-check the other documented contrast ratios (`textPrimary`/`background` ~9.5:1 AAA, `accent`/`background` ~5.8:1 AA, `textMuted`/`surface` ~5.2:1 AA, `textMuted`/`elevated` ~4.8:1 AA) still hold — if any have drifted because of theme changes since 2026-03-26, that is a release blocker, not a waivable item
+  - [x] `[iOS+Android]` VoiceOver / TalkBack spot-check on the Room View + QuickEditSheet path (UX spec 13.5, 13.8) — reviewer notes any accessibility labels that no longer match the rendered element
+  - [x] `[iOS]` Colourblindness spot-check via Xcode Accessibility Inspector (Deuteranopia + Protanopia filters) on Room View + QuickEditSheet (UX spec 13.7)
+  - [x] `[All]` Privacy and Support pages (Story 7.5) render the current effective date and correct content on the deployed web build at `https://helpamunch.click/privacy` and `https://helpamunch.click/support` — these are the URLs iOS/Play submissions reference
 
-- [ ] Task 6: Author the "Release Evidence Record" section (AC: 6)
-  - [ ] Define the per-release evidence shape explicitly: a filled-in copy of `docs/release-readiness-checklist.md` (preferred), OR a dated review issue / PR that links to the commit SHA, build numbers, and per-item Pass/Fail entries
-  - [ ] State where evidence lives: by default, the filled-in copy is added under a new `docs/release-history/` folder named `YYYY-MM-DD-<release-version>.md` at the time of release; if a different team-internal location is preferred (Linear, Confluence, GitHub issue label), record that location verbatim in the checklist so future releases use the same place
-  - [ ] Do NOT create `docs/release-history/` files in this story — the folder is created when the first release is reviewed; just document the convention in the checklist
+- [x] Task 6: Author the "Release Evidence Record" section (AC: 6)
+  - [x] Define the per-release evidence shape explicitly: a filled-in copy of `docs/release-readiness-checklist.md` (preferred), OR a dated review issue / PR that links to the commit SHA, build numbers, and per-item Pass/Fail entries
+  - [x] State where evidence lives: by default, the filled-in copy is added under a new `docs/release-history/` folder named `YYYY-MM-DD-<release-version>.md` at the time of release; if a different team-internal location is preferred (Linear, Confluence, GitHub issue label), record that location verbatim in the checklist so future releases use the same place
+  - [x] Do NOT create `docs/release-history/` files in this story — the folder is created when the first release is reviewed; just document the convention in the checklist
 
-- [ ] Task 7: Wire the new checklist into existing documentation entry points (AC: 1, 7)
-  - [ ] Update `docs/index.md`: add `- [Release Readiness Checklist](./release-readiness-checklist.md)` under the "Generated Documentation" list (after Deployment Guide) so the checklist is discoverable from the docs index
-  - [ ] Update `docs/deployment-guide.md`: add a short "Release Readiness" subsection at the bottom that links to `release-readiness-checklist.md` and states "before any iOS/Play/web release is approved, run the checklist against the candidate release" — this gives the deployment-guide reader the entry point into release-ops
-  - [ ] Do not edit any other docs — keep this change scoped (per project-context: "Keep edits minimal and localized")
+- [x] Task 7: Wire the new checklist into existing documentation entry points (AC: 1, 7)
+  - [x] Update `docs/index.md`: add `- [Release Readiness Checklist](./release-readiness-checklist.md)` under the "Generated Documentation" list (after Deployment Guide) so the checklist is discoverable from the docs index
+  - [x] Update `docs/deployment-guide.md`: add a short "Release Readiness" subsection at the bottom that links to `release-readiness-checklist.md` and states "before any iOS/Play/web release is approved, run the checklist against the candidate release" — this gives the deployment-guide reader the entry point into release-ops
+  - [x] Do not edit any other docs — keep this change scoped (per project-context: "Keep edits minimal and localized")
 
-- [ ] Task 8: Verification (AC: 1, 2, 3, 7)
-  - [ ] Read the checklist end-to-end out loud as if running a release; every line should be unambiguous and platform-tagged
-  - [ ] Resolve every link in the document by clicking through: each `_bmad-output/...` reference exists at the cited path, each `.github/workflows/...` file exists, each `frontend/app/...` route file exists, each public URL (`https://helpamunch.click`, `/privacy`, `/support`) renders without error
-  - [ ] Confirm the doc lints cleanly (no markdown lint errors if a linter is configured); confirm the file is committed to the same PR as `docs/index.md` and `docs/deployment-guide.md` updates so the cross-links are not broken on `main`
+- [x] Task 8: Verification (AC: 1, 2, 3, 7)
+  - [x] Read the checklist end-to-end out loud as if running a release; every line should be unambiguous and platform-tagged
+  - [x] Resolve every link in the document by clicking through: each `_bmad-output/...` reference exists at the cited path, each `.github/workflows/...` file exists, each `frontend/app/...` route file exists, each public URL (`https://helpamunch.click`, `/privacy`, `/support`) renders without error
+  - [x] Confirm the doc lints cleanly (no markdown lint errors if a linter is configured); confirm the file is committed to the same PR as `docs/index.md` and `docs/deployment-guide.md` updates so the cross-links are not broken on `main`
+
+### Review Findings
+
+_Code review on 2026-05-23 against commit `2e70205` (`9662c0e..2e70205`). Three review layers: Blind Hunter (diff-only), Edge Case Hunter (with repo access), Acceptance Auditor (with spec). Acceptance Auditor reported all 7 ACs Pass and all Scope Guards Compliant. The findings below are correctness/precision issues in the checklist content surfaced by the other two layers._
+
+- [x] [Review][Patch] Failure-signature items invert Pass/Fail/N/A semantics — Every `Release blocker: <bad outcome>` line in `Failure Mode & Release Blockers` reads as the failure already happened, so ticking the box means "yes, the failure occurred" — the opposite of every other section where tick = pass. Spec Task 4 asked for signatures "phrased so a reviewer can answer Yes/No"; the current phrasing makes the checkbox semantically inverted. [docs/release-readiness-checklist.md:80-106] (blind+edge)
+- [x] [Review][Patch] Single shared waiver block cannot capture multiple distinct waivers — Spec Task 4 says "Waivers require a named sign-off line (mirrors the AC 5 sign-off pattern)" — AC 5's pattern is per-item. The doc has one shared `Waiver owner: ____ Scope: ____ Date: ____` line for all 14 release-blocker items; two unrelated waivers in the same release cannot be recorded distinguishably. [docs/release-readiness-checklist.md:76] (blind+edge)
+- [x] [Review][Patch] Explicit secret list dropped from `[All]` workflow-secrets line — Spec Task 2 made the verbatim list `MATCH_*, APP_STORE_CONNECT_*, EXPO_PUBLIC_API_URL, ANDROID_SIGNING_KEY*, GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT` the contract for that line. The current text replaces the names with "signing, store, API, AWS, or GCP configuration"; reviewers can no longer cross-check from a single item. [docs/release-readiness-checklist.md:25] (blind)
+- [x] [Review][Patch] WCAG sign-off is itself a checkbox — A reviewer can tick `- [ ] [All] Obtain explicit named approval … accepted by: ____` without filling the blanks, defeating AC 5's "no implicit pass" requirement. The parallel waiver block at line 76 is a plain text line (no checkbox); the sign-off should match, or include an inline guard. [docs/release-readiness-checklist.md:113] (edge)
+- [x] [Review][Patch] UX-spec anchor `#13.3-13.4` will not resolve — Target file has separate headings `## 13.3 Design Token Update` and `## 13.4 Accessibility Strategy`; no combined anchor exists. GitHub-flavored Markdown slugifies to `#133-design-token-update` / `#134-accessibility-strategy`. AC 7's link-integrity is silently broken here. [docs/release-readiness-checklist.md:112] (blind+edge)
+- [x] [Review][Patch] Per-platform Pass/Fail/N/A has no notation slot on `[All]` rows — Preamble promises per-platform Pass/Fail/N/A recording, but `- [ ] [All] …` is a binary checkbox with no inline structure for per-platform outcomes. Spec line 146 anticipated this ("pick one convention and use it consistently"). Suggest either inline `iOS: __ Android: __ Web: __` or an upfront table convention referenced from each `[All]` row. [docs/release-readiness-checklist.md:5,21-133] (blind+edge)
+- [x] [Review][Patch] "Current effective date" Privacy/Support check is unauditable — `expected: the pages render the current effective date and correct release-facing content` gives no comparator — any date passes. Specify the source of truth (e.g., "matches the effective date in `frontend/app/privacy.tsx` at the candidate commit"). [docs/release-readiness-checklist.md:117] (blind)
+- [x] [Review][Patch] Heading capitalization inconsistency — `## Link And Artifact Verification` capitalizes `And` while sibling H2s use `&` or proper title case (`Pipelines & Distribution`, `Failure Mode & Release Blockers`). Use `Link & Artifact Verification` or `Link and Artifact Verification`. [docs/release-readiness-checklist.md:126] (blind)
+- [x] [Review][Defer] `battle-service` is not type-checked/tested in backend CI matrix — `.github/workflows/backend-ci-cd.yml` matrix builds `user-service, room-service, character-service, room-notifications-service, log-service` (lines 30-38) but omits `battle-service`. The SAM deploy step still ships it, so the checklist's "no failed Lambda deployments for battle-service" line is technically accurate — but a broken `battle-service` could pass CI. Pre-existing CI gap, not introduced by 7.6. — deferred, pre-existing (edge)
+- [x] [Review][Defer] `BattleMongoUri` silently defaults to a sandbox cluster in SAM — `backend/sam/template.yaml:18-21` has `Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/…`; the CD workflow validates four other Mongo URIs but never passes a battle one, so SAM falls back to sandbox. This makes the checklist line "no release pipeline succeeds by silently falling back to … configuration" partially false. Either harden SAM/CD (out of 7.6 scope) or trim the checklist claim in a follow-up. — deferred, pre-existing (edge)
+- [x] [Review][Defer] Subsystem labels diverge between Epic 7 narrative and Story 7.7 implementation enum — 7.6 uses Epic 7's verbatim labels `room state / character state / battle state / log history / session continuity` (correct per 7.6 Scope Guard), but 7.7 (already merged) ships a `Subsystem` enum `'room' | 'character' | 'battle' | 'log' | 'session_continuity'`. Reconciliation is 7.7/7.8's job, not 7.6's. — deferred, pre-existing (edge)
 
 ## Dev Notes
 
@@ -237,12 +253,30 @@ docs/
 
 ### Agent Model Used
 
+GPT-5
+
 ### Debug Log References
+
+- 2026-05-23: Confirmed story prerequisite statuses in `_bmad-output/implementation-artifacts/sprint-status.yaml`; Stories 1.1-6.7 and 7.1-7.5 are marked done.
+- 2026-05-23: Verified referenced repo artifacts exist: four release workflows, `frontend/app/privacy.tsx`, `frontend/app/support.tsx`, `frontend/constants/theme.ts`, `infrastructure/index.ts`, and UX accessibility source.
+- 2026-05-23: Verified public URLs with `curl -I -sS`: `https://helpamunch.click`, `/privacy`, and `/support` all returned HTTP 200.
+- 2026-05-23: Confirmed no Markdown linter is configured in root/frontend/backend/infrastructure package scripts; ran full repo coverage after installing existing dependencies.
 
 ### Completion Notes List
 
+- Created `docs/release-readiness-checklist.md` as the single cross-platform release go/no-go checklist, with Release Identity fields, platform-tagged Markdown checkboxes, core session flow checks, release-blocker failure signatures, accessibility exception sign-off, evidence convention, and link/artifact verification.
+- Wired the checklist into `docs/index.md` and `docs/deployment-guide.md` so release operators can discover it from existing documentation entry points.
+- Verified every checklist checkbox uses one of the required platform prefixes; local artifact references exist; public release URLs returned HTTP 200; full repo coverage passed after rerunning outside the sandbox port-binding restriction.
+
 ### File List
+
+- docs/release-readiness-checklist.md
+- docs/index.md
+- docs/deployment-guide.md
+- _bmad-output/implementation-artifacts/7-6-cross-platform-release-readiness-checklist.md
+- _bmad-output/implementation-artifacts/sprint-status.yaml
 
 ### Change Log
 
+- 2026-05-23: Implemented Story 7.6 checklist, wired documentation entry points, verified artifact/URL references, and moved story to review.
 - 2026-05-23: Story drafted and set to ready-for-dev. Documentation-only deliverable; produces `docs/release-readiness-checklist.md` and wires it into `docs/index.md` + `docs/deployment-guide.md`. Failure-mode section uses Epic 7 / Story 7.7's five subsystem category names verbatim (room state, character state, battle state, log history, session continuity); structured error codes and correlation-ID formats are explicitly deferred to Story 7.7. Validation matrix mechanics are explicitly deferred to Story 7.8.
