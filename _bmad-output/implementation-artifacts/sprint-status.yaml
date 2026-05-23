@@ -107,5 +107,5 @@ development_status:
   7-6-cross-platform-release-readiness-checklist: backlog
   7-7-supportability-signals-failure-taxonomy: backlog
   7-8-diagnostic-validation-matrix: backlog
-  7-9-release-channel-availability-validation: backlog
+  7-9-release-channel-availability-validation: ready-for-dev
   epic-7-retrospective: optional
