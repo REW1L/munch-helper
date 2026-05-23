@@ -115,11 +115,14 @@ const normalizeRoutePrefix = (value: string | undefined): string => {
   return withoutTrailingSlash || '/';
 };
 
-const readCorrelationHeader = (value: string | string[] | undefined): string => {
-  if (Array.isArray(value)) {
-    return value[0]?.trim() || '';
+export const readCorrelationHeader = (value: string | string[] | undefined): string => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') {
+    return '';
   }
-  return value?.trim() || '';
+  // Strip ASCII control characters (CR, LF, NUL, etc.) before trimming. setHeader rejects them
+  // (ERR_INVALID_CHAR), and echoing them back unsanitised would enable header-injection.
+  return raw.replace(/[\x00-\x1F\x7F]/g, '').trim();
 };
 
 const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {

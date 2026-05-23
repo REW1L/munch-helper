@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
-import { createApp, type CharacterModelLike } from './app';
+import { createApp, readCorrelationHeader, type CharacterModelLike } from './app';
 
 function buildCharacterModel(): CharacterModelLike {
   return {
@@ -134,6 +134,23 @@ describe('character-service app', () => {
 
     expect(response.headers['x-correlation-id']).toBe('request-header');
     expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'request-header' }));
+  });
+
+  it('strips CR/LF from inbound correlation id without crashing the request', () => {
+    // Cannot exercise this end-to-end via supertest — superagent rejects outgoing headers with
+    // CR/LF before they ever reach the server (Node's http client also enforces RFC 7230 §3.2.6).
+    // Test the sanitisation helper directly: the contract is that the value returned to the
+    // middleware is safe to pass to res.setHeader (which would otherwise throw ERR_INVALID_CHAR).
+    expect(readCorrelationHeader('foo\r\nX-Injected: bar')).toBe('fooX-Injected: bar');
+    expect(readCorrelationHeader('clean')).toBe('clean');
+    expect(readCorrelationHeader('  trim-me  ')).toBe('trim-me');
+    expect(readCorrelationHeader('null\x00byte')).toBe('nullbyte');
+    expect(readCorrelationHeader('tab\there')).toBe('tabhere');
+    expect(readCorrelationHeader('del\x7Fchar')).toBe('delchar');
+    expect(readCorrelationHeader('\r\n   \r\n')).toBe('');
+    expect(readCorrelationHeader(undefined)).toBe('');
+    expect(readCorrelationHeader(['multi\r\nvalue', 'second'])).toBe('multivalue');
+    expect(readCorrelationHeader([] as unknown as string[])).toBe('');
   });
 
   it('keeps create response successful when publishing fails', async () => {

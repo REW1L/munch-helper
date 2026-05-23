@@ -1,6 +1,6 @@
 # Story 7.7: Supportability Signals & Failure Taxonomy
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -196,6 +196,21 @@ So that I can quickly identify whether a problem is caused by room state, charac
   - [x] Run root `npm run typecheck` to catch any cross-service `correlationId` type drift on `CharacterEventPayload` / `BattleEventPayload`.
   - [x] No frontend changes in this story; do NOT run frontend gates unless something inadvertently touched a contract the frontend reads (it should not — event payloads still serialize the same way).
   - [x] Skim Docker Compose local stack: `npm run start:local` from `backend/`, hit one of the failing-test routes (or temporarily POST garbage to `/battles`), and grep `docker compose logs | grep support.failure` to confirm the signal renders. Tear down before completion.
+
+### Review Findings
+
+_Code review on 2026-05-23. Layers: Blind Hunter, Edge Case Hunter, Acceptance Auditor (all completed)._
+
+- [x] [Review][Decision] Spec self-contradiction "replaced" vs "stay as they are" — AC5 / AC6 / Task 5 instruct devs to **replace** the existing `console.warn('log.sns.invalid_event')`, `console.warn('log.sns.persist_failed')`, and `console.error('room-notifications.event.delivery_failed')` lines with `support.failure`, but Task 0 Scope Guard says these pre-existing lines "stay as they are". Implementation was inconsistent: log-service deleted both `log.sns.invalid_event` and `log.sns.persist_failed` warn lines (matched AC5/Task 5); `room-notifications-service` kept `console.error('room-notifications.event.delivery_failed', …)` additively next to `logSupportFailure` (deviated from AC6 "replaced"). **Resolved: replace everywhere** — the residual `console.error('room-notifications.event.delivery_failed', …)` in `backend/room-notifications-service/src/service.ts` was removed; existing test was strengthened to assert `console.error` called exactly once with `'support.failure'`. Operators must migrate any monitoring matching the deleted strings to filter on `support.failure` + `code` instead.
+- [x] [Review][Decision] AC8 enumeration vs Task 3 skip for `room-notifications-service` — AC8 listed `room-notifications-service` among the six services that must have an Express error middleware integration test asserting `console.error('support.failure', { subsystem, code: 'unexpected_error', … })`, but Task 3 said skip because the service has no Express error middleware. **Resolved: added a thin `unexpected_error` test** — wrapped the Lambda `handler` in `backend/room-notifications-service/src/lambda.ts` in a top-level try/catch that emits `logSupportFailure({ subsystem: 'session_continuity', code: 'unexpected_error', …extractErrorFields(error) })` and rethrows, with a matching test in `lambda.test.ts` that triggers a `connectToMongo` failure and asserts the exact signal shape.
+
+- [x] [Review][Patch] CR/LF in `x-correlation-id` header crashes the middleware on Node ≥18 [`backend/character-service/src/app.ts:60-71`, `backend/battle-service/src/app.ts:118-129`] — `readCorrelationHeader` was updated to strip ASCII control characters (`/[\x00-\x1F\x7F]/g`) before trimming, so values containing CR/LF/NUL never reach `res.setHeader`. Helper exported and unit-tested directly (supertest cannot transmit malformed headers). New test covers CR/LF, NUL, tab, DEL, whitespace-only, undefined, array values, and the header-injection vector `'foo\r\nX-Injected: bar'`.
+
+- [x] [Review][Defer] No length cap on `x-correlation-id` value [`backend/character-service/src/app.ts:60-71`, `backend/battle-service/src/app.ts:118-129`] — deferred, defensive hardening (CloudWatch 256 KB log-line limit risk; mitigations belong with broader request-size hardening).
+- [x] [Review][Defer] `extractErrorFields` leaks raw `error.message` content (Mongo connection strings with credentials, full Mongoose validation docs, etc.) [`backend/*/src/supportSignal.ts:52-60`] — deferred, AC2 scopes "user data" but not operational secrets in error messages; address with broader log-redaction policy.
+- [x] [Review][Defer] `extractErrorFields` does not unwrap `AggregateError` — top-level `.message` is often empty so inner errors are lost when fanout publishers reject [`backend/*/src/supportSignal.ts:52-60`] — deferred, low frequency in current codebase (only `FanOutBattleEventPublisher` uses `Promise.allSettled` and it logs failures separately).
+- [x] [Review][Defer] `logSupportFailure` does not guard against `console.error` throwing [`backend/*/src/supportSignal.ts:33-49`] — deferred, low likelihood in current Lambda/Express setup; revisit if a structured-logging wrapper is introduced.
+- [x] [Review][Defer] `log-service` subscriber `connectToMongo` cold-start failure is unhandled — no `support.failure` is emitted before the function exits [`backend/log-service/src/subscriber.ts:29`] — deferred, AC5 only mandates persistence-failure signals after a parsable record is received; cold-start observability belongs with the Lambda failure-mode story.
 
 ## Dev Notes
 

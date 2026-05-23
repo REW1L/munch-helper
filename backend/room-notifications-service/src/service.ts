@@ -115,14 +115,6 @@ export const sendEventToConnections = async (
           sessionId: connection.connectionId,
           ...extractErrorFields(error)
         });
-        console.error('room-notifications.event.delivery_failed', {
-          event: event.event,
-          roomId: event.roomId,
-          event_body: event.event_body,
-          connectionId: connection.connectionId,
-          userId: connection.userId,
-          error
-        });
         throw error;
       }
     })

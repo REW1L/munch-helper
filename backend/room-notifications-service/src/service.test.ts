@@ -185,6 +185,8 @@ describe('room notification service', () => {
       sessionId: 'conn-err',
       errorMessage: 'delivery failed'
     }));
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls.map((call) => call[0])).not.toContain('room-notifications.event.delivery_failed');
   });
 
   it('swallows disconnect failures', async () => {

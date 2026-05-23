@@ -91,4 +91,28 @@ describe('room-notifications lambda', () => {
     expect(mockSendEventToConnections).toHaveBeenCalledTimes(1);
     expect(response).toEqual({ statusCode: 200, body: JSON.stringify({ processed: 1 }) });
   });
+
+  it('emits support.failure with code=unexpected_error and rethrows on top-level handler error', async () => {
+    mockConnectToMongo.mockRejectedValueOnce(new Error('mongo unavailable'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const { handler } = await import('./lambda.js');
+
+    await expect(
+      handler({ requestContext: { routeKey: '$connect', connectionId: 'conn-err' } })
+    ).rejects.toThrow('mongo unavailable');
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      'support.failure',
+      expect.objectContaining({
+        subsystem: 'session_continuity',
+        code: 'unexpected_error',
+        correlationId: null,
+        errorName: 'Error',
+        errorMessage: 'mongo unavailable',
+      })
+    );
+    expect(errorSpy.mock.calls.filter((call) => call[0] === 'support.failure')).toHaveLength(1);
+    errorSpy.mockRestore();
+  });
 });
