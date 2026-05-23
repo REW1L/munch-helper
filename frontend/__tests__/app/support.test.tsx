@@ -77,7 +77,43 @@ describe('Support route', () => {
       fireEvent.click(screen.getByLabelText(`Email support at ${SUPPORT_EMAIL}`));
     });
 
+    expect(mockOpenURL).toHaveBeenCalledTimes(1);
     expect(mockOpenURL).toHaveBeenCalledWith(`mailto:${SUPPORT_EMAIL}`);
+  });
+
+  it('survives a Linking.openURL rejection without crashing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mockOpenURL.mockReset();
+    mockOpenURL.mockRejectedValue(new Error('no mail handler'));
+
+    const [{ SUPPORT_EMAIL }, { default: SupportPage }] = await Promise.all([
+      import('../../constants/releaseContent'),
+      import('../../app/support'),
+    ]);
+
+    await act(async () => {
+      render(<SupportPage />);
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByLabelText(`Email support at ${SUPPORT_EMAIL}`));
+    });
+
+    expect(mockOpenURL).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Support')).toBeTruthy();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('preserves iOS safe-area edges (no double inset under Stack header)', async () => {
+    mockPlatformOS.value = 'ios';
+    const { default: SupportPage } = await import('../../app/support');
+
+    await act(async () => {
+      render(<SupportPage />);
+    });
+
+    expect(screen.getByTestId('safe-area').getAttribute('data-edges')).toBe('[]');
   });
 
   it('preserves Android safe-area edges for native rendering', async () => {

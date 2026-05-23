@@ -5,8 +5,6 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { PRIVACY_EFFECTIVE_DATE, SUPPORT_EMAIL } from '@/constants/releaseContent';
 
-export const EFFECTIVE_DATE = PRIVACY_EFFECTIVE_DATE;
-
 export default function PrivacyPolicyPage() {
   return (
     <SafeAreaProvider>
@@ -18,7 +16,7 @@ export default function PrivacyPolicyPage() {
 
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={styles.title}>Privacy Policy</Text>
-          <Text style={styles.meta}>Effective date: {EFFECTIVE_DATE}</Text>
+          <Text style={styles.meta}>Effective date: {PRIVACY_EFFECTIVE_DATE}</Text>
 
           <PolicySection
             title="1. Overview"

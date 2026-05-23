@@ -1,6 +1,6 @@
 # Story 7.5: Release-Facing Compliance Content
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -211,3 +211,12 @@ Codex GPT-5
 
 - 2026-05-23: Implemented release-facing compliance content updates and moved story to review.
 - 2026-05-23: Story drafted and set to ready-for-dev.
+- 2026-05-23: Code review applied four patches (mailto rejection guard + test, removed EFFECTIVE_DATE re-export, symmetric platform safe-area assertions, strict mailto call-count). Lint, tsc, and full test suite (207 unit + 81 room-route) green. Status moved to done.
+
+### Review Findings
+
+- [x] [Review][Patch] `Linking.openURL` rejection unhandled in `handleEmailPress`; add error handling and a rejection-path test [frontend/app/support.tsx:9-11, frontend/__tests__/app/support.test.tsx]
+- [x] [Review][Patch] Privacy `EFFECTIVE_DATE` re-export only exists for the test — import `PRIVACY_EFFECTIVE_DATE` from `@/constants/releaseContent` in the test and remove the re-export to keep the route module's public API clean [frontend/app/privacy.tsx:7, frontend/__tests__/app/privacy.test.tsx:41]
+- [x] [Review][Patch] Privacy test only asserts iOS safe-area edges; add the symmetric `'android'` case (and Support test add the symmetric `'ios'` case) so each file independently locks both branches of `Platform.OS === 'ios' ? [] : [...]` [frontend/__tests__/app/privacy.test.tsx, frontend/__tests__/app/support.test.tsx]
+- [x] [Review][Patch] Strengthen mailto assertion: add `expect(mockOpenURL).toHaveBeenCalledTimes(1)` so a future double-tap regression is caught [frontend/__tests__/app/support.test.tsx:70]
+- [x] [Review][Defer] Privacy page contact email is not tappable and lacks `accessibilityRole`/`accessibilityLabel` [frontend/app/privacy.tsx:83-87] — deferred, out of scope (story spec requires the *support* page contact to be tappable; privacy page only needs visible contact info per AC2)

@@ -7,7 +7,11 @@ import { SUPPORT_EMAIL } from '@/constants/releaseContent';
 
 export default function SupportPage() {
   const handleEmailPress = async () => {
-    await Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+    try {
+      await Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+    } catch (error) {
+      console.warn('Failed to open mailto link', error);
+    }
   };
 
   return (

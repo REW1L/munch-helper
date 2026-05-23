@@ -42,14 +42,17 @@ describe('Privacy route', () => {
   });
 
   it('renders the title and current effective date', async () => {
-    const { EFFECTIVE_DATE, default: PrivacyPolicyPage } = await import('../../app/privacy');
+    const [{ PRIVACY_EFFECTIVE_DATE }, { default: PrivacyPolicyPage }] = await Promise.all([
+      import('../../constants/releaseContent'),
+      import('../../app/privacy'),
+    ]);
 
     await act(async () => {
       render(<PrivacyPolicyPage />);
     });
 
     expect(screen.getByText('Privacy Policy')).toBeTruthy();
-    expect(screen.getByText(`Effective date: ${EFFECTIVE_DATE}`)).toBeTruthy();
+    expect(screen.getByText(`Effective date: ${PRIVACY_EFFECTIVE_DATE}`)).toBeTruthy();
   });
 
   it('explains anonymous identity without account credentials', async () => {
@@ -98,5 +101,16 @@ describe('Privacy route', () => {
     });
 
     expect(screen.getByTestId('safe-area').getAttribute('data-edges')).toBe('[]');
+  });
+
+  it('preserves Android safe-area edges for native rendering', async () => {
+    mockPlatformOS.value = 'android';
+    const { default: PrivacyPolicyPage } = await import('../../app/privacy');
+
+    await act(async () => {
+      render(<PrivacyPolicyPage />);
+    });
+
+    expect(screen.getByTestId('safe-area').getAttribute('data-edges')).toBe('["top","bottom","left","right"]');
   });
 });
