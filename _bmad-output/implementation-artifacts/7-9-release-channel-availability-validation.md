@@ -1,6 +1,6 @@
 # Story 7.9: Release Channel Availability Validation
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -254,3 +254,18 @@ Codex GPT-5
 
 - 2026-05-23: Story drafted and set to ready-for-dev with Scope Guard, Task 0 prerequisite gate (7.5/7.6), and deferred-names list for 7.6/7.7/7.8. Documented variance: AC 1's readiness-checklist reference is a placeholder until 7.6 ships.
 - 2026-05-23: Implemented channel availability playbook, web validation script and tests, release evidence template/README, first concrete evidence artifact, and deployment-guide linkage. Set status to review.
+
+### Review Findings
+
+- [x] [Review][Decision] Redirect handling — 301/302 from CDN treated as FAIL; should redirects be followed or is this intentional? (AC 1 — a CloudFront trailing-slash redirect would cause a false FAIL) — resolved: follow redirects added
+- [x] [Review][Decision] Playbook smoke path references "battle" and "room history" — README says "Not implemented yet"; confirm these features exist in current release or update smoke path (AC 1 — smoke path may be impossible to complete) — resolved: README is stale, features exist
+- [x] [Review][Patch] No timeout on HTTP requests — hung connection blocks script indefinitely [scripts/web-channel-http.mjs:5]
+- [x] [Review][Patch] http:// base-url accepted but only node:https imported — script fails on http URLs [scripts/web-channel-http.mjs:1]
+- [x] [Review][Patch] --version / --base-url as last argv element produces misleading error [scripts/validate-web-channel.mjs:16-17]
+- [x] [Review][Patch] No test coverage for network error / catch branch [scripts/validate-web-channel.test.mjs]
+- [x] [Review][Patch] Evidence "Validated on" field lacks HH:mm timestamp; per-channel timestamps inconsistent [docs/release-evidence/1.1.1-2026-05-23-channel-availability.md]
+- [x] [Review][Patch] Deployment guide uses code-formatted path, not a clickable Markdown link to evidence [docs/deployment-guide.md]
+- [x] [Review][Patch] Readiness checklist reference links to non-existent file; should use TODO placeholder per spec [docs/release-evidence/1.1.1-2026-05-23-channel-availability.md]
+- [x] [Review][Patch] No test for --base-url argument path [scripts/validate-web-channel.test.mjs]
+- [x] [Review][Patch] Top-level await rejection has no catch — crashes with no structured output [scripts/validate-web-channel.mjs:165]
+- [x] [Review][Defer] No CI integration or npm script entry for the validation script — deferred, intentional per spec (operator-run during release review)

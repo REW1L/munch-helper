@@ -64,7 +64,7 @@ The web reachability check is automated with `scripts/validate-web-channel.mjs`:
 node scripts/validate-web-channel.mjs --version <release-version>
 ```
 
-Prior evidence examples include `docs/release-evidence/1.1.1-2026-05-23-channel-availability.md`.
+Prior evidence examples include [1.1.1-2026-05-23-channel-availability.md](release-evidence/1.1.1-2026-05-23-channel-availability.md).
 
 ## Operational Notes
 

@@ -1,5 +1,5 @@
 # generated: 2026-03-26T17:42:48Z
-# last_updated: 2026-05-23
+# last_updated: 2026-05-24
 # project: munch-helper
 # project_key: NOKEY
 # tracking_system: file-system
@@ -107,5 +107,5 @@ development_status:
   7-6-cross-platform-release-readiness-checklist: done
   7-7-supportability-signals-failure-taxonomy: done
   7-8-diagnostic-validation-matrix: done
-  7-9-release-channel-availability-validation: ready-for-dev
+  7-9-release-channel-availability-validation: done
   epic-7-retrospective: optional

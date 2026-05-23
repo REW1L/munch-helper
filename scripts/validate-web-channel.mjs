@@ -21,13 +21,21 @@ export function parseArgs(argv) {
     const arg = argv[index];
 
     if (arg === "--version") {
-      parsed.version = argv[index + 1] ?? null;
+      if (index + 1 >= argv.length) {
+        parsed.errors.push("--version requires a value");
+        continue;
+      }
+      parsed.version = argv[index + 1];
       index += 1;
       continue;
     }
 
     if (arg === "--base-url") {
-      parsed.baseUrl = argv[index + 1] ?? "";
+      if (index + 1 >= argv.length) {
+        parsed.errors.push("--base-url requires a value");
+        continue;
+      }
+      parsed.baseUrl = argv[index + 1];
       index += 1;
       continue;
     }
@@ -40,7 +48,10 @@ export function parseArgs(argv) {
   }
 
   try {
-    new URL(parsed.baseUrl);
+    const u = new URL(parsed.baseUrl);
+    if (u.protocol !== "https:") {
+      parsed.errors.push("--base-url must use https://");
+    }
   } catch {
     parsed.errors.push("--base-url must be a valid absolute URL");
   }
@@ -159,7 +170,12 @@ export async function runValidation({
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const result = await runValidation();
-  console.log(JSON.stringify(result.output, null, 2));
-  process.exitCode = result.exitCode;
+  try {
+    const result = await runValidation();
+    console.log(JSON.stringify(result.output, null, 2));
+    process.exitCode = result.exitCode;
+  } catch (error) {
+    console.error(JSON.stringify({ verdict: "ERROR", error: error.message }));
+    process.exitCode = 1;
+  }
 }
