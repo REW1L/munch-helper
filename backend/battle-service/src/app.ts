@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
@@ -9,6 +10,7 @@ import {
   createBattleStartedEventPayload,
   createBattleUpdatedEventPayload
 } from './publisher';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 export type BattleStatus = 'active' | 'concluded' | 'discarded';
 export type BattleResult = 'players_win' | 'monster_wins' | null;
@@ -112,6 +114,29 @@ const normalizeRoutePrefix = (value: string | undefined): string => {
   const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
   return withoutTrailingSlash || '/';
 };
+
+export const readCorrelationHeader = (value: string | string[] | undefined): string => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string') {
+    return '';
+  }
+  // Strip ASCII control characters (CR, LF, NUL, etc.) before trimming. setHeader rejects them
+  // (ERR_INVALID_CHAR), and echoing them back unsanitised would enable header-injection.
+  return raw.replace(/[\x00-\x1F\x7F]/g, '').trim();
+};
+
+const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  const correlationId = readCorrelationHeader(req.headers['x-correlation-id'])
+    || readCorrelationHeader(req.headers['x-request-id'])
+    || randomUUID();
+
+  res.locals.correlationId = correlationId;
+  res.setHeader('x-correlation-id', correlationId);
+  next();
+};
+
+const getCorrelationId = (res: Response): string | null =>
+  (res.locals.correlationId as string | undefined) ?? null;
 
 const MAX_CREATE_ATTEMPTS = 2;
 
@@ -259,6 +284,7 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
   app.use(cors());
   app.use(morgan('dev'));
   app.use(express.json());
+  app.use(correlationIdMiddleware);
 
   if (routePrefix !== '/') {
     // Lambda events may contain stage-prefixed URLs; strip once so route handlers stay unchanged.
@@ -348,8 +374,17 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(createBattleStartedEventPayload({ battle }));
+        await publisher.publish(createBattleStartedEventPayload({ battle, correlationId: getCorrelationId(res) ?? undefined }));
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'battle',
+          code: 'battle_event_publish_failed',
+          message: 'Failed to publish battle_started event',
+          correlationId: getCorrelationId(res),
+          roomId: battle.roomId,
+          actorId: battle.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish battle_started event', error);
       }
 
@@ -415,8 +450,17 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(createBattleUpdatedEventPayload({ battle }));
+        await publisher.publish(createBattleUpdatedEventPayload({ battle, correlationId: getCorrelationId(res) ?? undefined }));
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'battle',
+          code: 'battle_event_publish_failed',
+          message: 'Failed to publish battle_updated event',
+          correlationId: getCorrelationId(res),
+          roomId: battle.roomId,
+          actorId: battle.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish battle_updated event', error);
       }
 
@@ -456,8 +500,17 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(createBattleConcludedEventPayload({ battle }));
+        await publisher.publish(createBattleConcludedEventPayload({ battle, correlationId: getCorrelationId(res) ?? undefined }));
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'battle',
+          code: 'battle_event_publish_failed',
+          message: 'Failed to publish battle_concluded event',
+          correlationId: getCorrelationId(res),
+          roomId: battle.roomId,
+          actorId: battle.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish battle_concluded event', error);
       }
 
@@ -489,8 +542,17 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       }
 
       try {
-        await publisher.publish(createBattleDiscardedEventPayload({ battle }));
+        await publisher.publish(createBattleDiscardedEventPayload({ battle, correlationId: getCorrelationId(res) ?? undefined }));
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'battle',
+          code: 'battle_event_publish_failed',
+          message: 'Failed to publish battle_discarded event',
+          correlationId: getCorrelationId(res),
+          roomId: battle.roomId,
+          actorId: battle.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish battle_discarded event', error);
       }
 
@@ -508,6 +570,16 @@ export function createApp(battleModel: BattleModelLike, options: CreateBattleApp
       return res.status(400).json({ message: 'Invalid JSON body' });
     }
 
+    const { errorName, errorMessage } = extractErrorFields(err);
+    logSupportFailure({
+      subsystem: 'battle',
+      code: 'unexpected_error',
+      message: 'Unhandled error in battle-service',
+      correlationId: getCorrelationId(res),
+      httpStatus: 502,
+      errorName,
+      errorMessage
+    });
     console.error('[battle-service] unhandled error', { message: err.message, name: err.name });
     res.status(502).json({ message: 'Unexpected error' });
   });

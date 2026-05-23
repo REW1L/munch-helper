@@ -8,6 +8,7 @@ export interface LogEventInput {
   summary: string;
   payload: Record<string, unknown>;
   occurredAt: Date;
+  correlationId?: string | null;
 }
 
 export interface LogEventResource {
@@ -167,13 +168,15 @@ export function parseLogEvent(payload: unknown): LogEventInput | null {
   const occurredAtValue = trimString(payload.occurredAt) || trimString(payload.emittedAt) || new Date().toISOString();
   const parsedOccurredAt = new Date(occurredAtValue);
   const occurredAt = Number.isNaN(parsedOccurredAt.getTime()) ? new Date() : parsedOccurredAt;
+  const correlationId = trimString(payload.correlationId) || null;
 
   const baseInput = {
     roomId,
     eventType: eventTypeValue,
     actorId,
     payload,
-    occurredAt
+    occurredAt,
+    correlationId
   };
 
   return {

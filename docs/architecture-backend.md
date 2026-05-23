@@ -87,6 +87,10 @@ The backend is a small service-oriented system organized around bounded gameplay
 - Each service contains `*.test.ts` files adjacent to app, DB, service, and Lambda code.
 - Workspace-level backend commands run tests and coverage across services.
 
+## Supportability
+
+Backend failure diagnostics emit the `support.failure` signal described in [Release Support Reference](./release-support-reference.md). Keep the failure-code catalog there as the source of truth rather than duplicating it in architecture notes.
+
 ## Risks And Notes
 
 - The workspace manifest references a `gateway` package that is not present in the current tree.

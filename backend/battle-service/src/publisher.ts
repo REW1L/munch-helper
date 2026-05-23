@@ -204,16 +204,20 @@ export const createBattleEventPayload = (input: {
 
 export const createBattleStartedEventPayload = (input: {
   battle: BattleLike;
+  correlationId?: string;
 }): BattleEventPayload => createBattleEventPayload({ event: 'battle_started', ...input });
 
 export const createBattleUpdatedEventPayload = (input: {
   battle: BattleLike;
+  correlationId?: string;
 }): BattleEventPayload => createBattleEventPayload({ event: 'battle_updated', ...input });
 
 export const createBattleConcludedEventPayload = (input: {
   battle: BattleLike;
+  correlationId?: string;
 }): BattleEventPayload => createBattleEventPayload({ event: 'battle_concluded', ...input });
 
 export const createBattleDiscardedEventPayload = (input: {
   battle: BattleLike;
+  correlationId?: string;
 }): BattleEventPayload => createBattleEventPayload({ event: 'battle_discarded', ...input });

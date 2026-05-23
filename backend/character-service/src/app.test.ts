@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
-import { createApp, type CharacterModelLike } from './app';
+import { createApp, readCorrelationHeader, type CharacterModelLike } from './app';
 
 function buildCharacterModel(): CharacterModelLike {
   return {
@@ -107,6 +107,52 @@ describe('character-service app', () => {
     );
   });
 
+  it('uses inbound correlation id on response and published event', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-corr', roomId: 'r-corr' }));
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/characters')
+      .set('x-correlation-id', 'corr-header')
+      .send({ roomId: 'r-corr', userId: 'u2', name: 'Mage', avatarId: 4, color: '#00aaff' });
+
+    expect(response.status).toBe(201);
+    expect(response.headers['x-correlation-id']).toBe('corr-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'corr-header' }));
+  });
+
+  it('falls back to x-request-id for published correlation id', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-corr', roomId: 'r-corr' }));
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/characters')
+      .set('x-request-id', 'request-header')
+      .send({ roomId: 'r-corr', userId: 'u2', name: 'Mage', avatarId: 4, color: '#00aaff' });
+
+    expect(response.headers['x-correlation-id']).toBe('request-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'request-header' }));
+  });
+
+  it('strips CR/LF from inbound correlation id without crashing the request', () => {
+    // Cannot exercise this end-to-end via supertest — superagent rejects outgoing headers with
+    // CR/LF before they ever reach the server (Node's http client also enforces RFC 7230 §3.2.6).
+    // Test the sanitisation helper directly: the contract is that the value returned to the
+    // middleware is safe to pass to res.setHeader (which would otherwise throw ERR_INVALID_CHAR).
+    expect(readCorrelationHeader('foo\r\nX-Injected: bar')).toBe('fooX-Injected: bar');
+    expect(readCorrelationHeader('clean')).toBe('clean');
+    expect(readCorrelationHeader('  trim-me  ')).toBe('trim-me');
+    expect(readCorrelationHeader('null\x00byte')).toBe('nullbyte');
+    expect(readCorrelationHeader('tab\there')).toBe('tabhere');
+    expect(readCorrelationHeader('del\x7Fchar')).toBe('delchar');
+    expect(readCorrelationHeader('\r\n   \r\n')).toBe('');
+    expect(readCorrelationHeader(undefined)).toBe('');
+    expect(readCorrelationHeader(['multi\r\nvalue', 'second'])).toBe('multivalue');
+    expect(readCorrelationHeader([] as unknown as string[])).toBe('');
+  });
+
   it('keeps create response successful when publishing fails', async () => {
     const model = buildCharacterModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish failed')) };
@@ -120,6 +166,14 @@ describe('character-service app', () => {
 
     expect(response.status).toBe(201);
     expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'character',
+      code: 'character_event_publish_failed',
+      correlationId: expect.any(String),
+      roomId: 'r2',
+      actorId: 'c2',
+      errorMessage: 'publish failed'
+    }));
     errorSpy.mockRestore();
   });
 
@@ -230,6 +284,31 @@ describe('character-service app', () => {
     await expect(request(app).patch('/characters/c6').send({ level: 2 })).resolves.toMatchObject({ status: 200 });
     await expect(request(app).delete('/characters/c6')).resolves.toMatchObject({ status: 204 });
     expect(publisher.publish).toHaveBeenCalledTimes(2);
+    errorSpy.mockRestore();
+  });
+
+  it('emits support.failure for unexpected errors without changing the response', async () => {
+    const model = buildCharacterModel();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.mocked(model.find).mockReturnValue({
+      sort: vi.fn().mockRejectedValue(new Error('database unavailable'))
+    });
+
+    const response = await request(createApp(model))
+      .get('/characters')
+      .set('x-correlation-id', 'corr-error')
+      .query({ roomId: 'r1' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ message: 'Internal server error', details: 'database unavailable' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'character',
+      code: 'unexpected_error',
+      correlationId: 'corr-error',
+      httpStatus: 500,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
     errorSpy.mockRestore();
   });
 });

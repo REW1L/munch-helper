@@ -2,6 +2,7 @@ import { ApiGatewayManagementApiClient } from '@aws-sdk/client-apigatewaymanagem
 import { parseConnectRequest, parseNotificationEvent } from './app';
 import { connectToMongo } from './db';
 import { listRoomConnections, removeConnection, sendEventToConnections, upsertConnection } from './service';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 const mongoUri = process.env.ROOM_NOTIFICATIONS_MONGO_URI || 'mongodb://localhost:27017/munch_room_notifications_service';
 const wsEndpoint = process.env.ROOM_NOTIFICATIONS_WS_ENDPOINT;
@@ -124,12 +125,23 @@ const handleWebSocketEvent = async (event: unknown) => {
 };
 
 export const handler = async (event: unknown) => {
-  await connectToMongo(mongoUri);
+  try {
+    await connectToMongo(mongoUri);
 
-  const snsRecords = parseSnsRecords(event);
-  if (snsRecords.length > 0) {
-    return handleSnsEvent(event);
+    const snsRecords = parseSnsRecords(event);
+    if (snsRecords.length > 0) {
+      return await handleSnsEvent(event);
+    }
+
+    return await handleWebSocketEvent(event);
+  } catch (error) {
+    logSupportFailure({
+      subsystem: 'session_continuity',
+      code: 'unexpected_error',
+      message: 'Unhandled error in room-notifications-service',
+      correlationId: null,
+      ...extractErrorFields(error)
+    });
+    throw error;
   }
-
-  return handleWebSocketEvent(event);
 };

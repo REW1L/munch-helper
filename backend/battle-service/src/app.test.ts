@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { describe, expect, it, vi } from 'vitest';
-import { createApp, type BattleLike, type BattleModelLike } from './app';
+import { createApp, readCorrelationHeader, type BattleLike, type BattleModelLike } from './app';
 import { FanOutBattleEventPublisher } from './publisher';
 
 function buildBattle(overrides: Partial<BattleLike> = {}): BattleLike {
@@ -70,9 +70,58 @@ describe('battle-service app', () => {
     }));
   });
 
+  it('uses inbound correlation id on response and published event', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findOne).mockResolvedValue(null);
+    vi.mocked(model.create).mockResolvedValue(buildBattle());
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles')
+      .set('x-correlation-id', 'corr-header')
+      .send({ roomId: 'room-1', name: 'Battle' });
+
+    expect(response.status).toBe(201);
+    expect(response.headers['x-correlation-id']).toBe('corr-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'corr-header' }));
+  });
+
+  it('falls back to x-request-id for published correlation id', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findOne).mockResolvedValue(null);
+    vi.mocked(model.create).mockResolvedValue(buildBattle());
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles')
+      .set('x-request-id', 'request-header')
+      .send({ roomId: 'room-1', name: 'Battle' });
+
+    expect(response.headers['x-correlation-id']).toBe('request-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'request-header' }));
+  });
+
+  it('strips CR/LF from inbound correlation id without crashing the request', () => {
+    // Cannot exercise this end-to-end via supertest — superagent rejects outgoing headers with
+    // CR/LF before they ever reach the server (Node's http client also enforces RFC 7230 §3.2.6).
+    // Test the sanitisation helper directly: the contract is that the value returned to the
+    // middleware is safe to pass to res.setHeader (which would otherwise throw ERR_INVALID_CHAR).
+    expect(readCorrelationHeader('foo\r\nX-Injected: bar')).toBe('fooX-Injected: bar');
+    expect(readCorrelationHeader('clean')).toBe('clean');
+    expect(readCorrelationHeader('  trim-me  ')).toBe('trim-me');
+    expect(readCorrelationHeader('null\x00byte')).toBe('nullbyte');
+    expect(readCorrelationHeader('tab\there')).toBe('tabhere');
+    expect(readCorrelationHeader('del\x7Fchar')).toBe('delchar');
+    expect(readCorrelationHeader('\r\n   \r\n')).toBe('');
+    expect(readCorrelationHeader(undefined)).toBe('');
+    expect(readCorrelationHeader(['multi\r\nvalue', 'second'])).toBe('multivalue');
+    expect(readCorrelationHeader([] as unknown as string[])).toBe('');
+  });
+
   it('swallows a publisher failure on POST without failing the request', async () => {
     const model = buildBattleModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish down')) };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.findOne).mockResolvedValue(null);
     vi.mocked(model.create).mockResolvedValue(buildBattle());
 
@@ -82,6 +131,15 @@ describe('battle-service app', () => {
 
     expect(response.status).toBe(201);
     expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'battle',
+      code: 'battle_event_publish_failed',
+      correlationId: expect.any(String),
+      roomId: 'room-1',
+      actorId: 'battle-1',
+      errorMessage: 'publish down'
+    }));
+    errorSpy.mockRestore();
   });
 
   it('rejects a second active battle', async () => {
@@ -196,12 +254,25 @@ describe('battle-service app', () => {
 
   it('returns 502 for unexpected errors', async () => {
     const model = buildBattleModel();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.findOne).mockRejectedValue(new Error('database unavailable'));
 
-    const response = await request(createApp(model)).get('/battles').query({ roomId: 'room-1' });
+    const response = await request(createApp(model))
+      .get('/battles')
+      .set('x-correlation-id', 'corr-error')
+      .query({ roomId: 'room-1' });
 
     expect(response.status).toBe(502);
     expect(response.body).toEqual({ message: 'Unexpected error' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'battle',
+      code: 'unexpected_error',
+      correlationId: 'corr-error',
+      httpStatus: 502,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
+    errorSpy.mockRestore();
   });
 
   it('patches an active battle with full side replacements and trimmed name', async () => {

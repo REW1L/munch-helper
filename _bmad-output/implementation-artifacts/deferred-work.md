@@ -1,4 +1,12 @@
-## Deferred from: code review of 7-6-cross-platform-release-readiness-checklist (2026-05-23)
+## Deferred from: code review of 7-7-supportability-signals-failure-taxonomy (2026-05-23)
+
+- No length cap on `x-correlation-id` value in correlation middleware (`backend/character-service/src/app.ts:60-76`, `backend/battle-service/src/app.ts:118-133`) — an oversized header value is echoed back, propagated into every event payload and `support.failure` log line, and could push a single CloudWatch event past the 256 KB soft limit. Defensive hardening; pair with broader request-size guarding when added.
+- `extractErrorFields` writes raw `error.message` into the `support.failure` body without redaction (`backend/*/src/supportSignal.ts:52-60`). Mongo driver errors can include connection strings with credentials and full Mongoose validation docs that are operational secrets but not "user data" in AC2's narrow sense. Address as part of a broader log-redaction policy.
+- `extractErrorFields` does not unwrap `AggregateError`. When `FanOutBattleEventPublisher` fails via `Promise.allSettled`, the outer `AggregateError.message` is often empty and inner causes are lost. Revisit when AggregateError-emitting paths multiply.
+- `logSupportFailure` does not wrap `console.error` in `try/catch` (`backend/*/src/supportSignal.ts:33-49`). If a future structured-logging wrapper monkey-patches `console.error` with a broken serializer, the instrumentation itself can throw and crash the request path. Low likelihood today; revisit if a logging wrapper is introduced.
+- `log-service` subscriber `connectToMongo` cold-start failure is unhandled (`backend/log-service/src/subscriber.ts:29`) — no `support.failure` is emitted before the Lambda errors out. AC5 only requires the signal after a record is parsed; cold-start observability is out of scope here and belongs with the Lambda failure-mode story.
+
+
 
 - `battle-service` is omitted from `backend-ci-cd.yml` matrix (type-check + build only covers `user`, `room`, `character`, `room-notifications`, `log` at lines 30-38); SAM deploy still ships it. The 7.6 checklist line "no failed Lambda deployments for battle-service" is technically true (deploy errors surface), but a broken `battle-service` build/test could pass CI silently — pre-existing CI gap, not introduced by 7.6.
 - `BattleMongoUri` silently falls back to a sandbox cluster: `backend/sam/template.yaml:18-21` has `Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/…`, and the CD workflow validates four other Mongo URIs but never passes a battle one. Makes the 7.6 checklist claim "no release pipeline succeeds by silently falling back to … configuration" partially false. Fix in SAM/CD or trim the checklist line.

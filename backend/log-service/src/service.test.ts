@@ -99,6 +99,7 @@ describe('log-service service', () => {
       roomId: 'room-legacy',
       event_body: { characterId: 'char-legacy' },
       emittedAt: '2026-05-20T11:00:00.000Z',
+      correlationId: 'corr-legacy',
     }));
 
     expect(parsed).toEqual(expect.objectContaining({
@@ -106,6 +107,7 @@ describe('log-service service', () => {
       eventType: 'character_created',
       actorId: 'char-legacy',
       occurredAt: new Date('2026-05-20T11:00:00.000Z'),
+      correlationId: 'corr-legacy',
       summary: 'char-legacy created',
     }));
   });
