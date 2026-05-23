@@ -1,8 +1,9 @@
+import React from 'react';
 import { Stack } from 'expo-router';
-import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-const SUPPORT_EMAIL = 'ivan.danilov.work@gmail.com';
+import { SUPPORT_EMAIL } from '@/constants/releaseContent';
 
 export default function SupportPage() {
   const handleEmailPress = async () => {
@@ -17,19 +18,26 @@ export default function SupportPage() {
       >
         <Stack.Screen options={{ title: 'Support' }} />
 
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
           <Text style={styles.title}>Support</Text>
           <Text style={styles.description}>
-            Need help with Munch Helper? Contact me and include a short description of the issue.
+            Need help with Munch Helper rooms, characters, battles, or room history? Contact me
+            without creating an account and include a short description of the issue, the room code
+            if relevant, and what you expected to happen.
           </Text>
 
           <View style={styles.emailCard}>
             <Text style={styles.emailLabel}>Contact Email</Text>
-            <TouchableOpacity onPress={handleEmailPress} style={styles.emailButton}>
-              <Text style={styles.emailValue}>{SUPPORT_EMAIL}</Text>
+            <TouchableOpacity
+              accessibilityLabel={`Email support at ${SUPPORT_EMAIL}`}
+              accessibilityRole="button"
+              onPress={handleEmailPress}
+              style={styles.emailButton}
+            >
+              <Text selectable style={styles.emailValue}>{SUPPORT_EMAIL}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -41,11 +49,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   container: {
-    flex: 1,
     backgroundColor: '#3C3636',
     paddingHorizontal: 24,
     paddingVertical: 28,
     gap: 18,
+    flexGrow: 1,
   },
   title: {
     color: '#D4C26E',
