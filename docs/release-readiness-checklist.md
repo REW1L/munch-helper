@@ -124,6 +124,7 @@ When Stories 7.7 (Supportability Signals) and 7.8 (Diagnostic Validation Matrix)
 ## Release Evidence Record
 
 - [ ] [All] Preserve per-release evidence as a filled-in copy of `docs/release-readiness-checklist.md` whenever possible; expected: the copied record contains the Release Identity block, per-item Pass/Fail/N/A outcomes, named sign-offs, dates, and final Go/No-Go decision.
+- [ ] [All] Link the completed diagnostic validation matrix run for the same release candidate from `docs/release/runs/`; expected: every scenario in the run is `pass` or has an explicit waiver, and no blank or unresolved `fail` result remains.
 - [ ] [All] If a filled-in copy is not used, preserve a dated review issue or PR that links to the commit SHA, web artifact or CloudFront distribution, TestFlight build number, Play internal build number, and per-item Pass/Fail/N/A outcomes; expected: a past release decision can be reconstructed without relying on memory.
 - [ ] [All] At release time, store the preferred filled-in copy under `docs/release-history/YYYY-MM-DD-<release-version>.md`; expected: the folder is created by the first real release review, not by this checklist story.
 - [ ] [All] If the team chooses a different evidence system such as Linear, Confluence, or a GitHub issue label, record that exact location in the Evidence location field for the release and keep using the same location for future releases.
