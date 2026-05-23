@@ -70,9 +70,41 @@ describe('battle-service app', () => {
     }));
   });
 
+  it('uses inbound correlation id on response and published event', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findOne).mockResolvedValue(null);
+    vi.mocked(model.create).mockResolvedValue(buildBattle());
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles')
+      .set('x-correlation-id', 'corr-header')
+      .send({ roomId: 'room-1', name: 'Battle' });
+
+    expect(response.status).toBe(201);
+    expect(response.headers['x-correlation-id']).toBe('corr-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'corr-header' }));
+  });
+
+  it('falls back to x-request-id for published correlation id', async () => {
+    const model = buildBattleModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findOne).mockResolvedValue(null);
+    vi.mocked(model.create).mockResolvedValue(buildBattle());
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/battles')
+      .set('x-request-id', 'request-header')
+      .send({ roomId: 'room-1', name: 'Battle' });
+
+    expect(response.headers['x-correlation-id']).toBe('request-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'request-header' }));
+  });
+
   it('swallows a publisher failure on POST without failing the request', async () => {
     const model = buildBattleModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish down')) };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.findOne).mockResolvedValue(null);
     vi.mocked(model.create).mockResolvedValue(buildBattle());
 
@@ -82,6 +114,15 @@ describe('battle-service app', () => {
 
     expect(response.status).toBe(201);
     expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'battle',
+      code: 'battle_event_publish_failed',
+      correlationId: expect.any(String),
+      roomId: 'room-1',
+      actorId: 'battle-1',
+      errorMessage: 'publish down'
+    }));
+    errorSpy.mockRestore();
   });
 
   it('rejects a second active battle', async () => {
@@ -196,12 +237,25 @@ describe('battle-service app', () => {
 
   it('returns 502 for unexpected errors', async () => {
     const model = buildBattleModel();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     vi.mocked(model.findOne).mockRejectedValue(new Error('database unavailable'));
 
-    const response = await request(createApp(model)).get('/battles').query({ roomId: 'room-1' });
+    const response = await request(createApp(model))
+      .get('/battles')
+      .set('x-correlation-id', 'corr-error')
+      .query({ roomId: 'room-1' });
 
     expect(response.status).toBe(502);
     expect(response.body).toEqual({ message: 'Unexpected error' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'battle',
+      code: 'unexpected_error',
+      correlationId: 'corr-error',
+      httpStatus: 502,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
+    errorSpy.mockRestore();
   });
 
   it('patches an active battle with full side replacements and trimmed name', async () => {

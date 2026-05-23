@@ -161,4 +161,24 @@ describe('room-service app', () => {
     expect(response.status).toBe(502);
     expect(response.body).toMatchObject({ message: 'Failed to create default character while joining room' });
   });
+
+  it('emits support.failure for unexpected errors without changing the response', async () => {
+    const deps = buildDeps();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.mocked(deps.roomModel.findById).mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(createApp(deps)).post('/rooms/associations').send({ roomId: 'r1', userId: 'u1' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ message: 'Internal server error', details: 'database unavailable' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'room',
+      code: 'unexpected_error',
+      correlationId: null,
+      httpStatus: 500,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
+    errorSpy.mockRestore();
+  });
 });

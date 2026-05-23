@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
@@ -6,6 +7,7 @@ import {
   NoopCharacterEventPublisher,
   createCharacterEventPayload
 } from './publisher';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 export interface CharacterLike {
   id: string;
@@ -54,6 +56,26 @@ const normalizeRoutePrefix = (value: string | undefined): string => {
   const withoutTrailingSlash = withLeadingSlash.replace(/\/+$/, '');
   return withoutTrailingSlash || '/';
 };
+
+const readCorrelationHeader = (value: string | string[] | undefined): string => {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || '';
+  }
+  return value?.trim() || '';
+};
+
+const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  const correlationId = readCorrelationHeader(req.headers['x-correlation-id'])
+    || readCorrelationHeader(req.headers['x-request-id'])
+    || randomUUID();
+
+  res.locals.correlationId = correlationId;
+  res.setHeader('x-correlation-id', correlationId);
+  next();
+};
+
+const getCorrelationId = (res: Response): string | null =>
+  (res.locals.correlationId as string | undefined) ?? null;
 
 export function createApp(characterModel: CharacterModelLike, options: CreateCharacterAppOptions = {}) {
   const app = express();
@@ -165,6 +187,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   app.use(cors());
   app.use(morgan('dev'));
   app.use(express.json());
+  app.use(correlationIdMiddleware);
 
   if (routePrefix !== '/') {
     // Lambda events may contain stage-prefixed URLs; strip once so route handlers stay unchanged.
@@ -269,7 +292,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_created',
             roomId: character.roomId,
-            character: toPayloadCharacter(character)
+            character: toPayloadCharacter(character),
+            correlationId: getCorrelationId(res) ?? undefined
           })
         );
         console.info('[character-service] character_created event queued', {
@@ -277,6 +301,15 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           characterId: character.id
         });
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'character',
+          code: 'character_event_publish_failed',
+          message: 'Failed to publish character_created event',
+          correlationId: getCorrelationId(res),
+          roomId: character.roomId,
+          actorId: character.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish character_created event', error);
       }
 
@@ -355,7 +388,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
             event: 'character_updated',
             roomId: character.roomId,
             character: toPayloadCharacter(character),
-            changes: buildCharacterChanges(previousCharacter, character, updates)
+            changes: buildCharacterChanges(previousCharacter, character, updates),
+            correlationId: getCorrelationId(res) ?? undefined
           })
         );
         console.info('[character-service] character_updated event queued', {
@@ -363,6 +397,15 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           characterId: character.id
         });
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'character',
+          code: 'character_event_publish_failed',
+          message: 'Failed to publish character_updated event',
+          correlationId: getCorrelationId(res),
+          roomId: character.roomId,
+          actorId: character.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish character_updated event', error);
       }
 
@@ -395,7 +438,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           createCharacterEventPayload({
             event: 'character_deleted',
             roomId: character.roomId,
-            character: toPayloadCharacter(character)
+            character: toPayloadCharacter(character),
+            correlationId: getCorrelationId(res) ?? undefined
           })
         );
         console.info('[character-service] character_deleted event queued', {
@@ -403,6 +447,15 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           characterId: character.id
         });
       } catch (error) {
+        logSupportFailure({
+          subsystem: 'character',
+          code: 'character_event_publish_failed',
+          message: 'Failed to publish character_deleted event',
+          correlationId: getCorrelationId(res),
+          roomId: character.roomId,
+          actorId: character.id,
+          ...extractErrorFields(error)
+        });
         console.error('Failed to publish character_deleted event', error);
       }
 
@@ -416,6 +469,16 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    const { errorName, errorMessage } = extractErrorFields(err);
+    logSupportFailure({
+      subsystem: 'character',
+      code: 'unexpected_error',
+      message: 'Unhandled error in character-service',
+      correlationId: getCorrelationId(res),
+      httpStatus: 500,
+      errorName,
+      errorMessage
+    });
     console.error('[character-service] unhandled error', { message: err.message, name: err.name });
     res.status(500).json({ message: 'Internal server error', details: err.message });
   });

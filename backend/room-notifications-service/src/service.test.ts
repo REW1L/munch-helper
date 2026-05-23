@@ -26,6 +26,7 @@ describe('room notification service', () => {
     mockRoomConnection.findOneAndUpdate.mockReset();
     mockRoomConnection.deleteOne.mockReset();
     mockRoomConnection.find.mockReset();
+    vi.restoreAllMocks();
   });
 
   it('upserts a connection record', async () => {
@@ -152,6 +153,7 @@ describe('room notification service', () => {
 
   it('propagates non-stale websocket delivery failures', async () => {
     const send = vi.fn().mockRejectedValue(new Error('delivery failed'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await expect(
       sendEventToConnections(
@@ -170,9 +172,19 @@ describe('room notification service', () => {
           roomId: 'ROOM01',
           event_body: { characterId: 'char-1' },
           emittedAt: '2026-03-13T00:00:00.000Z',
+          correlationId: 'corr-ws',
         }
       )
     ).rejects.toThrow('delivery failed');
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'session_continuity',
+      code: 'ws_event_delivery_failed',
+      correlationId: 'corr-ws',
+      roomId: 'ROOM01',
+      actorId: 'char-1',
+      sessionId: 'conn-err',
+      errorMessage: 'delivery failed'
+    }));
   });
 
   it('swallows disconnect failures', async () => {

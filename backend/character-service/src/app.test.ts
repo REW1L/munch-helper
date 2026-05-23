@@ -107,6 +107,35 @@ describe('character-service app', () => {
     );
   });
 
+  it('uses inbound correlation id on response and published event', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-corr', roomId: 'r-corr' }));
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/characters')
+      .set('x-correlation-id', 'corr-header')
+      .send({ roomId: 'r-corr', userId: 'u2', name: 'Mage', avatarId: 4, color: '#00aaff' });
+
+    expect(response.status).toBe(201);
+    expect(response.headers['x-correlation-id']).toBe('corr-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'corr-header' }));
+  });
+
+  it('falls back to x-request-id for published correlation id', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-corr', roomId: 'r-corr' }));
+
+    const response = await request(createApp(model, { publisher }))
+      .post('/characters')
+      .set('x-request-id', 'request-header')
+      .send({ roomId: 'r-corr', userId: 'u2', name: 'Mage', avatarId: 4, color: '#00aaff' });
+
+    expect(response.headers['x-correlation-id']).toBe('request-header');
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ correlationId: 'request-header' }));
+  });
+
   it('keeps create response successful when publishing fails', async () => {
     const model = buildCharacterModel();
     const publisher = { publish: vi.fn().mockRejectedValue(new Error('publish failed')) };
@@ -120,6 +149,14 @@ describe('character-service app', () => {
 
     expect(response.status).toBe(201);
     expect(publisher.publish).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'character',
+      code: 'character_event_publish_failed',
+      correlationId: expect.any(String),
+      roomId: 'r2',
+      actorId: 'c2',
+      errorMessage: 'publish failed'
+    }));
     errorSpy.mockRestore();
   });
 
@@ -230,6 +267,31 @@ describe('character-service app', () => {
     await expect(request(app).patch('/characters/c6').send({ level: 2 })).resolves.toMatchObject({ status: 200 });
     await expect(request(app).delete('/characters/c6')).resolves.toMatchObject({ status: 204 });
     expect(publisher.publish).toHaveBeenCalledTimes(2);
+    errorSpy.mockRestore();
+  });
+
+  it('emits support.failure for unexpected errors without changing the response', async () => {
+    const model = buildCharacterModel();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.mocked(model.find).mockReturnValue({
+      sort: vi.fn().mockRejectedValue(new Error('database unavailable'))
+    });
+
+    const response = await request(createApp(model))
+      .get('/characters')
+      .set('x-correlation-id', 'corr-error')
+      .query({ roomId: 'r1' });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ message: 'Internal server error', details: 'database unavailable' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'character',
+      code: 'unexpected_error',
+      correlationId: 'corr-error',
+      httpStatus: 500,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
     errorSpy.mockRestore();
   });
 });

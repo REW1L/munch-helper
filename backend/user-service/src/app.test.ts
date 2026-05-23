@@ -94,4 +94,24 @@ describe('user-service app', () => {
     expect(response.status).toBe(400);
     expect(response.body).toMatchObject({ message: 'No valid fields provided for update' });
   });
+
+  it('emits support.failure for unexpected errors without changing the response', async () => {
+    const userModel = buildUserModel();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.mocked(userModel.create).mockRejectedValue(new Error('database unavailable'));
+
+    const response = await request(createApp(userModel)).post('/users').send({ name: 'Alice', avatarId: 2 });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ message: 'Internal server error', details: 'database unavailable' });
+    expect(errorSpy).toHaveBeenCalledWith('support.failure', expect.objectContaining({
+      subsystem: 'session_continuity',
+      code: 'unexpected_error',
+      correlationId: null,
+      httpStatus: 500,
+      errorName: 'Error',
+      errorMessage: 'database unavailable'
+    }));
+    errorSpy.mockRestore();
+  });
 });

@@ -1,5 +1,6 @@
 import { connectToMongo } from './db';
 import { parseLogEvent, persistLogEvent } from './service';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 const mongoUri = process.env.LOG_MONGO_URI || 'mongodb://localhost:27017/munch_log_service';
 const topicArn = process.env.LOG_TOPIC_ARN;
@@ -30,8 +31,11 @@ export const handler = async (event: unknown) => {
   for (const message of messages) {
     const parsed = parseLogEvent(message);
     if (!parsed) {
-      console.warn('log.sns.invalid_event', {
-        message
+      logSupportFailure({
+        subsystem: 'log',
+        code: 'log_invalid_event',
+        message: 'SNS message failed parseLogEvent',
+        correlationId: null
       });
       continue;
     }
@@ -40,11 +44,14 @@ export const handler = async (event: unknown) => {
       await persistLogEvent(parsed);
       processed += 1;
     } catch (error) {
-      console.warn('log.sns.persist_failed', {
-        eventType: parsed.eventType,
+      logSupportFailure({
+        subsystem: 'log',
+        code: 'log_persist_failed',
+        message: 'Failed to persist log event',
+        correlationId: parsed.correlationId ?? null,
         roomId: parsed.roomId,
         actorId: parsed.actorId,
-        error
+        ...extractErrorFields(error)
       });
     }
   }

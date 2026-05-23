@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 export interface RoomLike {
   id: string;
@@ -216,6 +217,16 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    const { errorName, errorMessage } = extractErrorFields(err);
+    logSupportFailure({
+      subsystem: 'room',
+      code: 'unexpected_error',
+      message: 'Unhandled error in room-service',
+      correlationId: null,
+      httpStatus: 500,
+      errorName,
+      errorMessage
+    });
     res.status(500).json({ message: 'Internal server error', details: err.message });
   });
 

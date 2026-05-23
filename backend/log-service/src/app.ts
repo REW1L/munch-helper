@@ -2,6 +2,7 @@ import cors from 'cors';
 import express, { NextFunction, Request, Response } from 'express';
 import morgan from 'morgan';
 import { logsRouter } from './routes/logs';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 interface BuildLogAppOptions {
   routePrefix?: string;
@@ -46,6 +47,16 @@ export function buildLogApp(options: BuildLogAppOptions = {}) {
       return;
     }
 
+    const { errorName, errorMessage } = extractErrorFields(error);
+    logSupportFailure({
+      subsystem: 'log',
+      code: 'unexpected_error',
+      message: 'Unhandled error in log-service',
+      correlationId: null,
+      httpStatus: 502,
+      errorName,
+      errorMessage
+    });
     console.error('[log-service] unexpected error', error);
     response.status(502).json({ message: 'Unexpected error' });
   });

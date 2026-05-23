@@ -1,6 +1,7 @@
 import type { ApiGatewayManagementApiClient } from '@aws-sdk/client-apigatewaymanagementapi';
 import { DeleteConnectionCommand, GetConnectionCommand, PostToConnectionCommand } from '@aws-sdk/client-apigatewaymanagementapi';
 import { RoomConnection } from './models/RoomConnection';
+import { extractErrorFields, logSupportFailure } from './supportSignal';
 import type { ConnectionRecord, RoomNotificationEvent } from './types';
 
 export const upsertConnection = async (input: {
@@ -58,6 +59,13 @@ const isGoneConnectionError = (error: unknown): boolean => {
   return statusCode === 410;
 };
 
+const getEventActorId = (event: RoomNotificationEvent): string | undefined => {
+  if ('characterId' in event.event_body) {
+    return event.event_body.characterId;
+  }
+  return event.event_body.battleId;
+};
+
 export const sendEventToConnections = async (
   client: ApiGatewayManagementApiClient,
   connections: ConnectionRecord[],
@@ -97,6 +105,16 @@ export const sendEventToConnections = async (
           return;
         }
 
+        logSupportFailure({
+          subsystem: 'session_continuity',
+          code: 'ws_event_delivery_failed',
+          message: `Failed to deliver ${event.event}`,
+          correlationId: event.correlationId ?? null,
+          roomId: event.roomId,
+          actorId: getEventActorId(event),
+          sessionId: connection.connectionId,
+          ...extractErrorFields(error)
+        });
         console.error('room-notifications.event.delivery_failed', {
           event: event.event,
           roomId: event.roomId,

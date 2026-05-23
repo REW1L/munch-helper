@@ -105,7 +105,7 @@ development_status:
   7-4-automated-android-delivery: done
   7-5-release-facing-compliance-content: done
   7-6-cross-platform-release-readiness-checklist: done
-  7-7-supportability-signals-failure-taxonomy: ready-for-dev
+  7-7-supportability-signals-failure-taxonomy: review
   7-8-diagnostic-validation-matrix: ready-for-dev
   7-9-release-channel-availability-validation: ready-for-dev
   epic-7-retrospective: optional
