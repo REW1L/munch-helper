@@ -1,3 +1,9 @@
+## Deferred from: code review of 7-6-cross-platform-release-readiness-checklist (2026-05-23)
+
+- `battle-service` is omitted from `backend-ci-cd.yml` matrix (type-check + build only covers `user`, `room`, `character`, `room-notifications`, `log` at lines 30-38); SAM deploy still ships it. The 7.6 checklist line "no failed Lambda deployments for battle-service" is technically true (deploy errors surface), but a broken `battle-service` build/test could pass CI silently — pre-existing CI gap, not introduced by 7.6.
+- `BattleMongoUri` silently falls back to a sandbox cluster: `backend/sam/template.yaml:18-21` has `Default: mongodb+srv://sandbox.4ty9upc.mongodb.net/…`, and the CD workflow validates four other Mongo URIs but never passes a battle one. Makes the 7.6 checklist claim "no release pipeline succeeds by silently falling back to … configuration" partially false. Fix in SAM/CD or trim the checklist line.
+- Subsystem label divergence between Epic 7 narrative (`room state / character state / battle state / log history / session continuity`, used verbatim in this checklist per Scope Guard) and Story 7.7's implementation `Subsystem` enum (`'room' | 'character' | 'battle' | 'log' | 'session_continuity'`). Reconcile when 7.7/7.8 evolve the taxonomy or the forward-link in `Failure Mode & Release Blockers` is exercised.
+
 ## Deferred from: code review of 6-6-room-history-view-shows-character-events (2026-05-21)
 
 - `formatDisplayValue` renders nested-object diffs as `[object Object]` — `LogEntry`'s value formatter falls through to `String(value)` for plain objects, so a `payload.changes` entry where `prev`/`next` is an object renders the JS default. Story 6.1's character payload only carries flat scalar/array values today, so this is not exercised; revisit when event sources start emitting object-valued diffs (e.g. equipment maps, status objects). [frontend/components/munchkin/LogEntry.tsx — `formatDisplayValue` final `return String(value)` branch]
