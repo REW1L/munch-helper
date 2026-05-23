@@ -36,6 +36,17 @@ pulumi preview
 pulumi up
 ```
 
+### Store Submission URLs
+
+The iOS App Store and Google Play submissions should use these canonical release-facing URLs:
+
+- Privacy Policy: `https://helpamunch.click/privacy`
+- Support: `https://helpamunch.click/support`
+
+The routes are owned by Expo Router files at `frontend/app/privacy.tsx` and
+`frontend/app/support.tsx`. The frontend infrastructure workflow builds them with
+`npm run export:web` and Pulumi publishes the static export to `helpamunch.click`.
+
 ## CI/CD Workflows Found
 
 - `.github/workflows/backend-ci-cd.yml`

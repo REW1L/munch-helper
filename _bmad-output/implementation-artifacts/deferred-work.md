@@ -71,3 +71,8 @@
 - `BattleHistoryModal.test.tsx:357-363, 545` mocks `react-native`'s `Modal` to return `null` when `visible=false`, so the "renders no modal tree when entry is null" assertion is testing the mock, not the component (real RN `Modal` stays mounted with `visible={false}`). Hides any regression in real-modal close lifecycle.
 - `BattleHistoryModal.tsx:107-123` shows `"Removed character"` for every player participant during the cold-cache window before `useRoomCharacters` resolves. No `isLoading` branch surfaces a distinct loading state for the modal — accepted now because in practice the user has been in the room long enough for the characters query to be hot, but a follow-up could surface a skeleton/loading copy.
 - `LogEntry.tsx:252, 284`: `getBattleDisplayName` is exported and used by the `battle_started` branch but the `battle_concluded`/`battle_discarded` branches inline the same `battle?.name || entry.summary || 'Battle'` expression. Centralizing reduces drift risk if the display-name rule ever changes.
+
+
+## Deferred from: code review of 7-5-release-facing-compliance-content (2026-05-23)
+
+- Privacy page contact email (`frontend/app/privacy.tsx:83-87`) is plain `<Text>` with no `onPress`, `selectable`, `accessibilityRole`, or `accessibilityLabel`. The Support page already provides a tappable, labelled email button. Out of scope for story 7.5 (AC2 only requires the contact info to remain visible on supported phone sizes; AC4's tappable contact requirement is bound to the Support page). Follow-up: make the privacy contact email at least `selectable` and ideally tappable with parity accessibility props to match Support, in a separate UX/accessibility cleanup story.
