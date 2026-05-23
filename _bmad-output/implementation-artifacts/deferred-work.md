@@ -101,3 +101,6 @@
 ## Deferred from: code review of 7-5-release-facing-compliance-content (2026-05-23)
 
 - Privacy page contact email (`frontend/app/privacy.tsx:83-87`) is plain `<Text>` with no `onPress`, `selectable`, `accessibilityRole`, or `accessibilityLabel`. The Support page already provides a tappable, labelled email button. Out of scope for story 7.5 (AC2 only requires the contact info to remain visible on supported phone sizes; AC4's tappable contact requirement is bound to the Support page). Follow-up: make the privacy contact email at least `selectable` and ideally tappable with parity accessibility props to match Support, in a separate UX/accessibility cleanup story.
+## Deferred from: code review of 7-9-release-channel-availability-validation (2026-05-24)
+
+- No CI integration or npm script entry for `scripts/validate-web-channel.mjs` — intentional per spec; the script is operator-run during release-readiness review, not a CI gate.

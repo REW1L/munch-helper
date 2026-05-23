@@ -54,6 +54,18 @@ The routes are owned by Expo Router files at `frontend/app/privacy.tsx` and
 - `.github/workflows/android-play-store-cd.yml`
 - `.github/workflows/ios-app-store-cd.yml`
 
+### Release Channel Validation
+
+Story 7.9 release channel validation produces a repeatable availability record for the current web, iOS, and Android release candidate. Run the playbook at `docs/release-validation/channel-availability-playbook.md`, start from the evidence template at `docs/release-evidence/TEMPLATE-channel-availability.md`, and save completed records under `docs/release-evidence/`.
+
+The web reachability check is automated with `scripts/validate-web-channel.mjs`:
+
+```bash
+node scripts/validate-web-channel.mjs --version <release-version>
+```
+
+Prior evidence examples include [1.1.1-2026-05-23-channel-availability.md](release-evidence/1.1.1-2026-05-23-channel-availability.md).
+
 ## Operational Notes
 
 - CloudFront routes `/api/*` to the backend HTTP API and `/ws*` to the backend WebSocket API.

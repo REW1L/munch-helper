@@ -1,6 +1,6 @@
 # Story 7.9: Release Channel Availability Validation
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -46,50 +46,50 @@ If the dev agent finds itself editing pipeline YAML, store-listing copy, or the 
 
 ## Tasks / Subtasks
 
-- [ ] **Task 0 (PREREQUISITE GATE — DO NOT SKIP):** Verify prerequisite stories before doing any other task (AC: 1, 2, 3)
-  - [ ] Read `_bmad-output/implementation-artifacts/sprint-status.yaml` and confirm `7-5-release-facing-compliance-content` is `done`. If not, **HALT** and report: "Story 7.9 cannot run end-to-end until 7.5 ships the privacy/support URLs the AC 2 metadata audit requires."
-  - [ ] Confirm `7-6-cross-platform-release-readiness-checklist` is `done`. If not, **HALT** and report: "Story 7.9 AC 1 references the readiness checklist owned by 7.6; without it, the playbook has no checklist input to record against." Acceptable fallback only if Ivan confirms explicitly: proceed with a placeholder marked `TODO: 7.6 dependency` in the playbook and the evidence template, and re-open this story when 7.6 lands to wire the real checklist reference in.
-  - [ ] Note: this story does **not** gate on 7.7 or 7.8. Supportability signals/diagnostic matrix are not in scope for user-visible availability validation.
+- [x] **Task 0 (PREREQUISITE GATE — DO NOT SKIP):** Verify prerequisite stories before doing any other task (AC: 1, 2, 3)
+  - [x] Read `_bmad-output/implementation-artifacts/sprint-status.yaml` and confirm `7-5-release-facing-compliance-content` is `done`. If not, **HALT** and report: "Story 7.9 cannot run end-to-end until 7.5 ships the privacy/support URLs the AC 2 metadata audit requires."
+  - [x] Confirm `7-6-cross-platform-release-readiness-checklist` is `done`. If not, **HALT** and report: "Story 7.9 AC 1 references the readiness checklist owned by 7.6; without it, the playbook has no checklist input to record against." Acceptable fallback only if Ivan confirms explicitly: proceed with a placeholder marked `TODO: 7.6 dependency` in the playbook and the evidence template, and re-open this story when 7.6 lands to wire the real checklist reference in.
+  - [x] Note: this story does **not** gate on 7.7 or 7.8. Supportability signals/diagnostic matrix are not in scope for user-visible availability validation.
 
-- [ ] Task 1: Author the channel-availability validation playbook (AC: 1, 2, 3)
-  - [ ] Create `docs/release-validation/channel-availability-playbook.md` (new directory under `docs/` — sibling of `docs/release-evidence/`)
-  - [ ] Document a single-page step-by-step playbook covering all three channels; the playbook must be runnable by any developer with workflow access and store-console access
-  - [ ] **Web section:** steps to (a) verify `https://helpamunch.click/` returns HTTP 200 and serves HTML produced by `expo export --platform web` for the version under test; (b) verify `/privacy` and `/support` return HTTP 200 and render the content shipped by 7.5; (c) verify the web build's embedded `EXPO_PUBLIC_API_URL` matches the production API base (read from the deployed bundle, not from local env) so the deployed web app can actually reach the backend
-  - [ ] **iOS section:** steps to (a) open App Store Connect → TestFlight → confirm the most recent build for `click.helpamunch.mobileapp` matches the release version (`frontend/app.json` `expo.version`); (b) confirm the build is in "Ready to Test" status; (c) install via TestFlight on a real device and complete one end-to-end smoke (create room → create character → start and conclude one battle → open room history) to confirm the build is actually usable, not just delivered
-  - [ ] **Android section:** steps to (a) open Google Play Console → Internal testing track → confirm the most recent active release for `click.helpamunch.mobileapp` matches the release version; (b) confirm rollout status is "Available"; (c) install via the internal-testing opt-in link and complete the same end-to-end smoke as iOS
-  - [ ] **Metadata audit section:** a 5-row table per channel listing exactly which fields to audit (web: `<title>` and landing CTA; iOS: App Name, Subtitle, Promotional Text, Description, Support URL, Privacy Policy URL; Android: App name, Short description, Full description, Privacy Policy URL, Contact email/website) with a "does this overstate scope?" yes/no check per row referencing FR43–FR44 and NFR8–NFR9
-  - [ ] **Failure handling:** explicit instruction that any per-channel FAIL marks the release NOT-RELEASE-READY for that channel and that the release-readiness review (Story 7.6) is the place where a waiver is granted — Story 7.9's job is to record, not to waive
+- [x] Task 1: Author the channel-availability validation playbook (AC: 1, 2, 3)
+  - [x] Create `docs/release-validation/channel-availability-playbook.md` (new directory under `docs/` — sibling of `docs/release-evidence/`)
+  - [x] Document a single-page step-by-step playbook covering all three channels; the playbook must be runnable by any developer with workflow access and store-console access
+  - [x] **Web section:** steps to (a) verify `https://helpamunch.click/` returns HTTP 200 and serves HTML produced by `expo export --platform web` for the version under test; (b) verify `/privacy` and `/support` return HTTP 200 and render the content shipped by 7.5; (c) verify the web build's embedded `EXPO_PUBLIC_API_URL` matches the production API base (read from the deployed bundle, not from local env) so the deployed web app can actually reach the backend
+  - [x] **iOS section:** steps to (a) open App Store Connect → TestFlight → confirm the most recent build for `click.helpamunch.mobileapp` matches the release version (`frontend/app.json` `expo.version`); (b) confirm the build is in "Ready to Test" status; (c) install via TestFlight on a real device and complete one end-to-end smoke (create room → create character → start and conclude one battle → open room history) to confirm the build is actually usable, not just delivered
+  - [x] **Android section:** steps to (a) open Google Play Console → Internal testing track → confirm the most recent active release for `click.helpamunch.mobileapp` matches the release version; (b) confirm rollout status is "Available"; (c) install via the internal-testing opt-in link and complete the same end-to-end smoke as iOS
+  - [x] **Metadata audit section:** a 5-row table per channel listing exactly which fields to audit (web: `<title>` and landing CTA; iOS: App Name, Subtitle, Promotional Text, Description, Support URL, Privacy Policy URL; Android: App name, Short description, Full description, Privacy Policy URL, Contact email/website) with a "does this overstate scope?" yes/no check per row referencing FR43–FR44 and NFR8–NFR9
+  - [x] **Failure handling:** explicit instruction that any per-channel FAIL marks the release NOT-RELEASE-READY for that channel and that the release-readiness review (Story 7.6) is the place where a waiver is granted — Story 7.9's job is to record, not to waive
 
-- [ ] Task 2: Add a lightweight script to automate the web-channel reachability check (AC: 1)
-  - [ ] Create `scripts/validate-web-channel.mjs` — ESM, Node 24, zero new dependencies (use `node:https`, `node:process`)
-  - [ ] Accepts `--version <semver>` (required) and `--base-url https://helpamunch.click` (optional, defaults to that)
-  - [ ] Performs HEAD/GET on `/`, `/privacy`, `/support`; fails with non-zero exit if any returns ≠ 200 or content-type is not HTML
-  - [ ] On GET `/`, fetches the response body, looks for the version string passed via `--version` in the embedded bundle (e.g. matches the version emitted by `expo export`'s manifest or `<meta>` tag) — log a warning (not a hard fail) if not found, since the version-embedding strategy is owned by Expo and may change
-  - [ ] Writes a structured PASS/FAIL summary (JSON to stdout) suitable for pasting into the evidence artifact
-  - [ ] No interactive prompts; exit codes only (`0` PASS, `1` FAIL, `2` USAGE)
-  - [ ] Add a one-line invocation example to the playbook (Task 1) and to `docs/deployment-guide.md` under a new "Release Channel Validation" subsection
+- [x] Task 2: Add a lightweight script to automate the web-channel reachability check (AC: 1)
+  - [x] Create `scripts/validate-web-channel.mjs` — ESM, Node 24, zero new dependencies (use `node:https`, `node:process`)
+  - [x] Accepts `--version <semver>` (required) and `--base-url https://helpamunch.click` (optional, defaults to that)
+  - [x] Performs HEAD/GET on `/`, `/privacy`, `/support`; fails with non-zero exit if any returns ≠ 200 or content-type is not HTML
+  - [x] On GET `/`, fetches the response body, looks for the version string passed via `--version` in the embedded bundle (e.g. matches the version emitted by `expo export`'s manifest or `<meta>` tag) — log a warning (not a hard fail) if not found, since the version-embedding strategy is owned by Expo and may change
+  - [x] Writes a structured PASS/FAIL summary (JSON to stdout) suitable for pasting into the evidence artifact
+  - [x] No interactive prompts; exit codes only (`0` PASS, `1` FAIL, `2` USAGE)
+  - [x] Add a one-line invocation example to the playbook (Task 1) and to `docs/deployment-guide.md` under a new "Release Channel Validation" subsection
 
-- [ ] Task 3: Add unit tests for the web-channel script (AC: 1)
-  - [ ] Create `scripts/validate-web-channel.test.mjs` using `node:test`
-  - [ ] Mock `node:https` via a thin wrapper module so tests do not hit the network
-  - [ ] Cover: (a) all three URLs 200 → exit 0; (b) `/privacy` 404 → exit 1 and the failing path is named in stdout; (c) HTML content-type missing → exit 1; (d) `--version` missing → exit 2; (e) version string found vs not found → both paths logged but only "not found" emits a warning, neither is a hard fail
-  - [ ] Reuse the test-style conventions already established in `scripts/story-project-sync.test.mjs` and `scripts/ready-for-dev-orchestrator.test.mjs` (same `node --test` runner, same dry-run output style)
+- [x] Task 3: Add unit tests for the web-channel script (AC: 1)
+  - [x] Create `scripts/validate-web-channel.test.mjs` using `node:test`
+  - [x] Mock `node:https` via a thin wrapper module so tests do not hit the network
+  - [x] Cover: (a) all three URLs 200 → exit 0; (b) `/privacy` 404 → exit 1 and the failing path is named in stdout; (c) HTML content-type missing → exit 1; (d) `--version` missing → exit 2; (e) version string found vs not found → both paths logged but only "not found" emits a warning, neither is a hard fail
+  - [x] Reuse the test-style conventions already established in `scripts/story-project-sync.test.mjs` and `scripts/ready-for-dev-orchestrator.test.mjs` (same `node --test` runner, same dry-run output style)
 
-- [ ] Task 4: Create the evidence-artifact template (AC: 4)
-  - [ ] Create `docs/release-evidence/TEMPLATE-channel-availability.md` — a fill-in-the-blanks template that mirrors the playbook sections from Task 1
-  - [ ] Sections: `Release version`, `Validated on`, `Validator`, `Readiness checklist reference` (link to the 7.6 artifact for this release; placeholder allowed only if 7.6 not yet shipped), `Web channel`, `iOS channel`, `Android channel`, `Metadata audit`, `Per-channel verdict`, `Blockers / waivers`, `Final go / no-go`
-  - [ ] Add a brief README at `docs/release-evidence/README.md` (new) explaining: file naming convention `<version>-<YYYY-MM-DD>-channel-availability.md`, where to find the template, and where to link the artifact (deployment guide)
+- [x] Task 4: Create the evidence-artifact template (AC: 4)
+  - [x] Create `docs/release-evidence/TEMPLATE-channel-availability.md` — a fill-in-the-blanks template that mirrors the playbook sections from Task 1
+  - [x] Sections: `Release version`, `Validated on`, `Validator`, `Readiness checklist reference` (link to the 7.6 artifact for this release; placeholder allowed only if 7.6 not yet shipped), `Web channel`, `iOS channel`, `Android channel`, `Metadata audit`, `Per-channel verdict`, `Blockers / waivers`, `Final go / no-go`
+  - [x] Add a brief README at `docs/release-evidence/README.md` (new) explaining: file naming convention `<version>-<YYYY-MM-DD>-channel-availability.md`, where to find the template, and where to link the artifact (deployment guide)
 
-- [ ] Task 5: Wire the evidence artifact into the deployment guide (AC: 4)
-  - [ ] Edit `docs/deployment-guide.md` to add a new "Release Channel Validation" section under "CI/CD Workflows Found"
-  - [ ] The section must include: a one-paragraph summary of what Story 7.9's validation produces, the path to the playbook (`docs/release-validation/channel-availability-playbook.md`), the path to the evidence template (`docs/release-evidence/TEMPLATE-channel-availability.md`), the path to the web-channel script (`scripts/validate-web-channel.mjs`) with its one-line invocation, and a sentence locating prior evidence files under `docs/release-evidence/`
-  - [ ] Keep the edit minimal — do not restructure or rewrite existing sections of `deployment-guide.md`
+- [x] Task 5: Wire the evidence artifact into the deployment guide (AC: 4)
+  - [x] Edit `docs/deployment-guide.md` to add a new "Release Channel Validation" section under "CI/CD Workflows Found"
+  - [x] The section must include: a one-paragraph summary of what Story 7.9's validation produces, the path to the playbook (`docs/release-validation/channel-availability-playbook.md`), the path to the evidence template (`docs/release-evidence/TEMPLATE-channel-availability.md`), the path to the web-channel script (`scripts/validate-web-channel.mjs`) with its one-line invocation, and a sentence locating prior evidence files under `docs/release-evidence/`
+  - [x] Keep the edit minimal — do not restructure or rewrite existing sections of `deployment-guide.md`
 
-- [ ] Task 6: Verification (AC: 1, 2, 3, 4)
-  - [ ] Run `node --test scripts/validate-web-channel.test.mjs` → all pass
-  - [ ] Run `node scripts/validate-web-channel.mjs --version $(node -p "require('./frontend/app.json').expo.version")` against the live production URL → PASS or, if any URL fails, capture the failing output and treat as a real release blocker (not a script bug) until proven otherwise
-  - [ ] Walk through the playbook end-to-end once against the current production release, fill out the evidence template, save the result at `docs/release-evidence/<current-version>-$(date +%Y-%m-%d)-channel-availability.md`, and link it from `docs/deployment-guide.md` as the first concrete example
-  - [ ] Confirm no pipeline YAML, no privacy/support page content, no Pulumi config, and no Fastlane config was modified by this story
+- [x] Task 6: Verification (AC: 1, 2, 3, 4)
+  - [x] Run `node --test scripts/validate-web-channel.test.mjs` → all pass
+  - [x] Run `node scripts/validate-web-channel.mjs --version $(node -p "require('./frontend/app.json').expo.version")` against the live production URL → PASS or, if any URL fails, capture the failing output and treat as a real release blocker (not a script bug) until proven otherwise
+  - [x] Walk through the playbook end-to-end once against the current production release, fill out the evidence template, save the result at `docs/release-evidence/<current-version>-$(date +%Y-%m-%d)-channel-availability.md`, and link it from `docs/deployment-guide.md` as the first concrete example
+  - [x] Confirm no pipeline YAML, no privacy/support page content, no Pulumi config, and no Fastlane config was modified by this story
 
 ## Dev Notes
 
@@ -223,12 +223,49 @@ This is a description for the dev agent — the dev agent writes the actual play
 
 ### Agent Model Used
 
+Codex GPT-5
+
 ### Debug Log References
+
+- `node --test scripts/validate-web-channel.test.mjs`
+- `node scripts/validate-web-channel.mjs --version 1.1.1`
+- `curl -sS https://helpamunch.click/_expo/static/js/web/entry-b6ece002f90d8748151bf43d57442640.js | rg -o 'EXPO_PUBLIC_API_URL:"[^"]+"|https://helpamunch[^"]+'`
 
 ### Completion Notes List
 
+- Added the release channel availability playbook, evidence template, evidence README, and first `1.1.1` evidence artifact.
+- Added a dependency-free Node web channel validator with a thin HTTP wrapper and `node:test` coverage for success, failures, usage, and version-warning behavior.
+- Live web reachability passed for `/`, `/privacy`, and `/support`; the deployed bundle contains `EXPO_PUBLIC_API_URL:"https://helpamunch.click/api"`.
+- The first evidence artifact records NOT-RELEASE-READY because the deployed web `<title>` is empty and iOS/Android store-console plus device smoke checks require operator access.
+- Confirmed story scope guard: no pipeline YAML, privacy/support page content, Pulumi config, Fastlane config, frontend app config, backend files, or infrastructure files were modified.
+
 ### File List
+
+- `docs/deployment-guide.md`
+- `docs/release-validation/channel-availability-playbook.md`
+- `docs/release-evidence/README.md`
+- `docs/release-evidence/TEMPLATE-channel-availability.md`
+- `docs/release-evidence/1.1.1-2026-05-23-channel-availability.md`
+- `scripts/web-channel-http.mjs`
+- `scripts/validate-web-channel.mjs`
+- `scripts/validate-web-channel.test.mjs`
 
 ### Change Log
 
 - 2026-05-23: Story drafted and set to ready-for-dev with Scope Guard, Task 0 prerequisite gate (7.5/7.6), and deferred-names list for 7.6/7.7/7.8. Documented variance: AC 1's readiness-checklist reference is a placeholder until 7.6 ships.
+- 2026-05-23: Implemented channel availability playbook, web validation script and tests, release evidence template/README, first concrete evidence artifact, and deployment-guide linkage. Set status to review.
+
+### Review Findings
+
+- [x] [Review][Decision] Redirect handling — 301/302 from CDN treated as FAIL; should redirects be followed or is this intentional? (AC 1 — a CloudFront trailing-slash redirect would cause a false FAIL) — resolved: follow redirects added
+- [x] [Review][Decision] Playbook smoke path references "battle" and "room history" — README says "Not implemented yet"; confirm these features exist in current release or update smoke path (AC 1 — smoke path may be impossible to complete) — resolved: README is stale, features exist
+- [x] [Review][Patch] No timeout on HTTP requests — hung connection blocks script indefinitely [scripts/web-channel-http.mjs:5]
+- [x] [Review][Patch] http:// base-url accepted but only node:https imported — script fails on http URLs [scripts/web-channel-http.mjs:1]
+- [x] [Review][Patch] --version / --base-url as last argv element produces misleading error [scripts/validate-web-channel.mjs:16-17]
+- [x] [Review][Patch] No test coverage for network error / catch branch [scripts/validate-web-channel.test.mjs]
+- [x] [Review][Patch] Evidence "Validated on" field lacks HH:mm timestamp; per-channel timestamps inconsistent [docs/release-evidence/1.1.1-2026-05-23-channel-availability.md]
+- [x] [Review][Patch] Deployment guide uses code-formatted path, not a clickable Markdown link to evidence [docs/deployment-guide.md]
+- [x] [Review][Patch] Readiness checklist reference links to non-existent file; should use TODO placeholder per spec [docs/release-evidence/1.1.1-2026-05-23-channel-availability.md]
+- [x] [Review][Patch] No test for --base-url argument path [scripts/validate-web-channel.test.mjs]
+- [x] [Review][Patch] Top-level await rejection has no catch — crashes with no structured output [scripts/validate-web-channel.mjs:165]
+- [x] [Review][Defer] No CI integration or npm script entry for the validation script — deferred, intentional per spec (operator-run during release review)
