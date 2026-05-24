@@ -1,0 +1,11 @@
+type: object
+required: [name, avatarId]
+additionalProperties: false
+properties:
+  name:
+    type: string
+    minLength: 1
+    description: Non-empty after trim.
+  avatarId:
+    type: integer
+    description: Avatar id (index into the frontend avatar registry).

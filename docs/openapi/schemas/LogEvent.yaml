@@ -1,0 +1,40 @@
+type: object
+required: [id, roomId, eventType, actorId, summary, payload, occurredAt]
+properties:
+  id:
+    type: string
+    description: 24-hex Mongo ObjectId. Used as the cursor for `before` pagination.
+  roomId:
+    type: string
+  eventType:
+    type: string
+    enum:
+      - character_created
+      - character_updated
+      - character_deleted
+      - battle_started
+      - battle_concluded
+      - battle_discarded
+  actorId:
+    type: string
+    description: |
+      `characterId` for `character_*` events; `battleId` for `battle_*` events.
+  summary:
+    type: string
+    description: |
+      Human-readable line generated at write time by `buildSummary` in
+      log-service. Used as a fallback rendering when payload introspection
+      fails on the client.
+  payload:
+    description: |
+      The full internal event payload as published by character-service or
+      battle-service. Shape varies by `eventType`.
+  occurredAt:
+    type: string
+    format: date-time
+  createdAt:
+    type: string
+    format: date-time
+  updatedAt:
+    type: string
+    format: date-time

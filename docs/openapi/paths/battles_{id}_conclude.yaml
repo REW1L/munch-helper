@@ -1,0 +1,41 @@
+post:
+  tags:
+    - Battle Management
+  summary: Conclude active battle
+  description: |
+    Atomically transitions an active battle to `concluded` with the provided
+    `result`. Emits `battle_concluded` to both buses.
+  operationId: concludeBattle
+  parameters:
+    - $ref: ../parameters/BattleId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/ConcludeBattleRequest.yaml
+  responses:
+    "200":
+      description: Battle concluded
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Battle.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "404":
+      description: Battle not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "409":
+      description: Battle is not active
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

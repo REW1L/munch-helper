@@ -1,0 +1,7 @@
+name: logId
+in: path
+required: true
+schema:
+  type: string
+  pattern: "^[a-fA-F0-9]{24}$"
+description: 24-hex Mongo ObjectId of the log event.

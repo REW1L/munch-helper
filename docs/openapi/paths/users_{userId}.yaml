@@ -1,12 +1,30 @@
+get:
+  tags:
+    - User Management
+  summary: Get user
+  description: Returns a user by id.
+  operationId: getUser
+  parameters:
+    - $ref: ../parameters/UserId.yaml
+  responses:
+    "200":
+      description: User found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/User.yaml
+    "404":
+      description: User not found (also returned for malformed `userId`).
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
 patch:
   tags:
     - User Management
   summary: Update user
-  description: >
-    Updates user profile with new parameters and returns the updated user.
-
-    The source documentation does not specify an HTTP method; PATCH is used for
-    partial updates.
+  description: |
+    Partial update. At least one of `name` or `avatarId` must be provided.
   operationId: updateUser
   parameters:
     - $ref: ../parameters/UserId.yaml
@@ -23,5 +41,15 @@ patch:
         application/json:
           schema:
             $ref: ../schemas/User.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
     "404":
       description: User not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

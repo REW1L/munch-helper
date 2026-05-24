@@ -1,0 +1,47 @@
+get:
+  tags:
+    - Room History
+  summary: List room history events
+  description: |
+    Cursor-paginated room history, newest first. The cursor is the `id` of the
+    last entry in the previous page; pass it as `before`. A page shorter than
+    `limit` (including `[]`) means the history is exhausted.
+  operationId: listLogEvents
+  parameters:
+    - name: roomId
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    - name: limit
+      in: query
+      required: false
+      description: Default 50. Capped at 100.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    - name: before
+      in: query
+      required: false
+      description: 24-hex Mongo ObjectId. Returns events older than this id.
+      schema:
+        type: string
+        pattern: "^[a-fA-F0-9]{24}$"
+  responses:
+    "200":
+      description: Page of log events.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../schemas/LogEvent.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

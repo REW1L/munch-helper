@@ -1,27 +1,33 @@
 type: object
+description: |
+  Partial update. Allowed keys are `name`, `avatarId`, `color`, `level`, `power`,
+  `class`, `race`, `gender`, `userId`. At least one allowed key must be present.
 additionalProperties: false
+minProperties: 1
 properties:
   name:
     type: string
-  avatar:
+    minLength: 1
+  avatarId:
     type: integer
   color:
     type: string
     pattern: "^#[0-9A-Fa-f]{6}$"
-    description: Hex color code in #RRGGBB format
+    description: Hex color code in #RRGGBB format. The server normalizes to upper case.
   level:
     type: integer
   power:
     type: integer
   class:
-    type: array
-    items:
-      type: string
+    type: string
+    description: JSON-encoded string array (legacy shape).
   race:
-    type: array
-    items:
-      type: string
+    type: string
+    description: JSON-encoded string array (legacy shape).
   gender:
-    type: array
-    items:
-      type: string
+    type: string
+    description: JSON-encoded string array (legacy shape).
+  userId:
+    type:
+      - string
+      - "null"

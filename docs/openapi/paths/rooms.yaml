@@ -2,7 +2,10 @@ post:
   tags:
     - Room Management
   summary: Create room
-  description: Creates a room for a room type and initializes it with a user.
+  description: |
+    Creates a Munchkin room and provisions a default character for the owner via
+    an internal call to character-service. If the character provisioning fails,
+    the room and any association are rolled back and a 502 is returned.
   operationId: createRoom
   requestBody:
     required: true
@@ -19,3 +22,13 @@ post:
             $ref: ../schemas/CreateRoomResponse.yaml
     "400":
       description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "502":
+      description: Failed to create default character for room owner
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

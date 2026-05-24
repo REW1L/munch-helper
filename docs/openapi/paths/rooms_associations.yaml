@@ -2,7 +2,9 @@ post:
   tags:
     - Room Management
   summary: Join room
-  description: Joins a room for a room type and initializes a user in it.
+  description: |
+    Joins an existing room. Idempotent on `(roomId, userId)`. Provisions a
+    default character via character-service when the user is new to the room.
   operationId: joinRoom
   requestBody:
     required: true
@@ -11,11 +13,35 @@ post:
         schema:
           $ref: ../schemas/JoinRoomRequest.yaml
   responses:
+    "200":
+      description: |
+        User is already a member of the room. The response body contains the
+        existing association with `alreadyJoined: true`.
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/JoinRoomResponse.yaml
     "201":
-      description: Room joined
+      description: "New association created. `alreadyJoined: false`."
       content:
         application/json:
           schema:
             $ref: ../schemas/JoinRoomResponse.yaml
     "400":
       description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "404":
+      description: Room not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "502":
+      description: Failed to create default character while joining the room
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

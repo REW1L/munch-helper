@@ -1,8 +1,25 @@
 type: object
-required: [userId, roomTypeId]
+required: [userId]
 additionalProperties: false
 properties:
-  userId:
-    type: string
   roomTypeId:
     type: string
+    enum: [munchkin]
+    default: munchkin
+    description: |
+      Only `munchkin` is supported today. Defaults to `munchkin` when omitted by
+      the room-service handler.
+  userId:
+    type: string
+    minLength: 1
+    description: User id of the owner; non-empty after trim.
+  userName:
+    type: string
+    description: |
+      Optional. Used as the default character's name when provisioning the
+      owner's character. Defaults to `Adventurer`.
+  avatarId:
+    type: integer
+    description: |
+      Optional. Used as the default character's avatar id when provisioning the
+      owner's character. Defaults to `1`.

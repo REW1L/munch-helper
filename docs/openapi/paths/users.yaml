@@ -2,8 +2,14 @@ post:
   tags:
     - User Management
   summary: Create user
-  description: Creates a user with random parameters and returns the created user.
+  description: Creates a user with the provided nickname and avatar id.
   operationId: createUser
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/CreateUserRequest.yaml
   responses:
     "201":
       description: User created
@@ -13,3 +19,7 @@ post:
             $ref: ../schemas/User.yaml
     "400":
       description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

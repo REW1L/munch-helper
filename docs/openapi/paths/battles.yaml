@@ -1,0 +1,80 @@
+get:
+  tags:
+    - Battle Management
+  summary: Get the active battle in a room
+  description: |
+    Returns the active battle for a room. Only `status=active` is supported; any
+    other status filter resolves to `null` to avoid leaking the active battle.
+  operationId: getActiveBattle
+  parameters:
+    - name: roomId
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 1
+    - name: status
+      in: query
+      required: false
+      description: |
+        Optional. Only `active` returns the battle; any other value resolves to
+        `null`.
+      schema:
+        type: string
+        enum:
+          - active
+  responses:
+    "200":
+      description: |
+        Either the active battle or `null` (when no battle is active or `status`
+        is not `active`).
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: ../schemas/Battle.yaml
+              - type: "null"
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+post:
+  tags:
+    - Battle Management
+  summary: Start a battle
+  description: |
+    Starts a new active battle in a room. At most one active battle per room is
+    enforced via a partial unique index plus a two-attempt retry to recover from
+    concurrent double-start races. Emits `battle_started` to both buses.
+  operationId: startBattle
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/StartBattleRequest.yaml
+  responses:
+    "201":
+      description: Battle started
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Battle.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "409":
+      description: |
+        A battle is already active for this room. The response includes
+        `activeBattleId` when the conflict was detected by the pre-create check;
+        the field is absent when the conflict surfaced from the unique-key race
+        recovery path.
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/StartBattleConflict.yaml

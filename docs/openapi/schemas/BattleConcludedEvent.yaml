@@ -1,0 +1,8 @@
+type: object
+required: [event, event_body]
+properties:
+  event:
+    type: string
+    const: battle_concluded
+  event_body:
+    $ref: ./BattleEventBody.yaml
