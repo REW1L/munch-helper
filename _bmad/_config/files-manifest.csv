@@ -1,5 +1,5 @@
 type,name,module,path,hash
-"yaml","manifest","_config","_config/manifest.yaml","9620d7e0e006ec3ac8206309701a13de8940187b58dca1f34ccc9430ff0cabb1"
+"yaml","manifest","_config","_config/manifest.yaml","bc825630464e348231cdd4e679cb63d477857d680fb0085504e6eefdb44deea9"
 "csv","documentation-requirements","bmm","bmm/1-analysis/bmad-document-project/documentation-requirements.csv","d1253b99e88250f2130516b56027ed706e643bfec3d99316727a4c6ec65c6c1d"
 "csv","domain-complexity","bmm","bmm/3-solutioning/bmad-create-architecture/data/domain-complexity.csv","3dc34ed39f1fc79a51f7b8fc92087edb7cd85c4393a891d220f2e8dd5a101c70"
 "csv","module-help","bmm","bmm/module-help.csv","b8c199e3bb160060887211772af2d21b785ce7a3d646699e39520f867af5400f"
@@ -188,7 +188,7 @@ type,name,module,path,hash
 "toml","customize","bmm","bmm/4-implementation/bmad-retrospective/customize.toml","0b032c342129732820ca2db386d2d5e26d033d8ac296388fc9f2e78765fab9fb"
 "toml","customize","bmm","bmm/4-implementation/bmad-sprint-planning/customize.toml","f7bde2f792e8604f26122ee792c5493e270710296044b07680db7d90e886caf3"
 "toml","customize","bmm","bmm/4-implementation/bmad-sprint-status/customize.toml","96261fd227befaa4685b0a5091d3e85299d4ae8e4404176b42f5ef2e2fb501bd"
-"yaml","config","bmm","bmm/config.yaml","df1bcb7c7969d88aa08aeb561fe65a55b17c0e2ad5dbbbcfa7bce6ed0c21c476"
+"yaml","config","bmm","bmm/config.yaml","de2ac94a3e4b7ee20549d8b060c2dfb68261f1adabb40e15d46675f670daa9ea"
 "yaml","sprint-status-template","bmm","bmm/4-implementation/bmad-sprint-planning/sprint-status-template.yaml","deeec135d875b107618dd41278349689b5f3dcb5894d7509909417a570f46fd9"
 "toml","config","config.toml","config.toml","0fb45559b61c746533450817f0855aaaabdb137c1a18453698ace081f34eaad9"
 "toml","config.user","config.user.toml","config.user.toml","0ecea01d04e2dfdb833f252b35638b42eabea98fb0fd3a90263e74e9937a5cba"
@@ -226,6 +226,6 @@ type,name,module,path,hash
 "py","list_customizable_skills","core","core/bmad-customize/scripts/list_customizable_skills.py","8787f542930b927789e7fdf12bc5a67ff08e19865903a5ad05ff2cc8fc426b66"
 "py","test_analyze_sources","core","core/bmad-distillator/scripts/tests/test_analyze_sources.py","d90525311f8010aaf8d7d9212a370468a697866190bae78c35d0aae9b7f23fdf"
 "py","test_list_customizable_skills","core","core/bmad-customize/scripts/tests/test_list_customizable_skills.py","b55fc2e454f245753874f359c18ade9f3ad04debd66176c6e6bf3e403ca9c812"
-"yaml","config","core","core/config.yaml","957289f28482cf3897c013fe22fa8a816dcb57d790d5f2fc77d62a6e05a7c3f0"
+"yaml","config","core","core/config.yaml","c22bbaa4733aadad0f5611c548896ce7263697aca493f04cb3237676fd4a7a0a"
 "py","resolve_config","scripts","scripts/resolve_config.py","8e326149d9170477ecc21aa2aa2389d8fbaa5d1cd95db2de2ad33029ce8ae528"
 "py","resolve_customization","scripts","scripts/resolve_customization.py","6dbf36a2fea13392426fdbaf4f074b6d9b93488a964d2d1bff2a5c1c3a1d506e"
