@@ -1,105 +1,48 @@
 {
   "workflow_version": "1.2.0",
   "timestamps": {
-    "started": "2026-03-19T22:50:33Z",
-    "last_updated": "2026-03-19T22:50:33Z"
+    "started": "2026-05-24T00:00:00Z",
+    "last_updated": "2026-05-24T00:00:00Z",
+    "completed": "2026-05-24T00:00:00Z"
   },
-  "mode": "initial_scan",
-  "scan_level": "quick",
+  "mode": "full_rescan",
+  "scan_level": "exhaustive",
   "project_root": "/Users/rew1l/own/munch-helper",
   "project_knowledge": "/Users/rew1l/own/munch-helper/docs",
   "project_types": [
-    {
-      "part_id": "backend",
-      "project_type_id": "backend",
-      "display_name": "Backend"
-    },
-    {
-      "part_id": "frontend",
-      "project_type_id": "mobile",
-      "display_name": "Frontend"
-    },
-    {
-      "part_id": "infrastructure",
-      "project_type_id": "infra",
-      "display_name": "Infrastructure"
-    }
+    {"part_id": "backend", "project_type_id": "backend", "display_name": "Backend"},
+    {"part_id": "frontend", "project_type_id": "mobile", "display_name": "Frontend"},
+    {"part_id": "infrastructure", "project_type_id": "infra", "display_name": "Infrastructure"}
   ],
   "completed_steps": [
-    {
-      "step": "step_1",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Classified repository as a multi-part monorepo with backend, frontend, and infrastructure parts"
-    },
-    {
-      "step": "step_2",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Inventoried existing README, OpenAPI, description, and workflow documentation under docs, backend, frontend, and infrastructure"
-    },
-    {
-      "step": "step_3",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Captured stack summaries for Express-based backend services, Expo Router frontend, and Pulumi infrastructure"
-    },
-    {
-      "step": "step_4",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Documented backend API contracts and data model summaries from OpenAPI and source file locations"
-    },
-    {
-      "step": "step_5",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Generated source tree analysis with annotated critical directories and entry points"
-    },
-    {
-      "step": "step_6",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Generated development and deployment guidance from package manifests, READMEs, Docker Compose, SAM, and Pulumi files"
-    },
-    {
-      "step": "step_7",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Documented cross-part integration architecture for HTTP, WebSocket, event bus, and stack output dependencies"
-    },
-    {
-      "step": "step_8",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Generated part-specific architecture documents for backend, frontend, and infrastructure"
-    },
-    {
-      "step": "step_9",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Wrote supporting overview, component inventory, development, deployment, API, and data model documents"
-    },
-    {
-      "step": "step_10",
-      "status": "completed",
-      "timestamp": "2026-03-19T22:50:33Z",
-      "summary": "Generated master documentation index"
-    }
+    {"step": "step_0.5", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Loaded documentation requirements CSV (12 project types) and selected exhaustive scan"},
+    {"step": "step_1", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Confirmed multi-part monorepo with backend (project_type_id=backend), frontend (mobile), infrastructure (infra)"},
+    {"step": "step_2", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Inventoried existing docs: 4 part READMEs, OpenAPI spec, descriptions, release evidence/validation, BMAD planning artifacts; user requested full coverage"},
+    {"step": "step_3", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Captured tech stacks: Node 20 + Express 5 + Mongoose 8 backend; Expo 55 + RN 0.83 frontend; Pulumi 3.203 infrastructure"},
+    {"step": "step_4", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Read every backend service src exhaustively; mapped routes, models, publishers, support-failure logger; produced api-contracts-backend.md and data-models-backend.md"},
+    {"step": "step_5", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Generated annotated source-tree-analysis.md covering backend, frontend, infrastructure, CI workflows, scripts, and maestro flows"},
+    {"step": "step_6", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Wrote development-guide-backend.md, development-guide-frontend.md, development-guide-infrastructure.md, and deployment-guide.md from package manifests, README, docker-compose, SAM, Pulumi, Fastlane, and CI workflows"},
+    {"step": "step_7", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Documented integration architecture: HTTP routes, WebSocket envelope, SNS/Redis fanout, room-history log gating, infrastructure stack discovery"},
+    {"step": "step_8", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Wrote part-specific architecture documents for backend, frontend, infrastructure with executive summary, stack table, patterns, source tree, and known constraints"},
+    {"step": "step_9", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Wrote project-overview.md, component-inventory-frontend.md, project-parts.json"},
+    {"step": "step_10", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Generated master documentation index"},
+    {"step": "step_11", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Validated all generated docs; no _(To be generated)_ markers; existing release-readiness, openapi, and BMAD artifacts cross-linked"},
+    {"step": "step_12", "status": "completed", "timestamp": "2026-05-24T00:00:00Z", "summary": "Workflow complete; final summary delivered"}
   ],
-  "current_step": "step_11",
+  "current_step": "completed",
   "findings": {
-    "project_classification": "Multi-part TypeScript monorepo with backend, frontend, and infrastructure segments",
+    "project_classification": "Multi-part TypeScript monorepo with three coordinated parts (backend microservices, Expo Router frontend, Pulumi infrastructure)",
     "technology_stack": {
-      "backend": "Node.js 20, Express 5, MongoDB, Redis, AWS SAM",
-      "frontend": "Expo 55, React Native 0.83, Expo Router, TanStack Query",
-      "infrastructure": "Pulumi with AWS S3, CloudFront, ACM, and Route53"
+      "backend": "Node.js 20 + TypeScript 5.9 (strict false) + Express 5 + Mongoose 8 + MongoDB 7 + AWS SAM + SNS + Redis (local) + ws + @aws-sdk v3",
+      "frontend": "Expo 55 + Expo Router 55 + React 19.2 + React Native 0.83.2 + TanStack Query 5 + Zod 4 + AsyncStorage + reanimated 4 + Vitest 4 + Maestro + Fastlane",
+      "infrastructure": "Pulumi 3.203 + @pulumi/aws 7.10 + ACM (us-east-1) + CloudFront with OAC + S3 (private) + Route 53"
     },
     "existing_docs_count": 30,
-    "batches_completed": [],
-    "notes": [
-      "Quick scan included targeted reads of key manifests, READMEs, OpenAPI files, Docker Compose, SAM, Pulumi, and selected runtime entry points",
-      "backend/package.json references a gateway workspace that is not present in the current tree"
+    "scan_notes": [
+      "Exhaustive scan read every backend service src/*.ts and frontend route, hook, component, util, config, and constant.",
+      "OpenAPI under docs/openapi/ was subsequently expanded to cover every shipped REST endpoint plus the WebSocket connect at /ws (with x-protocol: websocket and the seven character_*/battle_* event schemas listed under serverToClient).",
+      "v2.0.0 removed the gateway service; the current tree reflects Nginx-as-edge.",
+      "Class/race/gender are stored as JSON-encoded strings (legacy shape); frontend parseArrayField handles legacy comma-separated fallback."
     ]
   },
   "outputs_generated": [
@@ -109,16 +52,16 @@
     "architecture-backend.md",
     "architecture-frontend.md",
     "architecture-infrastructure.md",
+    "integration-architecture.md",
+    "api-contracts-backend.md",
+    "data-models-backend.md",
     "component-inventory-frontend.md",
     "development-guide-backend.md",
     "development-guide-frontend.md",
     "development-guide-infrastructure.md",
     "deployment-guide.md",
-    "integration-architecture.md",
-    "api-contracts-backend.md",
-    "data-models-backend.md",
     "project-parts.json",
     "index.md"
   ],
-  "resume_instructions": "Resume at step_11 to validate generated docs or run a deeper scan for field-level schema and implementation detail."
+  "resume_instructions": "Workflow complete. Re-run for an updated scan."
 }

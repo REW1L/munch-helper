@@ -1,0 +1,38 @@
+get:
+  tags:
+    - Room History
+  summary: Get a single log event
+  description: |
+    Returns a single log event scoped to the given room. The lookup matches both
+    the log id and the room id, so a log event id from a different room will
+    return 404.
+  operationId: getLogEvent
+  parameters:
+    - $ref: ../parameters/LogId.yaml
+    - name: roomId
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    "200":
+      description: Log event found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/LogEvent.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "404":
+      description: |
+        Log event not found (also returned when the id belongs to a different
+        room).
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

@@ -1,31 +1,42 @@
 type: object
-required: [id, userId, name, avatar, color, level, power, class, race, gender]
+required: [id, roomId, userId, name, avatarId, color, level, power, class, race, gender]
 properties:
   id:
     type: string
-  userId:
+  roomId:
     type: string
+  userId:
+    type:
+      - string
+      - "null"
   name:
     type: string
-  avatar:
+  avatarId:
     type: integer
+    description: Avatar id (index into the frontend avatar registry).
   color:
     type: string
     pattern: "^#[0-9A-Fa-f]{6}$"
-    description: Hex color code in #RRGGBB format
+    description: Hex color code in #RRGGBB format. The server normalizes to upper case.
   level:
     type: integer
   power:
     type: integer
   class:
-    type: array
-    items:
-      type: string
+    type: string
+    description: |
+      JSON-encoded string array (legacy storage shape). The frontend parses with
+      `parseArrayField` and serializes with `serializeArrayField`. Comma-separated
+      legacy values are also accepted on read.
   race:
-    type: array
-    items:
-      type: string
+    type: string
+    description: JSON-encoded string array; same shape as `class`.
   gender:
-    type: array
-    items:
-      type: string
+    type: string
+    description: JSON-encoded string array; same shape as `class`.
+  createdAt:
+    type: string
+    format: date-time
+  updatedAt:
+    type: string
+    format: date-time

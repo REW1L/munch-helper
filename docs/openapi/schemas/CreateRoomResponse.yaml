@@ -1,5 +1,17 @@
 type: object
-required: [roomId]
+required: [roomId, roomTypeId, userId, characterId, createdAt]
 properties:
   roomId:
     type: string
+    description: Auto-generated word + 4-digit code (for example `Frog4521`).
+  roomTypeId:
+    type: string
+    enum: [munchkin]
+  userId:
+    type: string
+  characterId:
+    type: string
+    description: Default character provisioned for the owner via character-service.
+  createdAt:
+    type: string
+    format: date-time

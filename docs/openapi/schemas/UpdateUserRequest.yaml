@@ -1,11 +1,11 @@
 type: object
+description: Partial update. At least one of `name` or `avatarId` must be provided.
 additionalProperties: false
+minProperties: 1
 properties:
   name:
-    anyOf:
-      - type: string
-      - type: "null"
+    type: string
+    minLength: 1
+    description: Non-empty after trim when provided.
   avatarId:
-    anyOf:
-      - type: integer
-      - type: "null"
+    type: integer

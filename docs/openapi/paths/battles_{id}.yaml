@@ -1,8 +1,52 @@
+patch:
+  tags:
+    - Battle Management
+  summary: Update active battle
+  description: |
+    Updates `name`, `playerSide`, and/or `monsterSide` on the active battle.
+    Each provided field is fully replaced; the request must contain at least one
+    of the three. Emits `battle_updated` to the notifications bus only.
+  operationId: patchBattle
+  parameters:
+    - $ref: ../parameters/BattleId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/PatchBattleRequest.yaml
+  responses:
+    "200":
+      description: Battle updated
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Battle.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "404":
+      description: Battle not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "409":
+      description: Battle is not active
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
 delete:
   tags:
     - Battle Management
   summary: Discard active battle
-  description: Soft-deletes an active battle by setting its status to discarded.
+  description: |
+    Soft-deletes the active battle by setting its status to `discarded`. Emits
+    `battle_discarded` to both buses.
   operationId: discardBattle
   parameters:
     - $ref: ../parameters/BattleId.yaml
@@ -15,5 +59,13 @@ delete:
             $ref: ../schemas/Battle.yaml
     "404":
       description: Battle not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
     "409":
       description: Battle is not active
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

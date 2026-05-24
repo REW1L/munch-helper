@@ -1,0 +1,8 @@
+type: object
+required: [message]
+properties:
+  message:
+    type: string
+    description: Human-readable error message.
+  details:
+    description: Optional originating error message.

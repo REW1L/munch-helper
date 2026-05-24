@@ -1,7 +1,8 @@
 type: object
-required: [characters]
+required: [items]
 properties:
-  characters:
+  items:
     type: array
+    description: Characters in the room, ordered oldest-first by `createdAt`.
     items:
-      $ref: "./Character.yaml"
+      $ref: ./Character.yaml

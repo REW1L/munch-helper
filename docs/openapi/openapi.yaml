@@ -1,34 +1,45 @@
 openapi: 3.1.0
 info:
   title: MunchHelper Backend API
-  version: 1.0.0
+  version: 1.1.0
   license:
-    name: UNLICENSED
-    identifier: UNLICENSED
+    name: GPL-3.0-only
+    identifier: GPL-3.0-only
   description: |
     OpenAPI specification for MunchHelper backend services:
-    - User Management
-    - Room Management
-    - Character Management
-    - Battle Management
-    - Room Notifications (documented as WebSocket upgrade + message schemas)
+
+    - User Management (`user-service`)
+    - Room Management (`room-service`)
+    - Character Management (`character-service`)
+    - Battle Management (`battle-service`)
+    - Room History (`log-service`)
+    - Room Notifications (`room-notifications-service`, documented as a WebSocket
+      upgrade plus the message schemas the server forwards to clients)
 servers:
-  - url: https://api.munch-helper.local
-    description: Placeholder production server
+  - url: https://helpamunch.click/api
+    description: Production
+  - url: http://localhost:8080
+    description: Local (Docker Compose via Nginx)
 security: []
 tags:
   - name: User Management
-    description: Endpoints for creating and updating user profiles.
+    description: Endpoints for creating, reading, and updating user profiles.
   - name: Room Management
-    description: Endpoints for creating rooms and managing room types.
+    description: Endpoints for creating rooms and managing room associations.
   - name: Character Management
-    description: Endpoints for creating, updating, and deleting characters.
+    description: Endpoints for listing, creating, updating, and deleting characters.
   - name: Battle Management
-    description: Endpoints for discarding battles. (Story 5.7 documented DELETE only;
-      GET / POST / PATCH / conclude are implemented but not yet documented — see the
-      deferred-work backlog: "OpenAPI backfill for battle endpoints 5.1 / 5.3 / 5.6".)
+    description: |
+      Endpoints for the active battle in a room: read, start, patch, conclude,
+      discard.
+  - name: Room History
+    description: |
+      Cursor-paginated read API for the per-room history of character and
+      battle lifecycle events.
   - name: Room Notifications
-    description: Endpoints for managing room notifications via WebSocket.
+    description: |
+      WebSocket endpoint that forwards `character_*` and `battle_*` events
+      scoped to a single room.
 paths:
   # User Management
   /users:
@@ -40,14 +51,23 @@ paths:
     $ref: paths/rooms.yaml
   /rooms/associations:
     $ref: paths/rooms_associations.yaml
-  # Room Notifications
-  /rooms/{roomId}:
-    $ref: paths/rooms_{roomId}.yaml
   # Character Management
   /characters:
     $ref: paths/characters.yaml
   /characters/{characterId}:
     $ref: paths/characters_{characterId}.yaml
-  # Battle Management (Story 5.7 — DELETE only; remaining endpoints deferred)
+  # Battle Management
+  /battles:
+    $ref: paths/battles.yaml
   /battles/{id}:
     $ref: paths/battles_{id}.yaml
+  /battles/{id}/conclude:
+    $ref: paths/battles_{id}_conclude.yaml
+  # Room History
+  /logs:
+    $ref: paths/logs.yaml
+  /logs/{logId}:
+    $ref: paths/logs_{logId}.yaml
+  # Room Notifications (WebSocket)
+  /ws:
+    $ref: paths/ws.yaml

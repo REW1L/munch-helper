@@ -1,0 +1,14 @@
+type: object
+description: |
+  Partial update for an active battle. At least one of `name`, `playerSide`,
+  `monsterSide` must be provided. Each provided field is fully replaced.
+additionalProperties: false
+minProperties: 1
+properties:
+  name:
+    type: string
+    minLength: 1
+  playerSide:
+    $ref: ./BattlePlayerSide.yaml
+  monsterSide:
+    $ref: ./BattleMonsterSide.yaml

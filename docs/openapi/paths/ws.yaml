@@ -1,0 +1,55 @@
+get:
+  tags:
+    - Room Notifications
+  summary: Connect to room notifications
+  description: |
+    Establishes a WebSocket connection for room notifications. Documented as an
+    HTTP GET in OpenAPI because OpenAPI 3.1 does not natively model WebSockets.
+    Wire-level details:
+
+    - Cloud: API Gateway WebSocket API stage `ws`. Routes `$connect`,
+      `$disconnect`, `$default`. Connection records persisted in MongoDB.
+    - Local: native `ws` server via Nginx upgrade on `/ws`. Connections kept
+      in-memory.
+
+    The server forwards a strictly minimal envelope to clients (only `event` and
+    `event_body`). Clients may send `{ "type": "ping" }` heartbeat messages; any
+    other client message is ignored.
+  operationId: connectRoomNotifications
+  parameters:
+    - name: roomId
+      in: query
+      required: true
+      description: Room id to subscribe to.
+      schema:
+        type: string
+        minLength: 1
+    - name: userId
+      in: query
+      required: true
+      description: User id of the connecting user.
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    "101":
+      description: Switching Protocols (WebSocket upgrade)
+    "400":
+      description: Missing required query parameters `roomId` and/or `userId`.
+  x-protocol: websocket
+  x-websocket-events:
+    serverToClient:
+      - $ref: ../schemas/CharacterCreatedEvent.yaml
+      - $ref: ../schemas/CharacterUpdatedEvent.yaml
+      - $ref: ../schemas/CharacterDeletedEvent.yaml
+      - $ref: ../schemas/BattleStartedEvent.yaml
+      - $ref: ../schemas/BattleUpdatedEvent.yaml
+      - $ref: ../schemas/BattleConcludedEvent.yaml
+      - $ref: ../schemas/BattleDiscardedEvent.yaml
+    clientToServer:
+      - description: Optional heartbeat ping.
+        type: object
+        properties:
+          type:
+            type: string
+            const: ping

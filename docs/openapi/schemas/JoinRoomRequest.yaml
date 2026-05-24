@@ -1,8 +1,20 @@
 type: object
-required: [userId, roomId]
+required: [roomId, userId]
 additionalProperties: false
 properties:
   roomId:
     type: string
+    minLength: 1
   userId:
     type: string
+    minLength: 1
+  userName:
+    type: string
+    description: |
+      Optional. Used as the default character's name when the user is new to the
+      room. Defaults to `Adventurer`.
+  avatarId:
+    type: integer
+    description: |
+      Optional. Used as the default character's avatar id when the user is new
+      to the room. Defaults to `1`.

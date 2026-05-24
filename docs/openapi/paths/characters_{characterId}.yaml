@@ -1,8 +1,12 @@
-post:
+patch:
   tags:
     - Character Management
   summary: Update character
-  description: Updates character parameters in a room.
+  description: |
+    Partial update. Allowed keys are `name`, `avatarId`, `color`, `level`,
+    `power`, `class`, `race`, `gender`, `userId`. A successful update emits a
+    `character_updated` event with a `changes` map containing only the fields
+    whose value actually changed.
   operationId: updateCharacter
   parameters:
     - $ref: ../parameters/CharacterId.yaml
@@ -19,18 +23,33 @@ post:
         application/json:
           schema:
             $ref: ../schemas/Character.yaml
+    "400":
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
     "404":
-      description: Character not found
+      description: Character not found (also returned for malformed `characterId`).
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
 delete:
   tags:
     - Character Management
   summary: Delete character
-  description: Deletes a character in a room.
+  description: |
+    Deletes a character. Emits a `character_deleted` event to both buses.
   operationId: deleteCharacter
   parameters:
     - $ref: ../parameters/CharacterId.yaml
   responses:
-    "200":
-      description: Character deleted
-    "400":
-      description: Bad request
+    "204":
+      description: Character deleted (no body).
+    "404":
+      description: Character not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

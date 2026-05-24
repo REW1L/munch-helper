@@ -1,73 +1,178 @@
-# Backend Data Models
+# Data Models - Backend
 
-Generated: 2026-03-19T22:50:33Z
+The backend uses MongoDB via Mongoose. Each service owns a private database; there is no shared schema and no cross-service Mongo access. All schemas are defined in `backend/<service>/src/models/*.ts`.
 
-This quick-scan summary is derived from OpenAPI schemas and service model file locations.
+## Schemas
 
-## Core Entities
+### User (`user-service`)
 
-### User
+File: `backend/user-service/src/models/User.ts`.
 
-Source hints:
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId (default) | Server-generated. Exposed as `id` in responses. |
+| `name` | String, required, trimmed | The displayed nickname. |
+| `avatarId` | Number, required | Index into the frontend avatar registry (0..9). |
+| `createdAt`, `updatedAt` | Date | Mongoose timestamps. |
 
-- `docs/openapi/schemas/User.yaml`
-- `backend/user-service/src/models/User.ts`
+`versionKey: false`. No additional indexes.
 
-Fields:
+### Room (`room-service`)
 
-- `id: string`
-- `name: string`
-- `avatarId: integer`
+File: `backend/room-service/src/models/Room.ts`.
 
-### Room
+#### `rooms` collection
 
-Source hints:
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | String | Auto-generated 4-letter (capitalized via `random-words`) + 4 random digits, e.g., `Frog4521`. Up to 5 retries on duplicate-key 11000 in `service.ts::createRoomModel`. |
+| `roomTypeId` | String enum `["munchkin"]`, required, default `"munchkin"` | Hard-gated at the service layer to `"munchkin"`. |
+| `createdAt`, `updatedAt` | Date | |
 
-- `backend/room-service/src/models/Room.ts`
-- `docs/openapi/schemas/CreateRoomResponse.yaml`
-- `docs/openapi/schemas/JoinRoomResponse.yaml`
+`versionKey: false`. No additional indexes.
 
-Confirmed contract fields:
+#### `roomassociations` collection
 
-- `roomId: string` in create/join responses
+Records which users have joined which rooms.
 
-The quick scan confirms a dedicated Room model file, but not the full persisted schema fields.
+| Field | Type | Notes |
+|---|---|---|
+| `roomId` | String, required, indexed | Foreign key to `rooms._id`. |
+| `userId` | String, required, indexed | Foreign key to `users._id`. |
+| `characterId` | String, required | Foreign key to `characters._id` (the user's character in this room). |
+| `createdAt`, `updatedAt` | Date | |
 
-### Character
+Unique compound index on `(roomId, userId)` enforces idempotent join semantics. The 11000 race is recovered with a fallback `findOne` to return the existing association.
 
-Source hints:
+### Character (`character-service`)
 
-- `docs/openapi/schemas/Character.yaml`
-- `backend/character-service/src/models/Character.ts`
+File: `backend/character-service/src/models/Character.ts`.
 
-Fields:
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | Exposed as `id`. |
+| `roomId` | String, required, indexed | Foreign key to `rooms._id`. |
+| `userId` | String, default `null`, indexed | Foreign key to `users._id`. Null for NPCs (currently unused; reserved). |
+| `name` | String, required, trimmed | |
+| `avatarId` | Number, required | |
+| `level` | Number, default `1` | |
+| `power` | Number, default `0` | |
+| `class` | String, default `''` | Stored as a JSON-encoded string (legacy shape). The frontend parses it back into an array. |
+| `race` | String, default `''` | Same JSON-encoded shape as `class`. |
+| `gender` | String, default `''` | Same shape. |
+| `color` | String, default `''` | Hex `#RRGGBB`. Validated at the service layer; invalid colors fall back to a deterministic hash of `_id`. |
+| `createdAt`, `updatedAt` | Date | |
 
-- `id: string`
-- `userId: string`
-- `name: string`
-- `avatar: integer`
-- `color: string` in hex format
-- `level: integer`
-- `power: integer`
-- `class: string[]`
-- `race: string[]`
-- `gender: string[]`
+`versionKey: false`. Indexes on `roomId` and `userId` (both non-unique).
 
-### RoomConnection
+### Battle (`battle-service`)
 
-Source hints:
+File: `backend/battle-service/src/models/Battle.ts`.
 
-- `backend/room-notifications-service/src/models/RoomConnection.ts`
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | Exposed as `id`. |
+| `roomId` | String, required, indexed | Foreign key to `rooms._id`. |
+| `name` | String, required, trimmed | |
+| `status` | String enum `['active','concluded','discarded']`, required, default `active` | |
+| `playerSide.characterIds` | String[] (default []) | Foreign keys to `characters._id`. |
+| `playerSide.bonuses` | Subdoc[] `{id: String, value: Number}` (default []) | `_id: false` on the subschema; ids are client-generated UUIDs. |
+| `monsterSide.monsters` | Subdoc[] `{id: String, name: String trimmed, level: Number}` (default []) | `_id: false`. |
+| `monsterSide.bonuses` | Subdoc[] `{id: String, value: Number}` (default []) | `_id: false`. |
+| `result` | String enum `['players_win','monster_wins',null]`, default `null` | |
+| `concludedAt` | Date, default `null` | Set by the conclude path. |
+| `createdAt`, `updatedAt` | Date | |
 
-The notifications service keeps a persisted connection model, but this quick scan did not read the schema deeply enough to document all fields.
+Indexes:
+- **Partial unique** on `(roomId, status)` with filter `{ status: 'active' }` - this is the integrity guarantee that there is at most one active battle per room.
+- Non-unique on `(roomId, createdAt: -1)` for room-scoped sorted reads (currently unused by the API, but kept for future history queries against this service).
 
-## Data Ownership
+`toJSON` strips `_id` and `__v` and exposes the virtual `id`.
 
-- `user-service` owns user profile records
-- `room-service` owns room/session records
-- `character-service` owns character records
-- `room-notifications-service` owns connection/session metadata for notification fan-out
+### LogEvent (`log-service`)
 
-## Follow-Up
+File: `backend/log-service/src/models/LogEvent.ts`.
 
-For a field-complete schema reference, do a deep scan of the four `src/models/` files and any service-layer validation logic.
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | Exposed as `id`. Used as the cursor for `before` pagination. |
+| `roomId` | String, required | Foreign key to `rooms._id`. |
+| `eventType` | String enum, required | One of `character_created`, `character_updated`, `character_deleted`, `battle_started`, `battle_concluded`, `battle_discarded`. |
+| `actorId` | String, required | `characterId` for character events; `battleId` for battle events. |
+| `summary` | String, required | Human-readable line generated by `service.ts::buildSummary` at write time. |
+| `payload` | Mixed, required | The full internal event payload as published. |
+| `occurredAt` | Date, required | The event's `occurredAt`/`emittedAt` from the publisher. |
+| `createdAt`, `updatedAt` | Date | Mongoose timestamps. |
+
+Indexes:
+- `(roomId, _id: -1)` for cursor pagination newest-first.
+
+`toJSON` strips `_id` and `__v`. The frontend's `LogEntry` component renders `eventType`, `summary`, optional `payload.character`/`payload.changes`/`payload.battle` defensively (gracefully handles missing fields).
+
+### RoomConnection (`room-notifications-service`, cloud only)
+
+File: `backend/room-notifications-service/src/models/RoomConnection.ts`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `_id` | ObjectId | |
+| `connectionId` | String, required, unique, indexed | API Gateway WebSocket connection id. |
+| `roomId` | String, required, indexed | The subscribed room. |
+| `userId` | String, required, indexed | The connected user. |
+| `connectedAt` | Date, default `Date.now` | |
+| `createdAt`, `updatedAt` | Date | |
+
+`versionKey: false`. Local mode does not persist connections - the `WebSocketServer` keeps them in an in-process `Map`.
+
+## Cross-service Foreign-Key Conventions
+
+Even though there are no enforced foreign keys, the application layer uses string ids consistently:
+
+- `roomId` strings appear in `RoomAssociation`, `Character`, `Battle`, `LogEvent`, and `RoomConnection`. They reference `Room._id`.
+- `userId` strings appear in `RoomAssociation`, `Character`, and `RoomConnection`. They reference `User._id`.
+- `characterId` strings appear in `RoomAssociation` and `Battle.playerSide.characterIds`. They reference `Character._id`.
+- `battleId` is exposed on battle event payloads and on `LogEvent.actorId` for battle events.
+
+There is no cascade delete. Removing a `Room` would orphan the related associations, characters, battles, log events, and connections; this is acceptable today because the product does not expose room deletion.
+
+## Lifecycle Invariants
+
+| Invariant | Where it is enforced |
+|---|---|
+| At most one `active` battle per room | Mongo partial unique index + service-layer pre-check + retry on 11000. |
+| Idempotent room join | Compound unique index on `RoomAssociation(roomId, userId)` + service-layer recovery on 11000. |
+| Character belongs to exactly one room | Application code (no schema-level enforcement). Characters are never moved between rooms in current flows. |
+| Log entries are immutable | Service code only ever calls `LogEvent.create`; there is no update path. |
+| Connection records are unique per WebSocket | `RoomConnection.connectionId` unique index. `upsertConnection` uses `findOneAndUpdate({connectionId}, ..., {upsert: true})`. |
+
+## Color Encoding
+
+Color is the trickiest field. The pattern across services:
+
+- Wire format: hex `#RRGGBB`, validated on `POST` and `PATCH /characters` with `^#[0-9a-fA-F]{6}$`.
+- Storage: upper-cased hex string.
+- Read fallback: when an old record has an empty/invalid color, the response substitutes a deterministic color hashed from the character id (FNV-1a → 6 hex chars). The same algorithm is used by `room-service` to derive a default color from `userId` when provisioning a character.
+- Frontend: `frontend/api/characters.ts::deterministicHexColor` applies the same fallback if the API response somehow lacks a hex color.
+
+This means the same character id will always render in a consistent color even if its persisted color was lost.
+
+## Class / Race / Gender Encoding
+
+These three fields are stored as JSON-encoded strings rather than native Mongo arrays. The historical reasons predate this scan; the practical consequences are:
+
+- The schema field type is `String`.
+- Service-layer code never parses these strings - it round-trips them as opaque strings.
+- The frontend uses `parseArrayField` (`frontend/api/characters.ts`) to convert them back to `string[]`. It accepts both JSON-array shapes and comma-separated fallbacks.
+- When mutating, the frontend uses `serializeArrayField` (which always produces JSON-array shape) - so writes always converge on the canonical shape.
+
+Migrating these to native arrays would be a coordinated frontend + backend change.
+
+## Migration Strategy
+
+There is no migrations framework today. Mongoose schema changes that are non-destructive (new optional field, new default) ship without any extra step. Destructive changes (rename, type change, removal) require:
+
+1. Deploy the backend that tolerates both old and new shape.
+2. Run a one-off script to migrate existing data.
+3. Deploy the backend that requires only the new shape.
+
+Because the system is pre-launch enough to have no significant historical data outside the development Mongo, scripts have been deferred case-by-case and run by hand.

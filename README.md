@@ -23,13 +23,11 @@ munch-helper/
 - User management: create, read, and update users
 - Room management: create room and join room
 - Character management: list, create, update, and delete characters
-- Real-time room notifications over WebSocket (`character_created`, `character_updated`, `character_deleted`)
-- Frontend app routes for onboarding, room flow, and Munchkin gameplay screens
+- Battle management: start, patch, conclude, and discard the active battle (one active battle per room)
+- Room history: cursor-paginated log of character and battle lifecycle events (`/logs`, `/logs/:logId`)
+- Real-time room notifications over WebSocket: `character_created`, `character_updated`, `character_deleted`, `battle_started`, `battle_updated`, `battle_concluded`, `battle_discarded`
+- Frontend app routes for onboarding, room flow, Munchkin gameplay, battle composer, and room history
 - Frontend web export and infrastructure deployment
-
-Not implemented yet:
-
-- Battle system and room history features
 
 ## Tech Stack
 
@@ -49,11 +47,13 @@ cp .env.example .env
 
 Local endpoints:
 
-- Gateway: `http://localhost:8080`
+- Edge (Nginx): `http://localhost:8080`
 - User service: `http://localhost:8082`
 - Room service: `http://localhost:8083`
 - Character service: `http://localhost:8084`
 - Room notifications service: `ws://localhost:8085`
+- Battle service: `http://localhost:8086`
+- Log service: `http://localhost:8087`
 - Proxied room notifications: `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`
 
 Stop services:

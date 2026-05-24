@@ -1,16 +1,39 @@
 type: object
-required: [name, avatar, roomId, color]
+required: [roomId, name, avatarId, color]
 additionalProperties: false
 properties:
   roomId:
     type: string
+    minLength: 1
   userId:
-    type: string
+    type:
+      - string
+      - "null"
+    description: Owner of the character. `null` is reserved for NPCs (currently unused).
   name:
     type: string
-  avatar:
+    minLength: 1
+  avatarId:
     type: integer
+    description: Avatar id (index into the frontend avatar registry).
   color:
     type: string
     pattern: "^#[0-9A-Fa-f]{6}$"
-    description: Hex color code in #RRGGBB format
+    description: Hex color code in #RRGGBB format. The server normalizes to upper case.
+  level:
+    type: integer
+    default: 1
+  power:
+    type: integer
+    default: 0
+  class:
+    type: string
+    description: |
+      JSON-encoded string array (legacy storage shape). The frontend serializes
+      with `serializeArrayField`. Defaults to `"[]"`.
+  race:
+    type: string
+    description: JSON-encoded string array. Defaults to `'["Human"]'`.
+  gender:
+    type: string
+    description: JSON-encoded string array. Defaults to `'["male"]'`.

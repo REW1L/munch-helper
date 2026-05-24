@@ -1,5 +1,18 @@
 type: object
-required: [roomId]
+required: [roomId, userId, characterId, joinedAt, alreadyJoined]
 properties:
   roomId:
     type: string
+  userId:
+    type: string
+  characterId:
+    type: string
+    description: Default character provisioned for the user (or the existing one when `alreadyJoined` is true).
+  joinedAt:
+    type: string
+    format: date-time
+  alreadyJoined:
+    type: boolean
+    description: |
+      `true` when the user already had an association in the room (idempotent
+      response). The HTTP status is 200 in that case and 201 for a new join.

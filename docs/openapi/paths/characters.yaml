@@ -1,8 +1,8 @@
 get:
   tags:
     - Character Management
-  summary: Get characters
-  description: Returns all characters in a room.
+  summary: List characters in a room
+  description: Returns all characters in a room ordered oldest-first by `createdAt`.
   operationId: getCharacters
   parameters:
     - name: roomId
@@ -10,6 +10,7 @@ get:
       required: true
       schema:
         type: string
+        minLength: 1
   responses:
     "200":
       description: Characters list
@@ -19,11 +20,17 @@ get:
             $ref: ../schemas/GetCharactersResponse.yaml
     "400":
       description: Bad request
-put:
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+post:
   tags:
     - Character Management
   summary: Create character
-  description: Creates a character in a room.
+  description: |
+    Creates a character in a room. Emits a `character_created` event to both the
+    notifications and log buses.
   operationId: createCharacter
   requestBody:
     required: true
@@ -40,3 +47,7 @@ put:
             $ref: ../schemas/Character.yaml
     "400":
       description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml

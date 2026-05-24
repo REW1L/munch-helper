@@ -1,0 +1,9 @@
+type: object
+required: [result]
+additionalProperties: false
+properties:
+  result:
+    type: string
+    enum:
+      - players_win
+      - monster_wins

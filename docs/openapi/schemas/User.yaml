@@ -1,5 +1,5 @@
 type: object
-required: [id, name, avatarId]
+required: [id, name, avatarId, createdAt, updatedAt]
 properties:
   id:
     type: string
@@ -9,4 +9,10 @@ properties:
     description: Nickname of the user.
   avatarId:
     type: integer
-    description: Avatar id of the user.
+    description: Avatar id of the user (index into the frontend avatar registry).
+  createdAt:
+    type: string
+    format: date-time
+  updatedAt:
+    type: string
+    format: date-time

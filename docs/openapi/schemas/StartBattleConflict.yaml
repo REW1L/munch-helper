@@ -1,0 +1,12 @@
+type: object
+required: [message]
+properties:
+  message:
+    type: string
+    example: A battle is already active for this room
+  activeBattleId:
+    type: string
+    description: |
+      Id of the active battle that prevented the create. Present in the response
+      when the server detected an active battle in the pre-create check; absent
+      when the conflict surfaced from the unique-key race recovery path.
