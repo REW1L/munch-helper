@@ -82,7 +82,7 @@ export default function LandingPage() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.storeLinkButton, styles.disabledStoreLinkButton]}
+                style={[styles.storeLinkButton]}
                 onPress={openPlayStore}
                 accessibilityLabel="Google Play"
               >
