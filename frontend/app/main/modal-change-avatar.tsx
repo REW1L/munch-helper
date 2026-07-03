@@ -2,6 +2,7 @@ import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Modal,
   ScrollView,
@@ -24,6 +25,7 @@ export default function ChangeAvatarModal({
   onConfirm,
   onCancel,
 }: ChangeAvatarModalProps) {
+  const { t } = useTranslation();
   const [selectedAvatar, setSelectedAvatar] = useState<number>(
     selectedImage
   );
@@ -84,7 +86,7 @@ export default function ChangeAvatarModal({
               onPress={handleConfirm}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Select</Text>
+              <Text style={styles.buttonText}>{t('profile.selectAvatar')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -92,7 +94,7 @@ export default function ChangeAvatarModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

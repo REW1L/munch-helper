@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +11,7 @@ const STORE_LINKS = {
 } as const;
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const showStoreLinks = Platform.OS === 'web';
 
   const openAppStore = async () => {
@@ -49,30 +51,30 @@ export default function LandingPage() {
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
           <TouchableOpacity style={styles.privacyButton} onPress={() => router.navigate('/privacy')}>
-            <Text style={styles.privacyButtonText}>Privacy</Text>
+            <Text style={styles.privacyButtonText}>{t('landing.privacy')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.supportButton} onPress={() => router.navigate('/support')}>
-            <Text style={styles.supportButtonText}>Support</Text>
+            <Text style={styles.supportButtonText}>{t('landing.support')}</Text>
           </TouchableOpacity>
 
           <View style={styles.heroSection}>
-            <Text style={styles.title}>Munch Helper</Text>
-            <Text style={styles.subtitle}>Your companion for board games like Munchkin</Text>
+            <Text style={styles.title}>{t('landing.title')}</Text>
+            <Text style={styles.subtitle}>{t('landing.subtitle')}</Text>
             <Text style={styles.description}>
-              Create game rooms with your friends, manage characters in games, and forget about remembering and recalculating stats.
+              {t('landing.description')}
             </Text>
           </View>
 
           <View style={styles.actionsSection}>
             <TouchableOpacity style={styles.roomsButton} onPress={() => router.navigate('/rooms')}>
-              <Text style={styles.roomsButtonText}>Rooms</Text>
+              <Text style={styles.roomsButtonText}>{t('landing.rooms')}</Text>
             </TouchableOpacity>
           </View>
 
           {showStoreLinks ? (
             <View style={styles.storeLinksSection}>
-              <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel="App Store">
+              <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel={t('landing.appStore')}>
                 <Image
                   source={require('../assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg')}
                   style={styles.appStoreBadge}
@@ -84,9 +86,9 @@ export default function LandingPage() {
               <TouchableOpacity
                 style={[styles.storeLinkButton]}
                 onPress={openPlayStore}
-                accessibilityLabel="Google Play"
+                accessibilityLabel={t('landing.googlePlay')}
               >
-                <Text style={styles.playSoonNote}>Join Closed Beta</Text>
+                <Text style={styles.playSoonNote}>{t('landing.joinBeta')}</Text>
                 <Image
                   source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
                   style={styles.playStoreBadge}

@@ -3,6 +3,7 @@ import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import type { ActivePlayerParticipant } from '@/utils/battlePlayerSide';
 import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export interface BattleSidePanelProps {
@@ -48,6 +49,7 @@ function BattleSidePanel({
   onAddBonus,
   onRemoveBonus,
 }: BattleSidePanelProps) {
+  const { t } = useTranslation();
   const [selectedCharacterId, setSelectedCharacterId] = useState('');
   const [monsterName, setMonsterName] = useState(DEFAULT_MONSTER_NAME);
   const [monsterLevelText, setMonsterLevelText] = useState(DEFAULT_MONSTER_LEVEL);
@@ -120,7 +122,7 @@ function BattleSidePanel({
                 Removed character
               </Text>
               <TouchableOpacity
-                accessibilityLabel="Drop removed character from draft"
+                accessibilityLabel={t('battle.dropRemovedCharacterA11y')}
                 accessibilityRole="button"
                 style={styles.removeButton}
                 testID={`discard-removed-character-${id}`}
@@ -147,7 +149,7 @@ function BattleSidePanel({
               {availableCharacters.length === 0 && <Text style={styles.mutedText}>No characters available</Text>}
             </View>
             <TouchableOpacity
-              accessibilityLabel="Add selected character"
+              accessibilityLabel={t('battle.addCharacterA11y')}
               accessibilityRole="button"
               disabled={!selectedCharacterId}
               style={[styles.addButton, !selectedCharacterId && styles.disabledButton]}
@@ -178,7 +180,7 @@ function BattleSidePanel({
             </View>
           ))}
           <TouchableOpacity
-            accessibilityLabel="Open add monster dialog"
+            accessibilityLabel={t('battle.openAddMonsterA11y')}
             accessibilityRole="button"
             style={styles.openDialogButton}
             testID="open-add-monster"
@@ -229,7 +231,7 @@ function BattleSidePanel({
         <Modal transparent visible={isMonsterModalVisible} animationType="fade" onRequestClose={closeMonsterModal}>
           <View style={styles.modalRoot}>
             <Pressable
-              accessibilityLabel="Cancel add monster"
+              accessibilityLabel={t('battle.cancelAddMonsterA11y')}
               style={styles.modalBackdrop}
               testID="add-monster-backdrop"
               onPress={closeMonsterModal}
@@ -243,7 +245,7 @@ function BattleSidePanel({
                 <View style={styles.monsterDialogField}>
                   <Text style={styles.monsterDialogLabel}>Name:</Text>
                   <TextInput
-                    accessibilityLabel="Monster name"
+                    accessibilityLabel={t('battle.monsterNameA11y')}
                     placeholder={DEFAULT_MONSTER_NAME}
                     placeholderTextColor={AppTheme.colors.surfaceWarm}
                     style={styles.monsterDialogInput}
@@ -255,7 +257,7 @@ function BattleSidePanel({
                 <View style={styles.monsterDialogField}>
                   <Text style={styles.monsterDialogLabel}>Level:</Text>
                   <TextInput
-                    accessibilityLabel="Monster level"
+                    accessibilityLabel={t('battle.monsterLevelA11y')}
                     inputMode="numeric"
                     keyboardType="number-pad"
                     placeholder={DEFAULT_MONSTER_LEVEL}
@@ -269,7 +271,7 @@ function BattleSidePanel({
               </View>
               <View style={styles.monsterDialogActions}>
                 <TouchableOpacity
-                  accessibilityLabel="Save monster"
+                  accessibilityLabel={t('battle.saveMonsterA11y')}
                   accessibilityRole="button"
                   disabled={!monsterName.trim()}
                   style={[styles.monsterDialogButton, !monsterName.trim() && styles.monsterDialogButtonDisabled]}
@@ -279,7 +281,7 @@ function BattleSidePanel({
                   <Text style={styles.monsterDialogButtonText}>Save</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  accessibilityLabel="Cancel add monster"
+                  accessibilityLabel={t('battle.cancelAddMonsterA11y')}
                   accessibilityRole="button"
                   style={styles.monsterDialogButton}
                   testID="cancel-add-monster"

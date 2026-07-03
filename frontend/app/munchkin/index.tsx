@@ -2,10 +2,12 @@ import { userProfileContext } from '@/context/UserContext';
 import { useRoomCreate, useRoomJoin } from '@/hooks/UseRoom';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { AppTheme } from '@/constants/theme';
 
 const MunchkinIndexView: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { userProfile } = React.useContext(userProfileContext);
   const roomIdParam = useLocalSearchParams().roomId;
@@ -70,7 +72,7 @@ const MunchkinIndexView: React.FC = () => {
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4C4545' }}>
       <ActivityIndicator size="large" color={AppTheme.colors.actionSecondary} />
       <Text style={{ marginTop: 10, color: '#FFFFFF', fontSize: 16 }}>
-        {isLoading ? 'Loading game room...' : errorMessage || 'Unable to connect to room service'}
+        {isLoading ? t('room.loadingRoom') : errorMessage || t('room.unableToConnect')}
       </Text>
     </View>
   );

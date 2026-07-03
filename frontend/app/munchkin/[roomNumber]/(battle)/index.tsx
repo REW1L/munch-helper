@@ -12,6 +12,7 @@ import { computePlayerTotal, reconcilePlayerParticipants } from '@/utils/battleP
 import { createUuidV4 } from '@/utils/uuid';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -36,6 +37,7 @@ function areDraftsEqual(left: BattleDraft | null, right: BattleDraft | null): bo
 }
 
 export default function BattleView() {
+  const { t } = useTranslation();
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
@@ -131,7 +133,7 @@ export default function BattleView() {
     return monsterLevelTotal + bonusTotal;
   }, [draft]);
 
-  const comparisonLabel = playerTotal === monsterTotal ? 'Even' : playerTotal > monsterTotal ? 'Players ahead' : 'Monsters ahead';
+  const comparisonLabel = playerTotal === monsterTotal ? t('battle.even') : playerTotal > monsterTotal ? t('battle.playersAhead') : t('battle.monstersAhead');
   const comparisonBorderColor = playerTotal === monsterTotal
     ? AppTheme.colors.surfaceSubtle
     : playerTotal > monsterTotal
@@ -163,12 +165,12 @@ export default function BattleView() {
       setSavedDraft(nextDraft);
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        setSaveError('Battle is not active');
+        setSaveError(t('battle.battleNotActive'));
         return;
       }
-      setSaveError(error instanceof Error ? error.message : 'Failed to save battle');
+      setSaveError(error instanceof Error ? error.message : t('battle.errorSave'));
     }
-  }, [battle, battleActions, draft, isDirty, isNameValid]);
+  }, [battle, battleActions, draft, isDirty, isNameValid, t]);
 
   const handleSelectConcludeResult = useCallback((result: BattleResult) => {
     setSelectedResult(result);
@@ -191,14 +193,14 @@ export default function BattleView() {
       router.back();
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        setConcludeError('Battle is not active');
+        setConcludeError(t('battle.battleNotActive'));
         return;
       }
-      setConcludeError(error instanceof Error ? error.message : 'Failed to conclude battle');
+      setConcludeError(error instanceof Error ? error.message : t('battle.errorConclude'));
     } finally {
       setIsConcluding(false);
     }
-  }, [battle, battleActions, concludeDisabled, router, selectedResult]);
+  }, [battle, battleActions, concludeDisabled, router, selectedResult, t]);
 
   const handleRequestDiscardConfirm = useCallback(() => {
     setDiscardError(null);
@@ -228,14 +230,14 @@ export default function BattleView() {
       }
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        setDiscardError('Battle is not active');
+        setDiscardError(t('battle.battleNotActive'));
         return;
       }
-      setDiscardError(error instanceof Error ? error.message : 'Failed to discard battle');
+      setDiscardError(error instanceof Error ? error.message : t('battle.errorDiscard'));
     } finally {
       setIsDiscarding(false);
     }
-  }, [battle, battleActions, isDiscarding, router]);
+  }, [battle, battleActions, isDiscarding, router, t]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -243,7 +245,7 @@ export default function BattleView() {
         {(isLoading || charactersLoading) && (
           <View style={styles.stateBlock}>
             <ActivityIndicator color={AppTheme.colors.accent} />
-            <Text style={styles.stateText}>Loading battle</Text>
+            <Text style={styles.stateText}>{t('battle.loading')}</Text>
           </View>
         )}
 
@@ -258,7 +260,7 @@ export default function BattleView() {
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <TextInput
-                  accessibilityLabel="Battle name"
+                  accessibilityLabel={t('battle.battleNameA11y')}
                   style={styles.titleInput}
                   testID="battle-name-input"
                   value={draft.name}
@@ -267,7 +269,7 @@ export default function BattleView() {
                 <Text style={styles.status}>{battle.status}</Text>
               </View>
               <TouchableOpacity
-                accessibilityLabel="Save battle"
+                accessibilityLabel={t('battle.saveBattleA11y')}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !canSave }}
                 disabled={!canSave}
@@ -276,7 +278,7 @@ export default function BattleView() {
                 onPress={handleSave}
               >
                 <Text style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>
-                  {battleActions.isLoading ? 'Saving' : 'Save'}
+                  {battleActions.isLoading ? t('battle.saving') : t('battle.save')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -296,7 +298,7 @@ export default function BattleView() {
               removedCharacterIds={playerParticipants.removed}
               selectedCharacterIds={draft.playerSide.characterIds}
               side="players"
-              title="Player Side"
+              title={t('battle.playerSide')}
               toneColor={AppTheme.colors.accent}
               total={playerTotal}
               onAddBonus={(value) => updatePlayerSide((side) => ({
@@ -321,7 +323,7 @@ export default function BattleView() {
               bonuses={draft.monsterSide.bonuses}
               monsters={draft.monsterSide.monsters}
               side="monsters"
-              title="Monster Side"
+              title={t('battle.monsterSide')}
               toneColor={AppTheme.colors.danger}
               total={monsterTotal}
               onAddBonus={(value) => updateMonsterSide((side) => ({
@@ -371,7 +373,7 @@ export default function BattleView() {
 
         {!isLoading && !errorMessage && !battle && (
           <View style={styles.stateBlock}>
-            <Text style={styles.stateText}>No active battle</Text>
+            <Text style={styles.stateText}>{t('battle.noActiveBattle')}</Text>
           </View>
         )}
       </ScrollView>

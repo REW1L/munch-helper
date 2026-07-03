@@ -1,5 +1,6 @@
 import { AppTheme } from '@/constants/theme';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ConfirmDialogProps {
@@ -22,10 +23,12 @@ export default function ConfirmDialog({
   title,
   message,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
   useEffect(() => {
     if (Platform.OS === 'web' || !visible) {
       return;
@@ -35,7 +38,7 @@ export default function ConfirmDialog({
       title,
       message,
       [
-        { text: cancelLabel, style: 'cancel', onPress: onCancel },
+        { text: resolvedCancelLabel, style: 'cancel', onPress: onCancel },
         { text: confirmLabel, style: 'destructive', onPress: onConfirm },
       ],
       { cancelable: true, onDismiss: onCancel }
@@ -56,12 +59,12 @@ export default function ConfirmDialog({
             <Text style={styles.message}>{message}</Text>
             <View style={styles.buttons}>
               <TouchableOpacity
-                accessibilityLabel={cancelLabel}
+                accessibilityLabel={resolvedCancelLabel}
                 accessibilityRole="button"
                 style={[styles.button, styles.cancelButton]}
                 onPress={onCancel}
               >
-                <Text style={styles.cancelText}>{cancelLabel}</Text>
+                <Text style={styles.cancelText}>{resolvedCancelLabel}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 accessibilityLabel={confirmLabel}
