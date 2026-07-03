@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
@@ -431,7 +432,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="delete-character-button"
             >
-              <Text style={styles.deleteButtonText}>{isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}</Text>
+              <ButtonLabel style={styles.deleteButtonText}>{isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}</ButtonLabel>
             </TouchableOpacity>
           </ScrollView>
 
@@ -444,7 +445,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="save-character-button"
             >
-              <Text style={styles.buttonText}>{t('common.save')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.save')}</ButtonLabel>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -454,7 +455,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="cancel-character-button"
             >
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>

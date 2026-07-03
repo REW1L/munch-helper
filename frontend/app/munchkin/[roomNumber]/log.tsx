@@ -1,4 +1,5 @@
 import type { LogEvent } from '@/api/logs';
+import ButtonLabel from '@/components/ButtonLabel';
 import BattleHistoryModal from '@/components/munchkin/BattleHistoryModal';
 import LogEntry from '@/components/munchkin/LogEntry';
 import { AppTheme } from '@/constants/theme';
@@ -74,7 +75,7 @@ export default function RoomHistoryLogScreen() {
             onPress={handleNextPageRetry}
             style={styles.retryButton}
           >
-            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+            <ButtonLabel style={styles.retryButtonText}>{t('common.retry')}</ButtonLabel>
           </TouchableOpacity>
         </View>
       );
@@ -101,7 +102,7 @@ export default function RoomHistoryLogScreen() {
             onPress={handleInitialRetry}
             style={styles.retryButton}
           >
-            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+            <ButtonLabel style={styles.retryButtonText}>{t('common.retry')}</ButtonLabel>
           </TouchableOpacity>
         </View>
       )}

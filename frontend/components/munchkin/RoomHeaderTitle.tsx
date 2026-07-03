@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -28,7 +29,7 @@ export function RoomHeaderTitle({
         style={styles.headerCopyButton}
         disabled={roomCode.length === 0}
       >
-        <Text style={styles.headerCopyButtonLabel}>{buttonLabel}</Text>
+        <ButtonLabel style={styles.headerCopyButtonLabel}>{buttonLabel}</ButtonLabel>
       </TouchableOpacity>
     </View>
   );

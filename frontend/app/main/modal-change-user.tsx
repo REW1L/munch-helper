@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import LanguageSelector from '@/components/LanguageSelector';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
@@ -73,7 +74,7 @@ export default function ChangeUserModal({
                 style={styles.changeAvatarButton}
                 onPress={handlePickAvatar}
               >
-                <Text style={styles.changeAvatarButtonText}>{t('profile.changeAvatar')}</Text>
+                <ButtonLabel style={styles.changeAvatarButtonText}>{t('profile.changeAvatar')}</ButtonLabel>
               </TouchableOpacity>
             </View>
 
@@ -102,7 +103,7 @@ export default function ChangeUserModal({
               onPress={handleSave}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.save')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.save')}</ButtonLabel>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -110,7 +111,7 @@ export default function ChangeUserModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    height: '100%',
+    flexGrow: 1,
     gap: 12,
   },
   avatarContainer: {

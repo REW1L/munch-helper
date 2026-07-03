@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import {
   Modal,
@@ -43,7 +44,7 @@ export default function RoomCreateModal({
               activeOpacity={0.7}
               testID="yep-button"
             >
-              <Text style={styles.buttonText}>{t('roomCreate.yes')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('roomCreate.yes')}</ButtonLabel>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -52,7 +53,7 @@ export default function RoomCreateModal({
               activeOpacity={0.7}
               testID="no-button"
             >
-              <Text style={styles.buttonText}>{t('roomCreate.no')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('roomCreate.no')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>

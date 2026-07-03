@@ -4,6 +4,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import ButtonLabel from '@/components/ButtonLabel';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { userProfileContext } from '@/context/UserContext';
@@ -42,10 +43,10 @@ export default function Home() {
               </View>
               <View style={styles.gameActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>{t('rooms.create')}</Text>
+                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>{t('rooms.join')}</Text>
+                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
                 </TouchableOpacity>
               </View>
             </View>

@@ -1,5 +1,6 @@
 import { Character as RoomCharacter } from '@/api/characters';
 import { ApiError } from '@/api/http';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useBattleActions } from '@/hooks/useBattleActions';
@@ -357,7 +358,7 @@ const MunchkinIndexView: React.FC = () => {
               }}
               style={styles.connectionRetryButton}
             >
-              <Text style={styles.connectionRetryButtonText}>{t('room.connectionLostRetry')}</Text>
+              <ButtonLabel style={styles.connectionRetryButtonText}>{t('room.connectionLostRetry')}</ButtonLabel>
             </Pressable>
           )}
 
@@ -389,7 +390,7 @@ const MunchkinIndexView: React.FC = () => {
                 (!roomId || isBattleLoading || battleActions.isLoading) && styles.actionButtonDisabled,
               ]}
             >
-              <Text style={styles.battleButtonText}>{t('room.battle')}</Text>
+              <ButtonLabel style={styles.battleButtonText}>{t('room.battle')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityLabel={t('room.openRoomHistoryA11y')}
@@ -398,7 +399,7 @@ const MunchkinIndexView: React.FC = () => {
               onPress={navigateToLog}
               style={[styles.logButton, !roomId && styles.actionButtonDisabled]}
             >
-              <Text style={styles.logButtonText}>{t('room.log')}</Text>
+              <ButtonLabel style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
             </TouchableOpacity>
           </View>
 

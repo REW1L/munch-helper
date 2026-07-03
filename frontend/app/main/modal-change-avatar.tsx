@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
@@ -7,7 +8,6 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -86,7 +86,7 @@ export default function ChangeAvatarModal({
               onPress={handleConfirm}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('profile.selectAvatar')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('profile.selectAvatar')}</ButtonLabel>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -94,7 +94,7 @@ export default function ChangeAvatarModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>

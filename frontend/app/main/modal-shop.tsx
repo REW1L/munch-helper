@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import VioletButton from '@/components/VioletButton';
 import { AppTheme } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
@@ -67,7 +68,7 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
           </ScrollView>
 
           <TouchableOpacity style={styles.quitButton} onPress={onClose}>
-            <Text style={styles.quitButtonText}>{t('shop.quit')}</Text>
+            <ButtonLabel style={styles.quitButtonText}>{t('shop.quit')}</ButtonLabel>
           </TouchableOpacity>
         </View>
       </View>

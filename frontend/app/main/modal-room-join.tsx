@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -56,14 +57,14 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
               onPress={handleJoin}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.join')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.join')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.button}
               onPress={handleCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>

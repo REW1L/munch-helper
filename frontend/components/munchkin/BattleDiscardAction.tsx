@@ -1,8 +1,9 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export interface BattleDiscardActionProps {
   onConfirmDiscard: () => void;
@@ -31,9 +32,9 @@ function BattleDiscardAction({
         testID="battle-discard-button"
         onPress={onRequestConfirm}
       >
-        <Text style={[styles.discardButtonText, isDiscarding && styles.discardButtonTextDisabled]}>
+        <ButtonLabel style={[styles.discardButtonText, isDiscarding && styles.discardButtonTextDisabled]}>
           {isDiscarding ? t('battle.discarding') : t('battle.discard')}
-        </Text>
+        </ButtonLabel>
       </TouchableOpacity>
 
       <ConfirmDialog

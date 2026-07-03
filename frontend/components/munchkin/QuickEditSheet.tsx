@@ -1,4 +1,5 @@
 import { Character as RoomCharacter } from '@/api/characters';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -262,10 +263,10 @@ export default function QuickEditSheet({
 
           <View style={styles.actions}>
             <TouchableOpacity onPress={handleOpenFullEdit} style={styles.secondaryAction}>
-              <Text style={styles.secondaryActionText}>{t('quickEdit.editMore')}</Text>
+              <ButtonLabel style={styles.secondaryActionText}>{t('quickEdit.editMore')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleSave} style={styles.primaryAction} disabled={isSaving}>
-              <Text style={styles.primaryActionText}>{isSaving ? t('quickEdit.saving') : t('quickEdit.save')}</Text>
+              <ButtonLabel style={styles.primaryActionText}>{isSaving ? t('quickEdit.saving') : t('quickEdit.save')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </Animated.View>
