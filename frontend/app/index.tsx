@@ -6,6 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const STORE_LINKS = {
   ios: 'https://apps.apple.com/us/app/munch-helper/id6760627502',
+  android: 'https://groups.google.com/g/helpamunch-testers',
 } as const;
 
 export default function LandingPage() {
@@ -20,6 +21,20 @@ export default function LandingPage() {
       }
 
       await Linking.openURL(STORE_LINKS.ios);
+    } catch {
+      // Intentionally swallow errors to keep landing actions stable.
+    }
+  };
+
+  const openPlayStore = async () => {
+    try {
+      const canOpen = await Linking.canOpenURL(STORE_LINKS.android);
+
+      if (!canOpen) {
+        return;
+      }
+
+      await Linking.openURL(STORE_LINKS.android);
     } catch {
       // Intentionally swallow errors to keep landing actions stable.
     }
@@ -68,10 +83,10 @@ export default function LandingPage() {
 
               <TouchableOpacity
                 style={[styles.storeLinkButton, styles.disabledStoreLinkButton]}
-                disabled
+                onPress={openPlayStore}
                 accessibilityLabel="Google Play"
               >
-                <Text style={styles.playSoonNote}>soon</Text>
+                <Text style={styles.playSoonNote}>Join Closed Beta</Text>
                 <Image
                   source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
                   style={styles.playStoreBadge}

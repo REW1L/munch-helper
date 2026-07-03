@@ -70,6 +70,11 @@ async function run(command, args, options = {}) {
         ...env,
       },
       maxBuffer: 1024 * 1024 * 20,
+      // expo run halts after installation to show logs
+      // and give debug info
+      // we don't need it here, so just interrupting
+      killSignal: 'SIGINT',
+      timeout: 120000
     });
 
     if (result.stdout) {

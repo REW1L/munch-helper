@@ -120,23 +120,21 @@ describe('Landing route', () => {
     expect(mockOpenURL).toHaveBeenCalledWith('https://apps.apple.com/us/app/munch-helper/id6760627502');
   });
 
-  it('renders disabled Google Play link and does not trigger URL action', async () => {
+  it('opens the closed beta Google group URL from the Google Play link', async () => {
     const { default: LandingPage } = await import('../../app/index');
 
     await act(async () => {
       render(<LandingPage />);
     });
 
-    const googlePlayButton = screen.getByLabelText('Google Play');
-    expect(googlePlayButton.getAttribute('aria-disabled')).toBe('true');
-    expect(screen.getByText('soon')).toBeTruthy();
+    expect(screen.getByText('Join Closed Beta')).toBeTruthy();
 
     await act(async () => {
-      fireEvent.click(googlePlayButton);
+      fireEvent.click(screen.getByLabelText('Google Play'));
     });
 
-    expect(mockOpenURL).not.toHaveBeenCalled();
-    expect(mockCanOpenURL).not.toHaveBeenCalled();
+    expect(mockCanOpenURL).toHaveBeenCalledWith('https://groups.google.com/g/helpamunch-testers');
+    expect(mockOpenURL).toHaveBeenCalledWith('https://groups.google.com/g/helpamunch-testers');
   });
 
   it('hides store links on native platforms', async () => {
@@ -149,7 +147,7 @@ describe('Landing route', () => {
 
     expect(screen.queryByLabelText('App Store')).toBeNull();
     expect(screen.queryByLabelText('Google Play')).toBeNull();
-    expect(screen.queryByText('soon')).toBeNull();
+    expect(screen.queryByText('Join Closed Beta')).toBeNull();
   });
 
   it('navigates to /rooms when Rooms is tapped', async () => {

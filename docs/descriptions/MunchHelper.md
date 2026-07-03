@@ -90,3 +90,5 @@ Create a mobile application for managing and tracking a game process for multipl
 [Backend Services](MunchHelper/Backend%20Services.md)
 
 [Frontend](MunchHelper/Frontend.md)
+
+[Infrastructure](Infrastructure/Infrastructure.md)
