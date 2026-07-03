@@ -164,13 +164,15 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   gameActions: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
     flexDirection: 'row',
   },
   actionButton: {
-    minWidth: 80,
+    flex: 1,
+    minWidth: 0,
     height: 50,
     paddingHorizontal: 10,
     paddingVertical: 5,
