@@ -1,5 +1,6 @@
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
@@ -33,6 +34,7 @@ export default function CreateCharacterModal({
   onConfirm,
   onCancel,
 }: CreateCharacterModalProps) {
+  const { t } = useLocalization();
   const [character, setCharacter] = useState<Character>({
     id: Math.random().toString(36).substring(2, 10),
     avatar: Math.floor(Math.random() * avatars.length),
@@ -60,7 +62,7 @@ export default function CreateCharacterModal({
             style={styles.content}
             contentContainerStyle={styles.contentContainer}
           >
-            <Text style={styles.headerText}>New character</Text>
+            <Text style={styles.headerText}>{t('character.new')}</Text>
 
             <View style={styles.avatarContainer}>
               <Image
@@ -71,7 +73,7 @@ export default function CreateCharacterModal({
 
             {/* Color Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Color:</Text>
+              <Text style={styles.fieldLabel}>{t('character.color')}</Text>
               <View
                 style={[
                   styles.colorPicker,
@@ -82,7 +84,7 @@ export default function CreateCharacterModal({
 
             {/* Name Input */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Name:</Text>
+              <Text style={styles.fieldLabel}>{t('character.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={character.name}
@@ -96,7 +98,7 @@ export default function CreateCharacterModal({
 
             {/* Gender Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Gender:</Text>
+              <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
               <View style={styles.optionContainer}>
                 <TouchableOpacity
                   style={styles.optionRow}
@@ -114,7 +116,7 @@ export default function CreateCharacterModal({
                       <View style={styles.radioDot} />
                     )}
                   </View>
-                  <Text style={styles.optionLabel}>Male</Text>
+                  <Text style={styles.optionLabel}>{t('character.male')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -133,7 +135,7 @@ export default function CreateCharacterModal({
                       <View style={styles.radioDot} />
                     )}
                   </View>
-                  <Text style={styles.optionLabel}>Female</Text>
+                  <Text style={styles.optionLabel}>{t('character.female')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -146,7 +148,7 @@ export default function CreateCharacterModal({
               onPress={handleCreate}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Create</Text>
+              <Text style={styles.buttonText}>{t('character.create')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -154,7 +156,7 @@ export default function CreateCharacterModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

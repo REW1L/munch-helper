@@ -3,6 +3,7 @@ import { RoomHeaderTitle } from '@/components/munchkin/RoomHeaderTitle';
 import { AppTheme } from '@/constants/theme';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
+import { useLocalization } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { StyleSheet, TouchableOpacity } from 'react-native';
@@ -13,6 +14,7 @@ export default function RoomLayout() {
   const segments = useSegments();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
+  const { t } = useLocalization();
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
   const { battle } = useRoomBattle(roomId);
   const isBattleRoute = segments.some((segment) => String(segment) === '(battle)');
@@ -29,7 +31,7 @@ export default function RoomLayout() {
           headerLeft: usesDetailHeader
             ? () => (
                 <TouchableOpacity
-                  accessibilityLabel="Back to room"
+                  accessibilityLabel={t('rooms.backToRoom')}
                   accessibilityRole="button"
                   onPress={() => {
                     if (router.canGoBack()) {
@@ -60,7 +62,7 @@ export default function RoomLayout() {
                   }}
                 />
               ),
-          title: isBattleRoute ? battle?.name ?? 'Battle' : isLogRoute ? 'History' : undefined,
+          title: isBattleRoute ? battle?.name ?? t('rooms.battle') : isLogRoute ? t('history.title') : undefined,
         }}
       />
       <Stack

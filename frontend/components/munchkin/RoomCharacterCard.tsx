@@ -2,6 +2,7 @@ import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
@@ -31,7 +32,12 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   onChangePress,
   realtimeFlashSignal = 0,
 }: RoomCharacterCardProps) {
-  const accessibilityLabel = `${character.nickname}, Level ${character.level}, Power ${character.power}`;
+  const { t } = useLocalization();
+  const accessibilityLabel = t('character.statsAccessibility', {
+    name: character.nickname,
+    level: character.level,
+    power: character.power,
+  });
   const animatedBorderProgress = useRef(new Animated.Value(0)).current;
   const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
@@ -121,7 +127,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
         accessible
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Tap to edit stats"
+        accessibilityHint={t('character.editHint')}
       >
         <View style={styles.characterContent}>
           <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
@@ -131,8 +137,8 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
           <View style={styles.characterInfo}>
             <Text style={styles.characterNickname} testID="character-nickname">{character.nickname}</Text>
             <View style={styles.statsRow}>
-              <Text style={styles.characterStats}>{character.level} lvl</Text>
-              <Text style={styles.characterStats}>{character.power} str</Text>
+              <Text style={styles.characterStats}>{t('character.levelAbbrev', { level: character.level })}</Text>
+              <Text style={styles.characterStats}>{t('character.strengthAbbrev', { power: character.power })}</Text>
             </View>
           </View>
         </View>
@@ -148,7 +154,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
         </ScrollView>
       </View>
 
-      <VioletButton title="Change" onPress={() => onChangePress(character)} testID="change-character-button" />
+      <VioletButton title={t('rooms.changeProfile')} onPress={() => onChangePress(character)} testID="change-character-button" />
     </Animated.View>
   );
 });

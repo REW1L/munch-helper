@@ -1,15 +1,17 @@
 import { setStringAsync } from 'expo-clipboard';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocalization } from '@/i18n';
 
 export const COPIED_LABEL_RESET_MS = 1500;
 
 interface UseRoomCodeClipboardResult {
-  buttonLabel: 'Copy' | 'Copied ✓';
+  buttonLabel: string;
   accessibilityLabel: string;
   copyRoomCode: () => Promise<void>;
 }
 
 export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResult {
+  const { t } = useLocalization();
   const [isCopied, setIsCopied] = useState(false);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
@@ -59,8 +61,8 @@ export function useRoomCodeClipboard(roomCode: string): UseRoomCodeClipboardResu
   }, [clearResetTimeout]);
 
   return {
-    buttonLabel: isCopied ? 'Copied ✓' : 'Copy',
-    accessibilityLabel: roomCode.length > 0 ? `Copy room code ${roomCode}` : 'Copy room code',
+    buttonLabel: isCopied ? t('rooms.copied') : t('rooms.copy'),
+    accessibilityLabel: roomCode.length > 0 ? t('rooms.copyRoomCodeValue', { roomCode }) : t('rooms.copyRoomCode'),
     copyRoomCode,
   };
 }

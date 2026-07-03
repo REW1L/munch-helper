@@ -3,6 +3,7 @@ import { getRuntimeConfig } from '@/config/runtime';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useUserProfile } from '@/hooks/useUser';
+import { LocalizationProvider } from '@/i18n';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -37,17 +38,19 @@ export default function RootLayout() {
 
   return (
     <RootErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <userProfileContext.Provider value={providerValue}>
-          <Stack screenOptions={{
-            headerShown: true,
-            headerStyle: { backgroundColor: AppTheme.colors.surface },
-            headerTintColor: AppTheme.colors.textPrimary,
-            contentStyle: { backgroundColor: AppTheme.colors.background },
-            headerShadowVisible: false,
-          }} />
-        </userProfileContext.Provider>
-      </QueryClientProvider>
+      <LocalizationProvider>
+        <QueryClientProvider client={queryClient}>
+          <userProfileContext.Provider value={providerValue}>
+            <Stack screenOptions={{
+              headerShown: true,
+              headerStyle: { backgroundColor: AppTheme.colors.surface },
+              headerTintColor: AppTheme.colors.textPrimary,
+              contentStyle: { backgroundColor: AppTheme.colors.background },
+              headerShadowVisible: false,
+            }} />
+          </userProfileContext.Provider>
+        </QueryClientProvider>
+      </LocalizationProvider>
     </RootErrorBoundary>
   );
 }

@@ -4,85 +4,86 @@ import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { PRIVACY_EFFECTIVE_DATE, SUPPORT_EMAIL } from '@/constants/releaseContent';
+import { useLocalization } from '@/i18n';
 
 export default function PrivacyPolicyPage() {
+  const { t } = useLocalization();
+
   return (
     <SafeAreaProvider>
       <SafeAreaView
         style={styles.safeArea}
         edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}
       >
-        <Stack.Screen options={{ title: 'Privacy Policy' }} />
+        <Stack.Screen options={{ title: t('privacy.title') }} />
 
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Privacy Policy</Text>
-          <Text style={styles.meta}>Effective date: {PRIVACY_EFFECTIVE_DATE}</Text>
+          <Text style={styles.title}>{t('privacy.title')}</Text>
+          <Text style={styles.meta}>{t('privacy.effectiveDate', { date: PRIVACY_EFFECTIVE_DATE })}</Text>
 
           <PolicySection
-            title="1. Overview"
-            body="Munch Helper is a companion app for tabletop games like Munchkin. It does not require sign-up, account creation, email, password, or any third-party identity provider. The app creates an anonymous player profile so you can enter rooms and play without a traditional account."
+            title={t('privacy.section1Title')}
+            body={t('privacy.section1Body')}
           />
 
           <PolicySection
-            title="2. Information We Process"
-            body="The app processes the profile and gameplay information needed to run the game: your nickname, avatar selection from a fixed local image set, and a server-assigned user identifier. Character records can include name, avatar, color, level, power, class, race, and gender. Room, battle, and room history log records are also processed when those features are used."
+            title={t('privacy.section2Title')}
+            body={t('privacy.section2Body')}
           />
 
           <PolicySection
-            title="3. Session Data"
-            body="To restore your session between launches, the app stores your user profile locally on your device with AsyncStorage under the user key. The profile is also stored server-side so you can rejoin rooms. Characters, battles, rooms, and room history are stored server-side to keep shared gameplay state available."
+            title={t('privacy.section3Title')}
+            body={t('privacy.section3Body')}
           />
 
           <PolicySection
-            title="4. Room Participation"
-            body="When you join a room, your nickname, avatar, and character details become visible to other players in that same room. Room, battle, and room history log state is shared in real time with participants in the room so everyone sees the same gameplay state."
+            title={t('privacy.section4Title')}
+            body={t('privacy.section4Body')}
           />
 
           <PolicySection
-            title="5. Server Communication"
-            body="The app sends and retrieves profile, room, character, battle, and log data through backend APIs and uses WebSocket connections for real-time updates between players in the same room."
+            title={t('privacy.section5Title')}
+            body={t('privacy.section5Body')}
           />
 
           <PolicySection
-            title="6. Why Data Is Used"
-            body="Data is used only to operate core features: creating player profiles, creating and joining rooms, managing characters, running battles, showing room history, synchronizing shared game state, and maintaining a stable multiplayer experience."
+            title={t('privacy.section6Title')}
+            body={t('privacy.section6Body')}
           />
 
           <PolicySection
-            title="7. Data Sharing"
-            body="Your profile and gameplay data is shared only with other participants in rooms you join so multiplayer features can function. Munch Helper does not sell data and does not include third-party advertising, analytics, or tracking SDKs."
+            title={t('privacy.section7Title')}
+            body={t('privacy.section7Body')}
           />
 
           <PolicySection
-            title="8. Children"
-            body="Munch Helper is not directed to children and does not include children-directed features. If you believe a child has provided information through the app, contact support and request deletion assistance."
+            title={t('privacy.section8Title')}
+            body={t('privacy.section8Body')}
           />
 
           <PolicySection
-            title="9. Security"
-            body="Reasonable technical measures are used to protect data in storage and transit. However, no method of transmission or storage can be guaranteed as completely secure."
+            title={t('privacy.section9Title')}
+            body={t('privacy.section9Body')}
           />
 
           <PolicySection
-            title="10. Data Retention and Deletion"
-            body="Local profile data remains on your device until you clear app data or uninstall the app. Server-side data may be retained as needed to operate and maintain the service. You can contact support to request data deletion assistance."
+            title={t('privacy.section10Title')}
+            body={t('privacy.section10Body')}
           />
 
           <PolicySection
-            title="11. International Use"
-            body="By using the app, you understand that data may be processed in infrastructure regions selected by the service operator."
+            title={t('privacy.section11Title')}
+            body={t('privacy.section11Body')}
           />
 
           <PolicySection
-            title="12. Changes to This Policy"
-            body="This policy may be updated from time to time. Updates will be reflected by changing the effective date on this page."
+            title={t('privacy.section12Title')}
+            body={t('privacy.section12Body')}
           />
 
           <View style={styles.contactCard}>
-            <Text style={styles.contactTitle}>Contact</Text>
-            <Text style={styles.contactText}>
-              For privacy questions or requests, email: {SUPPORT_EMAIL}
-            </Text>
+            <Text style={styles.contactTitle}>{t('privacy.contact')}</Text>
+            <Text style={styles.contactText}>{t('privacy.contactText', { email: SUPPORT_EMAIL })}</Text>
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -4,8 +4,11 @@ import { Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { SUPPORT_EMAIL } from '@/constants/releaseContent';
+import { useLocalization } from '@/i18n';
 
 export default function SupportPage() {
+  const { t } = useLocalization();
+
   const handleEmailPress = async () => {
     try {
       await Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
@@ -20,20 +23,16 @@ export default function SupportPage() {
         style={styles.safeArea}
         edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}
       >
-        <Stack.Screen options={{ title: 'Support' }} />
+        <Stack.Screen options={{ title: t('support.title') }} />
 
         <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Support</Text>
-          <Text style={styles.description}>
-            Need help with Munch Helper rooms, characters, battles, or room history? Contact me
-            without creating an account and include a short description of the issue, the room code
-            if relevant, and what you expected to happen.
-          </Text>
+          <Text style={styles.title}>{t('support.title')}</Text>
+          <Text style={styles.description}>{t('support.description')}</Text>
 
           <View style={styles.emailCard}>
-            <Text style={styles.emailLabel}>Contact Email</Text>
+            <Text style={styles.emailLabel}>{t('support.contactEmail')}</Text>
             <TouchableOpacity
-              accessibilityLabel={`Email support at ${SUPPORT_EMAIL}`}
+              accessibilityLabel={t('support.emailSupportAt', { email: SUPPORT_EMAIL })}
               accessibilityRole="button"
               onPress={handleEmailPress}
               style={styles.emailButton}

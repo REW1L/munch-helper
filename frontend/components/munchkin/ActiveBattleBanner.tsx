@@ -1,4 +1,5 @@
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import React, { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -11,13 +12,14 @@ const ActiveBattleBanner = memo(function ActiveBattleBanner({
   battleName,
   onViewBattle,
 }: ActiveBattleBannerProps) {
-  const label = useMemo(() => battleName?.trim() || 'Battle in progress', [battleName]);
+  const { t } = useLocalization();
+  const label = useMemo(() => battleName?.trim() || t('battle.inProgress'), [battleName, t]);
 
   return (
     <Pressable
       accessible
       accessibilityRole="button"
-      accessibilityLabel="Battle in progress. Tap to view."
+      accessibilityLabel={t('battle.inProgressAccessibility')}
       onPress={onViewBattle}
       style={({ pressed }) => [styles.banner, pressed && styles.bannerPressed]}
       testID="active-battle-banner"
@@ -26,7 +28,7 @@ const ActiveBattleBanner = memo(function ActiveBattleBanner({
         <Text style={styles.icon}>⚔️</Text>
         <Text style={styles.label} numberOfLines={1}>{label}</Text>
       </View>
-      <Text style={styles.actionText}>View Battle →</Text>
+      <Text style={styles.actionText}>{t('battle.viewBattle')}</Text>
     </Pressable>
   );
 });

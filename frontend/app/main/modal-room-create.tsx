@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import {
   Modal,
   StyleSheet,
@@ -21,6 +22,8 @@ export default function RoomCreateModal({
   onCancel,
   game = 'Munchkin',
 }: RoomCreateModalProps) {
+  const { t } = useLocalization();
+
   return (
     <Modal
       transparent={true}
@@ -31,7 +34,7 @@ export default function RoomCreateModal({
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Create a room for {game}?</Text>
+            <Text style={styles.titleText}>{t('roomModal.createTitle', { game })}</Text>
           </View>
 
           <View style={styles.buttonContainer}>
@@ -41,7 +44,7 @@ export default function RoomCreateModal({
               activeOpacity={0.7}
               testID="yep-button"
             >
-              <Text style={styles.buttonText}>YEP</Text>
+              <Text style={styles.buttonText}>{t('roomModal.yes')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -50,7 +53,7 @@ export default function RoomCreateModal({
               activeOpacity={0.7}
               testID="no-button"
             >
-              <Text style={styles.buttonText}>NO</Text>
+              <Text style={styles.buttonText}>{t('roomModal.no')}</Text>
             </TouchableOpacity>
           </View>
         </View>

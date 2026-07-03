@@ -4,6 +4,7 @@ import LogEntry from '@/components/munchkin/LogEntry';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomLogs } from '@/hooks/useRoomLogs';
+import { useLocalization } from '@/i18n';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useContext, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function RoomHistoryLogScreen() {
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
+  const { t } = useLocalization();
   const { userProfile } = useContext(userProfileContext);
   const [selectedEntry, setSelectedEntry] = useState<LogEvent | null>(null);
   const {
@@ -57,7 +59,7 @@ export default function RoomHistoryLogScreen() {
       return (
         <View style={styles.footerState}>
           <ActivityIndicator color={AppTheme.colors.accent} />
-          <Text style={styles.stateText}>Loading more history</Text>
+          <Text style={styles.stateText}>{t('history.loadingMore')}</Text>
         </View>
       );
     }
@@ -67,26 +69,26 @@ export default function RoomHistoryLogScreen() {
         <View style={styles.footerState}>
           <Text style={styles.errorText}>{errorMessage}</Text>
           <TouchableOpacity
-            accessibilityLabel="Retry loading older history"
+            accessibilityLabel={t('history.retryOlder')}
             accessibilityRole="button"
             onPress={handleNextPageRetry}
             style={styles.retryButton}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('history.retry')}</Text>
           </TouchableOpacity>
         </View>
       );
     }
 
     return null;
-  }, [errorMessage, handleNextPageRetry, isFetchingNextPage, isNextPageError]);
+  }, [errorMessage, handleNextPageRetry, isFetchingNextPage, isNextPageError, t]);
 
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} style={styles.safeArea}>
       {isLoading && (
         <View style={styles.stateBlock}>
           <ActivityIndicator color={AppTheme.colors.accent} />
-          <Text style={styles.stateText}>Loading history</Text>
+          <Text style={styles.stateText}>{t('history.loading')}</Text>
         </View>
       )}
 
@@ -94,12 +96,12 @@ export default function RoomHistoryLogScreen() {
         <View style={styles.stateBlock}>
           <Text style={styles.errorText}>{errorMessage}</Text>
           <TouchableOpacity
-            accessibilityLabel="Retry loading room history"
+            accessibilityLabel={t('history.retryRoom')}
             accessibilityRole="button"
             onPress={handleInitialRetry}
             style={styles.retryButton}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{t('history.retry')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -109,7 +111,7 @@ export default function RoomHistoryLogScreen() {
           contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
           data={entries}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={styles.emptyText}>No events recorded yet.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{t('history.empty')}</Text>}
           ListFooterComponent={renderFooter}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.4}

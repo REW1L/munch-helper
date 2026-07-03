@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import React from 'react';
 import { Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalization } from '@/i18n';
 
 const STORE_LINKS = {
   ios: 'https://apps.apple.com/us/app/munch-helper/id6760627502',
@@ -11,6 +12,7 @@ const STORE_LINKS = {
 
 export default function LandingPage() {
   const showStoreLinks = Platform.OS === 'web';
+  const { t } = useLocalization();
 
   const openAppStore = async () => {
     try {
@@ -46,52 +48,50 @@ export default function LandingPage() {
         style={{ flex: 1 }}
         edges={Platform.OS === 'ios' ? ['top'] : ['top', 'bottom', 'left', 'right']}
       >
-        <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
+        <Stack.Screen options={{ title: t('landing.title'), headerShown: false }} />
         <View style={styles.container}>
           <TouchableOpacity style={styles.privacyButton} onPress={() => router.navigate('/privacy')}>
-            <Text style={styles.privacyButtonText}>Privacy</Text>
+            <Text style={styles.privacyButtonText}>{t('landing.privacy')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.supportButton} onPress={() => router.navigate('/support')}>
-            <Text style={styles.supportButtonText}>Support</Text>
+            <Text style={styles.supportButtonText}>{t('landing.support')}</Text>
           </TouchableOpacity>
 
           <View style={styles.heroSection}>
-            <Text style={styles.title}>Munch Helper</Text>
-            <Text style={styles.subtitle}>Your companion for board games like Munchkin</Text>
-            <Text style={styles.description}>
-              Create game rooms with your friends, manage characters in games, and forget about remembering and recalculating stats.
-            </Text>
+            <Text style={styles.title}>{t('landing.title')}</Text>
+            <Text style={styles.subtitle}>{t('landing.subtitle')}</Text>
+            <Text style={styles.description}>{t('landing.description')}</Text>
           </View>
 
           <View style={styles.actionsSection}>
             <TouchableOpacity style={styles.roomsButton} onPress={() => router.navigate('/rooms')}>
-              <Text style={styles.roomsButtonText}>Rooms</Text>
+              <Text style={styles.roomsButtonText}>{t('landing.rooms')}</Text>
             </TouchableOpacity>
           </View>
 
           {showStoreLinks ? (
             <View style={styles.storeLinksSection}>
-              <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel="App Store">
+              <TouchableOpacity style={styles.storeLinkButton} onPress={openAppStore} accessibilityLabel={t('landing.appStore')}>
                 <Image
                   source={require('../assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg')}
                   style={styles.appStoreBadge}
                   contentFit="contain"
-                  accessibilityLabel="App Store badge"
+                  accessibilityLabel={t('landing.appStoreBadge')}
                 />
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.storeLinkButton]}
                 onPress={openPlayStore}
-                accessibilityLabel="Google Play"
+                accessibilityLabel={t('landing.googlePlay')}
               >
-                <Text style={styles.playSoonNote}>Join Closed Beta</Text>
+                <Text style={styles.playSoonNote}>{t('landing.joinClosedBeta')}</Text>
                 <Image
                   source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
                   style={styles.playStoreBadge}
                   contentFit="contain"
-                  accessibilityLabel="Google Play badge"
+                  accessibilityLabel={t('landing.googlePlayBadge')}
                 />
               </TouchableOpacity>
             </View>

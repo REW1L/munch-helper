@@ -1,11 +1,12 @@
 import type { LogEvent } from '@/api/logs';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
+import type { TranslationKey } from '@/i18n';
 import React, { memo, useMemo } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import {
-  getBattleResultLabel,
   hasUsableBattlePayload,
   narrowBattlePayload,
 } from './logEntryBattle';
@@ -32,9 +33,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function formatDisplayValue(value: unknown): string {
+function formatDisplayValue(value: unknown, t: (key: TranslationKey) => string): string {
   if (value === null || value === undefined || value === '') {
-    return 'none';
+    return t('history.none');
   }
 
   if (typeof value === 'string') {
@@ -45,7 +46,7 @@ function formatDisplayValue(value: unknown): string {
         const parsedValue: unknown = JSON.parse(trimmedValue);
 
         if (Array.isArray(parsedValue)) {
-          return formatDisplayValue(parsedValue);
+          return formatDisplayValue(parsedValue, t);
         }
       } catch {
         return value;
@@ -61,16 +62,16 @@ function formatDisplayValue(value: unknown): string {
 
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      return '<Empty>';
+      return t('history.emptyValue');
     }
 
-    return value.map(formatDisplayValue).join(', ');
+    return value.map((item) => formatDisplayValue(item, t)).join(', ');
   }
 
   return String(value);
 }
 
-function getCharacterDisplay(payload: unknown, summary: string): CharacterDisplay {
+function getCharacterDisplay(payload: unknown, summary: string, unknownCharacterLabel: string): CharacterDisplay {
   const character = isRecord(payload) && isRecord(payload.character) ? payload.character : {};
   const rawName = typeof character.name === 'string' ? character.name.trim() : '';
   const rawAvatarId = typeof character.avatarId === 'number' && Number.isInteger(character.avatarId)
@@ -81,13 +82,13 @@ function getCharacterDisplay(payload: unknown, summary: string): CharacterDispla
     : AppTheme.colors.surfaceWarm;
 
   return {
-    name: rawName || summary || 'Unknown character',
+    name: rawName || summary || unknownCharacterLabel,
     avatarId: rawAvatarId,
     color: rawColor,
   };
 }
 
-function getDiffRows(payload: unknown): DiffRow[] {
+function getDiffRows(payload: unknown, t: (key: TranslationKey) => string): DiffRow[] {
   if (!isRecord(payload) || !isRecord(payload.changes)) {
     return [];
   }
@@ -99,8 +100,8 @@ function getDiffRows(payload: unknown): DiffRow[] {
 
     return [{
       field,
-      prev: formatDisplayValue(change.prev),
-      next: formatDisplayValue(change.next),
+      prev: formatDisplayValue(change.prev, t),
+      next: formatDisplayValue(change.next, t),
     }];
   });
 }
@@ -112,7 +113,7 @@ function appendTime(label: string, relativeTime: string): string {
 function getActionAccessibilityLabel(
   name: string,
   summary: string,
-  action: 'created' | 'removed',
+  action: string,
   relativeTime: string,
 ): string {
   const baseLabel = name === summary ? summary : `${name} ${action}`;
@@ -124,20 +125,21 @@ function getUpdateAccessibilityLabel(
   summary: string,
   diffRows: DiffRow[],
   relativeTime: string,
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string,
 ): string {
   if (diffRows.length === 0) {
     return appendTime(summary || name, relativeTime);
   }
 
   const changes = diffRows
-    .map(({ field, prev, next }) => `${field} changed from ${prev} to ${next}`)
+    .map(({ field, prev, next }) => t('history.fieldChanged', { field, prev, next }))
     .join(', ');
 
   return appendTime(`${name}, ${changes}`, relativeTime);
 }
 
-function getNeutralAccessibilityLabel(summary: string, relativeTime: string): string {
-  return appendTime(summary || 'Log entry', relativeTime);
+function getNeutralAccessibilityLabel(summary: string, relativeTime: string, logEntryLabel: string): string {
+  return appendTime(summary || logEntryLabel, relativeTime);
 }
 
 function getBattleAccessibilityLabel(
@@ -146,10 +148,11 @@ function getBattleAccessibilityLabel(
   relativeTime: string,
   isInteractive: boolean,
   hasStructuredName: boolean,
+  t: (key: TranslationKey, values?: Record<string, string | number>) => string,
 ): string {
-  const suffix = isInteractive ? ' Double-tap to open battle record.' : '';
-  const prefix = hasStructuredName ? 'Battle ' : '';
-  return `${prefix}${name}, ${statusPhrase}, ${relativeTime}.${suffix}`;
+  const suffix = isInteractive ? t('history.openBattleRecordHint') : '';
+  const prefix = hasStructuredName ? `${t('rooms.battle')} ` : '';
+  return t('history.battleAccessibility', { prefix, name, status: statusPhrase, relativeTime, suffix });
 }
 
 function getResultColor(result: unknown): string {
@@ -165,15 +168,16 @@ function getResultColor(result: unknown): string {
 }
 
 function LogEntry({ entry, onPress }: LogEntryProps) {
+  const { t } = useLocalization();
   const relativeTime = formatRelativeTime(entry.occurredAt);
   const character = useMemo(
-    () => getCharacterDisplay(entry.payload, entry.summary),
-    [entry.payload, entry.summary],
+    () => getCharacterDisplay(entry.payload, entry.summary, t('history.unknownCharacter')),
+    [entry.payload, entry.summary, t],
   );
   const avatarSource = avatars[character.avatarId] ?? avatars[0];
 
   if (entry.eventType === 'character_created' || entry.eventType === 'character_deleted') {
-    const action = entry.eventType === 'character_created' ? 'created' : 'removed';
+    const action = entry.eventType === 'character_created' ? t('history.created') : t('history.removed');
 
     return (
       <View
@@ -203,12 +207,13 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
   }
 
   if (entry.eventType === 'character_updated') {
-    const diffRows = getDiffRows(entry.payload);
+    const diffRows = getDiffRows(entry.payload, t);
     const accessibilityLabel = getUpdateAccessibilityLabel(
       character.name,
       entry.summary,
       diffRows,
       relativeTime,
+      t,
     );
 
     return (
@@ -251,13 +256,13 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
 
   if (entry.eventType === 'battle_started') {
     const startedBattle = narrowBattlePayload(entry.payload);
-    const name = startedBattle?.name || entry.summary || 'Battle';
+    const name = startedBattle?.name || entry.summary || t('rooms.battle');
     const hasStructuredName = Boolean(startedBattle?.name);
 
     return (
       <View
         accessible
-        accessibilityLabel={getBattleAccessibilityLabel(name, 'started', relativeTime, false, hasStructuredName)}
+        accessibilityLabel={getBattleAccessibilityLabel(name, t('history.started'), relativeTime, false, hasStructuredName, t)}
         style={styles.row}
         testID="log-entry-row"
       >
@@ -276,7 +281,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.timestamp}>{relativeTime}</Text>
           </View>
-          <Text style={styles.actionLabel}>started</Text>
+          <Text style={styles.actionLabel}>{t('history.started')}</Text>
         </View>
       </View>
     );
@@ -284,11 +289,17 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
 
   if (entry.eventType === 'battle_concluded' || entry.eventType === 'battle_discarded') {
     const battle = narrowBattlePayload(entry.payload);
-    const name = battle?.name || entry.summary || 'Battle';
+    const name = battle?.name || entry.summary || t('rooms.battle');
     const hasStructuredName = Boolean(battle?.name);
     const isConcluded = entry.eventType === 'battle_concluded';
     const isInteractive = hasUsableBattlePayload(entry.payload);
-    const statusPhrase = isConcluded ? getBattleResultLabel(battle?.result) : 'discarded';
+    const statusPhrase = isConcluded
+      ? battle?.result === 'players_win'
+        ? t('battle.playersWin')
+        : battle?.result === 'monster_wins'
+          ? t('battle.monsterWins')
+          : t('history.concluded')
+      : t('history.discarded');
     const rowContents = (
       <>
         <View style={styles.battleGlyphWrapper}>
@@ -314,7 +325,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
               {statusPhrase}
             </Text>
           ) : (
-            <Text style={styles.actionLabel}>discarded</Text>
+            <Text style={styles.actionLabel}>{t('history.discarded')}</Text>
           )}
         </View>
       </>
@@ -325,6 +336,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
       relativeTime,
       isInteractive,
       hasStructuredName,
+      t,
     );
 
     if (isInteractive) {
@@ -358,7 +370,7 @@ function LogEntry({ entry, onPress }: LogEntryProps) {
   return (
     <View
       accessible
-      accessibilityLabel={getNeutralAccessibilityLabel(entry.summary, relativeTime)}
+      accessibilityLabel={getNeutralAccessibilityLabel(entry.summary, relativeTime, t('history.logEntry'))}
       style={styles.neutralRow}
       testID="log-entry-row"
     >

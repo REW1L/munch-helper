@@ -7,6 +7,7 @@ import { useRoomCharacters } from '@/hooks/useCharacters';
 import { useReconnectOnForeground } from '@/hooks/useReconnectOnForeground';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
+import { useLocalization } from '@/i18n';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -43,6 +44,7 @@ const MunchkinIndexView: React.FC = () => {
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
+  const { t } = useLocalization();
   const { userProfile } = useContext(userProfileContext);
   const {
     characters,
@@ -210,11 +212,11 @@ const MunchkinIndexView: React.FC = () => {
       setShowUndoToast(true);
     } catch (error) {
       setDangerFlash(true);
-      setActionError(error instanceof Error ? error.message : 'Failed to update character stats');
+      setActionError(error instanceof Error ? error.message : t('rooms.updateStatsFailed'));
       setShowUndoToast(false);
       setUndoState(null);
     }
-  }, [selectedCharacter, selectedCharacterId, update]);
+  }, [selectedCharacter, selectedCharacterId, update, t]);
 
   const handleQuickEditUndo = useCallback(() => {
     if (!undoState) {
@@ -227,9 +229,9 @@ const MunchkinIndexView: React.FC = () => {
       level: undoState.previous.level,
       power: undoState.previous.power,
     }).catch((error) => {
-      setActionError(error instanceof Error ? error.message : 'Failed to undo character stats');
+      setActionError(error instanceof Error ? error.message : t('rooms.undoStatsFailed'));
     });
-  }, [undoState, update]);
+  }, [undoState, update, t]);
 
   const handleOpenFullEdit = useCallback(() => {
     setDeleteError(null);
@@ -316,13 +318,13 @@ const MunchkinIndexView: React.FC = () => {
         // Re-sync the room instead of navigating to a battle that does not
         // exist, and let the next press start a fresh one.
         await refreshBattle();
-        setActionError('Could not start the battle. Please try again.');
+        setActionError(t('rooms.startBattleRetry'));
         return;
       }
 
-      setActionError(error instanceof Error ? error.message : 'Failed to start battle');
+      setActionError(error instanceof Error ? error.message : t('rooms.startBattleFailed'));
     }
-  }, [battle, battleActions, createDefaultBattleName, navigateToBattle, refreshBattle, roomId]);
+  }, [battle, battleActions, createDefaultBattleName, navigateToBattle, refreshBattle, roomId, t]);
 
   useReconnectOnForeground(Boolean(roomId && userProfile.id && !isConnected), handleReconnect);
 
@@ -347,14 +349,14 @@ const MunchkinIndexView: React.FC = () => {
 
           {isTimedOut && !isConnected && (
             <Pressable
-              accessibilityLabel="Connection lost. Tap to retry"
+              accessibilityLabel={t('rooms.connectionLostRetryAccessibility')}
               accessibilityRole="button"
               onPress={() => {
                 void handleReconnect();
               }}
               style={styles.connectionRetryButton}
             >
-              <Text style={styles.connectionRetryButtonText}>Connection lost · Retry</Text>
+              <Text style={styles.connectionRetryButtonText}>{t('rooms.connectionLostRetry')}</Text>
             </Pressable>
           )}
 
@@ -375,7 +377,7 @@ const MunchkinIndexView: React.FC = () => {
 
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              accessibilityLabel="Open battle"
+              accessibilityLabel={t('rooms.openBattle')}
               accessibilityRole="button"
               disabled={!roomId || isBattleLoading || battleActions.isLoading}
               onPress={() => {
@@ -386,16 +388,16 @@ const MunchkinIndexView: React.FC = () => {
                 (!roomId || isBattleLoading || battleActions.isLoading) && styles.actionButtonDisabled,
               ]}
             >
-              <Text style={styles.battleButtonText}>Battle</Text>
+              <Text style={styles.battleButtonText}>{t('rooms.battle')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              accessibilityLabel="Open room history"
+              accessibilityLabel={t('rooms.openHistory')}
               accessibilityRole="button"
               disabled={!roomId}
               onPress={navigateToLog}
               style={[styles.logButton, !roomId && styles.actionButtonDisabled]}
             >
-              <Text style={styles.logButtonText}>Log</Text>
+              <Text style={styles.logButtonText}>{t('rooms.log')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -425,7 +427,7 @@ const MunchkinIndexView: React.FC = () => {
                 });
                 setCreateCharacterModalVisible(false);
               } catch (error) {
-                setActionError(error instanceof Error ? error.message : 'Failed to create character');
+                setActionError(error instanceof Error ? error.message : t('rooms.createCharacterFailed'));
               }
             }}
             onCancel={() => setCreateCharacterModalVisible(false)}
@@ -451,7 +453,7 @@ const MunchkinIndexView: React.FC = () => {
                   });
                   setChangeCharacterModalVisible(false);
                 } catch (error) {
-                  setActionError(error instanceof Error ? error.message : 'Failed to update character');
+                  setActionError(error instanceof Error ? error.message : t('rooms.updateCharacterFailed'));
                 }
               }}
               onDelete={async (characterId) => {
@@ -472,7 +474,7 @@ const MunchkinIndexView: React.FC = () => {
                     return;
                   }
 
-                  setDeleteError(error instanceof Error ? error.message : 'Failed to delete character');
+                  setDeleteError(error instanceof Error ? error.message : t('rooms.deleteCharacterFailed'));
                 } finally {
                   setPendingDeleteCharacterId((current) => (current === characterId ? null : current));
                 }
@@ -497,7 +499,7 @@ const MunchkinIndexView: React.FC = () => {
           {showUndoToast && undoState && (
             <Animated.View style={[styles.undoToastWrapper, { transform: [{ translateY: undoToastTranslateY }] }]} pointerEvents="box-none">
               <Pressable style={styles.undoToast} onPress={handleQuickEditUndo}>
-                <Text style={styles.undoToastText}>Undo</Text>
+                <Text style={styles.undoToastText}>{t('rooms.undo')}</Text>
               </Pressable>
             </Animated.View>
           )}

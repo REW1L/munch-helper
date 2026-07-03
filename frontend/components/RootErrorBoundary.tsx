@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { DEFAULT_LOCALE, translate } from '@/i18n';
 
 type RootErrorBoundaryProps = {
   children: React.ReactNode;
@@ -34,8 +35,8 @@ export class RootErrorBoundary extends React.Component<RootErrorBoundaryProps, R
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>{this.state.errorMessage || 'Unexpected application error.'}</Text>
+          <Text style={styles.title}>{translate(DEFAULT_LOCALE, 'error.title')}</Text>
+          <Text style={styles.message}>{this.state.errorMessage || translate(DEFAULT_LOCALE, 'error.unexpected')}</Text>
         </View>
       );
     }

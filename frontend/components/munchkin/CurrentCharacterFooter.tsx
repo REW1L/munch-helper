@@ -2,6 +2,7 @@ import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import React, { memo } from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -16,6 +17,8 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
   character,
   onChangePress,
 }: CurrentCharacterFooterProps) {
+  const { t } = useLocalization();
+
   return (
     <View style={styles.currentCharacterFooter}>
       <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
@@ -25,8 +28,8 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
       <View style={styles.footerInfo}>
         <Text style={styles.footerNickname}>{character.nickname}</Text>
         <View style={styles.footerStats}>
-          <Text style={styles.footerStatText}>{character.level} lvl</Text>
-          <Text style={styles.footerStatText}>{character.power} str</Text>
+          <Text style={styles.footerStatText}>{t('character.levelAbbrev', { level: character.level })}</Text>
+          <Text style={styles.footerStatText}>{t('character.strengthAbbrev', { power: character.power })}</Text>
         </View>
       </View>
 
@@ -40,7 +43,7 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
         </ScrollView>
       </View>
 
-      <VioletButton title="Change" onPress={() => onChangePress(character)} />
+      <VioletButton title={t('rooms.changeProfile')} onPress={() => onChangePress(character)} />
     </View>
   );
 });

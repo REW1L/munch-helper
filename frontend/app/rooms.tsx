@@ -6,6 +6,7 @@ import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { userProfileContext } from '@/context/UserContext';
+import { useLocalization } from '@/i18n';
 import { router, Stack } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
@@ -19,6 +20,7 @@ export default function Home() {
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
   const { userProfile, setUserProfile } = useContext(userProfileContext);
+  const { t } = useLocalization();
 
   return (
     <SafeAreaProvider>
@@ -28,7 +30,7 @@ export default function Home() {
       >
         <View style={styles.container}>
           {/* Status Bar */}
-          <Stack.Screen options={{ title: 'Games' }} />
+          <Stack.Screen options={{ title: t('rooms.title') }} />
 
           {/* Main Content */}
           <View style={styles.mainContent}>
@@ -36,14 +38,14 @@ export default function Home() {
             <View style={styles.gameCard}>
               <View style={styles.gameTitle}>
                 <Text style={styles.gameTitleText}>Munch ⚔️</Text>
-                <Text style={styles.gameTitleText}>Classic</Text>
+                <Text style={styles.gameTitleText}>{t('rooms.munchClassic')}</Text>
               </View>
               <View style={styles.gameActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>Create</Text>
+                  <Text style={styles.actionButtonLabel}>{t('rooms.create')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>Join</Text>
+                  <Text style={styles.actionButtonLabel}>{t('rooms.join')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -53,7 +55,7 @@ export default function Home() {
           <View style={styles.roomsHistoryContainer}>
             {/* TODO: Not implemented yet */}
             <TouchableOpacity style={[styles.roomsHistoryButton, { opacity: 0 }]}>
-              <Text style={styles.roomsHistoryText}>Rooms history</Text>
+              <Text style={styles.roomsHistoryText}>{t('rooms.history')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -66,7 +68,7 @@ export default function Home() {
               />
               <View style={{ justifyContent: 'center', alignItems: 'center', gap: 5, width: '50%' }}>
                 <Text style={styles.profileNickname}>{userProfile.nickname}</Text>
-                <VioletButton title="Change" onPress={() => setChangeUserModalVisible(true)} />
+                <VioletButton title={t('rooms.changeProfile')} onPress={() => setChangeUserModalVisible(true)} />
               </View>
             </View>
             {/* Currently not implemented

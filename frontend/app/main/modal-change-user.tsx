@@ -1,9 +1,11 @@
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
+import { SupportedLocale, useLocalization } from '@/i18n';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
 import {
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +13,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import ChangeAvatarModal from './modal-change-avatar';
 
 import { UserProfileInterface } from '@/hooks/useUser';
@@ -30,6 +33,7 @@ export default function ChangeUserModal({
 }: ChangeUserModalProps) {
   const [user, setUser] = useState<UserProfileInterface>(initialUser);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const { locale, localeOptions, setLocale, t } = useLocalization();
 
   const handlePickAvatar = () => {
     setShowAvatarModal(true);
@@ -47,6 +51,13 @@ export default function ChangeUserModal({
   const handleSave = () => {
     onConfirm(user);
   };
+
+  const languagePickerItems = localeOptions.map((option) => ({
+    label: option.nativeName === option.englishName
+      ? option.englishName
+      : `${option.nativeName} (${option.englishName})`,
+    value: option.code,
+  }));
 
   return (
     <Modal
@@ -70,13 +81,13 @@ export default function ChangeUserModal({
                 style={styles.changeAvatarButton}
                 onPress={handlePickAvatar}
               >
-                <Text style={styles.changeAvatarButtonText}>Change Avatar</Text>
+                <Text style={styles.changeAvatarButtonText}>{t('profile.changeAvatar')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Name Input */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Nickname:</Text>
+              <Text style={styles.fieldLabel}>{t('profile.nickname')}</Text>
               <TextInput
                 maxLength={14}
                 style={styles.input}
@@ -85,8 +96,26 @@ export default function ChangeUserModal({
                   setUser({ ...user, nickname: text })
                 }
                 placeholderTextColor="#888686"
-                placeholder="Enter nickname"
+                placeholder={t('profile.nicknamePlaceholder')}
               />
+            </View>
+
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>{t('settings.language')}</Text>
+              <View style={styles.pickerFrame}>
+                <Picker
+                  selectedValue={locale}
+                  onValueChange={(nextLocale) => {
+                    void setLocale(nextLocale as SupportedLocale);
+                  }}
+                  style={styles.picker}
+                  dropdownIconColor="#000000"
+                >
+                  {languagePickerItems.map((option) => (
+                    <Picker.Item key={option.value} label={option.label} value={option.value} />
+                  ))}
+                </Picker>
+              </View>
             </View>
           </ScrollView>
 
@@ -97,7 +126,7 @@ export default function ChangeUserModal({
               onPress={handleSave}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={styles.buttonText}>{t('common.save')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -105,7 +134,7 @@ export default function ChangeUserModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -204,6 +233,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: 'Roboto',
     alignContent: 'center',
+  },
+  pickerFrame: {
+    width: '50%',
+    minHeight: 34,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#484848',
+    backgroundColor: '#DFDFDF',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  picker: {
+    color: '#000000',
+    minHeight: Platform.OS === 'ios' ? 90 : 34,
   },
   buttonContainer: {
     flexDirection: 'row',

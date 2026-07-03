@@ -1,5 +1,6 @@
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import React, { memo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -18,10 +19,12 @@ function BattleDiscardAction({
   onCancelConfirm,
   isDiscarding,
 }: BattleDiscardActionProps) {
+  const { t } = useLocalization();
+
   return (
     <View style={styles.root} testID="battle-discard-action">
       <TouchableOpacity
-        accessibilityLabel="Discard battle"
+        accessibilityLabel={t('battle.discardAccessibility')}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDiscarding }}
         disabled={isDiscarding}
@@ -30,15 +33,15 @@ function BattleDiscardAction({
         onPress={onRequestConfirm}
       >
         <Text style={[styles.discardButtonText, isDiscarding && styles.discardButtonTextDisabled]}>
-          {isDiscarding ? 'Discarding...' : 'Discard'}
+          {isDiscarding ? t('battle.discarding') : t('battle.discard')}
         </Text>
       </TouchableOpacity>
 
       <ConfirmDialog
-        cancelLabel="Keep battle"
-        confirmLabel="Discard"
-        message="This battle will be discarded and removed from the room. This can't be undone."
-        title="Discard battle?"
+        cancelLabel={t('battle.keepBattle')}
+        confirmLabel={t('battle.discard')}
+        message={t('battle.discardMessage')}
+        title={t('battle.discardTitle')}
         visible={confirmVisible}
         onCancel={onCancelConfirm}
         onConfirm={onConfirmDiscard}

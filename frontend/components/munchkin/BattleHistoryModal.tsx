@@ -2,6 +2,7 @@ import type { LogEvent } from '@/api/logs';
 import { AppTheme } from '@/constants/theme';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import type { UserProfileInterface } from '@/hooks/useUser';
+import { useLocalization } from '@/i18n';
 import React, { memo, useMemo } from 'react';
 import {
   Modal,
@@ -15,7 +16,6 @@ import {
 
 import {
   formatSignedValue,
-  getBattleResultLabel,
   narrowBattlePayload,
 } from './logEntryBattle';
 import { formatRelativeTime } from './logEntryTime';
@@ -45,6 +45,7 @@ function resultColor(result: unknown): string {
 }
 
 function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHistoryModalProps) {
+  const { t } = useLocalization();
   const isVisible = entry !== null;
   const { characters } = useRoomCharacters(roomId, userProfile);
   const characterById = useMemo(
@@ -53,8 +54,11 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
   );
   const battle = entry ? narrowBattlePayload(entry.payload) : null;
   const isConcluded = entry?.eventType === 'battle_concluded';
-  const title = battle?.name || entry?.summary || 'Battle';
-  const status = capitalizeStatus(battle?.status, entry?.eventType === 'battle_discarded' ? 'discarded' : 'concluded');
+  const title = battle?.name || entry?.summary || t('rooms.battle');
+  const status = capitalizeStatus(
+    battle?.status,
+    entry?.eventType === 'battle_discarded' ? t('history.discarded') : t('history.concluded')
+  );
   const relativeTime = entry ? formatRelativeTime(entry.occurredAt) : '';
   const playerIds = battle?.playerSide?.characterIds ?? [];
   const playerBonuses = battle?.playerSide?.bonuses ?? [];
@@ -84,7 +88,7 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
               <Text style={styles.status}>{status}</Text>
             </View>
             <TouchableOpacity
-              accessibilityLabel="Close battle history"
+              accessibilityLabel={t('history.closeBattleHistory')}
               accessibilityRole="button"
               hitSlop={8}
               onPress={onClose}
@@ -102,12 +106,16 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
                   style={[styles.resultChip, { color: resultColor(battle.result) }]}
                   testID="battle-history-result"
                 >
-                  {getBattleResultLabel(battle.result, '—')}
+                  {battle.result === 'players_win'
+                    ? t('battle.playersWin')
+                    : battle.result === 'monster_wins'
+                      ? t('battle.monsterWins')
+                      : '—'}
                 </Text>
               )}
 
               <View style={styles.section}>
-                <Text style={styles.playerHeading}>Player Side</Text>
+                <Text style={styles.playerHeading}>{t('battle.playerSide')}</Text>
                 {playerIds.length > 0 ? playerIds.map((characterId) => {
                   const character = characterById.get(characterId);
                   const hasLevel = character && Number.isFinite(character.level);
@@ -115,19 +123,19 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
                   return (
                     <View key={characterId} style={styles.rowLine}>
                       <Text style={styles.bodyText}>
-                        {character?.nickname ?? 'Removed character'}
+                        {character?.nickname ?? t('battle.removedCharacter')}
                       </Text>
                       {character && (hasLevel || hasPower) && (
                         <Text style={styles.captionText}>
-                          {hasLevel ? `Level ${character.level}` : null}
+                          {hasLevel ? t('battle.levelValue', { level: character.level }) : null}
                           {hasLevel && hasPower ? ' · ' : null}
-                          {hasPower ? `Power ${character.power}` : null}
+                          {hasPower ? t('battle.powerValue', { value: character.power }) : null}
                         </Text>
                       )}
                     </View>
                   );
                 }) : (
-                  <Text style={styles.captionText}>No player participants</Text>
+                  <Text style={styles.captionText}>{t('history.noPlayerParticipants')}</Text>
                 )}
                 {playerBonuses.length > 0 && (
                   <View style={styles.bonusList}>
@@ -139,13 +147,13 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.monsterHeading}>Monster Side</Text>
+                <Text style={styles.monsterHeading}>{t('battle.monsterSide')}</Text>
                 {monsters.length > 0 ? monsters.map((monster) => (
                   <Text key={monster.id} style={styles.bodyText}>
-                    {monster.name || 'Unknown monster'} · Level {Number.isFinite(monster.level) ? monster.level : '—'}
+                    {monster.name || t('history.unknownMonster')} · {Number.isFinite(monster.level) ? t('battle.levelValue', { level: monster.level }) : t('battle.levelValue', { level: '—' })}
                   </Text>
                 )) : (
-                  <Text style={styles.captionText}>No monsters recorded</Text>
+                  <Text style={styles.captionText}>{t('history.noMonstersRecorded')}</Text>
                 )}
                 {monsterBonuses.length > 0 && (
                   <View style={styles.bonusList}>

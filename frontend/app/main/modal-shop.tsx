@@ -1,5 +1,6 @@
 import VioletButton from '@/components/VioletButton';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ShopModalProps {
@@ -8,6 +9,8 @@ interface ShopModalProps {
 }
 
 export default function ShopModal({ visible, onClose }: ShopModalProps) {
+  const { t } = useLocalization();
+
   return (
     <Modal
       visible={visible}
@@ -19,7 +22,7 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
         <View style={styles.modalContainer}>
           <ScrollView contentContainerStyle={styles.contentContainer}>
             <View style={styles.header}>
-              <Text style={styles.headerText}>Shop</Text>
+              <Text style={styles.headerText}>{t('shop.title')}</Text>
             </View>
 
             <Image
@@ -33,10 +36,10 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 source={require('@/assets/images/coin-small.png')}
               />
               <View style={styles.coinInfo}>
-                <Text style={styles.coinAmount}>200 coins</Text>
+                <Text style={styles.coinAmount}>{t('shop.coinsAmount', { count: 200 })}</Text>
                 <Text style={styles.coinPrice}>$1.99</Text>
               </View>
-              <VioletButton title="Buy" onPress={() => { }} />
+              <VioletButton title={t('shop.buy')} onPress={() => { }} />
             </View>
 
             <View style={styles.coinItem}>
@@ -45,10 +48,10 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 source={require('@/assets/images/coin-medium.png')}
               />
               <View style={styles.coinInfo}>
-                <Text style={styles.coinAmount}>500 coins</Text>
+                <Text style={styles.coinAmount}>{t('shop.coinsAmount', { count: 500 })}</Text>
                 <Text style={styles.coinPrice}>$3.99</Text>
               </View>
-              <VioletButton title="Buy" onPress={() => { }} />
+              <VioletButton title={t('shop.buy')} onPress={() => { }} />
             </View>
 
             <View style={styles.coinItem}>
@@ -57,15 +60,15 @@ export default function ShopModal({ visible, onClose }: ShopModalProps) {
                 source={require('@/assets/images/coin-large.png')}
               />
               <View style={styles.coinInfo}>
-                <Text style={styles.coinAmount}>1000 coins</Text>
+                <Text style={styles.coinAmount}>{t('shop.coinsAmount', { count: 1000 })}</Text>
                 <Text style={styles.coinPrice}>$7.99</Text>
               </View>
-              <VioletButton title="Buy" onPress={() => { }} />
+              <VioletButton title={t('shop.buy')} onPress={() => { }} />
             </View>
           </ScrollView>
 
           <TouchableOpacity style={styles.quitButton} onPress={onClose}>
-            <Text style={styles.quitButtonText}>Quit shop</Text>
+            <Text style={styles.quitButtonText}>{t('shop.quit')}</Text>
           </TouchableOpacity>
         </View>
       </View>

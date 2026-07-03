@@ -1,5 +1,6 @@
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { AppTheme } from '@/constants/theme';
+import { useLocalization } from '@/i18n';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -44,6 +45,7 @@ export default function ChangeCharacterModal({
   deleteError = null,
   onCancel,
 }: ChangeCharacterModalProps) {
+  const { t } = useLocalization();
   const [character, setCharacter] = useState<Character>(
     initialCharacter || {
       id: 'temp-id',
@@ -81,7 +83,7 @@ export default function ChangeCharacterModal({
     setIsDeletePending(false);
     activeDeleteRef.current = null;
     pendingDeleteCharacterIdRef.current = null;
-  }, [initialCharacter?.id]);
+  }, [initialCharacter]);
 
   const handleSave = () => {
     if (isDeletePending) {
@@ -161,9 +163,9 @@ export default function ChangeCharacterModal({
         <View style={styles.container}>
           <ConfirmDialog
             visible={deleteConfirmVisible}
-            title="Delete character?"
-            message="This action cannot be undone."
-            confirmLabel="Delete"
+            title={t('character.deleteTitle')}
+            message={t('character.deleteMessage')}
+            confirmLabel={t('character.delete')}
             onConfirm={handleDeleteConfirmAccept}
             onCancel={handleDeleteConfirmCancel}
           />
@@ -177,7 +179,7 @@ export default function ChangeCharacterModal({
 
             {/* Name Input */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Name:</Text>
+              <Text style={styles.fieldLabel}>{t('character.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={character.nickname}
@@ -190,7 +192,7 @@ export default function ChangeCharacterModal({
 
             {/* Level Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Level:</Text>
+              <Text style={styles.fieldLabel}>{t('character.level')}</Text>
               <View style={styles.inputGroup}>
                 <View style={styles.valueDisplay}>
                   <Text style={styles.valueText}>{character.level}</Text>
@@ -212,7 +214,7 @@ export default function ChangeCharacterModal({
 
             {/* Power Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Power:</Text>
+              <Text style={styles.fieldLabel}>{t('character.power')}</Text>
               <View style={styles.inputGroup}>
                 <View style={styles.valueDisplay}>
                   <Text style={styles.valueText}>{character.power}</Text>
@@ -234,7 +236,7 @@ export default function ChangeCharacterModal({
 
             {/* Class Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Class:</Text>
+              <Text style={styles.fieldLabel}>{t('character.class')}</Text>
               <View style={styles.inputGroupVertical}>
                 {character.class.map((cls, index) => (
                   <View style={styles.classRow} key={`class-${index}`}>
@@ -285,7 +287,7 @@ export default function ChangeCharacterModal({
 
             {/* Race Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Race:</Text>
+              <Text style={styles.fieldLabel}>{t('character.race')}</Text>
               <View style={styles.inputGroupVertical}>
                 {character.race.map((race, index) => (
                   <View style={styles.classRow} key={`race-${index}`}>
@@ -342,7 +344,7 @@ export default function ChangeCharacterModal({
 
             {/* Gender Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Gender:</Text>
+              <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
               <View style={styles.genderContainer}>
                 <TouchableOpacity
                   style={styles.genderRow}
@@ -360,7 +362,7 @@ export default function ChangeCharacterModal({
                       <View style={styles.radioDot} />
                     )}
                   </View>
-                  <Text style={styles.genderLabel}>Male</Text>
+                  <Text style={styles.genderLabel}>{t('character.male')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -379,14 +381,14 @@ export default function ChangeCharacterModal({
                       <View style={styles.radioDot} />
                     )}
                   </View>
-                  <Text style={styles.genderLabel}>Female</Text>
+                  <Text style={styles.genderLabel}>{t('character.female')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Color Selection */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Color:</Text>
+              <Text style={styles.fieldLabel}>{t('character.color')}</Text>
               <Pressable
                 style={[
                   styles.colorPicker,
@@ -410,7 +412,7 @@ export default function ChangeCharacterModal({
                       setColorModalVisible(false);
                     }}
                   >
-                    <Text style={[styles.contentContainer, styles.headerText]}>Select Color</Text>
+                    <Text style={[styles.contentContainer, styles.headerText]}>{t('character.selectColor')}</Text>
                     <Panel5 />
                   </ColorPicker>
                 </Pressable>
@@ -428,7 +430,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="delete-character-button"
             >
-              <Text style={styles.deleteButtonText}>{isDeletePending ? 'Deleting Character...' : 'Delete Character'}</Text>
+              <Text style={styles.deleteButtonText}>{isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -441,7 +443,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="save-character-button"
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={styles.buttonText}>{t('common.save')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -451,7 +453,7 @@ export default function ChangeCharacterModal({
               disabled={isDeletePending}
               testID="cancel-character-button"
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
