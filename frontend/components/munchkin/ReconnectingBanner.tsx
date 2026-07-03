@@ -1,5 +1,6 @@
 import { AppTheme } from '@/constants/theme';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, StyleSheet, Text, View } from 'react-native';
 
 interface ReconnectingBannerProps {
@@ -15,18 +16,19 @@ export default function ReconnectingBanner({ visible }: ReconnectingBannerProps)
 }
 
 function MountedReconnectingBanner() {
+  const { t } = useTranslation();
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility('Reconnecting…');
-  }, []);
+    AccessibilityInfo.announceForAccessibility(t('banner.reconnecting'));
+  }, [t]);
 
   return (
     <View
       accessible
       accessibilityRole="alert"
-      accessibilityLabel="Reconnecting…"
+      accessibilityLabel={t('banner.reconnecting')}
       style={styles.banner}
     >
-      <Text style={styles.label}>Reconnecting…</Text>
+      <Text style={styles.label}>{t('banner.reconnecting')}</Text>
     </View>
   );
 }

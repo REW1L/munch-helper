@@ -1,4 +1,5 @@
 import type { BattleResult, BattleStatus, BonusItem, MonsterItem } from '@/api/battles';
+import i18n from '@/i18n';
 
 export interface BattleSnapshot {
   id: string;
@@ -119,16 +120,16 @@ export function hasUsableBattlePayload(payload: unknown): boolean {
   return Boolean(battle.name || battle.playerSide || battle.monsterSide);
 }
 
-export function getBattleResultLabel(result: unknown, emptyLabel = 'Concluded'): string {
+export function getBattleResultLabel(result: unknown, emptyLabel?: string): string {
   if (result === 'players_win') {
-    return 'Players Win';
+    return i18n.t('battleResult.playersWin');
   }
 
   if (result === 'monster_wins') {
-    return 'Monster Wins';
+    return i18n.t('battleResult.monsterWins');
   }
 
-  return emptyLabel;
+  return emptyLabel ?? i18n.t('battleResult.concluded');
 }
 
 export function formatSignedValue(value: number): string {

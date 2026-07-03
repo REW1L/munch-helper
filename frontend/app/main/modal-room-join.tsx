@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppTheme } from '@/constants/theme';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -10,6 +11,7 @@ interface ModalRoomJoinProps {
 }
 
 export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalRoomJoinProps) {
+  const { t } = useTranslation();
   const [roomName, setRoomName] = useState('');
 
   const handleJoin = () => {
@@ -37,10 +39,10 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
       <View style={styles.container}>
         <View style={styles.modalContent}>
           <View style={styles.formSection}>
-            <Text style={styles.title}>Join a room for {game}?</Text>
+            <Text style={styles.title}>{t('roomJoin.title', { game })}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter the room name"
+              placeholder={t('roomJoin.placeholder')}
               placeholderTextColor="#888686"
               value={roomName}
               onChangeText={setRoomName}
@@ -54,14 +56,14 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
               onPress={handleJoin}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Join</Text>
+              <Text style={styles.buttonText}>{t('common.join')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.button}
               onPress={handleCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

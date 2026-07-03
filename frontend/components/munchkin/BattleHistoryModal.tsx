@@ -3,6 +3,7 @@ import { AppTheme } from '@/constants/theme';
 import { useRoomCharacters } from '@/hooks/useCharacters';
 import type { UserProfileInterface } from '@/hooks/useUser';
 import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Modal,
   Pressable,
@@ -45,6 +46,7 @@ function resultColor(result: unknown): string {
 }
 
 function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHistoryModalProps) {
+  const { t } = useTranslation();
   const isVisible = entry !== null;
   const { characters } = useRoomCharacters(roomId, userProfile);
   const characterById = useMemo(
@@ -84,7 +86,7 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
               <Text style={styles.status}>{status}</Text>
             </View>
             <TouchableOpacity
-              accessibilityLabel="Close battle history"
+              accessibilityLabel={t('battleHistory.closeA11y')}
               accessibilityRole="button"
               hitSlop={8}
               onPress={onClose}
@@ -115,7 +117,7 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
                   return (
                     <View key={characterId} style={styles.rowLine}>
                       <Text style={styles.bodyText}>
-                        {character?.nickname ?? 'Removed character'}
+                        {character?.nickname ?? t('battleHistory.removedCharacter')}
                       </Text>
                       {character && (hasLevel || hasPower) && (
                         <Text style={styles.captionText}>
@@ -142,7 +144,7 @@ function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHisto
                 <Text style={styles.monsterHeading}>Monster Side</Text>
                 {monsters.length > 0 ? monsters.map((monster) => (
                   <Text key={monster.id} style={styles.bodyText}>
-                    {monster.name || 'Unknown monster'} · Level {Number.isFinite(monster.level) ? monster.level : '—'}
+                    {monster.name || t('battleHistory.unknownMonster')} · Level {Number.isFinite(monster.level) ? monster.level : '—'}
                   </Text>
                 )) : (
                   <Text style={styles.captionText}>No monsters recorded</Text>

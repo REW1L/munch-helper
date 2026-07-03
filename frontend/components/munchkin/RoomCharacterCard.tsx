@@ -3,6 +3,7 @@ import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
   Animated,
@@ -31,7 +32,12 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   onChangePress,
   realtimeFlashSignal = 0,
 }: RoomCharacterCardProps) {
-  const accessibilityLabel = `${character.nickname}, Level ${character.level}, Power ${character.power}`;
+  const { t } = useTranslation();
+  const accessibilityLabel = t('room.characterCardA11y', {
+    name: character.nickname,
+    level: character.level,
+    power: character.power,
+  });
   const animatedBorderProgress = useRef(new Animated.Value(0)).current;
   const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
@@ -121,7 +127,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
         accessible
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        accessibilityHint="Tap to edit stats"
+        accessibilityHint={t('room.tapToEditStats')}
       >
         <View style={styles.characterContent}>
           <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
@@ -148,7 +154,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
         </ScrollView>
       </View>
 
-      <VioletButton title="Change" onPress={() => onChangePress(character)} testID="change-character-button" />
+      <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} testID="change-character-button" />
     </Animated.View>
   );
 });

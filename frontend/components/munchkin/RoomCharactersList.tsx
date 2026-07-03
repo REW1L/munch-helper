@@ -1,6 +1,7 @@
 import { Character as RoomCharacter } from '@/api/characters';
 import VioletButton from '@/components/VioletButton';
 import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import RoomCharacterCard from './RoomCharacterCard';
@@ -26,6 +27,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
   onCreateCharacter,
   onChangePress,
 }: RoomCharactersListProps) {
+  const { t } = useTranslation();
   const listHeader = useMemo(() => {
     if (!actionError) {
       return null;
@@ -43,7 +45,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color="#FFFFFF" />
-          <Text style={styles.loadingText}>Loading characters...</Text>
+          <Text style={styles.loadingText}>{t('room.loadingCharacters')}</Text>
         </View>
       );
     }
@@ -57,7 +59,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
     }
 
     return null;
-  }, [errorMessage, isLoading]);
+  }, [errorMessage, isLoading, t]);
 
   return (
     <FlatList
@@ -78,7 +80,7 @@ const RoomCharactersList = memo(function RoomCharactersList({
       ListEmptyComponent={listEmpty}
       ListFooterComponent={
         <View style={styles.createCharacterButtonContainer}>
-          <VioletButton title="Create a character" onPress={onCreateCharacter} disabled={isCreateBlocked} testID="create-character-button" />
+          <VioletButton title={t('room.createCharacter')} onPress={onCreateCharacter} disabled={isCreateBlocked} testID="create-character-button" />
         </View>
       }
       removeClippedSubviews

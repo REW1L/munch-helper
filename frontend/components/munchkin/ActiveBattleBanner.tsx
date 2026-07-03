@@ -1,5 +1,6 @@
 import { AppTheme } from '@/constants/theme';
 import React, { memo, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface ActiveBattleBannerProps {
@@ -11,13 +12,14 @@ const ActiveBattleBanner = memo(function ActiveBattleBanner({
   battleName,
   onViewBattle,
 }: ActiveBattleBannerProps) {
-  const label = useMemo(() => battleName?.trim() || 'Battle in progress', [battleName]);
+  const { t } = useTranslation();
+  const label = useMemo(() => battleName?.trim() || t('banner.battleInProgress'), [battleName, t]);
 
   return (
     <Pressable
       accessible
       accessibilityRole="button"
-      accessibilityLabel="Battle in progress. Tap to view."
+      accessibilityLabel={t('banner.battleInProgressA11y')}
       onPress={onViewBattle}
       style={({ pressed }) => [styles.banner, pressed && styles.bannerPressed]}
       testID="active-battle-banner"
@@ -26,7 +28,7 @@ const ActiveBattleBanner = memo(function ActiveBattleBanner({
         <Text style={styles.icon}>⚔️</Text>
         <Text style={styles.label} numberOfLines={1}>{label}</Text>
       </View>
-      <Text style={styles.actionText}>View Battle →</Text>
+      <Text style={styles.actionText}>{t('banner.viewBattle')}</Text>
     </Pressable>
   );
 });

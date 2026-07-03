@@ -1,7 +1,9 @@
+import LanguageSelector from '@/components/LanguageSelector';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Modal,
   ScrollView,
@@ -28,6 +30,7 @@ export default function ChangeUserModal({
   onConfirm,
   onCancel,
 }: ChangeUserModalProps) {
+  const { t } = useTranslation();
   const [user, setUser] = useState<UserProfileInterface>(initialUser);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
@@ -70,13 +73,13 @@ export default function ChangeUserModal({
                 style={styles.changeAvatarButton}
                 onPress={handlePickAvatar}
               >
-                <Text style={styles.changeAvatarButtonText}>Change Avatar</Text>
+                <Text style={styles.changeAvatarButtonText}>{t('profile.changeAvatar')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Name Input */}
             <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Nickname:</Text>
+              <Text style={styles.fieldLabel}>{t('profile.nickname')}</Text>
               <TextInput
                 maxLength={14}
                 style={styles.input}
@@ -85,9 +88,11 @@ export default function ChangeUserModal({
                   setUser({ ...user, nickname: text })
                 }
                 placeholderTextColor="#888686"
-                placeholder="Enter nickname"
+                placeholder={t('profile.enterNickname')}
               />
             </View>
+
+            <LanguageSelector />
           </ScrollView>
 
           {/* Buttons */}
@@ -97,7 +102,7 @@ export default function ChangeUserModal({
               onPress={handleSave}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Save</Text>
+              <Text style={styles.buttonText}>{t('common.save')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -105,7 +110,7 @@ export default function ChangeUserModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

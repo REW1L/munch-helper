@@ -1,7 +1,9 @@
+import { LanguageProvider } from '@/components/LanguageProvider';
 import { RootErrorBoundary } from '@/components/RootErrorBoundary';
 import { getRuntimeConfig } from '@/config/runtime';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
+import '@/i18n';
 import { useUserProfile } from '@/hooks/useUser';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
@@ -37,17 +39,19 @@ export default function RootLayout() {
 
   return (
     <RootErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <userProfileContext.Provider value={providerValue}>
-          <Stack screenOptions={{
-            headerShown: true,
-            headerStyle: { backgroundColor: AppTheme.colors.surface },
-            headerTintColor: AppTheme.colors.textPrimary,
-            contentStyle: { backgroundColor: AppTheme.colors.background },
-            headerShadowVisible: false,
-          }} />
-        </userProfileContext.Provider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <userProfileContext.Provider value={providerValue}>
+            <Stack screenOptions={{
+              headerShown: true,
+              headerStyle: { backgroundColor: AppTheme.colors.surface },
+              headerTintColor: AppTheme.colors.textPrimary,
+              contentStyle: { backgroundColor: AppTheme.colors.background },
+              headerShadowVisible: false,
+            }} />
+          </userProfileContext.Provider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </RootErrorBoundary>
   );
 }

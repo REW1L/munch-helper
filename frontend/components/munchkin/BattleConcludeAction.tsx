@@ -1,6 +1,7 @@
 import { BattleResult } from '@/api/battles';
 import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export interface BattleConcludeActionProps {
@@ -20,11 +21,12 @@ function BattleConcludeAction({
   isConcluding,
   dirtyHint,
 }: BattleConcludeActionProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.root} testID="battle-conclude-action">
       <View accessibilityRole="radiogroup" style={styles.resultRow}>
         <TouchableOpacity
-          accessibilityLabel="Players Win"
+          accessibilityLabel={t('battle.playersWinA11y')}
           accessibilityRole="radio"
           accessibilityState={{ selected: selectedResult === 'players_win' }}
           style={[
@@ -35,12 +37,12 @@ function BattleConcludeAction({
           onPress={() => onSelectResult('players_win')}
         >
           <Text style={[styles.resultText, selectedResult === 'players_win' ? styles.resultTextSelected : styles.resultTextUnselected]}>
-            Players Win
+            {t('battle.playersWin')}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          accessibilityLabel="Monsters Win"
+          accessibilityLabel={t('battle.monstersWinA11y')}
           accessibilityRole="radio"
           accessibilityState={{ selected: selectedResult === 'monster_wins' }}
           style={[
@@ -51,13 +53,13 @@ function BattleConcludeAction({
           onPress={() => onSelectResult('monster_wins')}
         >
           <Text style={[styles.resultText, selectedResult === 'monster_wins' ? styles.resultTextSelected : styles.resultTextUnselected]}>
-            Monsters Win
+            {t('battle.monstersWin')}
           </Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity
-        accessibilityLabel="Conclude battle"
+        accessibilityLabel={t('battle.concludeBattleA11y')}
         accessibilityRole="button"
         accessibilityState={{ disabled }}
         disabled={disabled}
@@ -66,13 +68,13 @@ function BattleConcludeAction({
         onPress={onConclude}
       >
         <Text style={[styles.concludeButtonText, disabled && styles.concludeButtonTextDisabled]}>
-          {isConcluding ? 'Concluding...' : 'Conclude'}
+          {isConcluding ? t('battle.concluding') : t('battle.conclude')}
         </Text>
       </TouchableOpacity>
 
       {dirtyHint && (
         <Text style={styles.hintText} testID="battle-conclude-dirty-hint">
-          Save your changes before concluding
+          {t('battle.saveBeforeConcluding')}
         </Text>
       )}
     </View>

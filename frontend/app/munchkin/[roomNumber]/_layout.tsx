@@ -5,9 +5,11 @@ import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function RoomLayout() {
+  const { t } = useTranslation();
   const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
   const router = useRouter();
   const segments = useSegments();
@@ -29,7 +31,7 @@ export default function RoomLayout() {
           headerLeft: usesDetailHeader
             ? () => (
                 <TouchableOpacity
-                  accessibilityLabel="Back to room"
+                  accessibilityLabel={t('roomLayout.backToRoomA11y')}
                   accessibilityRole="button"
                   onPress={() => {
                     if (router.canGoBack()) {
@@ -60,7 +62,7 @@ export default function RoomLayout() {
                   }}
                 />
               ),
-          title: isBattleRoute ? battle?.name ?? 'Battle' : isLogRoute ? 'History' : undefined,
+          title: isBattleRoute ? battle?.name ?? t('roomLayout.battle') : isLogRoute ? t('roomLayout.history') : undefined,
         }}
       />
       <Stack

@@ -1,3 +1,4 @@
+import i18n from '@/i18n';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -34,8 +35,8 @@ export class RootErrorBoundary extends React.Component<RootErrorBoundaryProps, R
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message}>{this.state.errorMessage || 'Unexpected application error.'}</Text>
+          <Text style={styles.title}>{i18n.t('errorBoundary.title')}</Text>
+          <Text style={styles.message}>{this.state.errorMessage || i18n.t('errorBoundary.message')}</Text>
         </View>
       );
     }

@@ -2,6 +2,7 @@ import { Character as RoomCharacter } from '@/api/characters';
 import { AppTheme } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AccessibilityInfo,
   Animated,
@@ -41,6 +42,7 @@ export default function QuickEditSheet({
   onOpenFullEdit,
   hasErrorFlash,
 }: QuickEditSheetProps) {
+  const { t } = useTranslation();
   const [isRendered, setIsRendered] = useState(visible);
   const [isSaving, setIsSaving] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -229,11 +231,11 @@ export default function QuickEditSheet({
         >
           <View testID="quick-edit-drag-area" style={styles.dragArea} {...panResponder.panHandlers}>
             <View style={styles.dragHandle} />
-            <Text style={styles.title}>Quick Edit</Text>
+            <Text style={styles.title}>{t('quickEdit.title')}</Text>
           </View>
 
           <View style={styles.stepperRow}>
-            <Text style={styles.label}>Level</Text>
+            <Text style={styles.label}>{t('quickEdit.level')}</Text>
             <View style={styles.stepper}>
               <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('level', -1)}>
                 <Text style={styles.stepperButtonText}>−</Text>
@@ -246,7 +248,7 @@ export default function QuickEditSheet({
           </View>
 
           <View style={styles.stepperRow}>
-            <Text style={styles.label}>Power</Text>
+            <Text style={styles.label}>{t('quickEdit.power')}</Text>
             <View style={styles.stepper}>
               <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('power', -1)}>
                 <Text style={styles.stepperButtonText}>−</Text>
@@ -260,10 +262,10 @@ export default function QuickEditSheet({
 
           <View style={styles.actions}>
             <TouchableOpacity onPress={handleOpenFullEdit} style={styles.secondaryAction}>
-              <Text style={styles.secondaryActionText}>Edit more…</Text>
+              <Text style={styles.secondaryActionText}>{t('quickEdit.editMore')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleSave} style={styles.primaryAction} disabled={isSaving}>
-              <Text style={styles.primaryActionText}>{isSaving ? 'Saving…' : 'Save'}</Text>
+              <Text style={styles.primaryActionText}>{isSaving ? t('quickEdit.saving') : t('quickEdit.save')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>

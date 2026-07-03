@@ -3,6 +3,7 @@ import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import AttributeList from './AttributeList';
@@ -16,6 +17,7 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
   character,
   onChangePress,
 }: CurrentCharacterFooterProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.currentCharacterFooter}>
       <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
@@ -40,7 +42,7 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
         </ScrollView>
       </View>
 
-      <VioletButton title="Change" onPress={() => onChangePress(character)} />
+      <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} />
     </View>
   );
 });
