@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import React from 'react';
@@ -51,11 +52,11 @@ export default function LandingPage() {
         <Stack.Screen options={{ title: 'Munch Helper', headerShown: false }} />
         <View style={styles.container}>
           <TouchableOpacity style={styles.privacyButton} onPress={() => router.navigate('/privacy')}>
-            <Text style={styles.privacyButtonText}>{t('landing.privacy')}</Text>
+            <ButtonLabel style={styles.privacyButtonText}>{t('landing.privacy')}</ButtonLabel>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.supportButton} onPress={() => router.navigate('/support')}>
-            <Text style={styles.supportButtonText}>{t('landing.support')}</Text>
+            <ButtonLabel style={styles.supportButtonText}>{t('landing.support')}</ButtonLabel>
           </TouchableOpacity>
 
           <View style={styles.heroSection}>
@@ -68,7 +69,7 @@ export default function LandingPage() {
 
           <View style={styles.actionsSection}>
             <TouchableOpacity style={styles.roomsButton} onPress={() => router.navigate('/rooms')}>
-              <Text style={styles.roomsButtonText}>{t('landing.rooms')}</Text>
+              <ButtonLabel style={styles.roomsButtonText}>{t('landing.rooms')}</ButtonLabel>
             </TouchableOpacity>
           </View>
 

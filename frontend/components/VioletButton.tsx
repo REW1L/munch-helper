@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { AppTheme } from '@/constants/theme';
+import ButtonLabel from '@/components/ButtonLabel';
 
 type VioletButtonProps = {
   title: string;
@@ -11,7 +12,7 @@ type VioletButtonProps = {
 
 const VioletButton: React.FC<VioletButtonProps> = ({ title, onPress, disabled = false, testID }) => (
   <TouchableOpacity style={[styles.violetButton, disabled && styles.violetButtonDisabled]} onPress={onPress} disabled={disabled} testID={testID}>
-    <Text style={styles.violetButtonText}>{title}</Text>
+    <ButtonLabel style={styles.violetButtonText}>{title}</ButtonLabel>
   </TouchableOpacity>
 );
 

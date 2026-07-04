@@ -1,4 +1,5 @@
 import { BattleResult } from '@/api/battles';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -67,9 +68,9 @@ function BattleConcludeAction({
         testID="battle-conclude-button"
         onPress={onConclude}
       >
-        <Text style={[styles.concludeButtonText, disabled && styles.concludeButtonTextDisabled]}>
+        <ButtonLabel style={[styles.concludeButtonText, disabled && styles.concludeButtonTextDisabled]}>
           {isConcluding ? t('battle.concluding') : t('battle.conclude')}
-        </Text>
+        </ButtonLabel>
       </TouchableOpacity>
 
       {dirtyHint && (

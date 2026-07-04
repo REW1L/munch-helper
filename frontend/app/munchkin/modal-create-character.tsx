@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import avatars from '@/constants/avatars';
 import { AppTheme } from '@/constants/theme';
 import { Image } from 'expo-image';
@@ -148,7 +149,7 @@ export default function CreateCharacterModal({
               onPress={handleCreate}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.create')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.create')}</ButtonLabel>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -156,7 +157,7 @@ export default function CreateCharacterModal({
               onPress={onCancel}
               activeOpacity={0.7}
             >
-              <Text style={styles.buttonText}>{t('common.cancel')}</Text>
+              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>
           </View>
         </View>

@@ -4,6 +4,7 @@ import { useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import ButtonLabel from '@/components/ButtonLabel';
 import VioletButton from '@/components/VioletButton';
 import avatars from '@/constants/avatars';
 import { userProfileContext } from '@/context/UserContext';
@@ -42,10 +43,10 @@ export default function Home() {
               </View>
               <View style={styles.gameActions}>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>{t('rooms.create')}</Text>
+                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                  <Text style={styles.actionButtonLabel}>{t('rooms.join')}</Text>
+                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
                 </TouchableOpacity>
               </View>
             </View>
@@ -141,6 +142,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#473F3F',
     borderRadius: 10,
+    gap: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -163,13 +165,15 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   gameActions: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
     flexDirection: 'row',
   },
   actionButton: {
-    minWidth: 80,
+    flex: 1,
+    minWidth: 0,
     height: 50,
     paddingHorizontal: 10,
     paddingVertical: 5,

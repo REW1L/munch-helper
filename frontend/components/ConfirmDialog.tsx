@@ -1,3 +1,4 @@
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +65,7 @@ export default function ConfirmDialog({
                 style={[styles.button, styles.cancelButton]}
                 onPress={onCancel}
               >
-                <Text style={styles.cancelText}>{resolvedCancelLabel}</Text>
+                <ButtonLabel style={styles.cancelText}>{resolvedCancelLabel}</ButtonLabel>
               </TouchableOpacity>
               <TouchableOpacity
                 accessibilityLabel={confirmLabel}
@@ -73,7 +74,7 @@ export default function ConfirmDialog({
                 onPress={onConfirm}
                 testID="confirm-dialog-confirm"
               >
-                <Text style={styles.confirmText}>{confirmLabel}</Text>
+                <ButtonLabel style={styles.confirmText}>{confirmLabel}</ButtonLabel>
               </TouchableOpacity>
             </View>
           </Pressable>

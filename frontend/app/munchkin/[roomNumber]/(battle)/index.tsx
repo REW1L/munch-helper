@@ -1,5 +1,6 @@
 import { Battle, BattleResult, MonsterSide, PlayerSide } from '@/api/battles';
 import { ApiError } from '@/api/http';
+import ButtonLabel from '@/components/ButtonLabel';
 import BattleConcludeAction from '@/components/munchkin/BattleConcludeAction';
 import BattleDiscardAction from '@/components/munchkin/BattleDiscardAction';
 import BattleSidePanel from '@/components/munchkin/BattleSidePanel';
@@ -277,9 +278,9 @@ export default function BattleView() {
                 testID="save-battle"
                 onPress={handleSave}
               >
-                <Text style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>
+                <ButtonLabel style={[styles.saveButtonText, !canSave && styles.saveButtonTextDisabled]}>
                   {battleActions.isLoading ? t('battle.saving') : t('battle.save')}
-                </Text>
+                </ButtonLabel>
               </TouchableOpacity>
             </View>
 

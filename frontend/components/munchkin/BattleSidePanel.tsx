@@ -1,5 +1,6 @@
 import { BonusItem, MonsterItem } from '@/api/battles';
 import { Character as RoomCharacter } from '@/api/characters';
+import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import type { ActivePlayerParticipant } from '@/utils/battlePlayerSide';
 import React, { memo, useCallback, useMemo, useState } from 'react';
@@ -190,7 +191,7 @@ function BattleSidePanel({
               setIsMonsterModalVisible(true);
             }}
           >
-            <Text style={styles.openDialogButtonText}>Add monster</Text>
+            <ButtonLabel style={styles.openDialogButtonText}>Add monster</ButtonLabel>
           </TouchableOpacity>
         </View>
       )}
@@ -278,7 +279,7 @@ function BattleSidePanel({
                   testID="save-monster"
                   onPress={handleAddMonster}
                 >
-                  <Text style={styles.monsterDialogButtonText}>Save</Text>
+                  <ButtonLabel style={styles.monsterDialogButtonText}>Save</ButtonLabel>
                 </TouchableOpacity>
                 <TouchableOpacity
                   accessibilityLabel={t('battle.cancelAddMonsterA11y')}
@@ -287,7 +288,7 @@ function BattleSidePanel({
                   testID="cancel-add-monster"
                   onPress={closeMonsterModal}
                 >
-                  <Text style={styles.monsterDialogButtonText}>Cancel</Text>
+                  <ButtonLabel style={styles.monsterDialogButtonText}>Cancel</ButtonLabel>
                 </TouchableOpacity>
               </View>
             </View>
