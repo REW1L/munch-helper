@@ -1,10 +1,10 @@
+import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomCreate, useRoomJoin } from '@/hooks/UseRoom';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { AppTheme } from '@/constants/theme';
 
 const MunchkinIndexView: React.FC = () => {
   const { t } = useTranslation();

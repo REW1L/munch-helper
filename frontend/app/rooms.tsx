@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#473F3F',
     borderRadius: 10,
+    gap: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
