@@ -1,7 +1,7 @@
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useRoomCreate, useRoomJoin } from '@/hooks/UseRoom';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
@@ -70,6 +70,7 @@ const MunchkinIndexView: React.FC = () => {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4C4545' }}>
+      <Stack.Screen options={{ headerShown: true, title: `Munch ⚔️ ${t('rooms.classic')}`, }} />
       <ActivityIndicator size="large" color={AppTheme.colors.actionSecondary} />
       <Text style={{ marginTop: 10, color: '#FFFFFF', fontSize: 16 }}>
         {isLoading ? t('room.loadingRoom') : errorMessage || t('room.unableToConnect')}
