@@ -1,0 +1,1 @@
+The shared level counter for Munchkin night. Everyone sees the same levels, gear and score in real time, so the game keeps moving.

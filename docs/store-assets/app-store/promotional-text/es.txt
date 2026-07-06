@@ -1,0 +1,1 @@
+El contador de niveles compartido para la noche de Munchkin. Todos ven niveles, equipo y puntuación en tiempo real, y la partida no para.
