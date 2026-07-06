@@ -7,6 +7,10 @@ Store listing copy for the App Store submission.
 - `description/<code>.txt` — App Store description field (long copy)
 - `promotional-text/<code>.txt` — App Store promotional text field
   (short hook, max 170 chars, updatable without a new build)
+- `subtitle/<code>.txt` — App Store subtitle field (max 30 chars, indexed
+  for search)
+- `keywords/<code>.txt` — App Store keyword field (max 100 chars,
+  comma-separated, indexed for search)
 
 `en` is the source; every other file is a localization of it.
 
@@ -25,12 +29,24 @@ Store-only locales (App Store listing, no matching app UI language): `es`.
   paragraph — the store wraps text automatically.
 - **Promotional text** is a single sentence, at most 170 characters, and
   reuses the description's positive tone (no time/speed promises).
+- **Subtitle** carries generic, high-volume terms (score, tracker, counter,
+  game night) that complement — and do not repeat — words already in the
+  app Name, since Apple indexes Name + Subtitle + keyword field together.
+- **Keyword field** uses comma-separated single words with no space after
+  the comma (spaces waste characters). Words already in the Name or Subtitle
+  are omitted; Apple auto-combines tokens, so `board` + `game` covers
+  "board game". Keywords are localized per market.
 - **Brand:** `Munch Helper` is left untranslated in every locale.
 - **Game name:** the trademarked title stays out of the app **Name** field
   (trademark safety) but may appear in the description body. It is kept in
   Latin script for Latin-script locales (`Munchkin`) and transliterated for
   Cyrillic locales (`Манчкин` for `ru`, `Манчкін` for `uk`/`be`) to match how
   players search in those markets.
+  - **Trademark note:** the `keywords` field also includes the game term
+    (`munchkin` / `манчкин` / `манчкін`). Unlike the description body
+    (editorial nominative use), the keyword field is indexed metadata and
+    carries the same trademark-rejection risk as the Name. Keep it if the
+    ASO value is worth the risk; drop that token to play it safe.
 
 ## Related
 
