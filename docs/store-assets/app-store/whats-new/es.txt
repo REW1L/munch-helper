@@ -1,0 +1,15 @@
+Esta actualización trae combates en tiempo real, historial de la sala y compatibilidad con 10 idiomas.
+
+Novedades
+• La app ahora habla tu idioma — inglés y 9 idiomas más
+• Combates: inicia una pelea, síguela en directo y conclúyela o descártala cuando termines — la fuerza del personaje se suma a los totales
+• Historial de la sala: un registro de actividad completo de los eventos de personajes y combates para que no te pierdas nada
+• Un nuevo avatar de monstruo para elegir
+
+Mejoras
+• Actualizaciones en tiempo real muy sólidas que se reconectan solas y restauran tu sesión si se cae la conexión
+• Detección de incorporación tardía para ponerte al día en cuanto entras en una sala
+• Compatibilidad con movimiento reducido para una experiencia más fluida y tranquila
+• Correcciones de diseño, navegación y texto en todos los idiomas
+
+¡Gracias por jugar! Sigue enviándonos tus comentarios.

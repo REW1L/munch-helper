@@ -1,0 +1,15 @@
+Ta aktualizacja wprowadza walki w czasie rzeczywistym, historię pokoju i obsługę 10 języków.
+
+Nowości
+• Aplikacja mówi teraz w Twoim języku — angielski i 9 dodatkowych języków
+• Walki: rozpocznij starcie, śledź je na żywo, a po zakończeniu rozstrzygnij je lub odrzuć — siła postaci jest wliczana do wyników
+• Historia pokoju: pełny dziennik aktywności zdarzeń postaci i walk, byś niczego nie przegapił
+• Nowy awatar potwora do wyboru
+
+Ulepszenia
+• Wyjątkowo stabilne aktualizacje w czasie rzeczywistym, które same łączą się ponownie i przywracają sesję po zerwaniu połączenia
+• Rozpoznawanie późniejszego dołączenia, byś był na bieżąco od razu po wejściu do pokoju
+• Obsługa ograniczonego ruchu dla płynniejszego, spokojniejszego działania
+• Poprawki układu, nawigacji i tekstu we wszystkich językach
+
+Dziękujemy za grę! Czekamy na Wasze opinie.

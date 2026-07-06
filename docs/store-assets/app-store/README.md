@@ -11,6 +11,8 @@ Store listing copy for the App Store submission.
   for search)
 - `keywords/<code>.txt` — App Store keyword field (max 100 chars,
   comma-separated, indexed for search)
+- `whats-new/<code>.txt` — App Store "What's New" release notes
+  (max 4000 chars, per-release)
 
 `en` is the source; every other file is a localization of it.
 

@@ -1,0 +1,15 @@
+Dieses Update bringt Echtzeit-Kämpfe, den Raumverlauf und Unterstützung für 10 Sprachen.
+
+Neu
+• Die App spricht jetzt deine Sprache — Englisch plus 9 weitere Sprachen
+• Kämpfe: Starte einen Kampf, verfolge ihn live und schließe ihn ab oder verwirf ihn, wenn du fertig bist — die Charakterstärke fließt in die Gesamtwerte ein
+• Raumverlauf: ein vollständiges Aktivitätsprotokoll von Charakter- und Kampfereignissen, damit dir nichts entgeht
+• Ein neuer Monster-Avatar zur Auswahl
+
+Verbessert
+• Grundsolide Echtzeit-Updates, die sich von selbst neu verbinden und deine Sitzung wiederherstellen, falls die Verbindung abbricht
+• Erkennung von späterem Beitritt, damit du sofort auf dem Laufenden bist, wenn du einen Raum betrittst
+• Unterstützung für reduzierte Bewegung für ein ruhigeres, angenehmeres Erlebnis
+• Korrekturen an Layout, Navigation und Texten in allen Sprachen
+
+Danke fürs Spielen! Wir freuen uns weiter über dein Feedback.
