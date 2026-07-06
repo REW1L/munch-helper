@@ -1,0 +1,48 @@
+Munch Helper ir galda spēļu palīgs, kas notur tavu Munchkin galdu sinhronizētu. Visi reāllaikā redz vienus un tos pašus līmeņus, ekipējumu un punktus, tāpēc spēle rit uz priekšu un neviens nepazaudē pavedienu.
+
+Spēļu vakaram jābūt smiekliem ar draugiem un cīņai par uzvaru — nevis skricelējumiem uz papīra. Munch Helper skaita tavā vietā, lai tu varētu baudīt spēli pie galda.
+
+Lūk, ko vari darīt, tiklīdz apsēdies:
+• Skaitīt visu spēlētāju līmeņus uzreiz
+• Sekot ekipējumam, bonusiem un kopējam spēkam
+• Vērot, kā katrā kārtā mainās kopvērtējums
+• Turēt visu galdu vienā skaidrā ekrānā
+
+Galvenais ir ātrs un draudzīgs Munchkin līmeņu skaitītājs. Pieskaries, lai paceltu vai pazeminātu spēlētāja līmeni, un viss galds atjaunināsies visiem uzreiz.
+
+Spēlējat blakus vai pievienojaties no attāluma? Koplietotās istabas notur tavu komandu savienotu jebkurā ierīcē, kas jums jau ir.
+
+1. Izveido istabu un kopīgo kodu
+2. Draugi pievienojas ar tālruni, planšeti vai tīmekli
+3. Katrs līmenis un punkti atjauninās spēlējot
+
+Tā kā istaba darbojas tiešraidē, draugs, kas jauc kārtis, un draugs uz dīvāna vienmēr redz tieši to pašu galdu. Viens kopīgs galds, lai kur katrs sēdētu.
+
+Kad izceļas cīņa, cīņas skats veic aprēķinus tavā vietā, lai tu varētu koncentrēties uz prieku un blefu pie galda.
+
+• Pievienot spēlētājus katrā cīņas pusē
+• Summēt modifikatorus, ekipējumu un bonusus
+• Ar vienu skatienu redzēt, kurš uzvar
+
+Tev patīk laba sāncensība? Munch Helper ir radīts Munchkin spēļu vakaram un viegli organizējams. Sagatavo spēli acumirklī un ļauj kopvērtējumam izšķirt katru draudzīgu strīdu.
+
+• Organizēt spēles ar draugiem
+• Pārvērst jebkuru istabu par Munchkin spēļu istabu
+• Rīkot sacensības ar draugiem visu nakti
+• Pēc katras kārtas kronēt čempionu
+
+Katrs gājiens tiek klusi saglabāts istabas vēsturē. Attin vakaru atpakaļ, lai izšķirtu strīdu, no jauna izbaudītu episku atgriešanos vai vienkārši baudītu, kā aizritēja nakts.
+
+• Atkārtot iepriekšējās kārtas un cīņas
+• Redzēt, kā katrs spēlētājs kāpa pa līmeņiem
+• Atskatīties uz savām lielākajām sacensībām
+
+Nav divu vienādi spēlējošu grupu, un tieši tas ir aizraujoši. No mierīga ģimenes vakara līdz skaļam, sīvam maratonam Munch Helper pielāgojas tavam galdam.
+
+• Lieliski piemērots ģimenes spēļu vakaram
+• Lielisks ballītēm un rosīgai spēļu istabai
+• Ideāli piemērots regulārām sacensībām ar draugiem
+
+Sākt nevarētu būt vienkāršāk. Atver Munch Helper, izveido istabu, uzaicini draugus un sāc skaitīt jau nākamajā Munchkin spēļu vakarā.
+
+Tāpēc ņem kauliņus, sapulcini komandu un ļauj Munch Helper vest punktus. Tavs nākamais Munchkin spēļu vakars sākas šeit.
