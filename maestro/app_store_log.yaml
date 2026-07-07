@@ -1,0 +1,33 @@
+appId: click.helpamunch.mobileapp
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Rooms"
+    timeout: 20000
+- tapOn: "Rooms"
+- extendedWaitUntil:
+    visible: "Join"
+    timeout: 15000
+- tapOn: "Join"
+- extendedWaitUntil:
+    visible: "Join a room for Munchkin?"
+    timeout: 10000
+- tapOn: "Enter the room name"
+- inputText: ${ROOM_ID}
+- tapOn: "Join"
+- extendedWaitUntil:
+    visible: "Rune Rider"
+    timeout: 20000
+- tapOn:
+    point: "70%,86%"
+- extendedWaitUntil:
+    visible: "History"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "Players Win"
+    direction: DOWN
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Players Win"
+    timeout: 10000

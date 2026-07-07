@@ -8,9 +8,12 @@ const repoRoot = new URL('..', import.meta.url);
 const rootDir = path.resolve(repoRoot.pathname);
 const frontendDir = path.join(rootDir, 'frontend');
 const screenshotsDir = path.join(rootDir, 'screenshots');
+const androidOutputDirName = 'android1080x2400';
+const androidCanvas = { width: 1080, height: 2400 };
 
 const appApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 const seedApiUrl = process.env.API_BASE_URL || 'http://localhost:8080';
+const pythonCommand = process.env.SCREENSHOT_PYTHON || 'python3';
 const requestedDevice = process.env.ANDROID_SERIAL || '';
 const requestedAvd = process.env.ANDROID_SCREENSHOT_AVD || '';
 const requestedExpoDevice = process.env.ANDROID_EXPO_DEVICE || '';
@@ -26,16 +29,16 @@ const flows = [
     flow: 'maestro/app_store_rooms_home.yaml',
   },
   {
-    file: 'join-room.png',
-    flow: 'maestro/app_store_join_room.yaml',
-  },
-  {
     file: 'room-view.png',
     flow: 'maestro/app_store_room_view.yaml',
   },
   {
-    file: 'character-details.png',
-    flow: 'maestro/app_store_character_details.yaml',
+    file: 'battle.png',
+    flow: 'maestro/app_store_battle.yaml',
+  },
+  {
+    file: 'log.png',
+    flow: 'maestro/app_store_log.yaml',
   },
 ];
 
@@ -44,7 +47,14 @@ function sleep(ms) {
 }
 
 async function run(command, args, options = {}) {
-  const { cwd = rootDir, env = {}, allowFailure = false, encoding = 'utf8' } = options;
+  const {
+    cwd = rootDir,
+    env = {},
+    allowFailure = false,
+    encoding = 'utf8',
+    timeout,
+    killSignal,
+  } = options;
 
   try {
     const result = await execFileAsync(command, args, {
@@ -54,6 +64,8 @@ async function run(command, args, options = {}) {
         ...env,
       },
       encoding,
+      timeout,
+      killSignal,
       maxBuffer: 1024 * 1024 * 50,
     });
 
@@ -282,6 +294,13 @@ async function applyReversePorts(serial) {
   await run('adb', ['-s', serial, 'reverse', 'tcp:8080', 'tcp:8080']);
 }
 
+async function isAppInstalled(serial) {
+  const result = await run('adb', ['-s', serial, 'shell', 'pm', 'path', 'click.helpamunch.mobileapp'], {
+    allowFailure: true,
+  });
+  return typeof result.stdout === 'string' && result.stdout.includes('package:');
+}
+
 async function clearReversePorts(serial) {
   await run('adb', ['-s', serial, 'reverse', '--remove', 'tcp:8080'], { allowFailure: true });
 }
@@ -301,7 +320,13 @@ async function capturePng(serial, targetPath) {
 
 async function captureForDevice(device, roomId) {
   const size = await getDeviceSize(device.serial);
-  const targetDir = path.join(screenshotsDir, `android${size.width}x${size.height}`);
+  if (size.width !== androidCanvas.width || size.height !== androidCanvas.height) {
+    throw new Error(
+      `Google Play screenshots require a Pixel 6a-sized 1080x2400 device; ${device.serial} is ${size.width}x${size.height}.`
+    );
+  }
+
+  const targetDir = path.join(screenshotsDir, androidOutputDirName);
   await fs.mkdir(targetDir, { recursive: true });
 
   process.stdout.write(`\n==> Capturing Android ${size.width}x${size.height} on ${device.serial}\n`);
@@ -309,7 +334,8 @@ async function captureForDevice(device, roomId) {
   await applyStatusBar(device.serial);
 
   try {
-    await run(
+    await run('adb', ['-s', device.serial, 'uninstall', 'click.helpamunch.mobileapp'], { allowFailure: true });
+    const installResult = await run(
       'npx',
       ['expo', 'run:android', '--variant', 'release', '-d', device.expoDevice],
       {
@@ -319,8 +345,14 @@ async function captureForDevice(device, roomId) {
           EXPO_PUBLIC_SCREENSHOT_PROFILE_NAME: androidProfile.profileName,
           EXPO_PUBLIC_SCREENSHOT_PROFILE_AVATAR: androidProfile.profileAvatar,
         },
+        allowFailure: true,
+        timeout: 180000,
+        killSignal: 'SIGINT',
       }
     );
+    if (installResult instanceof Error && !(await isAppInstalled(device.serial))) {
+      throw installResult;
+    }
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);
@@ -338,6 +370,10 @@ async function captureForDevice(device, roomId) {
   return targetDir;
 }
 
+async function generateCaptionedScreenshots() {
+  await run(pythonCommand, ['scripts/generate-app-store-preview-redesign.py']);
+}
+
 async function main() {
   await fs.mkdir(screenshotsDir, { recursive: true });
   const seededRoom = await seedRoom();
@@ -345,6 +381,7 @@ async function main() {
 
   process.stdout.write(`Seeded room ${seededRoom.roomId} with ${seededRoom.characters.length} named characters.\n`);
   const targetDir = await captureForDevice(device, seededRoom.roomId);
+  await generateCaptionedScreenshots();
 
   process.stdout.write(`\nGoogle Play screenshots saved under ${targetDir}\n`);
 }
