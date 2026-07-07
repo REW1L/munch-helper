@@ -14,6 +14,23 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'ru', name: 'Русский' },
   { code: 'be', name: 'Беларуская' },
   { code: 'uk', name: 'Українська' },
+  { code: 'es', name: 'Español' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'pt', name: 'Português' },
+  { code: 'nl', name: 'Nederlands' },
+  { code: 'el', name: 'Ελληνικά' },
+  { code: 'cs', name: 'Čeština' },
+  { code: 'sk', name: 'Slovenčina' },
+  { code: 'hu', name: 'Magyar' },
+  { code: 'ro', name: 'Română' },
+  { code: 'bg', name: 'Български' },
+  { code: 'hr', name: 'Hrvatski' },
+  { code: 'sl', name: 'Slovenščina' },
+  { code: 'da', name: 'Dansk' },
+  { code: 'sv', name: 'Svenska' },
+  { code: 'fi', name: 'Suomi' },
+  { code: 'ga', name: 'Gaeilge' },
+  { code: 'mt', name: 'Malti' },
 ] as const;
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code'];
