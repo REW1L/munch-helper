@@ -1,0 +1,6 @@
+schema: spec-driven
+created: 2026-07-07
+goal: Establish Maestro-driven end-to-end tests running the same flows on iOS,
+  Android, and web against the local backend stack, covering room + character
+  lifecycle and cross-user character updates (real-time WebSocket fanout), all
+  gated on every PR in CI.
