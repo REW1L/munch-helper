@@ -1,0 +1,1 @@
+Wspólny licznik poziomów na wieczór z Munchkinem. Wszyscy widzą poziomy, ekwipunek i wynik w czasie rzeczywistym, więc gra toczy się dalej.

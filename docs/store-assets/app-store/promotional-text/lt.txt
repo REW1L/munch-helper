@@ -1,0 +1,1 @@
+Bendras lygių skaitiklis Munchkin vakarui. Visi realiu laiku mato lygius, įrangą ir taškus, todėl žaidimas juda toliau.

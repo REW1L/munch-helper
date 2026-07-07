@@ -1,0 +1,1 @@
+Le compteur de niveaux partagé pour la soirée Munchkin. Tous voient niveaux, équipement et score en temps réel, pour que la partie avance.

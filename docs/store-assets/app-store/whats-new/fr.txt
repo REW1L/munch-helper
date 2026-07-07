@@ -1,0 +1,15 @@
+Cette mise à jour apporte des combats en temps réel, l'historique du salon et la prise en charge de 10 langues.
+
+Nouveautés
+• L'app parle désormais votre langue — l'anglais et 9 langues supplémentaires
+• Combats : lancez un affrontement, suivez-le en direct, puis concluez-le ou abandonnez-le une fois terminé — la puissance des personnages est intégrée aux totaux
+• Historique du salon : un journal d'activité complet des événements de personnages et de combats pour ne rien manquer
+• Un nouvel avatar de monstre à choisir
+
+Améliorations
+• Des mises à jour en temps réel très fiables qui se reconnectent toutes seules et restaurent votre session en cas de coupure
+• Prise en compte des arrivées tardives pour être à jour dès que vous entrez dans un salon
+• Prise en charge des animations réduites pour une expérience plus douce et plus calme
+• Corrections de mise en page, de navigation et de texte dans toutes les langues
+
+Merci de jouer ! Continuez à nous envoyer vos retours.

@@ -1,0 +1,1 @@
+Kopīgs līmeņu skaitītājs Munchkin vakaram. Visi reāllaikā redz līmeņus, ekipējumu un punktus, tāpēc spēle rit uz priekšu.

@@ -1,0 +1,15 @@
+This update brings real-time battles, room history, and support for 10 languages.
+
+New
+• The app now speaks your language — English plus 9 additional languages
+• Battles: start a fight, follow it live, and conclude or discard it when you're done — with character power counted into the totals
+• Room history: a full activity log of character and battle events so you never miss what happened
+• A new monster avatar to choose from
+
+Improved
+• Rock-solid real-time updates that reconnect on their own and restore your session if your connection drops
+• Late-join awareness so you're caught up the moment you enter a room
+• Reduced-motion support for a smoother, calmer experience
+• Layout, navigation, and text fixes across languages
+
+Thanks for playing! Keep the feedback coming.
