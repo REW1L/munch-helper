@@ -1,5 +1,17 @@
 const API_BASE_URL = (process.env.API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, '');
 
+const battleFixtures = {
+  concluded: {
+    name: 'Fallen Gate',
+    result: 'players_win',
+    monster: { id: 'monster-fallen-gate', name: 'Goblin Accountant', level: 12 },
+  },
+  active: {
+    name: 'Dungeon Door',
+    monster: { id: 'monster-ancient-squid', name: 'Ancient Squid', level: 26 },
+  },
+};
+
 const cast = [
   {
     name: 'Rune Rider',
@@ -186,6 +198,80 @@ async function updateCharacter(characterId, member) {
   });
 }
 
+async function startBattle(roomId, name) {
+  return requestJson('/battles', {
+    method: 'POST',
+    body: JSON.stringify({ roomId, name }),
+  });
+}
+
+async function updateBattle(battleId, payload) {
+  return requestJson(`/battles/${encodeURIComponent(battleId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+async function concludeBattle(battleId, result) {
+  return requestJson(`/battles/${encodeURIComponent(battleId)}/conclude`, {
+    method: 'POST',
+    body: JSON.stringify({ result }),
+  });
+}
+
+async function waitForSeededLog(roomId, battleName, attempts = 8) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const logs = await requestJson(`/logs?roomId=${encodeURIComponent(roomId)}`);
+    if (Array.isArray(logs) && logs.some((entry) => entry?.summary?.includes(battleName))) {
+      return logs;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  throw new Error(`Seeded log entry for ${battleName} did not appear.`);
+}
+
+async function seedBattleStory(roomId, characters) {
+  const participantIds = characters.slice(0, 3).map((character) => character.id);
+
+  const battleToConclude = await startBattle(roomId, battleFixtures.concluded.name);
+  const populatedConcludedBattle = await updateBattle(battleToConclude.id, {
+    playerSide: {
+      characterIds: participantIds,
+      bonuses: [{ id: 'bonus-fallen-gate-help', value: 5 }],
+    },
+    monsterSide: {
+      monsters: [battleFixtures.concluded.monster],
+      bonuses: [],
+    },
+  });
+  const concludedBattle = await concludeBattle(populatedConcludedBattle.id, battleFixtures.concluded.result);
+  const logs = await waitForSeededLog(roomId, battleFixtures.concluded.name);
+
+  const activeBattle = await startBattle(roomId, battleFixtures.active.name);
+  const populatedActiveBattle = await updateBattle(activeBattle.id, {
+    playerSide: {
+      characterIds: participantIds,
+      bonuses: [{ id: 'bonus-dungeon-door-teamwork', value: 2 }],
+    },
+    monsterSide: {
+      monsters: [battleFixtures.active.monster],
+      bonuses: [{ id: 'bonus-ancient-squid-rage', value: 3 }],
+    },
+  });
+
+  const activeBattleCheck = await requestJson(`/battles?roomId=${encodeURIComponent(roomId)}&status=active`);
+  if (!activeBattleCheck || activeBattleCheck.id !== populatedActiveBattle.id) {
+    throw new Error('Seeded active battle did not survive verification.');
+  }
+
+  return {
+    activeBattle: populatedActiveBattle,
+    concludedBattle,
+    logCount: logs.length,
+  };
+}
+
 async function seedRoom() {
   const [owner, ...joiners] = cast;
   const ownerUser = await createUser(owner);
@@ -242,6 +328,8 @@ async function seedRoom() {
     });
   }
 
+  const battleStory = await seedBattleStory(createdRoom.roomId, characters);
+
   return {
     roomId: createdRoom.roomId,
     seededUsers: seededMembers.map((member) => ({
@@ -250,6 +338,7 @@ async function seedRoom() {
       avatarId: member.avatarId,
     })),
     characters,
+    battleStory,
   };
 }
 

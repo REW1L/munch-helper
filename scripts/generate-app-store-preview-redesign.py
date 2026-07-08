@@ -1,78 +1,134 @@
 #!/usr/bin/env python3
-"""Generate App Store preview redesign images from screenshots/iphone* variants.
-
-Default output is the current v5 style used in Figma:
-- top area retouched per slide for cleaner App Store presentation
-- no synthetic top caption badge
-- larger centered description text
-- output resolution preserved per source variant
-"""
+"""Generate caption-band store screenshots for App Store and Google Play."""
 
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_W, BASE_H = 1320, 2868
-MARGIN_X = 92
-SAFE_TOP = 180
+LOCALE = os.environ.get("STORE_SCREENSHOT_LOCALE", "en")
 
-PALETTE: Dict[str, str] = {
-    "cream": "#F7E9D7",
-    "gold": "#F0D36D",
-    "gold_soft": "#E6C45C",
-    "brown_dark": "#1D181A",
-    "rose": "#D8A7A6",
-    "plum": "#6A63ED",
-    "white": "#FFF8F1",
+# Mirrored from frontend/constants/theme.ts. Keep this dict in sync with
+# AppTheme.colors when the app palette changes.
+THEME: Dict[str, str] = {
+    "background": "#3C3636",
+    "surface": "#473F3F",
+    "elevated": "#4C4545",
+    "accent": "#D4C26E",
+    "textPrimary": "#FFFFFF",
+    "textMuted": "#D9D9D9",
+    "textAccentSoft": "#E8D89A",
+    "danger": "#922525",
+    "actionSecondary": "#6E6BD4",
+    "surfaceWarm": "#8A6150",
+    "surfaceSubtle": "#353535",
+    "parchmentSurface": "#D2ACAC",
+    "parchmentText": "#CEB464",
+    "parchmentTextShadow": "#796834",
 }
 
-SLIDES: List[Dict[str, object]] = [
-    {
-        "src": "rooms-home.png",
-        "dst": "01-rooms-home-preview-v5.png",
-        "eyebrow": "QUICK START",
-        "headline": ["Start your", "next game fast"],
-        "sub": "Create or join a room in a few taps and keep your table moving.",
-        "accent": PALETTE["gold"],
-        "center_all": True,
-        "retouch_tint": "#1a1416",
-    },
-    {
-        "src": "join-room.png",
-        "dst": "02-join-room-preview-v5.png",
-        "eyebrow": "INSTANT ACCESS",
-        "headline": ["Join a room", "in seconds"],
-        "sub": "Drop in with a code, skip setup friction, and get straight to play.",
-        "accent": PALETTE["rose"],
-        "center_all": False,
-        "retouch_tint": "#191315",
-    },
-    {
-        "src": "room-view.png",
-        "dst": "03-room-view-preview-v5.png",
-        "eyebrow": "LIVE TABLE VIEW",
-        "headline": ["Track every", "player update"],
-        "sub": "Watch the complete table in real time and see everyone's changes instantly.",
-        "accent": PALETTE["plum"],
-        "center_all": False,
-        "retouch_tint": "#171427",
-    },
-    {
-        "src": "character-details.png",
-        "dst": "04-character-details-preview-v5.png",
-        "eyebrow": "FAST STAT CONTROL",
-        "headline": ["Edit stats", "without slowing down"],
-        "sub": "Update levels, power, class, and race from one focused character sheet.",
-        "accent": PALETTE["gold_soft"],
-        "center_all": False,
-        "retouch_tint": "#1a1312",
-    },
-]
+
+@dataclass(frozen=True)
+class BaseCanvas:
+    width: int
+    height: int
+    band_ratio: float
+    margin_x: int
+    device_gap: int
+    corner_radius: int
+    shadow_blur: int
+    shadow_offset_y: int
+    eyebrow_size: int
+    headline_size: int
+    sub_size: int
+    headline_leading: int
+    sub_leading: int
+
+
+BASES: Dict[str, BaseCanvas] = {
+    "iphone69": BaseCanvas(
+        width=1320,
+        height=2868,
+        band_ratio=0.255,
+        margin_x=92,
+        device_gap=34,
+        corner_radius=58,
+        shadow_blur=46,
+        shadow_offset_y=22,
+        eyebrow_size=34,
+        headline_size=92,
+        sub_size=42,
+        headline_leading=102,
+        sub_leading=52,
+    ),
+    "android1080x2400": BaseCanvas(
+        width=1080,
+        height=2400,
+        band_ratio=0.265,
+        margin_x=76,
+        device_gap=28,
+        corner_radius=48,
+        shadow_blur=38,
+        shadow_offset_y=18,
+        eyebrow_size=30,
+        headline_size=76,
+        sub_size=36,
+        headline_leading=84,
+        sub_leading=44,
+    ),
+}
+
+
+CAPTIONS: Dict[str, Dict[str, Dict[str, object]]] = {
+    "en": {
+        "rooms-home": {
+            "src": "rooms-home.png",
+            "dst": "01-rooms-home.png",
+            "eyebrow": "GATHER THE TABLE",
+            "headline": ["One room for", "the whole party"],
+            "sub": "Create a shared table and keep everyone in sync from the first move.",
+            "accent": "accent",
+            "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26},
+            "crop_top": {"iphone69": 0, "android1080x2400": 0},
+        },
+        "room-view": {
+            "src": "room-view.png",
+            "dst": "02-room-view.png",
+            "eyebrow": "LIVE TABLE",
+            "headline": ["Watch everyone", "level up"],
+            "sub": "Track power, class, and race changes while the table keeps moving.",
+            "accent": "actionSecondary",
+            "band_ratio": {"iphone69": 0.255, "android1080x2400": 0.265},
+            "crop_top": {"iphone69": 0, "android1080x2400": 0},
+        },
+        "battle": {
+            "src": "battle.png",
+            "dst": "03-battle.png",
+            "eyebrow": "INTO BATTLE",
+            "headline": ["Take on the", "monster together"],
+            "sub": "Pull in allies, stack bonuses, and settle the fight as a group.",
+            "accent": "danger",
+            "band_ratio": {"iphone69": 0.265, "android1080x2400": 0.275},
+            "crop_top": {"iphone69": 0, "android1080x2400": 0},
+        },
+        "log": {
+            "src": "log.png",
+            "dst": "04-log.png",
+            "eyebrow": "GAME HISTORY",
+            "headline": ["Replay every", "twist"],
+            "sub": "Review battles and table updates long after the cards hit the table.",
+            "accent": "parchmentText",
+            "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26},
+            "crop_top": {"iphone69": 0, "android1080x2400": 0},
+        },
+    }
+}
 
 
 def resolve_font_path() -> Path:
@@ -104,10 +160,11 @@ def wrap_text(draw: ImageDraw.ImageDraw, text: str, max_width: int, font: ImageF
         candidate = f"{current} {word}".strip()
         if draw.textlength(candidate, font=font) <= max_width:
             current = candidate
-        else:
-            if current:
-                lines.append(current)
-            current = word
+            continue
+
+        if current:
+            lines.append(current)
+        current = word
 
     if current:
         lines.append(current)
@@ -115,162 +172,154 @@ def wrap_text(draw: ImageDraw.ImageDraw, text: str, max_width: int, font: ImageF
     return lines
 
 
-def main() -> None:
-    font_path = resolve_font_path()
+def rounded_mask(size: Tuple[int, int], radius: int) -> Image.Image:
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.rounded_rectangle((0, 0, size[0], size[1]), radius=radius, fill=255)
+    return mask
 
-    source_dirs = sorted(
-        directory
-        for directory in (ROOT / "screenshots").glob("iphone*")
-        if directory.is_dir() and "_appstore_redesign" not in directory.name
+
+def render_device_shot(source: Image.Image, base: BaseCanvas, slide: Dict[str, object], base_key: str) -> Image.Image:
+    band_ratio = get_tuned_value(slide, "band_ratio", base_key, base.band_ratio)
+    band_h = int(round(base.height * band_ratio))
+    region_top = band_h + base.device_gap
+    region_h = base.height - region_top
+    region_w = base.width - (base.margin_x * 2)
+    scale = region_w / source.width
+    scaled_h = int(round(source.height * scale))
+    scaled = source.resize((region_w, scaled_h), Image.Resampling.LANCZOS).convert("RGBA")
+
+    crop_top = int(get_tuned_value(slide, "crop_top", base_key, 0))
+    crop_top = max(0, min(crop_top, max(0, scaled_h - 1)))
+    crop_bottom = min(scaled_h, crop_top + region_h)
+    visible = scaled.crop((0, crop_top, region_w, crop_bottom))
+
+    if visible.height < region_h:
+        padded = Image.new("RGBA", (region_w, region_h), (0, 0, 0, 0))
+        padded.alpha_composite(visible, (0, 0))
+        visible = padded
+
+    return visible
+
+
+def get_tuned_value(slide: Dict[str, object], key: str, base_key: str, default: float) -> float:
+    value = slide.get(key)
+    if isinstance(value, dict):
+        tuned = value.get(base_key)
+        if isinstance(tuned, (int, float)):
+            return float(tuned)
+    if isinstance(value, (int, float)):
+        return float(value)
+    return default
+
+
+def draw_caption(
+    draw: ImageDraw.ImageDraw,
+    base: BaseCanvas,
+    slide: Dict[str, object],
+    font_path: Path,
+    band_h: int,
+) -> None:
+    eyebrow_font = ImageFont.truetype(str(font_path), base.eyebrow_size)
+    headline_font = ImageFont.truetype(str(font_path), base.headline_size)
+    sub_font = ImageFont.truetype(str(font_path), base.sub_size)
+    accent = THEME[str(slide["accent"])]
+    x = base.margin_x
+    max_width = base.width - (base.margin_x * 2)
+    headline_lines = [str(line) for line in slide["headline"]]  # type: ignore[index]
+    sub_lines = wrap_text(draw, str(slide["sub"]), max_width, sub_font)[:2]
+
+    text_h = (
+        base.eyebrow_size
+        + 28
+        + (len(headline_lines) * base.headline_leading)
+        + 18
+        + (len(sub_lines) * base.sub_leading)
     )
+    y = max(38, (band_h - text_h) // 2)
 
+    draw.text((x, y), str(slide["eyebrow"]), font=eyebrow_font, fill=accent)
+    y += base.eyebrow_size + 28
+
+    for line in headline_lines:
+        draw.text((x - 2, y), line, font=headline_font, fill=THEME["textPrimary"])
+        y += base.headline_leading
+
+    y += 12
+    for line in sub_lines:
+        draw.text((x, y), line, font=sub_font, fill=THEME["textMuted"])
+        y += base.sub_leading
+
+
+def compose_slide(source_path: Path, output_path: Path, base_key: str, base: BaseCanvas, slide: Dict[str, object], font_path: Path) -> None:
+    band_ratio = get_tuned_value(slide, "band_ratio", base_key, base.band_ratio)
+    band_h = int(round(base.height * band_ratio))
+    region_top = band_h + base.device_gap
+
+    canvas = Image.new("RGBA", (base.width, base.height), THEME["background"])
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle((0, 0, base.width, band_h), fill=THEME["background"])
+
+    with Image.open(source_path) as raw_source:
+        source = raw_source.convert("RGBA")
+        if source.size != (base.width, base.height):
+            raise RuntimeError(
+                f"{source_path.relative_to(ROOT)} is {source.size[0]}x{source.size[1]}, expected {base.width}x{base.height}"
+            )
+        device = render_device_shot(source, base, slide, base_key)
+
+    device_x = base.margin_x
+    device_y = region_top
+    mask = rounded_mask(device.size, base.corner_radius)
+
+    shadow = Image.new("RGBA", device.size, (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow)
+    shadow_draw.rounded_rectangle((0, 0, device.width, device.height), radius=base.corner_radius, fill=(0, 0, 0, 190))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(base.shadow_blur))
+    canvas.alpha_composite(shadow, (device_x, device_y + base.shadow_offset_y))
+
+    glow = Image.new("RGBA", device.size, (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow)
+    accent_rgb = Image.new("RGBA", (1, 1), THEME[str(slide["accent"])]).getpixel((0, 0))
+    glow_draw.rounded_rectangle(
+        (0, 0, device.width, device.height),
+        radius=base.corner_radius,
+        outline=accent_rgb[:3] + (128,),
+        width=max(8, base.width // 90),
+    )
+    glow = glow.filter(ImageFilter.GaussianBlur(base.shadow_blur // 2))
+    canvas.alpha_composite(glow, (device_x, device_y))
+
+    canvas.paste(device, (device_x, device_y), mask)
+    draw_caption(ImageDraw.Draw(canvas), base, slide, font_path, band_h)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.convert("RGB").save(output_path)
+
+
+def main() -> None:
+    if LOCALE not in CAPTIONS:
+        raise RuntimeError(f"Unsupported locale {LOCALE!r}; available: {', '.join(sorted(CAPTIONS))}")
+
+    font_path = resolve_font_path()
     print(f"FONT {font_path}")
 
-    for source_dir in source_dirs:
-        size_probe = source_dir / str(SLIDES[0]["src"])
-        if not size_probe.exists():
-            print(f"SKIP {source_dir.relative_to(ROOT)} (missing {size_probe.name})")
+    for base_key, base in BASES.items():
+        source_dir = ROOT / "screenshots" / base_key
+        if not source_dir.is_dir():
+            print(f"SKIP screenshots/{base_key} (missing directory)")
             continue
 
-        with Image.open(size_probe) as probe:
-            width, height = probe.size
-
-        scale_x = width / BASE_W
-        scale_y = height / BASE_H
-        scale = min(scale_x, scale_y)
-
-        def sx(value: int) -> int:
-            return max(1, int(round(value * scale_x)))
-
-        def sy(value: int) -> int:
-            return max(1, int(round(value * scale_y)))
-
-        def ss(value: int) -> int:
-            return max(1, int(round(value * scale)))
-
-        eyebrow_font = ImageFont.truetype(str(font_path), ss(34))
-        headline_font = ImageFont.truetype(str(font_path), ss(104))
-        sub_font = ImageFont.truetype(str(font_path), ss(48))
-
-        output_dir = source_dir.with_name(f"{source_dir.name}_appstore_redesign_v5")
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        for slide in SLIDES:
-            src_path = source_dir / str(slide["src"])
-            dst_path = output_dir / str(slide["dst"])
-
-            if not src_path.exists():
-                print(f"SKIP {src_path.relative_to(ROOT)} (missing)")
+        output_dir = ROOT / "screenshots" / f"{base_key}_store_preview" / LOCALE
+        for slide_key, slide in CAPTIONS[LOCALE].items():
+            source_path = source_dir / str(slide["src"])
+            output_path = output_dir / str(slide["dst"])
+            if not source_path.exists():
+                print(f"SKIP {source_path.relative_to(ROOT)} (missing)")
                 continue
 
-            img = Image.open(src_path).convert("RGBA").resize((width, height), Image.Resampling.LANCZOS)
-            canvas = img.copy()
-
-            dim = Image.new("RGBA", (width, height), "#0E0B0D")
-            dim.putalpha(58)
-            canvas.alpha_composite(dim)
-
-            grad = Image.new("L", (1, height), 0)
-            fade_limit = sy(1220)
-            for y in range(height):
-                alpha = int(232 * (1 - (y / fade_limit)) ** 0.74) if y <= fade_limit else 0
-                grad.putpixel((0, y), alpha)
-            grad = grad.resize((width, height))
-
-            top_scrim = Image.new("RGBA", (width, height), PALETTE["brown_dark"])
-            top_scrim.putalpha(grad)
-            canvas.alpha_composite(top_scrim)
-
-            # Retouch the app chrome at the very top for cleaner App Store visuals.
-            retouch = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-            rdraw = ImageDraw.Draw(retouch)
-            rdraw.rounded_rectangle((sx(36), sy(32), width - sx(36), sy(338)), radius=ss(62), fill=str(slide["retouch_tint"]))
-            retouch = retouch.filter(ImageFilter.GaussianBlur(ss(18)))
-            retouch.putalpha(retouch.getchannel("A").point(lambda a: min(a, 210)))
-            canvas.alpha_composite(retouch)
-
-            sheen = Image.new("L", (1, height), 0)
-            sheen_limit = sy(300)
-            for y in range(height):
-                a = int(84 * (1 - y / sheen_limit)) if y < sheen_limit else 0
-                sheen.putpixel((0, y), a)
-            sheen = sheen.resize((width, height))
-            sheen_layer = Image.new("RGBA", (width, height), "#FFFFFF")
-            sheen_layer.putalpha(sheen)
-            canvas.alpha_composite(sheen_layer)
-
-            glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-            gdraw = ImageDraw.Draw(glow)
-            gdraw.ellipse((sx(-250), sy(SAFE_TOP - 140), sx(650), sy(SAFE_TOP + 500)), fill=str(slide["accent"]))
-            glow = glow.filter(ImageFilter.GaussianBlur(ss(120)))
-            glow.putalpha(glow.getchannel("A").point(lambda a: min(a, 95)))
-            canvas.alpha_composite(glow)
-
-            draw = ImageDraw.Draw(canvas)
-
-            if bool(slide["center_all"]):
-                center_x = width // 2
-                y = sy(930)
-                eyebrow = str(slide["eyebrow"])
-                ew = draw.textlength(eyebrow, font=eyebrow_font)
-                draw.text((center_x - ew / 2, y), eyebrow, font=eyebrow_font, fill=str(slide["accent"]))
-
-                y += sy(88)
-                for line in slide["headline"]:  # type: ignore[index]
-                    lw = draw.textlength(str(line), font=headline_font)
-                    draw.text((center_x - lw / 2, y), str(line), font=headline_font, fill=PALETTE["white"])
-                    y += sy(118)
-
-                sub_lines = wrap_text(draw, str(slide["sub"]), sx(980), sub_font)
-                box_h = sy(76) + sy(58) * len(sub_lines)
-                box_top = y + sy(20)
-                draw.rounded_rectangle(
-                    (sx(160), box_top, width - sx(160), box_top + box_h),
-                    radius=ss(36),
-                    fill=(20, 16, 19, 162),
-                    outline=(255, 248, 241, 62),
-                    width=ss(2),
-                )
-
-                text_y = box_top + sy(28)
-                for line in sub_lines[:3]:
-                    lw = draw.textlength(line, font=sub_font)
-                    draw.text((center_x - lw / 2, text_y), line, font=sub_font, fill=PALETTE["cream"])
-                    text_y += sy(58)
-            else:
-                eyebrow_y = sy(SAFE_TOP + 18)
-                draw.text((sx(MARGIN_X), eyebrow_y), str(slide["eyebrow"]), font=eyebrow_font, fill=str(slide["accent"]))
-
-                head_y = eyebrow_y + sy(64)
-                for line in slide["headline"]:  # type: ignore[index]
-                    draw.text((sx(MARGIN_X - 2), head_y), str(line), font=headline_font, fill=PALETTE["white"])
-                    head_y += sy(114)
-
-                sub_lines = wrap_text(draw, str(slide["sub"]), sx(1040), sub_font)
-                box_h = sy(78) + sy(58) * len(sub_lines)
-                sub_top = head_y + sy(28)
-                sub_box = (sx(140), sub_top, width - sx(140), sub_top + box_h)
-                draw.rounded_rectangle(
-                    sub_box,
-                    radius=ss(36),
-                    fill=(20, 16, 19, 162),
-                    outline=(255, 248, 241, 62),
-                    width=ss(2),
-                )
-
-                center_x = width // 2
-                text_y = sub_top + sy(28)
-                for line in sub_lines[:3]:
-                    lw = draw.textlength(line, font=sub_font)
-                    draw.text((center_x - lw / 2, text_y), line, font=sub_font, fill=PALETTE["cream"])
-                    text_y += sy(58)
-
-            # Save as RGB so the exported PNGs do not include an alpha channel.
-            canvas.convert("RGB").save(dst_path)
-
-        for path in sorted(output_dir.glob("*.png")):
-            with Image.open(path) as image:
-                print(f"{path.relative_to(ROOT)} {image.size[0]}x{image.size[1]}")
+            compose_slide(source_path, output_path, base_key, base, slide, font_path)
+            with Image.open(output_path) as image:
+                print(f"{output_path.relative_to(ROOT)} {image.size[0]}x{image.size[1]}")
 
 
 if __name__ == "__main__":

@@ -16,24 +16,6 @@ const deviceProfiles = [
     profileName: 'Captain Rowan',
     profileAvatar: '1',
   },
-  {
-    directory: 'iphone63',
-    candidates: ['iPhone 17 Pro'],
-    profileName: 'Scout Mira',
-    profileAvatar: '2',
-  },
-  {
-    directory: 'iphone61',
-    candidates: ['iPhone 17e'],
-    profileName: 'Archivist Sol',
-    profileAvatar: '4',
-  },
-  {
-    directory: 'ipad13',
-    candidates: ['iPad Pro 13-inch (M5)'],
-    profileName: 'Marshal Veya',
-    profileAvatar: '6',
-  },
 ];
 
 const flows = [
@@ -42,16 +24,16 @@ const flows = [
     flow: 'maestro/app_store_rooms_home.yaml',
   },
   {
-    file: 'join-room.png',
-    flow: 'maestro/app_store_join_room.yaml',
-  },
-  {
     file: 'room-view.png',
     flow: 'maestro/app_store_room_view.yaml',
   },
   {
-    file: 'character-details.png',
-    flow: 'maestro/app_store_character_details.yaml',
+    file: 'battle.png',
+    flow: 'maestro/app_store_battle.yaml',
+  },
+  {
+    file: 'log.png',
+    flow: 'maestro/app_store_log.yaml',
   },
 ];
 
@@ -211,7 +193,9 @@ async function captureForDevice(device, roomId) {
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);
-      await run('maestro', ['test', '-e', `ROOM_ID=${roomId}`, flow.flow], { cwd: rootDir });
+      await run('maestro', ['test', '--device', device.udid, '-p', 'ios', '-e', `ROOM_ID=${roomId}`, flow.flow], {
+        cwd: rootDir,
+      });
       await sleep(1200);
       await run('xcrun', ['simctl', 'io', device.udid, 'screenshot', path.join(targetDir, flow.file)]);
     }

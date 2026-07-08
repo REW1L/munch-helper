@@ -16,6 +16,7 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
+      "usesCleartextTraffic": true,
       "package": "click.helpamunch.mobileapp"
     },
     "web": {
