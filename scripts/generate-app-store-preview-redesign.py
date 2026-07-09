@@ -256,9 +256,10 @@ def compose_slide(source_path: Path, output_path: Path, base_key: str, base: Bas
     band_h = int(round(base.height * band_ratio))
     region_top = band_h + base.device_gap
 
-    canvas = Image.new("RGBA", (base.width, base.height), THEME["background"])
+    canvas = Image.new("RGBA", (base.width, base.height), THEME["surface"])
     draw = ImageDraw.Draw(canvas)
     draw.rectangle((0, 0, base.width, band_h), fill=THEME["background"])
+    draw.rectangle((0, band_h - 2, base.width, band_h + 2), fill=THEME[str(slide["accent"])])
 
     with Image.open(source_path) as raw_source:
         source = raw_source.convert("RGBA")
@@ -291,6 +292,19 @@ def compose_slide(source_path: Path, output_path: Path, base_key: str, base: Bas
     canvas.alpha_composite(glow, (device_x, device_y))
 
     canvas.paste(device, (device_x, device_y), mask)
+    boundary = ImageDraw.Draw(canvas)
+    boundary.rounded_rectangle(
+        (device_x - 3, device_y - 3, device_x + device.width + 3, device_y + device.height + 3),
+        radius=base.corner_radius + 3,
+        outline=THEME["textAccentSoft"],
+        width=max(4, base.width // 180),
+    )
+    boundary.rounded_rectangle(
+        (device_x, device_y, device_x + device.width - 1, device_y + device.height - 1),
+        radius=base.corner_radius,
+        outline=THEME[str(slide["accent"])],
+        width=max(3, base.width // 240),
+    )
     draw_caption(ImageDraw.Draw(canvas), base, slide, font_path, band_h)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(output_path)

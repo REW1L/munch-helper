@@ -53,106 +53,6 @@ const cast = [
     race: ['Halfling'],
     gender: ['female'],
   },
-  {
-    name: 'Gilda Storm',
-    avatarId: 9,
-    color: '#D58B3E',
-    level: 5,
-    power: 12,
-    class: ['Cleric'],
-    race: ['Dwarf'],
-    gender: ['female'],
-  },
-  {
-    name: 'Moss Quill',
-    avatarId: 1,
-    color: '#6B9A57',
-    level: 4,
-    power: 11,
-    class: ['Thief'],
-    race: ['Human'],
-    gender: ['male'],
-  },
-  {
-    name: 'Iris Flint',
-    avatarId: 2,
-    color: '#B85F7A',
-    level: 8,
-    power: 18,
-    class: ['Wizard'],
-    race: ['Elf'],
-    gender: ['female'],
-  },
-  {
-    name: 'Torin Pike',
-    avatarId: 4,
-    color: '#4F88A8',
-    level: 6,
-    power: 15,
-    class: ['Warrior'],
-    race: ['Dwarf'],
-    gender: ['male'],
-  },
-  {
-    name: 'Selka Rune',
-    avatarId: 6,
-    color: '#8C6AD1',
-    level: 7,
-    power: 17,
-    class: ['Bard'],
-    race: ['Gnome'],
-    gender: ['female'],
-  },
-  {
-    name: 'Doran Vale',
-    avatarId: 8,
-    color: '#A76B45',
-    level: 9,
-    power: 20,
-    class: ['Ranger'],
-    race: ['Halfling'],
-    gender: ['male'],
-  },
-  {
-    name: 'Lyra March',
-    avatarId: 0,
-    color: '#D16A5E',
-    level: 3,
-    power: 9,
-    class: ['Cleric'],
-    race: ['Human'],
-    gender: ['female'],
-  },
-  {
-    name: 'Fen Ember',
-    avatarId: 3,
-    color: '#4C7CC8',
-    level: 10,
-    power: 23,
-    class: ['Wizard'],
-    race: ['Orc'],
-    gender: ['male'],
-  },
-  {
-    name: 'Rook Tallow',
-    avatarId: 5,
-    color: '#7B8E4A',
-    level: 5,
-    power: 13,
-    class: ['Thief'],
-    race: ['Human'],
-    gender: ['male'],
-  },
-  {
-    name: 'Cinder Vale',
-    avatarId: 7,
-    color: '#C06C3F',
-    level: 8,
-    power: 19,
-    class: ['Warrior'],
-    race: ['Elf'],
-    gender: ['female'],
-  },
 ];
 
 async function requestJson(path, init = {}) {
@@ -259,6 +159,7 @@ async function seedBattleStory(roomId, characters) {
       bonuses: [{ id: 'bonus-ancient-squid-rage', value: 3 }],
     },
   });
+  const activeLogs = await waitForSeededLog(roomId, battleFixtures.active.name);
 
   const activeBattleCheck = await requestJson(`/battles?roomId=${encodeURIComponent(roomId)}&status=active`);
   if (!activeBattleCheck || activeBattleCheck.id !== populatedActiveBattle.id) {
@@ -268,7 +169,7 @@ async function seedBattleStory(roomId, characters) {
   return {
     activeBattle: populatedActiveBattle,
     concludedBattle,
-    logCount: logs.length,
+    logCount: Math.max(logs.length, activeLogs.length),
   };
 }
 

@@ -1,5 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
@@ -8,10 +9,11 @@ const repoRoot = new URL('..', import.meta.url);
 const rootDir = path.resolve(repoRoot.pathname);
 const frontendDir = path.join(rootDir, 'frontend');
 const screenshotsDir = path.join(rootDir, 'screenshots');
+const androidManifestPath = path.join(frontendDir, 'android/app/src/main/AndroidManifest.xml');
 const androidOutputDirName = 'android1080x2400';
 const androidCanvas = { width: 1080, height: 2400 };
 
-const appApiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+const appApiUrl = process.env.EXPO_PUBLIC_API_URL || resolveAndroidHostApiUrl();
 const seedApiUrl = process.env.API_BASE_URL || 'http://localhost:8080';
 const pythonCommand = process.env.SCREENSHOT_PYTHON || 'python3';
 const requestedDevice = process.env.ANDROID_SERIAL || '';
@@ -44,6 +46,15 @@ const flows = [
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function resolveAndroidHostApiUrl() {
+  const networks = os.networkInterfaces();
+  const hostAddress = Object.values(networks)
+    .flat()
+    .find((address) => address?.family === 'IPv4' && !address.internal && address.address.startsWith('192.168.'));
+
+  return hostAddress ? `http://${hostAddress.address}:8080` : 'http://10.0.2.2:8080';
 }
 
 async function run(command, args, options = {}) {
@@ -104,6 +115,14 @@ async function seedRoom() {
     },
   });
   return JSON.parse(stdout);
+}
+
+async function seedRoomForFlow(flow) {
+  const seededRoom = await seedRoom();
+  process.stdout.write(
+    `   seeded ${flow.file}: ${seededRoom.roomId} (${seededRoom.characters.length} named characters)\n`
+  );
+  return seededRoom;
 }
 
 async function listConnectedAndroidDevices() {
@@ -294,6 +313,23 @@ async function applyReversePorts(serial) {
   await run('adb', ['-s', serial, 'reverse', 'tcp:8080', 'tcp:8080']);
 }
 
+async function ensureAndroidCleartextTraffic() {
+  const manifest = await fs.readFile(androidManifestPath, 'utf8');
+  if (manifest.includes('android:usesCleartextTraffic=')) {
+    return;
+  }
+
+  const updatedManifest = manifest.replace(
+    /<application\b([^>]*)>/,
+    '<application$1 android:usesCleartextTraffic="true">'
+  );
+  if (updatedManifest === manifest) {
+    throw new Error(`Unable to add cleartext traffic setting to ${androidManifestPath}.`);
+  }
+
+  await fs.writeFile(androidManifestPath, updatedManifest);
+}
+
 async function isAppInstalled(serial) {
   const result = await run('adb', ['-s', serial, 'shell', 'pm', 'path', 'click.helpamunch.mobileapp'], {
     allowFailure: true,
@@ -318,7 +354,7 @@ async function capturePng(serial, targetPath) {
   await fs.writeFile(targetPath, stdout);
 }
 
-async function captureForDevice(device, roomId) {
+async function captureForDevice(device) {
   const size = await getDeviceSize(device.serial);
   if (size.width !== androidCanvas.width || size.height !== androidCanvas.height) {
     throw new Error(
@@ -328,6 +364,7 @@ async function captureForDevice(device, roomId) {
 
   const targetDir = path.join(screenshotsDir, androidOutputDirName);
   await fs.mkdir(targetDir, { recursive: true });
+  const roomBySlide = [];
 
   process.stdout.write(`\n==> Capturing Android ${size.width}x${size.height} on ${device.serial}\n`);
   await applyReversePorts(device.serial);
@@ -335,6 +372,8 @@ async function captureForDevice(device, roomId) {
 
   try {
     await run('adb', ['-s', device.serial, 'uninstall', 'click.helpamunch.mobileapp'], { allowFailure: true });
+    await run('npx', ['expo', 'prebuild', '--platform', 'android'], { cwd: frontendDir });
+    await ensureAndroidCleartextTraffic();
     const installResult = await run(
       'npx',
       ['expo', 'run:android', '--variant', 'release', '-d', device.expoDevice],
@@ -353,16 +392,26 @@ async function captureForDevice(device, roomId) {
     if (installResult instanceof Error && !(await isAppInstalled(device.serial))) {
       throw installResult;
     }
+    await applyReversePorts(device.serial);
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);
-      await run('maestro', ['test', '--device', device.serial, '-p', 'android', '-e', `ROOM_ID=${roomId}`, flow.flow], {
+      const seededRoom = await seedRoomForFlow(flow);
+      roomBySlide.push({ file: flow.file, roomId: seededRoom.roomId });
+      await applyReversePorts(device.serial);
+      await run('maestro', ['test', '--device', device.serial, '-p', 'android', '-e', `ROOM_ID=${seededRoom.roomId}`, flow.flow], {
         cwd: rootDir,
       });
       await sleep(1200);
       await capturePng(device.serial, path.join(targetDir, flow.file));
     }
   } finally {
+    if (roomBySlide.length > 0) {
+      process.stdout.write('\nSlide room map:\n');
+      for (const mapping of roomBySlide) {
+        process.stdout.write(`   ${mapping.file}: ${mapping.roomId}\n`);
+      }
+    }
     await clearStatusBar(device.serial);
     await clearReversePorts(device.serial);
   }
@@ -376,11 +425,9 @@ async function generateCaptionedScreenshots() {
 
 async function main() {
   await fs.mkdir(screenshotsDir, { recursive: true });
-  const seededRoom = await seedRoom();
   const device = await resolveDevice();
 
-  process.stdout.write(`Seeded room ${seededRoom.roomId} with ${seededRoom.characters.length} named characters.\n`);
-  const targetDir = await captureForDevice(device, seededRoom.roomId);
+  const targetDir = await captureForDevice(device);
   await generateCaptionedScreenshots();
 
   process.stdout.write(`\nGoogle Play screenshots saved under ${targetDir}\n`);

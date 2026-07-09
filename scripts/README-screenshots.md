@@ -42,14 +42,16 @@ iPad/tablet screenshot sets and the Google Play feature graphic are handled outs
 
 The screenshot pipeline:
 
-1. Seeds a fresh room in the backend with a named cast of characters.
-2. Performs real battle API actions: creates and concludes one battle for history, then creates a separate active battle for the battle slide.
-3. Verifies the active battle via `GET /battles?roomId=...&status=active` and verifies history via `GET /logs?roomId=...`.
+1. Seeds a fresh, isolated room in the backend for each captured slide.
+2. Each seed creates four named characters and performs real battle API actions: creates and concludes one battle for history, then creates a separate active battle for the battle slide.
+3. Verifies each seeded room's active battle via `GET /battles?roomId=...&status=active` and verifies history via `GET /logs?roomId=...`.
 4. Resolves the target iOS 26 simulator or Android emulator.
 5. Builds and installs the app in release mode with screenshot profile data.
-6. Runs the four Maestro flows.
+6. Runs the four Maestro flows, passing the slide-specific `ROOM_ID` to each flow.
 7. Captures source PNG screenshots.
 8. Runs the caption-band compositor.
+
+The runners print a slide-to-room map so a generated image can be traced back to the local fixture that produced it. The local screenshot database is disposable; if fixtures drift or look stale, clear/recreate the local data and rerun the pipeline.
 
 The iOS local profile is injected at build time:
 
@@ -69,7 +71,7 @@ Each output uses:
 - the app palette mirrored from `frontend/constants/theme.ts`
 - locale-keyed caption copy, with `STORE_SCREENSHOT_LOCALE=en` by default
 - fixed base canvases: `1320x2868` for `iphone69`, `1080x2400` for `android1080x2400`
-- an undimmed screenshot with rounded corners, soft shadow, and no device hardware bezel
+- an undimmed screenshot with rounded corners, soft shadow, visible frame boundary, and no device hardware bezel
 - bottom-cropping when the screenshot is taller than the area below the band, preserving top content legibility
 
 The band occupies roughly 20-30 percent of the canvas. Per-slide band ratio and crop offset live in the script data so future tuning is data-only.
@@ -228,7 +230,7 @@ This prints JSON that includes:
 
 - `roomId`
 - seeded users
-- created characters
+- four created characters
 - active and concluded battle fixture metadata
 
 You can also override the backend URL:
@@ -329,7 +331,8 @@ Profile generation logic:
 - The screenshot runner expects an iOS `26.x` `iPhone 17 Pro Max` simulator.
 - The Android runner requires an emulator or device reporting `1080x2400`.
 - The local screenshot profile is created from build-time environment variables.
-- The seeded room intentionally contains many named characters so the joined user does not also appear in the visible room list area.
+- Each capture flow receives its own freshly seeded room so repeated clear-state launches do not pollute one shared history log.
+- Each seeded room contains four named characters; after the screenshot profile joins, room screenshots should still look like a realistic 2-6 player Munchkin table.
 - The runner clears app state before each Maestro flow using `launchApp: clearState: true`.
 - The active battle fixture is named `Dungeon Door`; the concluded log fixture is named `Fallen Gate`.
 

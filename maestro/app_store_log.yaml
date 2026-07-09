@@ -24,10 +24,12 @@ appId: click.helpamunch.mobileapp
 - extendedWaitUntil:
     visible: "History"
     timeout: 20000
-- scrollUntilVisible:
-    element: "Players Win"
-    direction: DOWN
-    timeout: 15000
 - extendedWaitUntil:
-    visible: "Players Win"
+    visible: "Battle Dungeon Door, started, just now."
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Battle Fallen Gate, Players Win, just now. Double-tap to open battle record."
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Battle Fallen Gate, started, just now."
     timeout: 10000
