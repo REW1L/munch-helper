@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,12 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCALE = os.environ.get("STORE_SCREENSHOT_LOCALE", "en")
+BEZEL_DIR = ROOT / "scripts" / "assets" / "device-bezels"
+BEZEL_METADATA_PATH = BEZEL_DIR / "device-bezels.json"
+EXPECTED_PLATFORMS: Dict[str, str] = {
+    "iphone69": "ios",
+    "android1080x2400": "android",
+}
 
 # Mirrored from frontend/constants/theme.ts. Keep this dict in sync with
 # AppTheme.colors when the app palette changes.
@@ -49,6 +56,22 @@ class BaseCanvas:
     sub_size: int
     headline_leading: int
     sub_leading: int
+
+
+@dataclass(frozen=True)
+class Rect:
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass(frozen=True)
+class BezelConfig:
+    platform: str
+    asset_path: Path
+    screen: Rect
+    outer_radius: int
 
 
 BASES: Dict[str, BaseCanvas] = {
@@ -172,34 +195,118 @@ def wrap_text(draw: ImageDraw.ImageDraw, text: str, max_width: int, font: ImageF
     return lines
 
 
-def rounded_mask(size: Tuple[int, int], radius: int) -> Image.Image:
-    mask = Image.new("L", size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.rounded_rectangle((0, 0, size[0], size[1]), radius=radius, fill=255)
-    return mask
+def load_bezel_configs() -> Dict[str, BezelConfig]:
+    if not BEZEL_METADATA_PATH.exists():
+        raise RuntimeError(f"Missing bezel metadata: {BEZEL_METADATA_PATH.relative_to(ROOT)}")
+
+    with BEZEL_METADATA_PATH.open("r", encoding="utf-8") as file:
+        raw_configs = json.load(file)
+
+    if not isinstance(raw_configs, dict):
+        raise RuntimeError(f"{BEZEL_METADATA_PATH.relative_to(ROOT)} must contain a JSON object")
+
+    configs: Dict[str, BezelConfig] = {}
+    for base_key, expected_platform in EXPECTED_PLATFORMS.items():
+        raw_config = raw_configs.get(base_key)
+        if not isinstance(raw_config, dict):
+            raise RuntimeError(f"Missing bezel config for {base_key!r} in {BEZEL_METADATA_PATH.relative_to(ROOT)}")
+
+        platform = raw_config.get("platform")
+        if platform != expected_platform:
+            raise RuntimeError(
+                f"Bezel config for {base_key!r} must use platform {expected_platform!r}, got {platform!r}"
+            )
+
+        asset = raw_config.get("asset")
+        if not isinstance(asset, str) or not asset:
+            raise RuntimeError(f"Bezel config for {base_key!r} must include a non-empty asset name")
+
+        asset_path = BEZEL_DIR / asset
+        if not asset_path.exists():
+            raise RuntimeError(f"Missing bezel asset for {base_key!r}: {asset_path.relative_to(ROOT)}")
+
+        raw_screen = raw_config.get("screen")
+        if not isinstance(raw_screen, dict):
+            raise RuntimeError(f"Bezel config for {base_key!r} must include a screen rectangle")
+
+        try:
+            screen = Rect(
+                x=int(raw_screen["x"]),
+                y=int(raw_screen["y"]),
+                width=int(raw_screen["width"]),
+                height=int(raw_screen["height"]),
+            )
+            outer_radius = int(raw_config.get("outerRadius", 0))
+        except (KeyError, TypeError, ValueError) as error:
+            raise RuntimeError(f"Invalid bezel screen rectangle for {base_key!r}") from error
+
+        if screen.x < 0 or screen.y < 0 or screen.width <= 0 or screen.height <= 0:
+            raise RuntimeError(f"Invalid non-positive bezel screen rectangle for {base_key!r}")
+        if outer_radius <= 0:
+            raise RuntimeError(f"Bezel config for {base_key!r} must include positive outerRadius")
+
+        with Image.open(asset_path) as asset_image:
+            asset_width, asset_height = asset_image.size
+        if screen.x + screen.width > asset_width or screen.y + screen.height > asset_height:
+            raise RuntimeError(f"Bezel screen rectangle for {base_key!r} exceeds {asset_path.relative_to(ROOT)}")
+
+        configs[base_key] = BezelConfig(
+            platform=platform,
+            asset_path=asset_path,
+            screen=screen,
+            outer_radius=outer_radius,
+        )
+
+    return configs
 
 
-def render_device_shot(source: Image.Image, base: BaseCanvas, slide: Dict[str, object], base_key: str) -> Image.Image:
-    band_ratio = get_tuned_value(slide, "band_ratio", base_key, base.band_ratio)
-    band_h = int(round(base.height * band_ratio))
-    region_top = band_h + base.device_gap
-    region_h = base.height - region_top
-    region_w = base.width - (base.margin_x * 2)
-    scale = region_w / source.width
+def render_screen_content(source: Image.Image, screen_size: Tuple[int, int], slide: Dict[str, object], base_key: str) -> Image.Image:
+    screen_w, screen_h = screen_size
+    scale = max(screen_w / source.width, screen_h / source.height)
+    scaled_w = int(round(source.width * scale))
     scaled_h = int(round(source.height * scale))
-    scaled = source.resize((region_w, scaled_h), Image.Resampling.LANCZOS).convert("RGBA")
+    scaled = source.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS).convert("RGBA")
 
     crop_top = int(get_tuned_value(slide, "crop_top", base_key, 0))
-    crop_top = max(0, min(crop_top, max(0, scaled_h - 1)))
-    crop_bottom = min(scaled_h, crop_top + region_h)
-    visible = scaled.crop((0, crop_top, region_w, crop_bottom))
+    crop_top = max(0, min(crop_top, max(0, scaled_h - screen_h)))
+    crop_left = max(0, (scaled_w - screen_w) // 2)
+    return scaled.crop((crop_left, crop_top, crop_left + screen_w, crop_top + screen_h))
 
-    if visible.height < region_h:
-        padded = Image.new("RGBA", (region_w, region_h), (0, 0, 0, 0))
-        padded.alpha_composite(visible, (0, 0))
-        visible = padded
 
-    return visible
+def render_framed_device(
+    source: Image.Image,
+    slide: Dict[str, object],
+    base_key: str,
+    region_size: Tuple[int, int],
+    bezel_config: BezelConfig,
+) -> Image.Image:
+    with Image.open(bezel_config.asset_path) as raw_bezel:
+        bezel = raw_bezel.convert("RGBA")
+
+    region_w, region_h = region_size
+    scale = min(region_w / bezel.width, region_h / bezel.height)
+    if scale <= 0:
+        raise RuntimeError(f"Invalid device region for {base_key!r}: {region_w}x{region_h}")
+
+    device_w = max(1, int(round(bezel.width * scale)))
+    device_h = max(1, int(round(bezel.height * scale)))
+    scaled_bezel = bezel.resize((device_w, device_h), Image.Resampling.LANCZOS)
+
+    screen = Rect(
+        x=int(round(bezel_config.screen.x * scale)),
+        y=int(round(bezel_config.screen.y * scale)),
+        width=max(1, int(round(bezel_config.screen.width * scale))),
+        height=max(1, int(round(bezel_config.screen.height * scale))),
+    )
+
+    if screen.x + screen.width > device_w or screen.y + screen.height > device_h:
+        raise RuntimeError(f"Scaled bezel screen rectangle for {base_key!r} exceeds rendered device bounds")
+
+    screen_content = render_screen_content(source, (screen.width, screen.height), slide, base_key)
+    device = Image.new("RGBA", (device_w, device_h), (0, 0, 0, 0))
+    device.alpha_composite(screen_content, (screen.x, screen.y))
+    device.alpha_composite(scaled_bezel)
+    return device
 
 
 def get_tuned_value(slide: Dict[str, object], key: str, base_key: str, default: float) -> float:
@@ -251,14 +358,28 @@ def draw_caption(
         y += base.sub_leading
 
 
-def compose_slide(source_path: Path, output_path: Path, base_key: str, base: BaseCanvas, slide: Dict[str, object], font_path: Path) -> None:
+def compose_slide(
+    source_path: Path,
+    output_path: Path,
+    base_key: str,
+    base: BaseCanvas,
+    slide: Dict[str, object],
+    font_path: Path,
+    bezel_configs: Dict[str, BezelConfig],
+) -> None:
     band_ratio = get_tuned_value(slide, "band_ratio", base_key, base.band_ratio)
     band_h = int(round(base.height * band_ratio))
     region_top = band_h + base.device_gap
+    region_h = base.height - region_top
+    region_w = base.width - (base.margin_x * 2)
+    bezel_config = bezel_configs.get(base_key)
+    if bezel_config is None:
+        raise RuntimeError(f"Missing loaded bezel config for {base_key!r}")
 
-    canvas = Image.new("RGBA", (base.width, base.height), THEME["background"])
+    canvas = Image.new("RGBA", (base.width, base.height), THEME["surface"])
     draw = ImageDraw.Draw(canvas)
     draw.rectangle((0, 0, base.width, band_h), fill=THEME["background"])
+    draw.rectangle((0, band_h - 2, base.width, band_h + 2), fill=THEME[str(slide["accent"])])
 
     with Image.open(source_path) as raw_source:
         source = raw_source.convert("RGBA")
@@ -266,31 +387,22 @@ def compose_slide(source_path: Path, output_path: Path, base_key: str, base: Bas
             raise RuntimeError(
                 f"{source_path.relative_to(ROOT)} is {source.size[0]}x{source.size[1]}, expected {base.width}x{base.height}"
             )
-        device = render_device_shot(source, base, slide, base_key)
+        device = render_framed_device(source, slide, base_key, (region_w, region_h), bezel_config)
 
-    device_x = base.margin_x
+    device_x = base.margin_x + max(0, (region_w - device.width) // 2)
     device_y = region_top
-    mask = rounded_mask(device.size, base.corner_radius)
 
-    shadow = Image.new("RGBA", device.size, (0, 0, 0, 0))
-    shadow_draw = ImageDraw.Draw(shadow)
-    shadow_draw.rounded_rectangle((0, 0, device.width, device.height), radius=base.corner_radius, fill=(0, 0, 0, 190))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(base.shadow_blur))
+    device_alpha = device.getchannel("A")
+    shadow = Image.new("RGBA", device.size, (0, 0, 0, 185))
+    shadow.putalpha(device_alpha.filter(ImageFilter.GaussianBlur(base.shadow_blur)))
     canvas.alpha_composite(shadow, (device_x, device_y + base.shadow_offset_y))
 
-    glow = Image.new("RGBA", device.size, (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(glow)
     accent_rgb = Image.new("RGBA", (1, 1), THEME[str(slide["accent"])]).getpixel((0, 0))
-    glow_draw.rounded_rectangle(
-        (0, 0, device.width, device.height),
-        radius=base.corner_radius,
-        outline=accent_rgb[:3] + (128,),
-        width=max(8, base.width // 90),
-    )
-    glow = glow.filter(ImageFilter.GaussianBlur(base.shadow_blur // 2))
+    glow = Image.new("RGBA", device.size, accent_rgb[:3] + (90,))
+    glow.putalpha(device_alpha.filter(ImageFilter.GaussianBlur(base.shadow_blur // 2)))
     canvas.alpha_composite(glow, (device_x, device_y))
 
-    canvas.paste(device, (device_x, device_y), mask)
+    canvas.alpha_composite(device, (device_x, device_y))
     draw_caption(ImageDraw.Draw(canvas), base, slide, font_path, band_h)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     canvas.convert("RGB").save(output_path)
@@ -301,6 +413,7 @@ def main() -> None:
         raise RuntimeError(f"Unsupported locale {LOCALE!r}; available: {', '.join(sorted(CAPTIONS))}")
 
     font_path = resolve_font_path()
+    bezel_configs = load_bezel_configs()
     print(f"FONT {font_path}")
 
     for base_key, base in BASES.items():
@@ -317,7 +430,7 @@ def main() -> None:
                 print(f"SKIP {source_path.relative_to(ROOT)} (missing)")
                 continue
 
-            compose_slide(source_path, output_path, base_key, base, slide, font_path)
+            compose_slide(source_path, output_path, base_key, base, slide, font_path, bezel_configs)
             with Image.open(output_path) as image:
                 print(f"{output_path.relative_to(ROOT)} {image.size[0]}x{image.size[1]}")
 

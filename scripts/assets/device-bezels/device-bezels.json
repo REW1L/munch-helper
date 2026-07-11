@@ -1,0 +1,24 @@
+{
+  "iphone69": {
+    "platform": "ios",
+    "asset": "iphone69.png",
+    "screen": {
+      "x": 72,
+      "y": 72,
+      "width": 1176,
+      "height": 2724
+    },
+    "outerRadius": 188
+  },
+  "android1080x2400": {
+    "platform": "android",
+    "asset": "android1080x2400.png",
+    "screen": {
+      "x": 52,
+      "y": 52,
+      "width": 976,
+      "height": 2296
+    },
+    "outerRadius": 110
+  }
+}

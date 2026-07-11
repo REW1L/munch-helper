@@ -167,9 +167,18 @@ async function seedRoom() {
   return JSON.parse(stdout);
 }
 
-async function captureForDevice(device, roomId) {
+async function seedRoomForFlow(flow) {
+  const seededRoom = await seedRoom();
+  process.stdout.write(
+    `   seeded ${flow.file}: ${seededRoom.roomId} (${seededRoom.characters.length} named characters)\n`
+  );
+  return seededRoom;
+}
+
+async function captureForDevice(device) {
   const targetDir = path.join(screenshotsDir, device.directory);
   await fs.mkdir(targetDir, { recursive: true });
+  const roomBySlide = [];
 
   process.stdout.write(`\n==> Capturing ${device.directory} on ${device.name} (${device.runtime})\n`);
   await run('xcrun', ['simctl', 'shutdown', 'all'], { allowFailure: true });
@@ -193,13 +202,21 @@ async function captureForDevice(device, roomId) {
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);
-      await run('maestro', ['test', '--device', device.udid, '-p', 'ios', '-e', `ROOM_ID=${roomId}`, flow.flow], {
+      const seededRoom = await seedRoomForFlow(flow);
+      roomBySlide.push({ file: flow.file, roomId: seededRoom.roomId });
+      await run('maestro', ['test', '--device', device.udid, '-p', 'ios', '-e', `ROOM_ID=${seededRoom.roomId}`, flow.flow], {
         cwd: rootDir,
       });
       await sleep(1200);
       await run('xcrun', ['simctl', 'io', device.udid, 'screenshot', path.join(targetDir, flow.file)]);
     }
   } finally {
+    if (roomBySlide.length > 0) {
+      process.stdout.write('\nSlide room map:\n');
+      for (const mapping of roomBySlide) {
+        process.stdout.write(`   ${mapping.file}: ${mapping.roomId}\n`);
+      }
+    }
     await clearStatusBar(device.udid);
     await run('xcrun', ['simctl', 'shutdown', device.udid], { allowFailure: true });
   }
@@ -207,13 +224,10 @@ async function captureForDevice(device, roomId) {
 
 async function main() {
   await fs.mkdir(screenshotsDir, { recursive: true });
-  const seededRoom = await seedRoom();
   const devices = await resolveDevices();
 
-  process.stdout.write(`Seeded room ${seededRoom.roomId} with ${seededRoom.characters.length} named characters.\n`);
-
   for (const device of devices) {
-    await captureForDevice(device, seededRoom.roomId);
+    await captureForDevice(device);
   }
 
   process.stdout.write(`\nScreenshots saved under ${screenshotsDir}\n`);
