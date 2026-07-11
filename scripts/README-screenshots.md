@@ -9,6 +9,7 @@ The automation uses:
 - Maestro flows for navigation and screen setup
 - `xcrun simctl io ... screenshot` or `adb exec-out screencap -p` for source PNG capture
 - `scripts/generate-app-store-preview-redesign.py` for captioned store-ready slides
+- static platform bezel assets from `scripts/assets/device-bezels/`
 
 ## Story And Output
 
@@ -71,10 +72,29 @@ Each output uses:
 - the app palette mirrored from `frontend/constants/theme.ts`
 - locale-keyed caption copy, with `STORE_SCREENSHOT_LOCALE=en` by default
 - fixed base canvases: `1320x2868` for `iphone69`, `1080x2400` for `android1080x2400`
-- an undimmed screenshot with rounded corners, soft shadow, visible frame boundary, and no device hardware bezel
-- bottom-cropping when the screenshot is taller than the area below the band, preserving top content legibility
+- an undimmed screenshot fitted behind a static transparent device bezel
+- platform-appropriate framing: iPhone-style bezel for App Store output, Android/Pixel-style bezel for Google Play output
+- bottom-cropping inside the bezel screen rectangle when needed, preserving top content legibility
 
 The band occupies roughly 20-30 percent of the canvas. Per-slide band ratio and crop offset live in the script data so future tuning is data-only.
+
+The compositor fails if required bezel assets or screen-rectangle metadata are missing. It does not fall back to a bare rounded screenshot and does not reuse the iPhone bezel for Google Play.
+
+Bezel files live in:
+
+```text
+scripts/assets/device-bezels/
+```
+
+Required files:
+
+- `iphone69.png` - transparent iPhone-style bezel for App Store previews
+- `android1080x2400.png` - transparent Android/Pixel-style bezel for Google Play previews
+- `device-bezels.json` - platform mapping and screen rectangles
+
+Figma's iOS 26 Product Bezels or other design kits may be used to export replacement static PNGs, but generation must run from local files. Do not make the compositor depend on a live Figma session.
+
+To tune a replacement asset, update the corresponding `screen` rectangle in `device-bezels.json`. The rectangle is measured in the bezel asset's own pixels and marks where the captured app screenshot is placed behind the transparent bezel window.
 
 The four accent mappings are:
 
@@ -137,7 +157,23 @@ Install Maestro if it is not already available:
 maestro --version
 ```
 
-### 4. Android Tooling For Google Play Screenshots
+### 4. Python Pillow Installed
+
+The caption compositor uses Pillow:
+
+```bash
+python3 -m venv .tmp/screenshot-venv
+.tmp/screenshot-venv/bin/python -m pip install -r scripts/requirements-screenshots.txt
+SCREENSHOT_PYTHON=.tmp/screenshot-venv/bin/python npm run screenshots:google-play
+```
+
+For direct compositor runs, use the same Python:
+
+```bash
+.tmp/screenshot-venv/bin/python scripts/generate-app-store-preview-redesign.py
+```
+
+### 5. Android Tooling For Google Play Screenshots
 
 You need:
 
@@ -167,7 +203,7 @@ ANDROID_SCREENSHOT_AVD=Pixel_6a_API_36 npm run screenshots:google-play
 
 The script fails fast unless the resolved device reports exactly `1080x2400`.
 
-### 5. Backend Running Locally
+### 6. Backend Running Locally
 
 The screenshot scripts expect the backend API to be reachable at:
 
