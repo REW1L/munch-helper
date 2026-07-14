@@ -379,7 +379,6 @@ def compose_slide(
     canvas = Image.new("RGBA", (base.width, base.height), THEME["surface"])
     draw = ImageDraw.Draw(canvas)
     draw.rectangle((0, 0, base.width, band_h), fill=THEME["background"])
-    draw.rectangle((0, band_h - 2, base.width, band_h + 2), fill=THEME[str(slide["accent"])])
 
     with Image.open(source_path) as raw_source:
         source = raw_source.convert("RGBA")
@@ -396,11 +395,6 @@ def compose_slide(
     shadow = Image.new("RGBA", device.size, (0, 0, 0, 185))
     shadow.putalpha(device_alpha.filter(ImageFilter.GaussianBlur(base.shadow_blur)))
     canvas.alpha_composite(shadow, (device_x, device_y + base.shadow_offset_y))
-
-    accent_rgb = Image.new("RGBA", (1, 1), THEME[str(slide["accent"])]).getpixel((0, 0))
-    glow = Image.new("RGBA", device.size, accent_rgb[:3] + (90,))
-    glow.putalpha(device_alpha.filter(ImageFilter.GaussianBlur(base.shadow_blur // 2)))
-    canvas.alpha_composite(glow, (device_x, device_y))
 
     canvas.alpha_composite(device, (device_x, device_y))
     draw_caption(ImageDraw.Draw(canvas), base, slide, font_path, band_h)

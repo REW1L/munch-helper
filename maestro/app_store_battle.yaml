@@ -24,7 +24,6 @@ appId: click.helpamunch.mobileapp
 - extendedWaitUntil:
     visible: "Dungeon Door"
     timeout: 20000
-- scroll
 - extendedWaitUntil:
-    visible: "Monster Side"
+    visible: "Player Side"
     timeout: 10000

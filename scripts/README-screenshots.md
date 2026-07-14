@@ -74,6 +74,7 @@ Each output uses:
 - fixed base canvases: `1320x2868` for `iphone69`, `1080x2400` for `android1080x2400`
 - an undimmed screenshot fitted behind a static transparent device bezel
 - platform-appropriate framing: iPhone-style bezel for App Store output, Android/Pixel-style bezel for Google Play output
+- bezel-first composition with a restrained neutral shadow, no colored halo, and no hard divider between the caption band and device area
 - bottom-cropping inside the bezel screen rectangle when needed, preserving top content legibility
 
 The band occupies roughly 20-30 percent of the canvas. Per-slide band ratio and crop offset live in the script data so future tuning is data-only.
