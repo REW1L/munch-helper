@@ -2,6 +2,8 @@
 
 The shared Pillow compositor renders the four App Store and Google Play slides inside local, platform-specific bezel assets. Its current composition adds two accent-driven effects around the device: a blurred colored glow based on the full device alpha and a narrow horizontal accent divider at the caption-band boundary. These treatments compete with the bezel and make the caption-to-device transition feel over-designed.
 
+The compositor also places rectangular captured screenshots behind transparent bezel artwork. On rounded device openings this can leave square screenshot corners visibly protruding past the intended screen border, especially on the Android/Pixel-style frame.
+
 The shared `maestro/app_store_battle.yaml` flow waits for the active battle, then scrolls to the monster panel. Both platform capture runners execute that same flow and take the source screenshot only after it completes, so the published battle slide is necessarily scrolled away from its initial context.
 
 ## Goals / Non-Goals
@@ -10,6 +12,7 @@ The shared `maestro/app_store_battle.yaml` flow waits for the active battle, the
 
 - Retain the successful static iPhone and Android bezel assets as the primary device frame.
 - Make the device presentation quieter by removing colored glow and the hard divider, while keeping enough neutral depth to separate the device from its background.
+- Clip captured screen pixels to the rounded screen aperture of each bezel so no screenshot corner escapes the hardware frame.
 - Capture a stable, top-of-battle view on both platforms.
 - Preserve canvas dimensions, caption copy, palette values, fixture data, and the four-slide story.
 
@@ -40,11 +43,18 @@ The battle Maestro flow will wait for a stable top-of-screen element (the active
 
 *Alternative considered:* capture a purpose-built battle summary screen. Rejected because it adds product/UI work and breaks the established story-to-screen mapping; the existing battle view already provides an appropriate initial-state composition.
 
+### D4: Mask source screenshots to the bezel screen opening
+
+The compositor will apply a rounded alpha mask to the captured app content before compositing the static bezel over it. The radius will be derived from existing bezel metadata by subtracting the screen inset from the bezel outer radius, then scaling with the rendered device. This keeps platform geometry tied to the bezel artwork without adding per-slide tuning.
+
+*Alternative considered:* editing the screenshots or enlarging the bezel overlay. Rejected because the issue is a composition mask problem; source captures should remain faithful app screenshots and bezel artwork should remain reusable.
+
 ## Risks / Trade-offs
 
 - [Removing color reduces the apparent separation on very dark slides] → Keep the existing neutral shadow and verify both platform canvases at their native output dimensions.
 - [Top-of-screen content can render slower than the old lower-panel assertion] → Wait for stable active-battle and Player Side content before capture, using the fixture's deterministic `Dungeon Door` title.
 - [Platform viewport differences could expose different amounts of the player panel] → Regenerate and inspect both iPhone and Android output sets; the unscrolled requirement applies to both, not an identical pixel crop.
+- [Derived clipping radius can be too aggressive or too loose if bezel metadata drifts] → Use the existing screen rectangle and outer radius together, clamp to screen bounds, and visually inspect both platforms.
 - [Generated images are ignored by Git] → Treat fresh local generation and visual review as a required verification step and retain the runner's slide-to-room mapping for reproducibility.
 
 ## Migration Plan

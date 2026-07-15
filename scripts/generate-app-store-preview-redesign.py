@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -248,7 +248,7 @@ def load_bezel_configs() -> Dict[str, BezelConfig]:
         with Image.open(asset_path) as asset_image:
             asset_width, asset_height = asset_image.size
         if screen.x + screen.width > asset_width or screen.y + screen.height > asset_height:
-            raise RuntimeError(f"Bezel screen rectangle for {base_key!r} exceeds {asset_path.relative_to(ROOT)}")
+            raise RuntimeError(f"Bezel screen rectangle ({screen.x}, {screen.y}, {screen.width}, {screen.height}) for {base_key!r} exceeds {asset_path.relative_to(ROOT)}")
 
         configs[base_key] = BezelConfig(
             platform=platform,
@@ -267,10 +267,24 @@ def render_screen_content(source: Image.Image, screen_size: Tuple[int, int], sli
     scaled_h = int(round(source.height * scale))
     scaled = source.resize((scaled_w, scaled_h), Image.Resampling.LANCZOS).convert("RGBA")
 
-    crop_top = int(get_tuned_value(slide, "crop_top", base_key, 0))
-    crop_top = max(0, min(crop_top, max(0, scaled_h - screen_h)))
-    crop_left = max(0, (scaled_w - screen_w) // 2)
-    return scaled.crop((crop_left, crop_top, crop_left + screen_w, crop_top + screen_h))
+    return scaled
+
+
+def clip_screen_to_bezel_opening(screen_content: Image.Image, radius: int) -> Image.Image:
+    radius = max(0, min(radius, screen_content.width // 2, screen_content.height // 2))
+    if radius == 0:
+        return screen_content
+    mask = Image.new("L", screen_content.size, 0)
+    mask_draw = ImageDraw.Draw(mask)
+    mask_draw.rounded_rectangle(
+        (0, 0, screen_content.width, screen_content.height),
+        radius=radius,
+        fill=255,
+    )
+
+    clipped = screen_content.copy()
+    clipped.putalpha(ImageChops.multiply(clipped.getchannel("A"), mask))
+    return clipped
 
 
 def render_framed_device(
@@ -287,7 +301,7 @@ def render_framed_device(
     scale = min(region_w / bezel.width, region_h / bezel.height)
     if scale <= 0:
         raise RuntimeError(f"Invalid device region for {base_key!r}: {region_w}x{region_h}")
-
+    
     device_w = max(1, int(round(bezel.width * scale)))
     device_h = max(1, int(round(bezel.height * scale)))
     scaled_bezel = bezel.resize((device_w, device_h), Image.Resampling.LANCZOS)
@@ -303,6 +317,16 @@ def render_framed_device(
         raise RuntimeError(f"Scaled bezel screen rectangle for {base_key!r} exceeds rendered device bounds")
 
     screen_content = render_screen_content(source, (screen.width, screen.height), slide, base_key)
+    screen_radius = int(
+        round(
+            max(
+                0,
+                bezel_config.outer_radius - min(bezel_config.screen.x, bezel_config.screen.y),
+            )
+            * scale
+        )
+    )
+    screen_content = clip_screen_to_bezel_opening(screen_content, screen_radius)
     device = Image.new("RGBA", (device_w, device_h), (0, 0, 0, 0))
     device.alpha_composite(screen_content, (screen.x, screen.y))
     device.alpha_composite(scaled_bezel)
@@ -376,7 +400,7 @@ def compose_slide(
     if bezel_config is None:
         raise RuntimeError(f"Missing loaded bezel config for {base_key!r}")
 
-    canvas = Image.new("RGBA", (base.width, base.height), THEME["surface"])
+    canvas = Image.new("RGBA", (base.width, base.height), THEME["background"])
     draw = ImageDraw.Draw(canvas)
     draw.rectangle((0, 0, base.width, band_h), fill=THEME["background"])
 
@@ -390,11 +414,6 @@ def compose_slide(
 
     device_x = base.margin_x + max(0, (region_w - device.width) // 2)
     device_y = region_top
-
-    device_alpha = device.getchannel("A")
-    shadow = Image.new("RGBA", device.size, (0, 0, 0, 185))
-    shadow.putalpha(device_alpha.filter(ImageFilter.GaussianBlur(base.shadow_blur)))
-    canvas.alpha_composite(shadow, (device_x, device_y + base.shadow_offset_y))
 
     canvas.alpha_composite(device, (device_x, device_y))
     draw_caption(ImageDraw.Draw(canvas), base, slide, font_path, band_h)

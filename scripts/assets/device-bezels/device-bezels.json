@@ -1,23 +1,23 @@
 {
   "iphone69": {
     "platform": "ios",
-    "asset": "iphone69.png",
+    "asset": "iphone69-figma.png",
     "screen": {
-      "x": 72,
-      "y": 72,
-      "width": 1176,
-      "height": 2724
+      "x": 48,
+      "y": 43,
+      "width": 862,
+      "height": 1920
     },
     "outerRadius": 188
   },
   "android1080x2400": {
     "platform": "android",
-    "asset": "android1080x2400.png",
+    "asset": "android1080x2400-figma.png",
     "screen": {
-      "x": 52,
-      "y": 52,
-      "width": 976,
-      "height": 2296
+      "x": 30,
+      "y": 30,
+      "width": 880,
+      "height": 2080
     },
     "outerRadius": 110
   }
