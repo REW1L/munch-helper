@@ -68,8 +68,8 @@ export default function LandingPage() {
           </View>
 
           <View style={styles.actionsSection}>
-            <TouchableOpacity style={styles.roomsButton} onPress={() => router.navigate('/rooms')}>
-              <ButtonLabel style={styles.roomsButtonText}>{t('landing.rooms')}</ButtonLabel>
+            <TouchableOpacity accessible={false} testID="screenshot-open-rooms" style={styles.roomsButton} onPress={() => router.navigate('/rooms')}>
+              <ButtonLabel accessible accessibilityLabel="screenshot-open-rooms" style={styles.roomsButtonText}>{t('landing.rooms')}</ButtonLabel>
             </TouchableOpacity>
           </View>
 

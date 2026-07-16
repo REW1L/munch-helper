@@ -21,13 +21,21 @@ const mockDetect = vi.mocked(detectDeviceLanguage);
 const mockSetStored = vi.mocked(setStoredLanguage);
 
 describe('LanguageProvider', () => {
+  const originalScreenshotLanguage = process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE;
+
   beforeEach(async () => {
     vi.clearAllMocks();
+    delete process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE;
     mockSetStored.mockResolvedValue();
     await i18n.changeLanguage('en');
   });
 
   afterEach(async () => {
+    if (originalScreenshotLanguage === undefined) {
+      delete process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE;
+    } else {
+      process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE = originalScreenshotLanguage;
+    }
     await i18n.changeLanguage('en');
   });
 
@@ -79,4 +87,22 @@ describe('LanguageProvider', () => {
     resolveStored(null);
     await waitFor(() => expect(screen.getByText('ready')).toBeTruthy());
   });
+
+  it('uses screenshot language instead of stored or device language', async () => {
+    process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE = 'uk';
+    mockGetStored.mockResolvedValue('ru');
+    mockDetect.mockReturnValue('de');
+
+    render(
+      <LanguageProvider>
+        <span>ready</span>
+      </LanguageProvider>
+    );
+
+    await waitFor(() => expect(screen.getByText('ready')).toBeTruthy());
+    expect(i18n.language).toBe('uk');
+    expect(mockGetStored).not.toHaveBeenCalled();
+    expect(mockDetect).not.toHaveBeenCalled();
+  });
+
 });

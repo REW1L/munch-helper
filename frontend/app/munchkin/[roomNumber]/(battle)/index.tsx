@@ -257,7 +257,7 @@ export default function BattleView() {
         )}
 
         {!isLoading && !charactersLoading && !errorMessage && !charactersErrorMessage && battle && draft && (
-          <View style={styles.body}>
+          <View accessible accessibilityLabel="screenshot-battle-ready" style={styles.body} testID="screenshot-battle-ready">
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <TextInput

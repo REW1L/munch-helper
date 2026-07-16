@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
@@ -16,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCALE = os.environ.get("STORE_SCREENSHOT_LOCALE", "en")
 BEZEL_DIR = ROOT / "scripts" / "assets" / "device-bezels"
 BEZEL_METADATA_PATH = BEZEL_DIR / "device-bezels.json"
+STORE_LOCALES_PATH = ROOT / "scripts" / "store-screenshot-locales.json"
+STORE_ASSETS_DIR = ROOT / "docs" / "store-assets" / "app-store"
 EXPECTED_PLATFORMS: Dict[str, str] = {
     "iphone69": "ios",
     "android1080x2400": "android",
@@ -108,54 +111,33 @@ BASES: Dict[str, BaseCanvas] = {
 }
 
 
-CAPTIONS: Dict[str, Dict[str, Dict[str, object]]] = {
-    "en": {
-        "rooms-home": {
-            "src": "rooms-home.png",
-            "dst": "01-rooms-home.png",
-            "eyebrow": "GATHER THE TABLE",
-            "headline": ["One room for", "the whole party"],
-            "sub": "Create a shared table and keep everyone in sync from the first move.",
-            "accent": "accent",
-            "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26},
-            "crop_top": {"iphone69": 0, "android1080x2400": 0},
-        },
-        "room-view": {
-            "src": "room-view.png",
-            "dst": "02-room-view.png",
-            "eyebrow": "LIVE TABLE",
-            "headline": ["Watch everyone", "level up"],
-            "sub": "Track power, class, and race changes while the table keeps moving.",
-            "accent": "actionSecondary",
-            "band_ratio": {"iphone69": 0.255, "android1080x2400": 0.265},
-            "crop_top": {"iphone69": 0, "android1080x2400": 0},
-        },
-        "battle": {
-            "src": "battle.png",
-            "dst": "03-battle.png",
-            "eyebrow": "INTO BATTLE",
-            "headline": ["Take on the", "monster together"],
-            "sub": "Pull in allies, stack bonuses, and settle the fight as a group.",
-            "accent": "danger",
-            "band_ratio": {"iphone69": 0.265, "android1080x2400": 0.275},
-            "crop_top": {"iphone69": 0, "android1080x2400": 0},
-        },
-        "log": {
-            "src": "log.png",
-            "dst": "04-log.png",
-            "eyebrow": "GAME HISTORY",
-            "headline": ["Replay every", "twist"],
-            "sub": "Review battles and table updates long after the cards hit the table.",
-            "accent": "parchmentText",
-            "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26},
-            "crop_top": {"iphone69": 0, "android1080x2400": 0},
-        },
-    }
+SLIDES: Dict[str, Dict[str, object]] = {
+    "rooms-home": {"src": "rooms-home.png", "dst": "01-rooms-home.png", "accent": "accent", "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26}},
+    "room-view": {"src": "room-view.png", "dst": "02-room-view.png", "accent": "actionSecondary", "band_ratio": {"iphone69": 0.255, "android1080x2400": 0.265}},
+    "battle": {"src": "battle.png", "dst": "03-battle.png", "accent": "danger", "band_ratio": {"iphone69": 0.265, "android1080x2400": 0.275}},
+    "log": {"src": "log.png", "dst": "04-log.png", "accent": "parchmentText", "band_ratio": {"iphone69": 0.25, "android1080x2400": 0.26}},
+}
+
+# Caption text is intentionally the only locale-specific screenshot data.
+CAPTIONS: Dict[str, Dict[str, Dict[str, str]]] = {
+    "en": {"rooms-home": {"eyebrow": "GATHER THE TABLE", "headline": "One room for the whole party", "sub": "Create a shared table and keep everyone in sync from the first move."}, "room-view": {"eyebrow": "LIVE TABLE", "headline": "Watch everyone level up", "sub": "Track power, class, and race changes while the table keeps moving."}, "battle": {"eyebrow": "INTO BATTLE", "headline": "Take on the monster together", "sub": "Pull in allies, stack bonuses, and settle the fight as a group."}, "log": {"eyebrow": "GAME HISTORY", "headline": "Replay every twist", "sub": "Review battles and table updates long after the cards hit the table."}},
+    "pl": {"rooms-home": {"eyebrow": "ZBIERZ DRUŻYNĘ", "headline": "Jeden pokój dla całej ekipy", "sub": "Stwórz wspólny stół i bądźcie zsynchronizowani od pierwszego ruchu."}, "room-view": {"eyebrow": "STÓŁ NA ŻYWO", "headline": "Obserwuj rozwój całej drużyny", "sub": "Śledź siłę, klasę i rasę, gdy gra toczy się dalej."}, "battle": {"eyebrow": "DO WALKI", "headline": "Zmierzcie się z potworem razem", "sub": "Dobieraj sojuszników, dodawaj premie i rozstrzygnijcie walkę wspólnie."}, "log": {"eyebrow": "HISTORIA GRY", "headline": "Odtwórz każdy zwrot akcji", "sub": "Przeglądaj walki i zmiany przy stole długo po rozdaniu kart."}},
+    "de": {"rooms-home": {"eyebrow": "ALLE AN DEN TISCH", "headline": "Ein Raum für die ganze Runde", "sub": "Erstellt einen gemeinsamen Tisch und bleibt vom ersten Zug an synchron."}, "room-view": {"eyebrow": "LIVE AM TISCH", "headline": "Sieh alle aufsteigen", "sub": "Behalte Stärke, Klasse und Rasse im Blick, während die Runde läuft."}, "battle": {"eyebrow": "AB IN DEN KAMPF", "headline": "Stellt euch gemeinsam dem Monster", "sub": "Holt Verbündete dazu, stapelt Boni und entscheidet den Kampf zusammen."}, "log": {"eyebrow": "SPIELVERLAUF", "headline": "Erlebe jede Wendung noch einmal", "sub": "Sieh Kämpfe und Änderungen am Tisch nach, lange nachdem die Karten liegen."}},
+    "fr": {"rooms-home": {"eyebrow": "RASSEMBLEZ LA TABLE", "headline": "Une salle pour toute la partie", "sub": "Créez une table partagée et restez synchronisés dès le premier tour."}, "room-view": {"eyebrow": "TABLE EN DIRECT", "headline": "Voyez tout le monde progresser", "sub": "Suivez puissance, classe et race pendant que la partie avance."}, "battle": {"eyebrow": "AU COMBAT", "headline": "Affrontez le monstre ensemble", "sub": "Appelez des alliés, empilez les bonus et réglez le combat en groupe."}, "log": {"eyebrow": "HISTORIQUE", "headline": "Revivez chaque rebondissement", "sub": "Retrouvez les combats et les changements à table après les cartes."}},
+    "lt": {"rooms-home": {"eyebrow": "SUBURKITE STALĄ", "headline": "Vienas kambarys visai komandai", "sub": "Sukurkite bendrą stalą ir sinchronizuokitės nuo pirmo ėjimo."}, "room-view": {"eyebrow": "STALAS GYVAI", "headline": "Stebėkite, kaip visi kyla", "sub": "Sekite galią, klasę ir rasę žaidimui tęsiantis."}, "battle": {"eyebrow": "Į MŪŠĮ", "headline": "Kovokite su monstru kartu", "sub": "Pasikvieskite sąjungininkus, dėkite premijas ir užbaikite kovą drauge."}, "log": {"eyebrow": "ŽAIDIMO ISTORIJA", "headline": "Peržiūrėkite kiekvieną posūkį", "sub": "Prisiminkite kovas ir stalo pokyčius, kai kortos jau išdalytos."}},
+    "lv": {"rooms-home": {"eyebrow": "SAPULCĒ GALDU", "headline": "Viena istaba visai komandai", "sub": "Izveido kopīgu galdu un palieciet sinhronizēti jau no pirmā gājiena."}, "room-view": {"eyebrow": "GALDS TIEŠRAIDĒ", "headline": "Skaties, kā visi aug", "sub": "Seko spēkam, klasei un rasei, kamēr spēle turpinās."}, "battle": {"eyebrow": "KAUJĀ", "headline": "Stājieties pret briesmoni kopā", "sub": "Piesaisti sabiedrotos, krāj bonusus un izšķiriet cīņu kopā."}, "log": {"eyebrow": "SPĒLES VĒSTURE", "headline": "Atspēlē katru pavērsienu", "sub": "Pārskati cīņas un galda izmaiņas pēc kāršu izspēles."}},
+    "et": {"rooms-home": {"eyebrow": "KOGUGE LAUD KOKKU", "headline": "Üks tuba kogu seltskonnale", "sub": "Looge ühine laud ja püsige esimesest käigust alates sünkroonis."}, "room-view": {"eyebrow": "LAUD OTSE-EETRIS", "headline": "Vaata, kuidas kõik arenevad", "sub": "Jälgi jõudu, klassi ja rassi, kuni mäng liigub edasi."}, "battle": {"eyebrow": "LAHINGUSSE", "headline": "Võtke koletis koos ette", "sub": "Kutsu liitlasi, lisa boonuseid ja lahendage võitlus koos."}, "log": {"eyebrow": "MÄNGU AJALUGU", "headline": "Ela iga pööre uuesti läbi", "sub": "Vaata lahinguid ja laua muudatusi ka pärast kaartide lauale jõudmist."}},
+    "ru": {"rooms-home": {"eyebrow": "СОБЕРИТЕ СТОЛ", "headline": "Одна комната для всей компании", "sub": "Создайте общий стол и оставайтесь синхронны с первого хода."}, "room-view": {"eyebrow": "СТОЛ В ПРЯМОМ ЭФИРЕ", "headline": "Следите, как растут все", "sub": "Отслеживайте силу, класс и расу, пока игра продолжается."}, "battle": {"eyebrow": "В БОЙ", "headline": "Сразитесь с монстром вместе", "sub": "Зовите союзников, складывайте бонусы и решайте исход боя вместе."}, "log": {"eyebrow": "ИСТОРИЯ ИГРЫ", "headline": "Вспомните каждый поворот", "sub": "Просматривайте бои и изменения за столом после раздачи карт."}},
+    "be": {"rooms-home": {"eyebrow": "ЗБЯРЫЦЕ СТОЛ", "headline": "Адзін пакой для ўсёй кампаніі", "sub": "Стварыце агульны стол і заставайцеся сінхроннымі з першага ходу."}, "room-view": {"eyebrow": "СТОЛ УЖЫВУЮ", "headline": "Сачыце, як растуць усе", "sub": "Сачыце за сілай, класам і расай, пакуль гульня працягваецца."}, "battle": {"eyebrow": "Ў БІТВУ", "headline": "Змагайцеся з пачварай разам", "sub": "Клічце саюзнікаў, дадавайце бонусы і вырашайце зыход бітвы разам."}, "log": {"eyebrow": "ГІСТОРЫЯ ГУЛЬНІ", "headline": "Узгадайце кожны паварот", "sub": "Праглядайце бітвы і змены за сталом пасля раздачы карт."}},
+    "uk": {"rooms-home": {"eyebrow": "ЗБЕРІТЬ СТІЛ", "headline": "Одна кімната для всієї компанії", "sub": "Створіть спільний стіл і залишайтеся синхронними з першого ходу."}, "room-view": {"eyebrow": "СТІЛ НАЖИВО", "headline": "Стежте, як зростають усі", "sub": "Відстежуйте силу, клас і расу, поки гра триває."}, "battle": {"eyebrow": "ДО БОЮ", "headline": "Бийтеся з монстром разом", "sub": "Кличте союзників, додавайте бонуси й вирішуйте бій разом."}, "log": {"eyebrow": "ІСТОРІЯ ГРИ", "headline": "Згадайте кожен поворот", "sub": "Переглядайте бої та зміни за столом після роздачі карт."}},
+    "es": {"rooms-home": {"eyebrow": "REÚNE LA MESA", "headline": "Una sala para toda la partida", "sub": "Crea una mesa compartida y mantened la sincronía desde el primer turno."}, "room-view": {"eyebrow": "MESA EN DIRECTO", "headline": "Mira cómo sube de nivel todo el grupo", "sub": "Sigue poder, clase y raza mientras la partida avanza."}, "battle": {"eyebrow": "AL COMBATE", "headline": "Enfrentad al monstruo juntos", "sub": "Llama a aliados, suma bonificaciones y resolved el combate en grupo."}, "log": {"eyebrow": "HISTORIAL", "headline": "Revive cada giro", "sub": "Revisa combates y cambios de la mesa después de jugar las cartas."}},
 }
 
 
 def resolve_font_path() -> Path:
     candidates = [
+        Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
         Path("/System/Library/Fonts/Avenir Next.ttc"),
         Path("/System/Library/Fonts/Supplemental/Avenir Next.ttc"),
         Path("/System/Library/Fonts/Helvetica.ttc"),
@@ -172,6 +154,56 @@ def resolve_font_path() -> Path:
                 continue
 
     raise RuntimeError("No loadable system font found")
+
+
+def load_store_locale_config() -> Tuple[List[str], List[str]]:
+    try:
+        raw = json.loads(STORE_LOCALES_PATH.read_text(encoding="utf-8"))
+        locales = raw["locales"]
+        asset_directories = raw["listingAssetDirectories"]
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"Invalid store screenshot locale config: {STORE_LOCALES_PATH.relative_to(ROOT)}") from error
+
+    if not all(isinstance(locale, str) and locale for locale in locales):
+        raise RuntimeError("Store screenshot locale config must contain non-empty locale strings")
+    if not all(isinstance(directory, str) and directory for directory in asset_directories):
+        raise RuntimeError("Store screenshot locale config must contain non-empty listing asset directories")
+    return locales, asset_directories
+
+
+def validate_locale_data(locales: Iterable[str], font_path: Path) -> None:
+    configured_locales = list(locales)
+    if set(configured_locales) != set(CAPTIONS):
+        missing = sorted(set(configured_locales) - set(CAPTIONS))
+        unexpected = sorted(set(CAPTIONS) - set(configured_locales))
+        details = []
+        if missing:
+            details.append(f"missing captions: {', '.join(missing)}")
+        if unexpected:
+            details.append(f"unexpected captions: {', '.join(unexpected)}")
+        raise RuntimeError(f"Store screenshot caption locales do not match config ({'; '.join(details)})")
+
+    font = ImageFont.truetype(str(font_path), 40)
+    required_slide_keys = set(SLIDES)
+    for locale in configured_locales:
+        for directory in load_store_locale_config()[1]:
+            asset = STORE_ASSETS_DIR / directory / f"{locale}.txt"
+            if not asset.is_file():
+                raise RuntimeError(f"Missing App Store listing asset for {locale}: {asset.relative_to(ROOT)}")
+        if set(CAPTIONS[locale]) != required_slide_keys:
+            raise RuntimeError(f"Caption slides for {locale} must be: {', '.join(SLIDES)}")
+        for slide_key, copy in CAPTIONS[locale].items():
+            for field in ("eyebrow", "headline", "sub"):
+                value = copy.get(field, "")
+                if not isinstance(value, str) or not value.strip():
+                    raise RuntimeError(f"Missing {field} caption text for {locale}/{slide_key}")
+                # Arial Unicode and DejaVu Sans have distinct glyph masks for
+                # supported characters. Comparing with U+FFFD catches a font
+                # fallback before it produces replacement boxes in a store image.
+                replacement_mask = bytes(font.getmask("�"))
+                for character in value:
+                    if not character.isspace() and bytes(font.getmask(character)) == replacement_mask:
+                        raise RuntimeError(f"Font {font_path} does not support {character!r} in {locale}/{slide_key}")
 
 
 def wrap_text(draw: ImageDraw.ImageDraw, text: str, max_width: int, font: ImageFont.FreeTypeFont) -> List[str]:
@@ -344,6 +376,27 @@ def get_tuned_value(slide: Dict[str, object], key: str, base_key: str, default: 
     return default
 
 
+def fit_caption_fonts(
+    draw: ImageDraw.ImageDraw, base: BaseCanvas, slide: Dict[str, object], font_path: Path, band_h: int
+) -> Tuple[ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, ImageFont.FreeTypeFont, List[str], List[str]]:
+    max_width = base.width - (base.margin_x * 2)
+    headline = str(slide["headline"])
+    sub = str(slide["sub"])
+    for scale_percent in range(100, 64, -5):
+        eyebrow_font = ImageFont.truetype(str(font_path), max(1, base.eyebrow_size * scale_percent // 100))
+        headline_font = ImageFont.truetype(str(font_path), max(1, base.headline_size * scale_percent // 100))
+        sub_font = ImageFont.truetype(str(font_path), max(1, base.sub_size * scale_percent // 100))
+        headline_lines = wrap_text(draw, headline, max_width, headline_font)
+        sub_lines = wrap_text(draw, sub, max_width, sub_font)
+        text_h = (
+            eyebrow_font.size + 28 + len(headline_lines) * int(base.headline_leading * scale_percent / 100)
+            + 18 + len(sub_lines) * int(base.sub_leading * scale_percent / 100)
+        )
+        if len(headline_lines) <= 2 and len(sub_lines) <= 2 and text_h <= band_h - 76:
+            return eyebrow_font, headline_font, sub_font, headline_lines, sub_lines
+    raise RuntimeError(f"Caption does not fit the {base.width}x{base.height} band: {headline!r}")
+
+
 def draw_caption(
     draw: ImageDraw.ImageDraw,
     base: BaseCanvas,
@@ -351,35 +404,31 @@ def draw_caption(
     font_path: Path,
     band_h: int,
 ) -> None:
-    eyebrow_font = ImageFont.truetype(str(font_path), base.eyebrow_size)
-    headline_font = ImageFont.truetype(str(font_path), base.headline_size)
-    sub_font = ImageFont.truetype(str(font_path), base.sub_size)
+    eyebrow_font, headline_font, sub_font, headline_lines, sub_lines = fit_caption_fonts(draw, base, slide, font_path, band_h)
     accent = THEME[str(slide["accent"])]
     x = base.margin_x
-    max_width = base.width - (base.margin_x * 2)
-    headline_lines = [str(line) for line in slide["headline"]]  # type: ignore[index]
-    sub_lines = wrap_text(draw, str(slide["sub"]), max_width, sub_font)[:2]
+    scale_percent = headline_font.size / base.headline_size
 
     text_h = (
-        base.eyebrow_size
+        eyebrow_font.size
         + 28
-        + (len(headline_lines) * base.headline_leading)
+        + (len(headline_lines) * int(base.headline_leading * scale_percent))
         + 18
-        + (len(sub_lines) * base.sub_leading)
+        + (len(sub_lines) * int(base.sub_leading * scale_percent))
     )
     y = max(38, (band_h - text_h) // 2)
 
     draw.text((x, y), str(slide["eyebrow"]), font=eyebrow_font, fill=accent)
-    y += base.eyebrow_size + 28
+    y += eyebrow_font.size + 28
 
     for line in headline_lines:
         draw.text((x - 2, y), line, font=headline_font, fill=THEME["textPrimary"])
-        y += base.headline_leading
+        y += int(base.headline_leading * scale_percent)
 
     y += 12
     for line in sub_lines:
         draw.text((x, y), line, font=sub_font, fill=THEME["textMuted"])
-        y += base.sub_leading
+        y += int(base.sub_leading * scale_percent)
 
 
 def compose_slide(
@@ -421,31 +470,52 @@ def compose_slide(
     canvas.convert("RGB").save(output_path)
 
 
-def main() -> None:
-    if LOCALE not in CAPTIONS:
-        raise RuntimeError(f"Unsupported locale {LOCALE!r}; available: {', '.join(sorted(CAPTIONS))}")
+def compose_locale(locale: str, font_path: Path, bezel_configs: Dict[str, BezelConfig], target: str | None = None) -> None:
+    if locale not in CAPTIONS:
+        raise RuntimeError(f"Unsupported locale {locale!r}; available: {', '.join(sorted(CAPTIONS))}")
 
+    selected_bases = BASES.items() if target is None else [(target, BASES[target])]
+    for base_key, base in selected_bases:
+        source_dir = ROOT / "screenshots" / base_key
+        if not source_dir.is_dir():
+            raise RuntimeError(f"Missing source screenshot directory: {source_dir.relative_to(ROOT)}")
+        output_dir = ROOT / "screenshots" / f"{base_key}_store_preview" / locale
+        for slide_key, shared_slide in SLIDES.items():
+            slide = {**shared_slide, **CAPTIONS[locale][slide_key]}
+            source_path = source_dir / str(slide["src"])
+            output_path = output_dir / str(slide["dst"])
+            if not source_path.is_file():
+                raise RuntimeError(f"Missing source screenshot: {source_path.relative_to(ROOT)}")
+            compose_slide(source_path, output_path, base_key, base, slide, font_path, bezel_configs)
+            with Image.open(output_path) as image:
+                if image.size != (base.width, base.height):
+                    raise RuntimeError(f"Unexpected output size for {output_path.relative_to(ROOT)}: {image.size}")
+                print(f"{output_path.relative_to(ROOT)} {image.size[0]}x{image.size[1]}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--locale", default=LOCALE, help="one configured store locale")
+    parser.add_argument("--all", action="store_true", help="render every configured store locale")
+    parser.add_argument("--target", choices=sorted(BASES), help="render only one store target")
+    parser.add_argument("--validate", action="store_true", help="validate locale assets, captions, fonts, and bezel config")
+    args = parser.parse_args()
+
+    locales, _ = load_store_locale_config()
     font_path = resolve_font_path()
+    validate_locale_data(locales, font_path)
     bezel_configs = load_bezel_configs()
     print(f"FONT {font_path}")
 
-    for base_key, base in BASES.items():
-        source_dir = ROOT / "screenshots" / base_key
-        if not source_dir.is_dir():
-            print(f"SKIP screenshots/{base_key} (missing directory)")
-            continue
+    if args.validate:
+        print(f"Validated store screenshot locales: {', '.join(locales)}")
+        return
 
-        output_dir = ROOT / "screenshots" / f"{base_key}_store_preview" / LOCALE
-        for slide_key, slide in CAPTIONS[LOCALE].items():
-            source_path = source_dir / str(slide["src"])
-            output_path = output_dir / str(slide["dst"])
-            if not source_path.exists():
-                print(f"SKIP {source_path.relative_to(ROOT)} (missing)")
-                continue
-
-            compose_slide(source_path, output_path, base_key, base, slide, font_path, bezel_configs)
-            with Image.open(output_path) as image:
-                print(f"{output_path.relative_to(ROOT)} {image.size[0]}x{image.size[1]}")
+    requested_locales = locales if args.all else [args.locale]
+    for locale in requested_locales:
+        if locale not in locales:
+            raise RuntimeError(f"Unsupported store locale {locale!r}; available: {', '.join(locales)}")
+        compose_locale(locale, font_path, bezel_configs, args.target)
 
 
 if __name__ == "__main__":

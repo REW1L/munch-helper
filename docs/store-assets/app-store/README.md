@@ -22,6 +22,21 @@ Locales mirror the app's supported languages
 
 Store-only locales (App Store listing, no matching app UI language): `es`.
 
+## Screenshot localization
+
+Store screenshots use exactly the locales represented by the four listing-copy
+directories (`description`, `promotional-text`, `subtitle`, and `whats-new`):
+`en`, `pl`, `de`, `fr`, `lt`, `lv`, `et`, `ru`, `be`, `uk`, and `es`. This list
+is maintained in `scripts/store-screenshot-locales.json` and is intentionally
+smaller than the app UI's language list.
+
+The capture runners build each locale with a screenshot-only language override
+and save matching localized UI and captioned previews under
+`screenshots/<target>_store_preview/<locale>/`. When a listing locale is added
+or removed, update the JSON configuration and the four caption strings for
+each screenshot slide, then run `python3 scripts/generate-app-store-preview-redesign.py --validate`
+before capturing the full store set.
+
 ## Conventions
 
 - **No emojis.** The App Store description field does not support them, so
