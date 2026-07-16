@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -8,6 +8,12 @@ const repoRoot = new URL('..', import.meta.url);
 const rootDir = path.resolve(repoRoot.pathname);
 const frontendDir = path.join(rootDir, 'frontend');
 const screenshotsDir = path.join(rootDir, 'screenshots');
+const screenshotBuildLocalePath = path.join(frontendDir, 'i18n/screenshotBuildLocale.ts');
+const localeConfigPath = path.join(rootDir, 'scripts', 'store-screenshot-locales.json');
+const localeConfig = JSON.parse(await fs.readFile(localeConfigPath, 'utf8'));
+const storeLocales = localeConfig.locales;
+const pythonCommand = process.env.SCREENSHOT_PYTHON || 'python3';
+let hasCleanBuilt = false;
 
 const deviceProfiles = [
   {
@@ -81,6 +87,45 @@ async function run(command, args, options = {}) {
 
     throw error;
   }
+}
+
+async function isIosAppInstalled(udid) {
+  const result = await run('xcrun', ['simctl', 'get_app_container', udid, 'click.helpamunch.mobileapp', 'app'], { allowFailure: true });
+  return typeof result.stdout === 'string' && result.stdout.includes('.app');
+}
+
+async function buildAndInstallForLocale(device, locale) {
+  // Remove the previous locale build so the install poll cannot mistake a
+  // stale app container for the bundle being built for this locale.
+  await run('xcrun', ['simctl', 'uninstall', device.udid, 'click.helpamunch.mobileapp'], { allowFailure: true });
+  const buildArgs = ['expo', 'run:ios', '--configuration', 'Release', ...(hasCleanBuilt ? [] : ['--no-build-cache']), '-d', device.udid];
+  const child = spawn('npx', buildArgs, {
+    cwd: frontendDir,
+    env: {
+      ...process.env,
+      EXPO_PUBLIC_API_URL: 'http://localhost:8080',
+      EXPO_PUBLIC_SCREENSHOT_PROFILE_NAME: device.profileName,
+      EXPO_PUBLIC_SCREENSHOT_PROFILE_AVATAR: device.profileAvatar,
+      EXPO_PUBLIC_SCREENSHOT_LANGUAGE: locale,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.on('data', (chunk) => process.stdout.write(chunk));
+  child.stderr.on('data', (chunk) => process.stderr.write(chunk));
+  const deadline = Date.now() + 15 * 60 * 1000;
+  while (Date.now() < deadline) {
+    if (await isIosAppInstalled(device.udid)) {
+      child.kill('SIGINT');
+      hasCleanBuilt = true;
+      return;
+    }
+    if (child.exitCode !== null) {
+      throw new Error(`iOS release build exited before installing the ${locale} screenshot app.`);
+    }
+    await sleep(1500);
+  }
+  child.kill('SIGINT');
+  throw new Error(`Timed out waiting for the ${locale} iOS screenshot app to install.`);
 }
 
 function getLatestRuntimeRank(runtime) {
@@ -175,30 +220,33 @@ async function seedRoomForFlow(flow) {
   return seededRoom;
 }
 
-async function captureForDevice(device) {
+async function setScreenshotBuildLocale(locale) {
+  await fs.writeFile(
+    screenshotBuildLocalePath,
+    `import type { LanguageCode } from './languages';\n\nexport const SCREENSHOT_BUILD_LANGUAGE: LanguageCode | null = '${locale}';\n`,
+  );
+}
+
+async function clearScreenshotBuildLocale() {
+  await fs.writeFile(
+    screenshotBuildLocalePath,
+    "import type { LanguageCode } from './languages';\n\nexport const SCREENSHOT_BUILD_LANGUAGE: LanguageCode | null = null;\n",
+  );
+}
+
+async function captureForDevice(device, locale) {
   const targetDir = path.join(screenshotsDir, device.directory);
   await fs.mkdir(targetDir, { recursive: true });
   const roomBySlide = [];
 
-  process.stdout.write(`\n==> Capturing ${device.directory} on ${device.name} (${device.runtime})\n`);
+  process.stdout.write(`\n==> Capturing ${device.directory} (${locale}) on ${device.name} (${device.runtime})\n`);
   await run('xcrun', ['simctl', 'shutdown', 'all'], { allowFailure: true });
   await run('xcrun', ['simctl', 'boot', device.udid], { allowFailure: true });
   await run('xcrun', ['simctl', 'bootstatus', device.udid, '-b']);
   await applyStatusBar(device.udid);
 
   try {
-    await run(
-      'npx',
-      ['expo', 'run:ios', '--configuration', 'Release', '-d', device.udid],
-      {
-        cwd: frontendDir,
-        env: {
-          EXPO_PUBLIC_API_URL: 'http://localhost:8080',
-          EXPO_PUBLIC_SCREENSHOT_PROFILE_NAME: device.profileName,
-          EXPO_PUBLIC_SCREENSHOT_PROFILE_AVATAR: device.profileAvatar,
-        },
-      }
-    );
+    await buildAndInstallForLocale(device, locale);
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);
@@ -222,12 +270,24 @@ async function captureForDevice(device) {
   }
 }
 
+async function generateCaptionedScreenshots(locale) {
+  await run(pythonCommand, ['scripts/generate-app-store-preview-redesign.py', '--locale', locale, '--target', 'iphone69']);
+}
+
 async function main() {
   await fs.mkdir(screenshotsDir, { recursive: true });
   const devices = await resolveDevices();
 
-  for (const device of devices) {
-    await captureForDevice(device);
+  try {
+    for (const locale of storeLocales) {
+      await setScreenshotBuildLocale(locale);
+      for (const device of devices) {
+        await captureForDevice(device, locale);
+      }
+      await generateCaptionedScreenshots(locale);
+    }
+  } finally {
+    await clearScreenshotBuildLocale();
   }
 
   process.stdout.write(`\nScreenshots saved under ${screenshotsDir}\n`);

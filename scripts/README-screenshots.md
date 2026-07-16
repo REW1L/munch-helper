@@ -33,6 +33,14 @@ Captioned, store-ready slides are written by locale:
 - `screenshots/iphone69_store_preview/en`
 - `screenshots/android1080x2400_store_preview/en`
 
+The canonical localized store set is defined in
+`scripts/store-screenshot-locales.json` and currently contains `en`, `pl`,
+`de`, `fr`, `lt`, `lv`, `et`, `ru`, `be`, `uk`, and `es`. Both runners capture
+each locale with `EXPO_PUBLIC_SCREENSHOT_LANGUAGE` set at build time, then
+write its four previews into the matching locale directory. The generated UI
+and caption copy therefore use the same language; no simulator system-locale
+change or manual language selection is required.
+
 The Google Play feature graphic is separate and still written to:
 
 - `screenshots/google-play/feature-graphic.png`
@@ -110,11 +118,28 @@ Run the compositor directly after source screenshots exist:
 python3 scripts/generate-app-store-preview-redesign.py
 ```
 
-To render another populated locale later:
+To render one populated locale after its source screenshots exist:
 
 ```bash
 STORE_SCREENSHOT_LOCALE=en python3 scripts/generate-app-store-preview-redesign.py
 ```
+
+To validate the locale configuration, listing assets, caption completeness,
+font glyph coverage, and bezel metadata without capturing devices:
+
+```bash
+python3 scripts/generate-app-store-preview-redesign.py --validate
+```
+
+To render every configured locale from the currently captured source images:
+
+```bash
+python3 scripts/generate-app-store-preview-redesign.py --all
+```
+
+`--all` is primarily useful for compositor/layout review. The iOS and Android
+runners build and capture each locale separately, then compose it immediately,
+so their source images are never incorrectly reused across languages.
 
 ## Prerequisites
 
@@ -226,7 +251,6 @@ For App Store screenshots, run:
 
 ```bash
 npm run screenshots:app-store
-python3 scripts/generate-app-store-preview-redesign.py
 ```
 
 For Google Play screenshots, run:

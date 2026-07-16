@@ -3,8 +3,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LanguageContext } from '@/context/LanguageContext';
 import i18n from '@/i18n';
 import { detectDeviceLanguage } from '@/i18n/detectLanguage';
-import { DEFAULT_LANGUAGE, type LanguageCode } from '@/i18n/languages';
+import { DEFAULT_LANGUAGE, isSupportedLanguage, type LanguageCode } from '@/i18n/languages';
 import { getStoredLanguage, setStoredLanguage } from '@/i18n/storage';
+import { SCREENSHOT_BUILD_LANGUAGE } from '@/i18n/screenshotBuildLocale';
 
 interface LanguageProviderProps {
   children: React.ReactNode;
@@ -24,8 +25,15 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     let cancelled = false;
 
     const resolve = async () => {
-      const stored = await getStoredLanguage();
-      const resolved = stored ?? detectDeviceLanguage();
+      // Keep this direct member access in the provider: Expo inlines
+      // EXPO_PUBLIC_* values during release bundling.
+      const configuredScreenshotLanguage =
+        SCREENSHOT_BUILD_LANGUAGE ?? process.env.EXPO_PUBLIC_SCREENSHOT_LANGUAGE?.trim();
+      const screenshotLanguage = isSupportedLanguage(configuredScreenshotLanguage)
+        ? configuredScreenshotLanguage
+        : null;
+      const stored = screenshotLanguage ? null : await getStoredLanguage();
+      const resolved = screenshotLanguage ?? stored ?? detectDeviceLanguage();
 
       if (cancelled) {
         return;

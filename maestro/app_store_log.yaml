@@ -3,33 +3,28 @@ appId: click.helpamunch.mobileapp
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Rooms"
-    timeout: 20000
-- tapOn: "Rooms"
-- extendedWaitUntil:
-    visible: "Join"
-    timeout: 15000
-- tapOn: "Join"
-- extendedWaitUntil:
-    visible: "Join a room for Munchkin?"
+    visible:
+      text: "screenshot-open-rooms"
     timeout: 10000
-- tapOn: "Enter the room name"
+- tapOn:
+    text: "screenshot-open-rooms"
+- extendedWaitUntil:
+    visible:
+      text: "screenshot-open-room-join"
+    timeout: 10000
+- tapOn:
+    text: "screenshot-open-room-join"
+- tapOn:
+    text: "screenshot-room-id-input"
 - inputText: ${ROOM_ID}
-- tapOn: "Join"
+- tapOn:
+    text: "screenshot-confirm-room-join"
 - extendedWaitUntil:
     visible: "Rune Rider"
     timeout: 20000
 - tapOn:
-    point: "70%,86%"
+    id: "screenshot-open-history"
 - extendedWaitUntil:
-    visible: "History"
+    visible:
+      text: "screenshot-history-ready"
     timeout: 20000
-- extendedWaitUntil:
-    visible: "Battle Dungeon Door, started, just now."
-    timeout: 10000
-- extendedWaitUntil:
-    visible: "Battle Fallen Gate, Players Win, just now. Double-tap to open battle record."
-    timeout: 10000
-- extendedWaitUntil:
-    visible: "Battle Fallen Gate, started, just now."
-    timeout: 10000

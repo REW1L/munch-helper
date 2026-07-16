@@ -3,9 +3,12 @@ appId: click.helpamunch.mobileapp
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Rooms"
-    timeout: 20000
-- tapOn: "Rooms"
+    visible:
+      text: "screenshot-open-rooms"
+    timeout: 15000
+- tapOn:
+    text: "screenshot-open-rooms"
 - extendedWaitUntil:
-    visible: "Munch ⚔️"
+    visible:
+      text: "screenshot-open-room-join"
     timeout: 15000

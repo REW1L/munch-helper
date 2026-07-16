@@ -109,6 +109,9 @@ export default function RoomHistoryLogScreen() {
 
       {!isLoading && !isFirstPageError && (
         <FlatList
+          accessible
+          accessibilityLabel="screenshot-history-ready"
+          testID="screenshot-history-ready"
           contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
           data={entries}
           keyExtractor={(item) => item.id}

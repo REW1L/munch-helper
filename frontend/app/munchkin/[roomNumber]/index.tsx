@@ -379,7 +379,6 @@ const MunchkinIndexView: React.FC = () => {
 
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              accessibilityLabel={t('room.openBattleA11y')}
               accessibilityRole="button"
               disabled={!roomId || isBattleLoading || battleActions.isLoading}
               onPress={() => {
@@ -389,17 +388,20 @@ const MunchkinIndexView: React.FC = () => {
                 styles.battleButton,
                 (!roomId || isBattleLoading || battleActions.isLoading) && styles.actionButtonDisabled,
               ]}
+              accessible={false}
+              testID="screenshot-open-battle"
             >
-              <ButtonLabel style={styles.battleButtonText}>{t('room.battle')}</ButtonLabel>
+              <ButtonLabel accessible accessibilityLabel={t('room.openBattleA11y')} style={styles.battleButtonText}>{t('room.battle')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity
-              accessibilityLabel={t('room.openRoomHistoryA11y')}
               accessibilityRole="button"
               disabled={!roomId}
               onPress={navigateToLog}
               style={[styles.logButton, !roomId && styles.actionButtonDisabled]}
+              accessible={false}
+              testID="screenshot-open-history"
             >
-              <ButtonLabel style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
+              <ButtonLabel accessible accessibilityLabel={t('room.openRoomHistoryA11y')} style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
             </TouchableOpacity>
           </View>
 

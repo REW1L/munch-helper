@@ -1,0 +1,4 @@
+{
+  "locales": ["en", "pl", "de", "fr", "lt", "lv", "et", "ru", "be", "uk", "es"],
+  "listingAssetDirectories": ["description", "promotional-text", "subtitle", "whats-new"]
+}
