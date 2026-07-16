@@ -389,10 +389,9 @@ const MunchkinIndexView: React.FC = () => {
                 (!roomId || isBattleLoading || battleActions.isLoading) && styles.actionButtonDisabled,
               ]}
               accessible={false}
-              accessibilityLabel="screenshot-open-battle"
               testID="screenshot-open-battle"
             >
-              <ButtonLabel accessible accessibilityLabel="screenshot-open-battle" style={styles.battleButtonText}>{t('room.battle')}</ButtonLabel>
+              <ButtonLabel accessible accessibilityLabel={t('room.openBattleA11y')} style={styles.battleButtonText}>{t('room.battle')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="button"
@@ -400,10 +399,9 @@ const MunchkinIndexView: React.FC = () => {
               onPress={navigateToLog}
               style={[styles.logButton, !roomId && styles.actionButtonDisabled]}
               accessible={false}
-              accessibilityLabel="screenshot-open-history"
               testID="screenshot-open-history"
             >
-              <ButtonLabel accessible accessibilityLabel="screenshot-open-history" style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
+              <ButtonLabel accessible accessibilityLabel={t('room.openRoomHistoryA11y')} style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
             </TouchableOpacity>
           </View>
 

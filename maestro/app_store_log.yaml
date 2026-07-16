@@ -23,7 +23,7 @@ appId: click.helpamunch.mobileapp
     visible: "Rune Rider"
     timeout: 20000
 - tapOn:
-    text: "screenshot-open-history"
+    id: "screenshot-open-history"
 - extendedWaitUntil:
     visible:
       text: "screenshot-history-ready"
