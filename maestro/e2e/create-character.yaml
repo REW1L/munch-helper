@@ -1,0 +1,46 @@
+appId: click.helpamunch.mobileapp
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "http://.*:8081"
+    commands:
+      - tapOn:
+          text: "http://.*:8081"
+      - tapOn: Continue
+      - tapOn: Close
+- tapOn:
+    id: screenshot-open-rooms
+- tapOn:
+    id: screenshot-open-room-join
+- tapOn:
+    id: screenshot-room-id-input
+- inputText: ${ROOM_ID}
+- tapOn:
+    id: screenshot-confirm-room-join
+- extendedWaitUntil:
+    visible:
+      id: create-character-button
+    timeout: 20000
+- tapOn:
+    id: create-character-button
+- tapOn:
+    id: character-name-input
+- eraseText
+- inputText: E2E Created
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - pressKey: ENTER
+- tapOn:
+    id: confirm-create-character-button
+- extendedWaitUntil:
+    visible: "E2E Created.*"
+    timeout: 20000

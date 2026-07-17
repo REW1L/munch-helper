@@ -347,6 +347,15 @@ const MunchkinIndexView: React.FC = () => {
             }}
           />
 
+          <Text
+            accessible
+            accessibilityLabel={isConnected ? "room-websocket-connected" : "room-websocket-disconnected"}
+            testID={isConnected ? "room-websocket-connected" : "room-websocket-disconnected"}
+            style={styles.realtimeConnectionStatus}
+          >
+            {isConnected ? 'connected' : 'disconnected'}
+          </Text>
+
           <ReconnectingBanner visible={isReconnecting} />
 
           {isTimedOut && !isConnected && (
@@ -521,6 +530,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppTheme.colors.background,
+  },
+  realtimeConnectionStatus: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    opacity: 0.01,
   },
   actionButtons: {
     paddingHorizontal: AppTheme.spacing.md,

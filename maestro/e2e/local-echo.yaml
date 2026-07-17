@@ -1,0 +1,49 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: join-room.yaml
+- tapOn:
+    id: change-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Echo
+      - tapOn:
+          id: save-character-button
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: quick-edit-sheet
+          commands:
+            - tapOn:
+                id: quick-edit-open-full-edit
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Echo
+      - hideKeyboard
+      - tapOn:
+          id: save-character-button
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Echo
+      - pressKey: ENTER
+      - tapOn:
+          id: save-character-button
+- extendedWaitUntil:
+    visible: "E2E Echo.*"
+    timeout: 20000
+- assertVisible: "E2E Echo.*"
+- assertNotVisible: "E2E Actor A.*"

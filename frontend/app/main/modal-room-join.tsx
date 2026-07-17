@@ -59,11 +59,10 @@ export default function ModalRoomJoin({ visible, onClose, onJoin, game }: ModalR
               style={styles.button}
               onPress={handleJoin}
               activeOpacity={0.7}
-              accessible={false}
               accessibilityLabel="screenshot-confirm-room-join"
               testID="screenshot-confirm-room-join"
             >
-              <ButtonLabel accessible accessibilityLabel="screenshot-confirm-room-join" style={styles.buttonText}>{t('common.join')}</ButtonLabel>
+              <ButtonLabel accessible accessibilityLabel="screenshot-confirm-room-join" testID="screenshot-confirm-room-join" style={styles.buttonText}>{t('common.join')}</ButtonLabel>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.button}

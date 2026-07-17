@@ -1,0 +1,11 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: cross-user-create.yaml
+- runScript:
+    file: actor-b-delete.js
+    env:
+      API_URL: ${API_URL}
+      ACTOR_B_CHARACTER_ID: ${output.actorBCharacterId}
+- extendedWaitUntil:
+    notVisible: Actor B
+    timeout: 20000

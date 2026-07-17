@@ -16,8 +16,8 @@ interface ConfirmDialogProps {
 
 /**
  * Cross-platform confirmation dialog.
- * Native: delegates to Alert.alert (system sheet).
- * Web: renders an inline modal overlay (Alert.alert is a no-op on web).
+ * Native Android: delegates to Alert.alert (system sheet).
+ * Web and iOS: render an inline overlay (Alert.alert is unavailable to the E2E driver).
  */
 export default function ConfirmDialog({
   visible,
@@ -30,8 +30,9 @@ export default function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
+  const useCustomDialog = Platform.OS === 'web' || Platform.OS === 'ios' || process.env.EXPO_PUBLIC_E2E === 'true';
   useEffect(() => {
-    if (Platform.OS === 'web' || !visible) {
+    if (useCustomDialog || !visible) {
       return;
     }
 
@@ -45,41 +46,49 @@ export default function ConfirmDialog({
       { cancelable: true, onDismiss: onCancel }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }, [useCustomDialog, visible]);
 
-  if (Platform.OS !== 'web') {
+  if (!useCustomDialog) {
     return null;
+  }
+
+  const dialogContent = visible ? (
+    <Pressable style={styles.overlay} onPress={onCancel}>
+      <Pressable style={styles.dialog} onPress={() => { }}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.message}>{message}</Text>
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            accessible
+            accessibilityLabel={resolvedCancelLabel}
+            accessibilityRole="button"
+            style={[styles.button, styles.cancelButton]}
+            onPress={onCancel}
+          >
+            <ButtonLabel style={styles.cancelText}>{resolvedCancelLabel}</ButtonLabel>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessible
+            accessibilityLabel={confirmLabel}
+            accessibilityRole="button"
+            style={[styles.button, styles.confirmButton]}
+            onPress={onConfirm}
+            testID="confirm-dialog-confirm"
+          >
+            <ButtonLabel style={styles.confirmText}>{confirmLabel}</ButtonLabel>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Pressable>
+  ) : null;
+
+  if (Platform.OS === 'ios') {
+    return <View style={StyleSheet.absoluteFill} pointerEvents="box-none">{dialogContent}</View>;
   }
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
-      {visible && (
-        <Pressable style={styles.overlay} onPress={onCancel}>
-          <Pressable style={styles.dialog} onPress={() => { }}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.message}>{message}</Text>
-            <View style={styles.buttons}>
-              <TouchableOpacity
-                accessibilityLabel={resolvedCancelLabel}
-                accessibilityRole="button"
-                style={[styles.button, styles.cancelButton]}
-                onPress={onCancel}
-              >
-                <ButtonLabel style={styles.cancelText}>{resolvedCancelLabel}</ButtonLabel>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityLabel={confirmLabel}
-                accessibilityRole="button"
-                style={[styles.button, styles.confirmButton]}
-                onPress={onConfirm}
-                testID="confirm-dialog-confirm"
-              >
-                <ButtonLabel style={styles.confirmText}>{confirmLabel}</ButtonLabel>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      )}
+      {dialogContent}
     </Modal>
   );
 }
