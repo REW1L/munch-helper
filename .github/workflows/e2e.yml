@@ -121,7 +121,10 @@ jobs:
       - name: Start Docker engine
         run: |
           brew install colima docker docker-compose
-          colima start --cpu 4 --memory 8 --disk 40
+          mkdir -p "$HOME/.docker"
+          printf '%s\n' '{"cliPluginsExtraDirs":["/opt/homebrew/lib/docker/cli-plugins","/usr/local/lib/docker/cli-plugins"]}' > "$HOME/.docker/config.json"
+          colima start --vm-type=qemu --cpu 4 --memory 8 --disk 40
+          docker context use colima
           docker info
       - name: Cache Maestro and iOS build
         uses: actions/cache@v4

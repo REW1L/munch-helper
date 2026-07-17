@@ -10,6 +10,10 @@ appId: click.helpamunch.mobileapp
           text: "http://.*:8081"
       - tapOn: Continue
       - tapOn: Close
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-rooms
+    timeout: 30000
 - tapOn:
     id: screenshot-open-rooms
 - tapOn:

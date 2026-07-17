@@ -1,6 +1,12 @@
 import { spawnSync } from 'node:child_process';
 
-const compose = ['compose', '-f', 'backend/docker-compose.local.yml'];
+const compose = [
+  'compose',
+  '-f',
+  'backend/docker-compose.local.yml',
+  '-f',
+  'backend/docker-compose.e2e.yml',
+];
 const fresh = process.env.CI === 'true' || process.argv.includes('--fresh');
 const result = spawnSync('docker', [...compose, 'up', '--build', '-d', ...(fresh ? ['--renew-anon-volumes'] : [])], { stdio: 'inherit' });
 if (result.status !== 0) process.exit(result.status ?? 1);

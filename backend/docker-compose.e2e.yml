@@ -1,0 +1,28 @@
+# E2E-only override: the gateway is the only host-facing endpoint. All other
+# services communicate over the Compose network, avoiding host-port collisions
+# on CI runners while preserving the direct ports in docker-compose.local.yml.
+services:
+  user-service:
+    ports: !reset []
+  room-service:
+    ports: !reset []
+  character-service:
+    ports: !reset []
+  battle-service:
+    ports: !reset []
+  room-notifications-service:
+    ports: !reset []
+  log-service:
+    ports: !reset []
+  redis:
+    ports: !reset []
+  mongo-user:
+    ports: !reset []
+  mongo-room:
+    ports: !reset []
+  mongo-character:
+    ports: !reset []
+  mongo-battle:
+    ports: !reset []
+  mongo-log:
+    ports: !reset []
