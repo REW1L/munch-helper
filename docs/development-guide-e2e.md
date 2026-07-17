@@ -4,7 +4,7 @@ The E2E suite uses Maestro against the local Docker stack. It drives the same fl
 
 ## Prerequisites
 
-Install Docker, Node 24, a current Maestro CLI, and the platform simulator/emulator you plan to use. From the repository root, start an isolated local stack:
+Install Docker (Docker Desktop or Colima on macOS), Node 24, a current Maestro CLI, and the platform simulator/emulator you plan to use. From the repository root, start an isolated local stack:
 
 ```sh
 npm run e2e:stack:start

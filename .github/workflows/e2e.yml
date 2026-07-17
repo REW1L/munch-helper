@@ -34,6 +34,16 @@ jobs:
           npx serve dist -l 19006 > /tmp/munch-e2e-web-server.log 2>&1 &
           echo $! > /tmp/munch-e2e-web-server.pid
         working-directory: frontend
+      - name: Wait for web server
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:19006/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/munch-e2e-web-server.log
+          exit 1
       - name: Run web flows
         run: |
           node scripts/e2e/prepare-web-flows.mjs --output /tmp/munch-maestro-web --url http://localhost:19006
@@ -51,7 +61,7 @@ jobs:
 
   android:
     name: e2e-android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -78,8 +88,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          emulator-options: -no-window -no-audio -no-boot-anim
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
+          emulator-boot-timeout: 900
           script: echo emulator-ready
       - name: Build Android dev client
         run: EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache
@@ -107,6 +118,11 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install Maestro
         run: curl -Ls https://get.maestro.mobile.dev | bash
+      - name: Start Docker engine
+        run: |
+          brew install colima docker docker-compose
+          colima start --cpu 4 --memory 8 --disk 40
+          docker info
       - name: Cache Maestro and iOS build
         uses: actions/cache@v4
         with:
@@ -130,3 +146,6 @@ jobs:
       - name: Stop backend stack
         if: always()
         run: npm run e2e:stack:stop
+      - name: Stop Docker engine
+        if: always()
+        run: colima stop || true
