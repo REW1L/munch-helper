@@ -8,7 +8,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 const STORE_LINKS = {
   ios: 'https://apps.apple.com/us/app/munch-helper/id6760627502',
-  android: 'https://groups.google.com/g/helpamunch-testers',
+  android: 'https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp',
 } as const;
 
 export default function LandingPage() {
@@ -89,7 +89,6 @@ export default function LandingPage() {
                 onPress={openPlayStore}
                 accessibilityLabel={t('landing.googlePlay')}
               >
-                <Text style={styles.playSoonNote}>{t('landing.joinBeta')}</Text>
                 <Image
                   source={require('../assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg')}
                   style={styles.playStoreBadge}
