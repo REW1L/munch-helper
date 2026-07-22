@@ -75,7 +75,6 @@ const MunchkinIndexView: React.FC = () => {
   const [createCharacterModalVisible, setCreateCharacterModalVisible] = useState(false);
   const [changeCharacterModalVisible, setChangeCharacterModalVisible] = useState(false);
   const [quickEditVisible, setQuickEditVisible] = useState(false);
-  const [pendingFullEditOpen, setPendingFullEditOpen] = useState(false);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [selectedCharacterSnapshot, setSelectedCharacterSnapshot] = useState<RoomCharacter | null>(null);
   const [pendingDeleteCharacterId, setPendingDeleteCharacterId] = useState<string | null>(null);
@@ -86,6 +85,7 @@ const MunchkinIndexView: React.FC = () => {
   const [dangerFlash, setDangerFlash] = useState(false);
   const undoToastTranslateY = useMemo(() => new Animated.Value(24), []);
   const selectedCharacterIdRef = useRef<string | null>(null);
+  const autoClosedCharacterIdRef = useRef<string | null>(null);
 
   const setSelectedCharacterIdAndRef = useCallback((id: string | null) => {
     selectedCharacterIdRef.current = id;
@@ -160,16 +160,6 @@ const MunchkinIndexView: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!pendingFullEditOpen || quickEditVisible) {
-      return;
-    }
-
-    setPendingFullEditOpen(false);
-    setSelectedCharacterSnapshot(selectedCharacter ?? null);
-    setChangeCharacterModalVisible(true);
-  }, [pendingFullEditOpen, quickEditVisible, selectedCharacter]);
-
-  useEffect(() => {
     if (!changeCharacterModalVisible || !selectedCharacterId || selectedCharacter) {
       return;
     }
@@ -181,6 +171,11 @@ const MunchkinIndexView: React.FC = () => {
     if (pendingDeleteCharacterId === selectedCharacterId) {
       return;
     }
+
+    if (autoClosedCharacterIdRef.current === selectedCharacterId) {
+      return;
+    }
+    autoClosedCharacterIdRef.current = selectedCharacterId;
 
     setDeleteError(null);
     setChangeCharacterModalVisible(false);
@@ -238,7 +233,7 @@ const MunchkinIndexView: React.FC = () => {
   const handleOpenFullEdit = useCallback(() => {
     setDeleteError(null);
     setSelectedCharacterSnapshot(selectedCharacter ?? null);
-    setPendingFullEditOpen(true);
+    setChangeCharacterModalVisible(true);
     setQuickEditVisible(false);
   }, [selectedCharacter]);
 

@@ -36,7 +36,7 @@ export default function CreateCharacterModal({
   onCancel,
 }: CreateCharacterModalProps) {
   const { t } = useTranslation();
-  const [character, setCharacter] = useState<Character>({
+  const [character, setCharacter] = useState<Character>(() => ({
     id: Math.random().toString(36).substring(2, 10),
     avatar: Math.floor(Math.random() * avatars.length),
     name: 'Munchqueen',
@@ -44,7 +44,7 @@ export default function CreateCharacterModal({
     gender: ['male'],
     race: ['Human'],
     class: [],
-  });
+  }));
 
   const handleCreate = () => {
     onConfirm(character);

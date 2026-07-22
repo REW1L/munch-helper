@@ -2,7 +2,7 @@
   "expo": {
     "name": "Munch Helper",
     "slug": "munch-helper",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/munchkin-cat.png",
     "scheme": "munchhelper",
@@ -16,7 +16,6 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true,
       "package": "click.helpamunch.mobileapp"
     },
     "web": {
@@ -36,7 +35,9 @@
       "expo-navigation-bar",
       "expo-font",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-localization",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,
