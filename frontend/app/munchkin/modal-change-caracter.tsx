@@ -48,17 +48,18 @@ export default function ChangeCharacterModal({
 }: ChangeCharacterModalProps) {
   const { t } = useTranslation();
   const [character, setCharacter] = useState<Character>(
-    initialCharacter || {
-      id: 'temp-id',
-      nickname: 'Munchqueen',
-      color: '#1010FF',
-      gender: ['male'],
-      race: ['Human'],
-      class: ['Cleric'],
-      level: 9,
-      power: 15,
-      avatar: Math.floor(Math.random() * avatars.length),
-    }
+    () =>
+      initialCharacter || {
+        id: 'temp-id',
+        nickname: 'Munchqueen',
+        color: '#1010FF',
+        gender: ['male'],
+        race: ['Human'],
+        class: ['Cleric'],
+        level: 9,
+        power: 15,
+        avatar: Math.floor(Math.random() * avatars.length),
+      }
   );
   let [newRace, setNewRace] = useState("<Select>");
   let [newClass, setNewClass] = useState("<Select>");
@@ -70,11 +71,17 @@ export default function ChangeCharacterModal({
   const activeDeleteRef = useRef<{ requestId: number; characterId: string } | null>(
     null
   );
+  const resetForCharacterIdRef = useRef<string | undefined>(initialCharacter?.id);
 
   useEffect(() => {
     if (!initialCharacter) {
       return;
     }
+
+    if (resetForCharacterIdRef.current === initialCharacter.id) {
+      return;
+    }
+    resetForCharacterIdRef.current = initialCharacter.id;
 
     setCharacter(initialCharacter);
     setNewRace('<Select>');
@@ -84,7 +91,7 @@ export default function ChangeCharacterModal({
     setIsDeletePending(false);
     activeDeleteRef.current = null;
     pendingDeleteCharacterIdRef.current = null;
-  }, [initialCharacter?.id]);
+  }, [initialCharacter]);
 
   const handleSave = () => {
     if (isDeletePending) {

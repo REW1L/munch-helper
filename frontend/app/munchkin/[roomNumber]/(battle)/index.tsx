@@ -58,6 +58,7 @@ export default function BattleView() {
   const initializedBattleIdRef = useRef<string | null>(null);
   const hadBattleRef = useRef(false);
   const dismissedAfterNullRef = useRef(false);
+  const syncedBattleRef = useRef<Battle | null>(null);
 
   useEffect(() => {
     if (!battle) {
@@ -65,9 +66,11 @@ export default function BattleView() {
         dismissedAfterNullRef.current = true;
         router.back();
       }
-      initializedBattleIdRef.current = null;
-      setDraft(null);
-      setSavedDraft(null);
+      if (initializedBattleIdRef.current !== null) {
+        initializedBattleIdRef.current = null;
+        setDraft(null);
+        setSavedDraft(null);
+      }
       return;
     }
 
@@ -93,11 +96,18 @@ export default function BattleView() {
     // invalidation). If the user has no local edits, move the visible draft forward
     // with the server state; otherwise keep their unsaved draft and update only the
     // saved baseline so the dirty comparison stays accurate.
-    const nextDraft = cloneDraft(battle);
-    if (!draft || !savedDraft || areDraftsEqual(draft, savedDraft)) {
-      setDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
+    if (syncedBattleRef.current !== battle) {
+      syncedBattleRef.current = battle;
+      const nextDraft = cloneDraft(battle);
+      setDraft((current) => {
+        const hasNoLocalEdits = !current || !savedDraft || areDraftsEqual(current, savedDraft);
+        if (!hasNoLocalEdits) {
+          return current;
+        }
+        return current && areDraftsEqual(current, nextDraft) ? current : nextDraft;
+      });
+      setSavedDraft((current) => (current && areDraftsEqual(current, nextDraft) ? current : nextDraft));
     }
-    setSavedDraft((current) => current && areDraftsEqual(current, nextDraft) ? current : nextDraft);
   }, [battle, draft, errorMessage, isLoading, router, savedDraft]);
 
   // Exclude optimistic (temp-) ids from the add picker so users can't add a

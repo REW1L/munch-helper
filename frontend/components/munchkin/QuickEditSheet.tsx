@@ -51,6 +51,10 @@ export default function QuickEditSheet({
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
   const hasHandledVisibilityRef = useRef(false);
   const lastVisibleRef = useRef(visible);
+  const isSavingRef = useRef(false);
+  const syncedStatsKeyRef = useRef<string | null>(null);
+  const closeAnimationStartedRef = useRef(false);
+  const openHandledRef = useRef(false);
   const translateY = useMemo(() => new Animated.Value(0), []);
   const backdropOpacity = useMemo(() => new Animated.Value(1), []);
   const dismissOffset = useMemo(() => Dimensions.get('window').height, []);
@@ -85,12 +89,19 @@ export default function QuickEditSheet({
     };
 
     if (!visible) {
-      setIsSaving(false);
+      if (isSavingRef.current) {
+        isSavingRef.current = false;
+        setIsSaving(false);
+      }
       return;
     }
 
-    setIsClosing(false);
-    setDraftStats(nextStats);
+    const statsKey = `${nextStats.level}:${nextStats.power}`;
+    if (syncedStatsKeyRef.current !== statsKey) {
+      syncedStatsKeyRef.current = statsKey;
+      setIsClosing(false);
+      setDraftStats(nextStats);
+    }
   }, [character?.level, character?.power, visible]);
 
   const animateSheetTo = useCallback(
@@ -131,20 +142,37 @@ export default function QuickEditSheet({
     lastVisibleRef.current = visible;
 
     if (!visible) {
+      openHandledRef.current = false;
+
       if (!isRendered) {
-        setIsSaving(false);
+        if (isSavingRef.current) {
+          isSavingRef.current = false;
+          setIsSaving(false);
+        }
         return;
       }
 
+      if (closeAnimationStartedRef.current) {
+        return;
+      }
+      closeAnimationStartedRef.current = true;
+
       setIsClosing(true);
       animateSheetTo(dismissOffset, () => {
+        closeAnimationStartedRef.current = false;
         setIsClosing(false);
+        isSavingRef.current = false;
         setIsSaving(false);
         setIsRendered(false);
       });
       return;
     }
 
+    if (openHandledRef.current) {
+      return;
+    }
+    openHandledRef.current = true;
+    closeAnimationStartedRef.current = false;
     setIsRendered(true);
     setIsClosing(false);
     translateY.setValue(dismissOffset);
@@ -185,6 +213,7 @@ export default function QuickEditSheet({
       return;
     }
 
+    isSavingRef.current = true;
     setIsSaving(true);
     await onSave(draftStats);
   }, [character, draftStats, isSaving, onSave]);
@@ -281,10 +310,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   overlayBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   overlayPressable: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sheet: {
