@@ -120,21 +120,21 @@ describe('Landing route', () => {
     expect(mockOpenURL).toHaveBeenCalledWith('https://apps.apple.com/us/app/munch-helper/id6760627502');
   });
 
-  it('opens the closed beta Google group URL from the Google Play link', async () => {
+  it('opens the public Google Play listing from the Google Play link', async () => {
     const { default: LandingPage } = await import('../../app/index');
 
     await act(async () => {
       render(<LandingPage />);
     });
 
-    expect(screen.getByText('Join Closed Beta')).toBeTruthy();
+    expect(screen.queryByText('Join Closed Beta')).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByLabelText('Google Play'));
     });
 
-    expect(mockCanOpenURL).toHaveBeenCalledWith('https://groups.google.com/g/helpamunch-testers');
-    expect(mockOpenURL).toHaveBeenCalledWith('https://groups.google.com/g/helpamunch-testers');
+    expect(mockCanOpenURL).toHaveBeenCalledWith('https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp');
+    expect(mockOpenURL).toHaveBeenCalledWith('https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp');
   });
 
   it('hides store links on native platforms', async () => {
