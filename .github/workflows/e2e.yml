@@ -49,7 +49,7 @@ jobs:
           node scripts/e2e/prepare-web-flows.mjs --output /tmp/munch-maestro-web --url http://localhost:19006
           for flow in /tmp/munch-maestro-web/*.yaml; do
             eval "$(node scripts/e2e/prepare-room.mjs)"
-            node scripts/e2e/cleanup.mjs
+            E2E_KEEP_WEB_SERVER=true node scripts/e2e/cleanup.mjs
             "$HOME/.maestro/bin/maestro" test -p web --headless -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
           done
       - name: Stop web server and browser
@@ -81,7 +81,7 @@ jobs:
           key: e2e-android-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json', 'frontend/android/**/*.gradle*') }}
       - name: Install dependencies and boot backend
         run: npm ci && npm ci --prefix frontend && npm run e2e:stack:start
-      - name: Start Android emulator
+      - name: Start Android emulator, build, and run flows
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 33
@@ -91,17 +91,16 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
           emulator-boot-timeout: 900
-          script: echo emulator-ready
-      - name: Build Android dev client
-        run: EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache
-        working-directory: frontend
-      - name: Run Android flows
-        run: |
-          for flow in maestro/e2e/*.yaml; do
-            eval "$(node scripts/e2e/prepare-room.mjs)"
-            node scripts/e2e/cleanup.mjs
-            "$HOME/.maestro/bin/maestro" test -p android -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
-          done
+          script: |
+            (
+              cd frontend
+              EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache
+            )
+            for flow in maestro/e2e/*.yaml; do
+              eval "$(node scripts/e2e/prepare-room.mjs)"
+              node scripts/e2e/cleanup.mjs
+              "$HOME/.maestro/bin/maestro" test -p android -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
+            done
       - name: Stop backend stack
         if: always()
         run: npm run e2e:stack:stop
@@ -120,7 +119,7 @@ jobs:
         run: curl -Ls https://get.maestro.mobile.dev | bash
       - name: Start Docker engine
         run: |
-          brew install colima docker docker-compose
+          brew install qemu colima docker docker-compose
           mkdir -p "$HOME/.docker"
           printf '%s\n' '{"cliPluginsExtraDirs":["/opt/homebrew/lib/docker/cli-plugins","/usr/local/lib/docker/cli-plugins"]}' > "$HOME/.docker/config.json"
           colima start --vm-type=qemu --cpu 4 --memory 8 --disk 40

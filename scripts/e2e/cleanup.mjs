@@ -4,6 +4,7 @@ import { readFile, rm } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 
 const serverPidFile = process.env.E2E_WEB_SERVER_PID_FILE ?? '/tmp/munch-e2e-web-server.pid';
+const keepWebServer = process.env.E2E_KEEP_WEB_SERVER === 'true';
 const processOutput = spawnSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' });
 const processes = (processOutput.stdout ?? '')
   .split('\n')
@@ -31,11 +32,13 @@ for (const process of processes) {
   if (maestroTest || headlessChromium) addProcessTree(process.pid);
 }
 
-try {
-  const serverPid = Number.parseInt(await readFile(serverPidFile, 'utf8'), 10);
-  if (Number.isInteger(serverPid)) addProcessTree(serverPid);
-} catch {
-  // No web server was started for this platform.
+if (!keepWebServer) {
+  try {
+    const serverPid = Number.parseInt(await readFile(serverPidFile, 'utf8'), 10);
+    if (Number.isInteger(serverPid)) addProcessTree(serverPid);
+  } catch {
+    // No web server was started for this platform.
+  }
 }
 
 for (const pid of targets) {
@@ -55,5 +58,5 @@ for (const pid of targets) {
   }
 }
 
-await rm(serverPidFile, { force: true });
+if (!keepWebServer) await rm(serverPidFile, { force: true });
 console.log(`Cleaned ${targets.size} E2E processes.`);
