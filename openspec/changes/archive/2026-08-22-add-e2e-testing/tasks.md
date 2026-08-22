@@ -58,4 +58,4 @@
 - [x] 8.7 Run the iOS, Android, and web E2E suites locally after the native runner fix
 - [x] 8.8 Use Maestro's default headless Chromium viewport; forcing `1920x1080` made the CI suite exceed its timeout
 - [x] 8.9 Close headed Maestro Chromium processes too, allowing macOS local web E2E to avoid its headless one-pixel viewport limitation
-- [x] 8.10 Generate web flow copies with CSS `[data-testid]` selectors, because Maestro's `id` selector targets HTML `id` rather than React Native Web `testID`
+- [x] 8.10 Preserve the shared `id` selectors in web-flow copies; Maestro resolves React Native Web `data-testid` through them, avoiding the CSS-selector performance regression
