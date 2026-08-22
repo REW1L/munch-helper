@@ -1,0 +1,11 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: cross-user-create.yaml
+- runScript:
+    file: actor-b-update.js
+    env:
+      API_URL: ${API_URL}
+      ACTOR_B_CHARACTER_ID: ${output.actorBCharacterId}
+- extendedWaitUntil:
+    visible: Actor B Updated
+    timeout: 20000

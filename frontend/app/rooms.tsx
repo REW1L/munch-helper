@@ -42,11 +42,11 @@ export default function Home() {
                 <Text style={styles.gameTitleText}>{t('rooms.classic')}</Text>
               </View>
               <View style={styles.gameActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
+                <TouchableOpacity testID="create-room-button" style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
                   <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
                 </TouchableOpacity>
-                <TouchableOpacity accessible={false} testID="screenshot-open-room-join" style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                  <ButtonLabel accessible accessibilityLabel="screenshot-open-room-join" style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
+                <TouchableOpacity testID="screenshot-open-room-join" style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
+                  <ButtonLabel accessible accessibilityLabel="screenshot-open-room-join" testID="screenshot-open-room-join" style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
                 </TouchableOpacity>
               </View>
             </View>

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# e2e-testing
+
+## Purpose
+
+Cross-platform end-to-end coverage of crucial user paths (room and character lifecycle, cross-user real-time updates) using a single Maestro flow definition per path, run against the local full-stack backend on iOS, Android, and web, with test isolation and CI/commit-gate enforcement.
+
+## Requirements
 
 ### Requirement: Single cross-platform E2E tool
 
@@ -94,14 +100,24 @@ The suite SHALL cover an external actor ("actor B"), injected via direct HTTP ca
 - **WHEN** actor A edits its own character and the backend echoes the corresponding update event back over the WebSocket
 - **THEN** actor A's list SHALL reflect the edit exactly once, with no duplicated or reverted state from the echoed event
 
-### Requirement: CI gating on every pull request across all platforms
+### Requirement: Web CI gating and native frontend commit gate
 
-The E2E suite SHALL run in CI as a required check on every pull request, executing on iOS, Android, and web. The suite SHALL also be runnable locally on each platform, with documented setup including the Android emulator host address and the web export/serve steps.
+The E2E suite SHALL run the exported web app in CI as the required `e2e-web` check on affected pull requests. iOS and Android E2E SHALL run locally, in that order and without concurrent Maestro commands, before a commit that stages one or more paths under `frontend/`. The native gate SHALL start and stop the local backend stack and use `http://localhost:8080` for the iOS build and `http://10.0.2.2:8080` for the Android build. The suite SHALL remain runnable locally on each platform, with documented setup including the Android emulator host address and the web export/serve steps.
 
-#### Scenario: PR is gated by all three platforms
+#### Scenario: PR is gated by web E2E
 
 - **WHEN** a pull request is opened or updated
-- **THEN** the E2E suite SHALL run on iOS, Android, and web, and all three SHALL be required to pass before merge
+- **THEN** the exported web E2E suite SHALL run as the required `e2e-web` check
+
+#### Scenario: Frontend commit runs native E2E
+
+- **WHEN** a developer attempts a commit with staged changes under `frontend/`
+- **THEN** the Husky pre-commit gate SHALL run iOS E2E followed by Android E2E against the local backend stack, and the commit SHALL fail if either platform fails
+
+#### Scenario: Non-frontend commit skips native E2E
+
+- **WHEN** a developer attempts a commit with no staged paths under `frontend/`
+- **THEN** the pre-commit gate SHALL skip the native E2E suite
 
 #### Scenario: Suite is runnable locally
 

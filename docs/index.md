@@ -65,6 +65,7 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 - [Development Guide - Backend](./development-guide-backend.md)
 - [Development Guide - Frontend](./development-guide-frontend.md)
 - [Development Guide - Infrastructure](./development-guide-infrastructure.md)
+- [Development Guide - E2E](./development-guide-e2e.md)
 - [Deployment Guide](./deployment-guide.md)
 - [Project Parts Metadata](./project-parts.json)
 

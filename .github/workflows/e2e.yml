@@ -1,0 +1,61 @@
+name: E2E
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'maestro/**'
+      - 'scripts/e2e/**'
+      - '.github/workflows/e2e.yml'
+  workflow_dispatch:
+
+jobs:
+  web:
+    name: e2e-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Maestro
+        run: curl -Ls https://get.maestro.mobile.dev | bash
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Boot backend stack
+        run: npm run e2e:stack:start
+      - name: Export and serve web app
+        run: |
+          EXPO_PUBLIC_API_URL=http://localhost:8080 npm run export:web
+          npx serve dist -l 19006 > /tmp/munch-e2e-web-server.log 2>&1 &
+          echo $! > /tmp/munch-e2e-web-server.pid
+        working-directory: frontend
+      - name: Wait for web server
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:19006/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/munch-e2e-web-server.log
+          exit 1
+      - name: Run web flows
+        run: |
+          node scripts/e2e/prepare-web-flows.mjs --output /tmp/munch-maestro-web --url http://localhost:19006
+          for flow in /tmp/munch-maestro-web/*.yaml; do
+            eval "$(node scripts/e2e/prepare-room.mjs)"
+            E2E_KEEP_WEB_SERVER=true node scripts/e2e/cleanup.mjs
+            "$HOME/.maestro/bin/maestro" test -p web --headless -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
+          done
+      - name: Stop web server and browser
+        if: always()
+        run: node scripts/e2e/cleanup.mjs
+      - name: Stop backend stack
+        if: always()
+        run: npm run e2e:stack:stop

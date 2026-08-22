@@ -42,7 +42,7 @@ export default function RoomCreateModal({
               style={styles.button}
               onPress={onConfirm}
               activeOpacity={0.7}
-              testID="yep-button"
+              testID="confirm-create-room-button"
             >
               <ButtonLabel style={styles.buttonText}>{t('roomCreate.yes')}</ButtonLabel>
             </TouchableOpacity>

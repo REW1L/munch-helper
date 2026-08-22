@@ -13,7 +13,7 @@ Existing test assets: vitest unit/component tests; Maestro 2.4.0 flows built for
 - Genuine end-to-end coverage of room + character lifecycle against the running local stack.
 - Genuine cross-user coverage: an external actor's character write results in the app-under-test's UI updating via the real WebSocket fanout.
 - Deterministic, isolated runs (unique room/user per test; no shared mutable state between tests).
-- Every PR gated by the suite on all three platforms.
+- Every affected PR gated by the web suite, with native E2E gated before commits that stage frontend changes.
 
 **Non-Goals:**
 - Battle, shop, and log flows (later changes).
@@ -46,21 +46,24 @@ Each test generates a unique `roomId` and `userId` (e.g., timestamp/uuid suffix)
 - **Android emulator**: host is reachable at **`10.0.2.2`**, so `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080` (and the derived `ws://10.0.2.2:8080/ws`). This is the known gotcha to bake into the harness.
 - **Web**: `expo export --platform web`, serve the static output, run `maestro test --url http://localhost:<port>`; the app uses the default `http://localhost:8080`.
 
-### D6 — CI shape: one workflow, three jobs, all required on PR
-`.github/workflows/e2e.yml` with a reusable "boot backend stack" step and three matrixed jobs: `web` (Linux + Chromium), `android` (Linux + KVM emulator), `ios` (macOS + simulator). All three are required checks on pull requests. iOS macOS-runner cost is accepted now and re-evaluated later.
+### D6 — CI shape: web-only workflow plus a native commit hook
+`.github/workflows/e2e.yml` contains one required `web` job (Linux + Chromium) for affected pull requests. It has a 120-minute timeout, exports the web app, serves it locally, creates URL-configured copies of the shared flows, and runs them sequentially before closing the browser and server. Maestro's `id` selector resolves React Native Web's `data-testid`, so the shared flows retain their stable `testID` selectors. CI leaves Maestro's headless viewport at its default: forcing `1920x1080` made routine commands take minutes and caused the suite to exceed its timeout. Local macOS runs use a normal Maestro Chromium window because its headless driver can report a one-pixel height; cleanup recognizes both headed and headless Maestro Chromium processes.
+
+Native coverage is a version-controlled Husky `.husky/pre-commit` quality gate, installed by the root-package `prepare` script. The hook examines `git diff --cached --name-only` and invokes `npm run test:e2e:mobile` only when a staged path begins with `frontend/`. The runner starts the backend stack once, starts iOS Release with `EXPO_PUBLIC_API_URL=http://localhost:8080` and `--no-bundler`, waits for the release app to install, then stops Expo's headless CLI before running iOS flows serially. It repeats that sequence for Android with `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080`, using a connected device or launching the first installed AVD. This accounts for Expo 54 retaining its headless CLI process after the release app is installed. The runner invokes cleanup before every Maestro command and tears down the stack on success or failure.
 
 ## Risks / Trade-offs
 
 - **R1 — Maestro Web is younger/Chromium-only** → Keep web assertions tolerant: rely on `extendedWaitUntil` with generous timeouts (the WebSocket update is async), select by stable `data-testid`, avoid pixel/layout assertions. Treat cross-browser as out of scope.
+  - **Known limitation (macOS local runs, Maestro 2.8.0):** `launchApp` leaves a second, blank `data:,` browser tab open alongside the real app tab; Maestro's `detectWindowChange` driver logic can latch onto that blank tab instead of the app tab, failing every selector assertion against an empty page (and sometimes hanging instead of exiting). Reproduced with and without the shared dev-client `runFlow` guard, in headed and `--headless` mode, and with both the system Chrome and a Selenium-managed Chrome-for-Testing build (`SE_FORCE_BROWSER_DOWNLOAD=true`) — so it is an upstream driver bug, not something fixable in this repo's flows or scripts. It does not reproduce on the `e2e-web` GitHub Actions job (true headless Chrome on Linux never creates the extra browser-chrome UI target that triggers it), so **`e2e-web` remains the authoritative local+CI web gate**; treat a local macOS web run as a convenience that may need a Maestro update before it's reliable.
 - **R2 — WebSocket timing flake in cross-user tests** → Assert with `extendedWaitUntil` on the post-update state (not fixed sleeps); give the fanout a generous window; ensure actor A is confirmed connected (the app invalidates the query `onOpen`) before actor B writes.
-- **R3 — iOS CI is slow/expensive (sim boot + dev-client build)** → Cache the dev-client build and Maestro; accept cost for now per decision; documented escape hatch is moving iOS to nightly/pre-release later.
-- **R4 — Android emulator flakiness in CI** → Use a known-good emulator action with KVM, headless, and a warm snapshot; retry the emulator boot, not the assertions.
+- **R3 — Native E2E lengthens frontend commits** → The gate only triggers when staged paths are under `frontend/`, runs the platforms serially to protect Maestro, and can also be started directly with `npm run test:e2e:mobile` before staging.
+- **R4 — Native device/toolchain availability is local** → The gate makes missing/failed simulator, emulator, Docker, Expo, or Maestro setup fail visibly before the commit; Husky installs the gate during normal root-package installation.
 - **R5 — Local-echo suppression regressions** ([useCharacters.ts](frontend/hooks/useCharacters.ts)) → Include an explicit cross-user case where actor A edits its own character and must see exactly one applied change (no double-apply from the echoed event).
 - **R6 — Missing/unstable testIDs on some crucial-path elements** → Audit the room + character-lifecycle screens during implementation; add `testID`s where needed (prop-only, no behavior change) rather than selecting by translated text (i18n makes text brittle).
 
 ## Migration Plan
 
-Additive only — no runtime/app behavior changes. Land the harness + flows + docs, then add `e2e.yml` as a required PR check once green on all three platforms. Rollback = remove/de-require the workflow; no production surface is touched.
+Additive only — no runtime/app behavior changes. Land the harness + flows + docs, make `e2e-web` the required PR check, and let Husky install the version-controlled hook during root-package installation. Rollback = remove/de-require the web workflow and the Husky hook; no production surface is touched.
 
 ## Open Questions
 

@@ -1,0 +1,16 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: join-room.yaml
+- extendedWaitUntil:
+    visible:
+      id: room-websocket-connected
+    timeout: 20000
+- runScript:
+    file: actor-b-create.js
+    env:
+      API_URL: ${API_URL}
+      ROOM_ID: ${ROOM_ID}
+      ACTOR_B_USER_ID: ${ACTOR_B_USER_ID}
+- extendedWaitUntil:
+    visible: Actor B
+    timeout: 20000

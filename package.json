@@ -3,11 +3,19 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "prepare": "husky",
     "screenshots:seed": "node scripts/seed-app-store-room.mjs",
     "screenshots:app-store": "node scripts/capture-app-store-screenshots.mjs",
     "screenshots:google-play": "node scripts/capture-google-play-screenshots.mjs",
     "coverage:frontend": "npm --prefix frontend run test:coverage",
     "coverage:backend": "npm --prefix backend run test:coverage",
-    "coverage": "npm run coverage:frontend && npm run coverage:backend && node scripts/coverage-combined.mjs"
+    "coverage": "npm run coverage:frontend && npm run coverage:backend && node scripts/coverage-combined.mjs",
+    "e2e:stack:start": "node scripts/e2e/start-stack.mjs",
+    "e2e:stack:stop": "node scripts/e2e/stop-stack.mjs",
+    "e2e:ids": "node scripts/e2e/ids.mjs",
+    "test:e2e:mobile": "bash scripts/e2e/run-mobile-quality-gate.sh"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }

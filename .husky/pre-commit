@@ -1,0 +1,6 @@
+if git diff --cached --name-only | grep -q '^frontend/'; then
+  echo "Running mobile E2E: staged frontend changes detected."
+  npm run test:e2e:mobile
+else
+  echo "Skipping mobile E2E: no staged frontend changes."
+fi

@@ -57,7 +57,7 @@ export default function CreateCharacterModal({
       visible={visible}
       onRequestClose={onCancel}
     >
-      <View style={styles.overlay}>
+      <View style={styles.overlay} testID="create-character-modal">
         <View style={styles.container}>
           <ScrollView
             style={styles.content}
@@ -148,6 +148,7 @@ export default function CreateCharacterModal({
               style={styles.button}
               onPress={handleCreate}
               activeOpacity={0.7}
+              testID="confirm-create-character-button"
             >
               <ButtonLabel style={styles.buttonText}>{t('common.create')}</ButtonLabel>
             </TouchableOpacity>
@@ -156,6 +157,7 @@ export default function CreateCharacterModal({
               style={styles.button}
               onPress={onCancel}
               activeOpacity={0.7}
+              testID="cancel-create-character-button"
             >
               <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
             </TouchableOpacity>

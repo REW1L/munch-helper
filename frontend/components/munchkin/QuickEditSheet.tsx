@@ -238,11 +238,11 @@ export default function QuickEditSheet({
           <View style={styles.stepperRow}>
             <Text style={styles.label}>{t('quickEdit.level')}</Text>
             <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('level', -1)}>
+              <TouchableOpacity testID="quick-edit-level-decrease" style={styles.stepperButton} onPress={() => applyStep('level', -1)}>
                 <Text style={styles.stepperButtonText}>−</Text>
               </TouchableOpacity>
               <Text style={styles.value}>{draftStats.level}</Text>
-              <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('level', 1)}>
+              <TouchableOpacity testID="quick-edit-level-increase" style={styles.stepperButton} onPress={() => applyStep('level', 1)}>
                 <Text style={styles.stepperButtonText}>+</Text>
               </TouchableOpacity>
             </View>
@@ -251,21 +251,21 @@ export default function QuickEditSheet({
           <View style={styles.stepperRow}>
             <Text style={styles.label}>{t('quickEdit.power')}</Text>
             <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('power', -1)}>
+              <TouchableOpacity testID="quick-edit-power-decrease" style={styles.stepperButton} onPress={() => applyStep('power', -1)}>
                 <Text style={styles.stepperButtonText}>−</Text>
               </TouchableOpacity>
               <Text style={styles.value}>{draftStats.power}</Text>
-              <TouchableOpacity style={styles.stepperButton} onPress={() => applyStep('power', 1)}>
+              <TouchableOpacity testID="quick-edit-power-increase" style={styles.stepperButton} onPress={() => applyStep('power', 1)}>
                 <Text style={styles.stepperButtonText}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity onPress={handleOpenFullEdit} style={styles.secondaryAction}>
+            <TouchableOpacity testID="quick-edit-open-full-edit" onPress={handleOpenFullEdit} style={styles.secondaryAction}>
               <ButtonLabel style={styles.secondaryActionText}>{t('quickEdit.editMore')}</ButtonLabel>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleSave} style={styles.primaryAction} disabled={isSaving}>
+            <TouchableOpacity testID="quick-edit-save" onPress={handleSave} style={styles.primaryAction} disabled={isSaving}>
               <ButtonLabel style={styles.primaryActionText}>{isSaving ? t('quickEdit.saving') : t('quickEdit.save')}</ButtonLabel>
             </TouchableOpacity>
           </View>

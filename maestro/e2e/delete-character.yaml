@@ -1,0 +1,45 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: create-character.yaml
+- tapOn:
+    id: change-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: web-delete-character-button
+      - extendedWaitUntil:
+          visible: Delete
+          timeout: 5000
+      - tapOn: Delete
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: change-character-modal
+          timeout: 10000
+      - scrollUntilVisible:
+          element:
+            id: delete-character-button
+          direction: DOWN
+      - tapOn:
+          id: delete-character-button
+      - extendedWaitUntil:
+          visible: Delete
+          timeout: 5000
+      - tapOn: Delete
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: ios-delete-character-button
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "66%, 54%"
+- extendedWaitUntil:
+    notVisible: E2E Created
+    timeout: 20000

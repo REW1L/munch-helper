@@ -1,0 +1,58 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: create-character.yaml
+- tapOn:
+    id: change-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Renamed
+      - tapOn:
+          id: save-character-button
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: quick-edit-sheet
+          commands:
+            - tapOn:
+                id: quick-edit-level-increase
+            - tapOn:
+                id: quick-edit-save
+            - extendedWaitUntil:
+                visible: "2"
+                timeout: 10000
+            - tapOn:
+                id: change-character-button
+            - tapOn:
+                id: quick-edit-open-full-edit
+      - tapOn:
+          id: edit-character-name-input
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Renamed
+      - hideKeyboard
+      - tapOn:
+          id: save-character-button
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: edit-character-name-input
+      - eraseText
+      - inputText: E2E Renamed
+      - pressKey: ENTER
+      - tapOn:
+          id: save-character-button
+- extendedWaitUntil:
+    visible: "E2E Renamed.*"
+    timeout: 20000

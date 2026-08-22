@@ -1,0 +1,26 @@
+appId: click.helpamunch.mobileapp
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "http://.*:8081"
+    commands:
+      - tapOn:
+          text: "http://.*:8081"
+      - tapOn: Continue
+      - tapOn: Close
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-rooms
+    timeout: 30000
+- tapOn:
+    id: screenshot-open-rooms
+- tapOn:
+    id: create-room-button
+- tapOn:
+    id: confirm-create-room-button
+- extendedWaitUntil:
+    visible:
+      id: create-character-button
+    timeout: 20000
