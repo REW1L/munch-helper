@@ -12,7 +12,7 @@ The app is one Expo codebase shipped to three platforms (iOS, Android, web via r
   - Room lifecycle: create a room, join a room by id, land in the character list.
   - Character lifecycle: create, edit/quick-edit, change (name/avatar), delete a character.
   - Cross-user character updates: actor B **creates / updates / deletes** a character while actor A is on the room screen → actor A's list reflects the change (WebSocket-driven), including that actor A's own edits are not double-applied (local-echo suppression).
-- **Web CI and native commit gate**: `.github/workflows/e2e.yml` runs the exported web suite as the required `e2e-web` pull-request check. A version-controlled Git pre-commit hook detects staged paths under `frontend/` and runs iOS followed by Android locally, serially, against the local backend stack. This preserves native coverage while avoiding hosted simulator/emulator cost and instability.
+- **Web CI and native commit gate**: `.github/workflows/e2e.yml` runs the exported web suite as the required `e2e-web` pull-request check. A standard Husky pre-commit hook detects staged paths under `frontend/` and runs iOS followed by Android locally, serially, against the local backend stack. This preserves native coverage while avoiding hosted simulator/emulator cost and instability.
 - **Documentation**: a testing guide covering how to run the suite locally per platform (including the Android emulator host `10.0.2.2` gotcha and web `--url` against the exported web build) and how to add new flows.
 
 ## Capabilities

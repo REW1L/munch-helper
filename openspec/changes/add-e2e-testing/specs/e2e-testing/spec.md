@@ -106,7 +106,7 @@ The E2E suite SHALL run the exported web app in CI as the required `e2e-web` che
 #### Scenario: Frontend commit runs native E2E
 
 - **WHEN** a developer attempts a commit with staged changes under `frontend/`
-- **THEN** the version-controlled pre-commit gate SHALL run iOS E2E followed by Android E2E against the local backend stack, and the commit SHALL fail if either platform fails
+- **THEN** the Husky pre-commit gate SHALL run iOS E2E followed by Android E2E against the local backend stack, and the commit SHALL fail if either platform fails
 
 #### Scenario: Non-frontend commit skips native E2E
 

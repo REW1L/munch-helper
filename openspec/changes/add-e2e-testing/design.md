@@ -49,20 +49,20 @@ Each test generates a unique `roomId` and `userId` (e.g., timestamp/uuid suffix)
 ### D6 — CI shape: web-only workflow plus a native commit hook
 `.github/workflows/e2e.yml` contains one required `web` job (Linux + Chromium) for affected pull requests. It exports the web app, serves it locally, and runs flows sequentially before closing the browser and server.
 
-Native coverage is a version-controlled `.githooks/pre-commit` quality gate. Root-package installation configures Git's `core.hooksPath` to `.githooks`; the hook examines `git diff --cached --name-only` and invokes `npm run test:e2e:mobile` only when a staged path begins with `frontend/`. The runner starts the backend stack once, builds iOS Release with `EXPO_PUBLIC_API_URL=http://localhost:8080`, runs iOS flows serially, then builds Android release with `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080` and runs Android flows serially. It invokes cleanup before every Maestro command and tears down the stack on success or failure.
+Native coverage is a version-controlled Husky `.husky/pre-commit` quality gate, installed by the root-package `prepare` script. The hook examines `git diff --cached --name-only` and invokes `npm run test:e2e:mobile` only when a staged path begins with `frontend/`. The runner starts the backend stack once, builds iOS Release with `EXPO_PUBLIC_API_URL=http://localhost:8080`, runs iOS flows serially, then builds Android release with `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080` and runs Android flows serially. It invokes cleanup before every Maestro command and tears down the stack on success or failure.
 
 ## Risks / Trade-offs
 
 - **R1 — Maestro Web is younger/Chromium-only** → Keep web assertions tolerant: rely on `extendedWaitUntil` with generous timeouts (the WebSocket update is async), select by stable `data-testid`, avoid pixel/layout assertions. Treat cross-browser as out of scope.
 - **R2 — WebSocket timing flake in cross-user tests** → Assert with `extendedWaitUntil` on the post-update state (not fixed sleeps); give the fanout a generous window; ensure actor A is confirmed connected (the app invalidates the query `onOpen`) before actor B writes.
 - **R3 — Native E2E lengthens frontend commits** → The gate only triggers when staged paths are under `frontend/`, runs the platforms serially to protect Maestro, and can also be started directly with `npm run test:e2e:mobile` before staging.
-- **R4 — Native device/toolchain availability is local** → The gate makes missing/failed simulator, emulator, Docker, Expo, or Maestro setup fail visibly before the commit; the guide documents prerequisites and explicit hook installation for checkouts that skipped install scripts.
+- **R4 — Native device/toolchain availability is local** → The gate makes missing/failed simulator, emulator, Docker, Expo, or Maestro setup fail visibly before the commit; Husky installs the gate during normal root-package installation.
 - **R5 — Local-echo suppression regressions** ([useCharacters.ts](frontend/hooks/useCharacters.ts)) → Include an explicit cross-user case where actor A edits its own character and must see exactly one applied change (no double-apply from the echoed event).
 - **R6 — Missing/unstable testIDs on some crucial-path elements** → Audit the room + character-lifecycle screens during implementation; add `testID`s where needed (prop-only, no behavior change) rather than selecting by translated text (i18n makes text brittle).
 
 ## Migration Plan
 
-Additive only — no runtime/app behavior changes. Land the harness + flows + docs, make `e2e-web` the required PR check, and install the version-controlled hook during root-package installation. Rollback = remove/de-require the web workflow and unset `core.hooksPath`; no production surface is touched.
+Additive only — no runtime/app behavior changes. Land the harness + flows + docs, make `e2e-web` the required PR check, and let Husky install the version-controlled hook during root-package installation. Rollback = remove/de-require the web workflow and the Husky hook; no production surface is touched.
 
 ## Open Questions
 

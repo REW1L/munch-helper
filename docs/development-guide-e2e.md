@@ -14,11 +14,7 @@ Keep this backend stack running for the entire iOS, Android, or web E2E run. The
 
 ## Mobile commit quality gate
 
-Git installs the repository hook automatically when you run `npm install` or `npm ci` at the repository root. For an existing checkout where install scripts were skipped, install it explicitly:
-
-```sh
-npm run hooks:install
-```
+Husky installs the repository hook automatically when you run `npm install` or `npm ci` at the repository root.
 
 When staged changes include a path under `frontend/`, `git commit` runs the iOS suite followed by the Android suite. The gate starts the backend stack, builds each release app with the platform-specific API URL, and runs Maestro flows one at a time. It always stops Maestro and the stack before returning. Commits without staged `frontend/` changes skip the mobile suite.
 

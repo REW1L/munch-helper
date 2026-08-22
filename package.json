@@ -3,8 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "hooks:install": "node scripts/install-git-hooks.mjs",
-    "prepare": "npm run hooks:install",
+    "prepare": "husky",
     "screenshots:seed": "node scripts/seed-app-store-room.mjs",
     "screenshots:app-store": "node scripts/capture-app-store-screenshots.mjs",
     "screenshots:google-play": "node scripts/capture-google-play-screenshots.mjs",
@@ -15,5 +14,8 @@
     "e2e:stack:stop": "node scripts/e2e/stop-stack.mjs",
     "e2e:ids": "node scripts/e2e/ids.mjs",
     "test:e2e:mobile": "bash scripts/e2e/run-mobile-quality-gate.sh"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
   }
 }
