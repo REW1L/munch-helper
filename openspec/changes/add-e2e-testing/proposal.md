@@ -1,6 +1,6 @@
 ## Why
 
-The app is one Expo codebase shipped to three platforms (iOS, Android, web via react-native-web) backed by six microservices, and its defining feature is real-time cross-user updates over WebSocket — yet there is no end-to-end test that exercises a crucial user path against the running stack, and nothing that verifies "another user changed their character and my screen updated." Unit/component tests (vitest) and the existing Maestro flows (built for store screenshots) do not cover these journeys, so regressions in navigation, the room/character lifecycle, or the WebSocket fanout can reach production unnoticed. This change establishes a single-tool E2E suite that runs the same flows on all three platforms and gates every PR.
+The app is one Expo codebase shipped to three platforms (iOS, Android, web via react-native-web) backed by six microservices, and its defining feature is real-time cross-user updates over WebSocket — yet there is no end-to-end test that exercises a crucial user path against the running stack, and nothing that verifies "another user changed their character and my screen updated." Unit/component tests (vitest) and the existing Maestro flows (built for store screenshots) do not cover these journeys, so regressions in navigation, the room/character lifecycle, or the WebSocket fanout can reach production unnoticed. This change establishes a single-tool E2E suite that runs the same flows on all three platforms, with web gated in pull requests and native coverage gated before frontend commits.
 
 ## What Changes
 
@@ -12,13 +12,13 @@ The app is one Expo codebase shipped to three platforms (iOS, Android, web via r
   - Room lifecycle: create a room, join a room by id, land in the character list.
   - Character lifecycle: create, edit/quick-edit, change (name/avatar), delete a character.
   - Cross-user character updates: actor B **creates / updates / deletes** a character while actor A is on the room screen → actor A's list reflects the change (WebSocket-driven), including that actor A's own edits are not double-applied (local-echo suppression).
-- **CI on every PR**: a new `.github/workflows/e2e.yml` runs the suite on all three platforms (web + Android on Linux runners, iOS on a macOS runner) as a required check on pull requests. iOS runner cost is accepted for now and will be re-evaluated later.
+- **Web CI and native commit gate**: `.github/workflows/e2e.yml` runs the exported web suite as the required `e2e-web` pull-request check. A version-controlled Git pre-commit hook detects staged paths under `frontend/` and runs iOS followed by Android locally, serially, against the local backend stack. This preserves native coverage while avoiding hosted simulator/emulator cost and instability.
 - **Documentation**: a testing guide covering how to run the suite locally per platform (including the Android emulator host `10.0.2.2` gotcha and web `--url` against the exported web build) and how to add new flows.
 
 ## Capabilities
 
 ### New Capabilities
-- `e2e-testing`: Defines the end-to-end test deliverable — the single-tool (Maestro) cross-platform strategy, the local full-stack harness and test isolation model, the API-injected actor-B mechanism for cross-user scenarios, the first-cut crucial-path flow coverage (room + character lifecycle + cross-user character updates), and the CI gating requirement across iOS/Android/web on every PR.
+- `e2e-testing`: Defines the end-to-end test deliverable — the single-tool (Maestro) cross-platform strategy, the local full-stack harness and test isolation model, the API-injected actor-B mechanism for cross-user scenarios, the first-cut crucial-path flow coverage (room + character lifecycle + cross-user character updates), web CI gating, and the native commit gate for staged frontend changes.
 
 ### Modified Capabilities
 <!-- No existing spec covers testing or CI; this is net-new. -->
@@ -29,5 +29,5 @@ The app is one Expo codebase shipped to three platforms (iOS, Android, web via r
 - **Backend/API**: no code changes — uses the existing local stack (`docker-compose.local.yml`, nginx `/ws`) and existing endpoints (`/rooms`, `/characters`).
 - **App code**: none for the first cut, unless a specific crucial-path element lacks a stable `testID` — any additions are limited to `testID` props (no behavior change). To be confirmed during design/implementation.
 - **Frontend build (web)**: E2E web job runs `expo export --platform web` and serves the static output for Maestro to drive.
-- **CI cost**: adds an iOS macOS-runner job to every PR; cost accepted now, re-evaluated later (possible move to nightly/pre-release if it proves expensive).
+- **CI cost**: adds only a Linux web E2E job to affected pull requests. Native E2E uses the developer's local simulator/emulator before commits that stage `frontend/` changes.
 - **Out of scope (separate changes)**: battle flow, shop, log view, and other paths; two-live-client cross-user tests (second driven device); cross-browser web (Maestro Web is Chromium-only); localization/visual-regression assertions.

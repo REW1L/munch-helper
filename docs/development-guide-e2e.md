@@ -10,7 +10,25 @@ Install Docker (Docker Desktop or Colima on macOS), Node 24, a current Maestro C
 npm run e2e:stack:start
 ```
 
-Keep this backend stack running for the entire iOS, Android, or web E2E run. The command waits for the nginx gateway at `http://localhost:8080/health` and the required services. Stop it when finished with `npm run e2e:stack:stop`. CI starts and stops an isolated stack separately in each platform job and additionally drops volumes, so every run begins with an empty database.
+Keep this backend stack running for the entire iOS, Android, or web E2E run. The command waits for the nginx gateway at `http://localhost:8080/health` and the required services. Stop it when finished with `npm run e2e:stack:stop`. The web CI job and the local mobile commit gate each start and stop their own isolated stack, so every automated run begins with an empty database.
+
+## Mobile commit quality gate
+
+Git installs the repository hook automatically when you run `npm install` or `npm ci` at the repository root. For an existing checkout where install scripts were skipped, install it explicitly:
+
+```sh
+npm run hooks:install
+```
+
+When staged changes include a path under `frontend/`, `git commit` runs the iOS suite followed by the Android suite. The gate starts the backend stack, builds each release app with the platform-specific API URL, and runs Maestro flows one at a time. It always stops Maestro and the stack before returning. Commits without staged `frontend/` changes skip the mobile suite.
+
+Run the exact gate directly when you want to check it before staging:
+
+```sh
+npm run test:e2e:mobile
+```
+
+The gate requires an available iOS simulator and Android emulator, Docker, Expo native toolchains, and Maestro. As with every local Git hook, `git commit --no-verify` bypasses it; do not use that bypass for frontend changes.
 
 Each run needs a new room and two users. Generate a ready-to-source fixture after the stack is running:
 
@@ -61,3 +79,7 @@ The web driver requires a URL in each flow, while native flows require an app id
 ## Add a flow
 
 Add YAML under `maestro/e2e/` and select controls by `id` whenever an app `testID` exists. Keep it platform-neutral, launch with `clearState`, and use `extendedWaitUntil` for asynchronous UI or WebSocket updates. If a needed control has no stable ID, add a prop-only `testID` and verify the web build exposes it as `data-testid`. For cross-user coverage, wait for `room-websocket-connected`, then use a `runScript` actor-B request and assert the UI update—never use a fixed sleep.
+
+## CI
+
+GitHub Actions runs the exported web suite as the `e2e-web` required check. Native E2E is intentionally local: the commit hook protects frontend changes without the emulator/simulator cost and instability of hosted mobile runners.

@@ -37,12 +37,20 @@
 
 - [x] 6.1 Add `.github/workflows/e2e.yml` with a reusable "boot backend stack" step
 - [x] 6.2 Web job on a Linux runner (export + serve + Chromium)
-- [x] 6.3 Android job on a Linux runner (KVM emulator, warm snapshot, boot retry)
-- [x] 6.4 iOS job on a macOS runner (simulator + dev-client build, with build/Maestro caching)
-- [x] 6.5 Make all three jobs required checks on pull requests
-- [x] 6.6 Stabilize: run the workflow until green on all three platforms without retry-on-assertion flakiness
+- [x] 6.3 Remove the Android GitHub Actions job and run Android E2E in the staged-frontend commit gate
+- [x] 6.4 Remove the iOS GitHub Actions job and run iOS E2E in the staged-frontend commit gate
+- [x] 6.5 Keep `e2e-web` as the required pull-request E2E check
+- [x] 6.6 Keep the web suite serialized and ensure it closes browser and server processes after every run
 
 ## 7. Documentation
 
 - [x] 7.1 Add an E2E testing guide (how to boot the stack and run flows per platform, the Android `10.0.2.2` gotcha, the web export/serve steps, and how to add a new flow)
 - [x] 7.2 Link the guide from `docs/index.md`
+
+## 8. Web CI and native commit gate
+
+- [x] 8.1 Reduce the GitHub Actions E2E workflow to the web `e2e-web` job, retaining its 60-minute timeout and teardown
+- [x] 8.2 Add an installable, version-controlled pre-commit hook that runs only when staged paths include `frontend/`
+- [x] 8.3 Add a serial iOS-then-Android local runner that starts the backend stack, uses the platform-specific release URLs, and cleans up Maestro and the stack on exit
+- [x] 8.4 Update the proposal, design, specification, and E2E guide to describe web CI and the native commit quality gate
+- [x] 8.5 Validate the hook filtering, runner syntax, workflow shape, and OpenSpec change
