@@ -55,7 +55,7 @@
 - [x] 8.4 Update the proposal, design, specification, and E2E guide to describe web CI and the native commit quality gate
 - [x] 8.5 Validate the hook filtering, runner syntax, workflow shape, and OpenSpec change
 - [x] 8.6 Ensure release native builds disable the Expo development bundler, release Expo's retained headless CLI, and launch an installed Android AVD when no device is connected before serial Maestro runs
-- [ ] 8.7 Run the iOS, Android, and web E2E suites locally after the native runner fix
+- [x] 8.7 Run the iOS, Android, and web E2E suites locally after the native runner fix
 - [x] 8.8 Set an explicit headless Chromium viewport for Maestro web flows so selectors are visible locally and in CI
 - [x] 8.9 Close headed Maestro Chromium processes too, allowing macOS local web E2E to avoid its headless one-pixel viewport limitation
 - [x] 8.10 Generate web flow copies with CSS `[data-testid]` selectors, because Maestro's `id` selector targets HTML `id` rather than React Native Web `testID`
