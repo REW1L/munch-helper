@@ -4,7 +4,7 @@ set -euo pipefail
 
 (
   cd frontend
-  EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache
+  EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache --no-bundler
 )
 
 for flow in maestro/e2e/*.yaml; do

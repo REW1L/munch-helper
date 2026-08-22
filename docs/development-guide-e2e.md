@@ -24,7 +24,7 @@ Run the exact gate directly when you want to check it before staging:
 npm run test:e2e:mobile
 ```
 
-The gate requires an available iOS simulator and Android emulator, Docker, Expo native toolchains, and Maestro. As with every local Git hook, `git commit --no-verify` bypasses it; do not use that bypass for frontend changes.
+The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). As with every local Git hook, `git commit --no-verify` bypasses it; do not use that bypass for frontend changes.
 
 Each run needs a new room and two users. Generate a ready-to-source fixture after the stack is running:
 
@@ -46,7 +46,7 @@ maestro test -e API_URL="$API_URL" -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -
 For iOS, build/run the dev client with `EXPO_PUBLIC_API_URL=http://localhost:8080`; the simulator can reach the host via `localhost`.
 
 ```sh
-(cd frontend && EXPO_PUBLIC_API_URL=http://localhost:8080 EXPO_PUBLIC_E2E=true npx expo run:ios --configuration Release --no-build-cache)
+(cd frontend && EXPO_PUBLIC_API_URL=http://localhost:8080 EXPO_PUBLIC_E2E=true npx expo run:ios --configuration Release --no-build-cache --no-bundler)
 node scripts/e2e/cleanup.mjs
 maestro test -p ios -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" maestro/e2e
 ```
@@ -54,7 +54,7 @@ maestro test -p ios -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e US
 For Android, the release app uses `10.0.2.2`, the emulator's alias for the host machine. Maestro actor scripts run on the host, so keep their API URL as `localhost`.
 
 ```sh
-(cd frontend && EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache)
+(cd frontend && EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true npx expo run:android --variant release --no-build-cache --no-bundler)
 node scripts/e2e/cleanup.mjs
 maestro test -p android -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" maestro/e2e
 ```
@@ -66,11 +66,11 @@ For web, export and serve the static bundle, then point Maestro's web driver at 
 (cd frontend && npx serve dist -l 19006 > /tmp/munch-e2e-web-server.log 2>&1) & echo $! > /tmp/munch-e2e-web-server.pid
 node scripts/e2e/prepare-web-flows.mjs --output /tmp/munch-maestro-web --url http://localhost:19006
 node scripts/e2e/cleanup.mjs
-maestro test -p web --headless -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" /tmp/munch-maestro-web/join-room.yaml
+maestro test -p web -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" /tmp/munch-maestro-web/join-room.yaml
 node scripts/e2e/cleanup.mjs
 ```
 
-The web driver requires a URL in each flow, while native flows require an app id. `prepare-web-flows.mjs` creates a temporary URL-configured copy without maintaining a second authored suite. Run the flows sequentially with a fresh `prepare-room.mjs` fixture per flow in CI.
+The web driver requires a URL in each flow, while native flows require an app id. `prepare-web-flows.mjs` creates a temporary URL-configured copy without maintaining a second authored suite. It also converts each shared `id` selector into a CSS `[data-testid="…"]` selector, matching React Native Web's DOM output. Local macOS runs use a normal Chromium window because Maestro's headless driver can report a one-pixel height; CI uses `--headless --screen-size 1920x1080`. The cleanup command closes the Maestro Chromium window after every flow. Run the flows sequentially with a fresh `prepare-room.mjs` fixture per flow in CI.
 
 ## Add a flow
 

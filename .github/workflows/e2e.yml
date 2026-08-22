@@ -51,7 +51,7 @@ jobs:
           for flow in /tmp/munch-maestro-web/*.yaml; do
             eval "$(node scripts/e2e/prepare-room.mjs)"
             E2E_KEEP_WEB_SERVER=true node scripts/e2e/cleanup.mjs
-            "$HOME/.maestro/bin/maestro" test -p web --headless -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
+            "$HOME/.maestro/bin/maestro" test -p web --headless --screen-size 1920x1080 -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
           done
       - name: Stop web server and browser
         if: always()

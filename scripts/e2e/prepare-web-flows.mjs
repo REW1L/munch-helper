@@ -20,7 +20,12 @@ for (const entry of await readdir(root)) {
   const destination = path.join(output, entry);
   if (entry.endsWith('.yaml')) {
     const contents = await readFile(source, 'utf8');
-    await writeFile(destination, contents.replace(/^appId: .*$/m, `url: ${url}`));
+    const webFlow = contents
+      .replace(/^appId: .*$/m, `url: ${url}`)
+      .replace(/^(\s*)id: ([^\r\n]+)$/gm, (_match, indentation, testId) => (
+        `${indentation}css: '[data-testid="${testId.trim()}"]'`
+      ));
+    await writeFile(destination, webFlow);
   } else {
     await cp(source, destination, { recursive: true });
   }

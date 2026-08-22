@@ -28,8 +28,8 @@ const addProcessTree = (pid) => {
 for (const process of processes) {
   const shellProcess = /(?:^|\/)(?:bash|sh|zsh)(?:\s|$)/.test(process.command);
   const maestroTest = !shellProcess && /maestro(?:-cli)?/.test(process.command) && /\btest\b/.test(process.command);
-  const headlessChromium = /(?:Google Chrome|Chromium)/i.test(process.command) && /--headless/.test(process.command) && /org\.chromium\.Chromium\.scoped_dir/.test(process.command);
-  if (maestroTest || headlessChromium) addProcessTree(process.pid);
+  const maestroChromium = /(?:Google Chrome|Chromium)/i.test(process.command) && /org\.chromium\.Chromium\.scoped_dir/.test(process.command);
+  if (maestroTest || maestroChromium) addProcessTree(process.pid);
 }
 
 if (!keepWebServer) {
