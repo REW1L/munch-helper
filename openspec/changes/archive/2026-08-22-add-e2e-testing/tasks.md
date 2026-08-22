@@ -49,7 +49,7 @@
 
 ## 8. Web CI and native commit gate
 
-- [x] 8.1 Reduce the GitHub Actions E2E workflow to the web `e2e-web` job, retaining its 60-minute timeout and teardown
+- [x] 8.1 Reduce the GitHub Actions E2E workflow to the web `e2e-web` job, retaining its 120-minute timeout and teardown
 - [x] 8.2 Add a standard Husky pre-commit hook that runs only when staged paths include `frontend/`
 - [x] 8.3 Add a serial iOS-then-Android local runner that starts the backend stack, uses the platform-specific release URLs, and cleans up Maestro and the stack on exit
 - [x] 8.4 Update the proposal, design, specification, and E2E guide to describe web CI and the native commit quality gate

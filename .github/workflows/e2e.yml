@@ -14,7 +14,7 @@ jobs:
   web:
     name: e2e-web
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -96,12 +96,12 @@ The suite SHALL cover an external actor ("actor B"), injected via direct HTTP ca
 
 ### Requirement: Web CI gating and native frontend commit gate
 
-The E2E suite SHALL run the exported web app in CI as the required `e2e-web` check on affected pull requests. iOS and Android E2E SHALL run locally, in that order and without concurrent Maestro commands, before a commit that stages one or more paths under `frontend/`. The native gate SHALL start and stop the local backend stack and use `http://localhost:8080` for the iOS build and `http://10.0.2.2:8080` for the Android build. The suite SHALL remain runnable locally on each platform, with documented setup including the Android emulator host address and the web export/serve steps.
+The E2E suite SHALL run the exported web app in CI as the required `e2e-web` check on affected pull requests, with a 120-minute job timeout. iOS and Android E2E SHALL run locally, in that order and without concurrent Maestro commands, before a commit that stages one or more paths under `frontend/`. The native gate SHALL start and stop the local backend stack and use `http://localhost:8080` for the iOS build and `http://10.0.2.2:8080` for the Android build. The suite SHALL remain runnable locally on each platform, with documented setup including the Android emulator host address and the web export/serve steps.
 
 #### Scenario: PR is gated by web E2E
 
 - **WHEN** a pull request is opened or updated
-- **THEN** the exported web E2E suite SHALL run as the required `e2e-web` check
+- **THEN** the exported web E2E suite SHALL run as the required `e2e-web` check with a 120-minute job timeout
 
 #### Scenario: Frontend commit runs native E2E
 
