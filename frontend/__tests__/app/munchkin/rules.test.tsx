@@ -67,6 +67,7 @@ describe('Munchkin rules route', () => {
     expect(screen.getByText(/competitive card game/i)).toBeTruthy();
     expect(screen.getByText(/original summary/i)).toBeTruthy();
     expect(screen.getByTestId('munchkin-rules-scroll')).toBeTruthy();
+    expect(screen.getByTestId('jump-to-official-rules-source')).toBeTruthy();
 
     for (const heading of EXPECTED_HEADINGS) {
       expect(screen.getByRole('heading', { name: heading, level: 2 })).toBeTruthy();

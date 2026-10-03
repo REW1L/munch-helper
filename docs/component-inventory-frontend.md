@@ -6,7 +6,7 @@ This is a categorized inventory of every React component the frontend ships, wit
 
 ### Munchkin Classic rules (`app/munchkin/rules.tsx`)
 
-Scrollable, localized guide opened by the Rules action on the Munchkin Classic game tile. The screen owns its fixed section ordering, semantic heading hierarchy, summary notice, and accessible source link. Its content is an original description of play rather than embedded or copied rulebook material; `Linking.openURL` delegates the official PDF to the platform, and a rejected open is logged without taking down the view.
+Scrollable, localized guide opened by the Rules action on the Munchkin Classic game tile. The screen owns its fixed section ordering, semantic heading hierarchy, summary notice, an in-page jump to the source section, and the accessible external source link. Its content is an original description of play rather than embedded or copied rulebook material; `Linking.openURL` delegates the official PDF to the platform, and a rejected open is logged without taking down the view.
 
 ## App-shell Components
 

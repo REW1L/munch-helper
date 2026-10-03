@@ -50,10 +50,8 @@ appId: click.helpamunch.mobileapp
     when:
       platform: Web
     commands:
-      - repeat:
-          times: 12
-          commands:
-            - scroll
+      - tapOn:
+          id: jump-to-official-rules-source
 - assertVisible:
     id: official-rules-source
 - runFlow:
