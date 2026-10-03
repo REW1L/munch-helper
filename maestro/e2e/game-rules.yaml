@@ -57,6 +57,6 @@ appId: click.helpamunch.mobileapp
     when:
       platform: Web
     commands:
-      - tapOn: Games
+      - back
 - assertVisible:
     id: open-munchkin-rules
