@@ -51,12 +51,9 @@ appId: click.helpamunch.mobileapp
       platform: Web
     commands:
       - repeat:
-          times: 8
+          times: 12
           commands:
-            - swipe:
-                start: 50%, 80%
-                end: 50%, 20%
-                duration: 500
+            - scroll
 - assertVisible:
     id: official-rules-source
 - runFlow:
