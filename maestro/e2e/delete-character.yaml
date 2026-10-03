@@ -10,11 +10,9 @@ appId: click.helpamunch.mobileapp
       - tapOn:
           id: web-delete-character-button
       - extendedWaitUntil:
-          visible:
-            id: confirm-dialog-confirm
+          visible: Delete
           timeout: 5000
-      - tapOn:
-          id: confirm-dialog-confirm
+      - tapOn: Delete
 - runFlow:
     when:
       platform: Android
