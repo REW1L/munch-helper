@@ -54,11 +54,6 @@ export default function MunchkinRulesPage() {
         <Text accessibilityRole="header" aria-level={1} style={styles.title}>
           {t('gameRules.title')}
         </Text>
-        <Text style={styles.description}>{t('gameRules.description')}</Text>
-        <View style={styles.notice}>
-          <Text style={styles.noticeText}>{t('gameRules.summaryNotice')}</Text>
-        </View>
-
         <View style={styles.sourceCard}>
           <Text accessibilityRole="header" aria-level={2} style={styles.sourceTitle}>
             {t('gameRules.sourceIntro')}
@@ -72,6 +67,10 @@ export default function MunchkinRulesPage() {
           >
             <Text style={styles.sourceLinkText}>{t('gameRules.sourceLabel')}</Text>
           </TouchableOpacity>
+        </View>
+        <Text style={styles.description}>{t('gameRules.description')}</Text>
+        <View style={styles.notice}>
+          <Text style={styles.noticeText}>{t('gameRules.summaryNotice')}</Text>
         </View>
 
         {RULE_SECTIONS.map(([titleKey, bodyKey]) => (

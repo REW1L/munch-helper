@@ -72,8 +72,8 @@ describe('Munchkin rules route', () => {
       name: 'Source and complete rules',
       level: 2,
     });
-    const firstRuleHeading = screen.getByRole('heading', { name: 'Goal and victory', level: 2 });
-    expect(sourceHeading.compareDocumentPosition(firstRuleHeading)).toBe(
+    const description = screen.getByText(/competitive card game/i);
+    expect(sourceHeading.compareDocumentPosition(description)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
 
