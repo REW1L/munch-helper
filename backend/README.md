@@ -30,7 +30,7 @@ Transport by environment:
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - Docker
 
 ## Local startup

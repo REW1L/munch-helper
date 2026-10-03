@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20+ (CI pins 20). Use `nvm install 20 && nvm use 20` or equivalent.
+- Node.js 24 (CI, containers, and Lambda use 24). Use `nvm install 24 && nvm use 24` or equivalent.
 - npm 10+.
 - Docker + Docker Compose (Compose v2, invoked as `docker compose`).
 - AWS SAM CLI (only required for the SAM local/deploy flows).

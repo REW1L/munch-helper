@@ -19,7 +19,7 @@ This document describes each pipeline end-to-end plus the manual deployment path
 
 - One HTTP API stage `api` with explicit CORS allow-list for `https://helpamunch.click` and the methods `GET, POST, PATCH, DELETE, OPTIONS`.
 - One WebSocket API stage `ws` with `$connect`, `$disconnect`, `$default` routes integrated to `RoomNotificationsFunction`.
-- Six Lambda functions (User, Room, Character, RoomNotifications, Battle, LogReader, LogWriter) on `nodejs20.x`, `arm64`, 512 MB, 15s timeout, X-Ray Active tracing.
+- Six Lambda functions (User, Room, Character, RoomNotifications, Battle, LogReader, LogWriter) on `nodejs24.x`, `arm64`, 512 MB, 15s timeout, X-Ray Active tracing.
 - Two SNS topics (`${stack}-room-character-events`, `${stack}-log-events`) plus per-service IAM roles with least-privilege `sns:Publish`, `execute-api:ManageConnections`, and `AWSLambdaBasicExecutionRole + AWSXRayDaemonWriteAccess` policies.
 - HTTP API event mappings for every public route (see [API Contracts - Backend](./api-contracts-backend.md)).
 - An SNS event source for `RoomNotificationsFunction` (subscribes to `RoomCharacterEventsTopic`) and for `LogWriterFunction` (subscribes to `LogEventsTopic`).

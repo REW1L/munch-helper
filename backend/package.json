@@ -2,6 +2,9 @@
   "name": "munch-helper-backend",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": "24.x"
+  },
   "workspaces": [
     "user-service",
     "room-service",

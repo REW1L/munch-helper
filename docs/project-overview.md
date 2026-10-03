@@ -18,7 +18,7 @@ Multi-part TypeScript monorepo with three independently buildable parts. Top-lev
 
 | Surface | Language | Framework | Data | Real-time | Tests |
 |---|---|---|---|---|---|
-| Backend | Node.js 20 + TypeScript 5.9 | Express 5, Mongoose 8 | MongoDB 7 (per-service DB) | AWS SNS (cloud) / Redis Pub/Sub (local) | Vitest 3.2.4 + supertest |
+| Backend | Node.js 24 + TypeScript 5.9 | Express 5, Mongoose 8 | MongoDB 7 (per-service DB) | AWS SNS (cloud) / Redis Pub/Sub (local) | Vitest 3.2.4 + supertest |
 | Frontend | TypeScript 6.0.3 | Expo 57, Expo Router 57, React 19.2.3, React Native 0.86.3 | TanStack Query 5, AsyncStorage, Zod | Native WebSocket via API Gateway WebSocket (cloud) or `ws` server (local) | Vitest 4.0.18 + Testing Library + jsdom; Maestro for E2E |
 | Infrastructure | TypeScript 5.9 | Pulumi 3.203.0, Pulumi AWS 7.10.0 | S3 (artifact bucket) | n/a | n/a |
 
