@@ -70,7 +70,7 @@ Run these before opening a PR:
 
 ```bash
 npm run lint
-npm run tsc
+npm run typecheck
 npm run test
 ```
 

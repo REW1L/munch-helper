@@ -465,7 +465,11 @@ const styles = StyleSheet.create({
     padding: AppTheme.spacing.xl,
   },
   modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: AppTheme.colors.surfaceSubtle,
     opacity: 0.75,
   },

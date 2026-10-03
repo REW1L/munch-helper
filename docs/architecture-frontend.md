@@ -184,7 +184,7 @@ See [Development Guide - Frontend](./development-guide-frontend.md) for commands
 
 1. `npm ci` (Node 24 in CI).
 2. `npm run lint` (`expo lint`, which is the flat config in `eslint.config.js`).
-3. `npm run tsc` (`tsc --noEmit`).
+3. `npm run typecheck` (`tsc --noEmit`).
 4. `npm run test:coverage` - runs both the unit suite and the room-route suite under coverage.
 5. `EXPO_PUBLIC_API_URL=… npm run export:web --clear` - the artifact is uploaded for the infrastructure deploy step.
 
