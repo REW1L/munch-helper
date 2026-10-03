@@ -26,8 +26,23 @@ appId: click.helpamunch.mobileapp
     visible:
       id: munchkin-rules-scroll
     timeout: 10000
-- assertVisible:
-    id: official-rules-source
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - assertVisible: Source and complete rules
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: official-rules-source
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: official-rules-source
 - runFlow:
     when:
       platform: iOS
