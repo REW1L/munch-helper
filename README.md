@@ -164,6 +164,8 @@ Primary artifact locations in this repo:
 
 OpenSpec is required for every new feature; see `AGENTS.md`. BMAD can provide additional planning context. Recommended full BMAD flow (for new or major work):
 
+OpenSpec workflow instructions for the supported assistants are generated in `.agents/`, `.claude/`, `.cursor/`, `.github/`, and `.kiro/`. To refresh them after upgrading the OpenSpec CLI, run `openspec update` from the repository root and commit the generated changes. Codex reads the shared `.agents/skills/` instructions.
+
 1. Generate/refresh context: `bmad-bmm-generate-project-context`
 2. Plan: `bmad-bmm-create-prd` -> `bmad-bmm-create-ux-design` (if UI changes) -> `bmad-bmm-create-architecture` -> `bmad-bmm-create-epics-and-stories`
 3. Readiness check: `bmad-bmm-check-implementation-readiness`
