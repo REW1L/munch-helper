@@ -18,13 +18,13 @@ Husky installs the repository hook automatically when you run `npm install` or `
 
 When staged changes include a path under `frontend/`, `git commit` runs the iOS suite followed by the Android suite. The gate starts the backend stack, builds each release app with the platform-specific API URL, and runs Maestro flows one at a time. It always stops Maestro and the stack before returning. Commits without staged `frontend/` changes skip the mobile suite.
 
-Run the exact gate directly when you want to check it before staging:
+Run the exact gate directly for every `frontend/` change before opening a PR. Do not rely on the pre-commit hook being installed or triggered:
 
 ```sh
 npm run test:e2e:mobile
 ```
 
-The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). As with every local Git hook, `git commit --no-verify` bypasses it; do not use that bypass for frontend changes.
+The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). If unavailable hardware or tooling blocks a platform, run all other applicable checks, document the exact gap in the PR, and leave it open. `git commit --no-verify` bypasses the hook; do not use that bypass or another hook bypass for frontend changes. A missing or bypassed Git hook does not count as a passing mobile E2E run.
 
 Each run needs a new room and two users. Generate a ready-to-source fixture after the stack is running:
 

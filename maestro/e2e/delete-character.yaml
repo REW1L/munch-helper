@@ -28,9 +28,11 @@ appId: click.helpamunch.mobileapp
       - tapOn:
           id: delete-character-button
       - extendedWaitUntil:
-          visible: Delete
+          visible:
+            id: confirm-dialog-confirm
           timeout: 5000
-      - tapOn: Delete
+      - tapOn:
+          id: confirm-dialog-confirm
 - runFlow:
     when:
       platform: iOS

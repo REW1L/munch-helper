@@ -2,27 +2,27 @@
 
 ## Executive Summary
 
-The frontend is an Expo Router app built with React 19.2 and React Native 0.83.2 that ships to iOS, Android, and the web export. It composes layered modules - `app/` for routes, `hooks/` for orchestration, `api/` for transport, `config/` for runtime validation - on top of TanStack Query for server state and a hand-rolled WebSocket client for real-time updates.
+The frontend is an Expo Router app built with React 19.2.3 and React Native 0.86.3 that ships to iOS, Android, and the web export. It composes layered modules - `app/` for routes, `hooks/` for orchestration, `api/` for transport, `config/` for runtime validation - on top of TanStack Query for server state and a hand-rolled WebSocket client for real-time updates.
 
 ## Technology Stack
 
 | Category | Technology | Version | Notes |
 |---|---|---|---|
 | Runtime | Node.js | 24+ | Local dev only; published artifacts are RN bundles. |
-| Language | TypeScript | ~5.9.2 | `strict: true`, paths alias `@/*` -> repo root. |
-| App framework | Expo | ^55.0.0 | With the `expo-router`, `expo-image`, `expo-haptics`, `expo-clipboard`, `expo-navigation-bar`, `expo-splash-screen`, `expo-web-browser`, `expo-symbols`, `expo-constants`, `expo-font` plugins. |
-| Routing | expo-router | ~55.0.0 | File-system routing under `app/`. Typed routes enabled (`experiments.typedRoutes: true`). |
-| Native | React Native | 0.83.2 | Coordinated with Expo 55 + React 19; do not bump independently. |
-| UI library | React | 19.2.0 | React Compiler enabled (`experiments.reactCompiler: true`). |
+| Language | TypeScript | ~6.0.3 | `strict: true`, paths alias `@/*` -> repo root. |
+| App framework | Expo | ^57.0.26 | With the `expo-router`, `expo-image`, `expo-haptics`, `expo-clipboard`, `expo-navigation-bar`, `expo-splash-screen`, `expo-web-browser`, `expo-symbols`, `expo-constants`, `expo-font` plugins. |
+| Routing | expo-router | ~57.0.24 | File-system routing under `app/`. Typed routes enabled (`experiments.typedRoutes: true`). |
+| Native | React Native | 0.86.3 | Coordinated with Expo 57 + React 19; do not bump independently. |
+| UI library | React | 19.2.3 | React Compiler enabled (`experiments.reactCompiler: true`). |
 | Server state | @tanstack/react-query | ^5.90.21 | One QueryClient at the root layout with `staleTime: 15s`, `retry: 1`. |
 | Schema validation | zod | ^4.3.6 | Used for runtime config and persisted profile shape. |
 | Local persistence | @react-native-async-storage/async-storage | 2.2.0 | Stores user profile under key `user`. |
-| Animation | react-native-reanimated | ~4.2.1 | Transitions inside QuickEditSheet, RoomCharacterCard flash. |
+| Animation | react-native-reanimated | 4.5.1 | Transitions inside QuickEditSheet, RoomCharacterCard flash. |
 | Color picker | reanimated-color-picker | ^4.2.0 | Used in the character edit modal. |
 | Pickers | @react-native-picker/picker / @expo/ui SwiftUI Picker | 2.11.4 | Native picker on iOS via `@expo/ui/swift-ui`; cross-platform fallback via `@react-native-picker/picker`. |
 | Testing | Vitest 4.0.18 + Testing Library RN | latest | jsdom environment; `react-native` aliased to `react-native-web`. |
 | E2E | Maestro | latest | Flows live in `maestro/`. |
-| Linting | eslint-config-expo | ~55.0.0 | Adds `react-hooks/exhaustive-deps: warn`. |
+| Linting | eslint-config-expo | ~57.0.2 | Adds `react-hooks/exhaustive-deps: warn`. |
 | Mobile delivery | Fastlane (Match, deliver, supply) | 2.232+ | Configured in `frontend/fastlane/`. |
 
 ## Architecture Pattern
