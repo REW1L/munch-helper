@@ -24,7 +24,7 @@ Run the exact gate directly for every `frontend/` change before opening a PR. Do
 npm run test:e2e:mobile
 ```
 
-The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). If unavailable hardware or tooling blocks a platform, run all other applicable checks, document the exact gap in the PR, and leave it open. A missing or bypassed Git hook does not count as a passing mobile E2E run.
+The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). If unavailable hardware or tooling blocks a platform, run all other applicable checks, document the exact gap in the PR, and leave it open. `git commit --no-verify` bypasses the hook; do not use that bypass or another hook bypass for frontend changes. A missing or bypassed Git hook does not count as a passing mobile E2E run.
 
 Each run needs a new room and two users. Generate a ready-to-source fixture after the stack is running:
 
