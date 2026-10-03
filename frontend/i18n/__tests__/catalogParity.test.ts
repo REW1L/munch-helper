@@ -16,12 +16,47 @@ function collectKeys(obj: Record<string, unknown>, prefix = ''): string[] {
 }
 
 const englishKeys = collectKeys(en).sort();
+const expectedGameRulesKeys = [
+  'charactersBody',
+  'charactersTitle',
+  'combatBody',
+  'combatTitle',
+  'cursesBody',
+  'cursesTitle',
+  'description',
+  'escapeBody',
+  'escapeTitle',
+  'goalBody',
+  'goalTitle',
+  'helpBody',
+  'helpTitle',
+  'itemsBody',
+  'itemsTitle',
+  'priorityBody',
+  'priorityTitle',
+  'screenTitle',
+  'setupBody',
+  'setupTitle',
+  'sourceA11y',
+  'sourceIntro',
+  'sourceLabel',
+  'summaryNotice',
+  'title',
+  'turnBody',
+  'turnTitle',
+].sort();
 
 describe('catalog parity', () => {
   const nonEnglish = SUPPORTED_LANGUAGE_CODES.filter((code) => code !== 'en');
 
   it('English catalog exposes keys', () => {
     expect(englishKeys.length).toBeGreaterThan(0);
+  });
+
+  it('English catalog defines the complete game rules namespace', () => {
+    const gameRulesKeys = collectKeys(en.gameRules).sort();
+
+    expect(gameRulesKeys).toEqual(expectedGameRulesKeys);
   });
 
   it.each(nonEnglish)('%s catalog has exactly the English key set', (code) => {

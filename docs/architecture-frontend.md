@@ -77,6 +77,7 @@ app/
 │   └── modal-shop.tsx
 └── munchkin/
     ├── index.tsx               <- /munchkin (loader; redirects to room when ready)
+    ├── rules.tsx               <- /munchkin/rules (localized game overview + official source link)
     ├── modal-create-character.tsx
     ├── modal-change-caracter.tsx     (sic)
     └── [roomNumber]/
@@ -158,6 +159,7 @@ TanStack Query is used as a server-state cache, not a global store. Conventions:
 
 - `RoomCharactersList` (`components/munchkin/RoomCharactersList.tsx`) - FlatList of `RoomCharacterCard`, with header (action error), empty (loading + error), and footer (`Create character` button).
 - `RoomCharacterCard` - The most decorated component. Animates a colored border flash (700ms) on remote updates; respects `AccessibilityInfo.isReduceMotionEnabled` and substitutes a static reduced-motion fallback. Subscribes to per-character realtime signals.
+- Munchkin rules route (`app/munchkin/rules.tsx`) - scrollable, sectioned, localized overview opened from the Munchkin Classic tile. The copy is an original summary; the route does not fetch, bundle, or render the rulebook and instead opens the official PDF through `Linking` from an accessible source link.
 - `CurrentCharacterFooter` - Fixed footer for the user's own character; identical visual to the cards above but always rendered last.
 - `ActiveBattleBanner` - Tap-to-open banner when `useRoomBattle().battle !== null`.
 - `ReconnectingBanner` - Announces "Reconnecting…" both visually and via `AccessibilityInfo.announceForAccessibility`.
