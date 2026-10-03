@@ -42,11 +42,21 @@ export default function Home() {
                 <Text style={styles.gameTitleText}>{t('rooms.classic')}</Text>
               </View>
               <View style={styles.gameActions}>
-                <TouchableOpacity testID="create-room-button" style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
-                </TouchableOpacity>
-                <TouchableOpacity testID="screenshot-open-room-join" style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                  <ButtonLabel accessible accessibilityLabel="screenshot-open-room-join" testID="screenshot-open-room-join" style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
+                <View style={styles.primaryGameActions}>
+                  <TouchableOpacity testID="create-room-button" style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
+                    <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
+                  </TouchableOpacity>
+                  <TouchableOpacity testID="screenshot-open-room-join" style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
+                    <ButtonLabel accessible accessibilityLabel="screenshot-open-room-join" testID="screenshot-open-room-join" style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  testID="open-munchkin-rules"
+                  style={[styles.actionButton, styles.rulesButton]}
+                  onPress={() => router.navigate('/munchkin/rules')}
+                >
+                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.rules')}</ButtonLabel>
                 </TouchableOpacity>
               </View>
             </View>
@@ -148,7 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gameTitle: {
-    height: 80,
+    height: 108,
     paddingHorizontal: 10,
     paddingVertical: 20,
     backgroundColor: '#3C3636',
@@ -167,9 +177,13 @@ const styles = StyleSheet.create({
   gameActions: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
+    alignItems: 'stretch',
+    gap: 8,
+    flexDirection: 'column',
+  },
+  primaryGameActions: {
     flexDirection: 'row',
+    gap: 8,
   },
   actionButton: {
     flex: 1,
@@ -182,6 +196,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 5,
+  },
+  rulesButton: {
+    alignSelf: 'stretch',
+    flex: 0,
   },
   actionButtonLabel: {
     alignSelf: 'stretch',

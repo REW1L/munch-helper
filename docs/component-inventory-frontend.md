@@ -1,6 +1,12 @@
 # Component Inventory - Frontend
 
-This is a categorized inventory of every React component the frontend ships, with their props and intent. Components live under `frontend/components/` (general) and `frontend/components/munchkin/` (munchkin-specific). Routes (`frontend/app/**`) are listed under [Architecture - Frontend](./architecture-frontend.md#routing-structure) and not duplicated here.
+This is a categorized inventory of every React component the frontend ships, with their props and intent. Components live under `frontend/components/` (general) and `frontend/components/munchkin/` (munchkin-specific). Routes (`frontend/app/**`) are listed under [Architecture - Frontend](./architecture-frontend.md#routing-structure); route-owned views with noteworthy presentation boundaries are called out here when useful.
+
+## Route-owned Informational Views
+
+### Munchkin Classic rules (`app/munchkin/rules.tsx`)
+
+Scrollable, localized guide opened by the Rules action on the Munchkin Classic game tile. The screen owns its fixed section ordering, semantic heading hierarchy, summary notice, and accessible source link. Its content is an original description of play rather than embedded or copied rulebook material; `Linking.openURL` delegates the official PDF to the platform, and a rejected open is logged without taking down the view.
 
 ## App-shell Components
 

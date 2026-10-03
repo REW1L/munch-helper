@@ -16,12 +16,14 @@ Feature-oriented orchestration (`useUser`, `useRoomCharacters`, `useRoomCreate`,
 Global user profile context shared across route groups.
 
 4. `app/*`
-Expo Router route files and screen composition, including the App Store support page route at `/support`.
+Expo Router route files and screen composition, including the App Store support page at `/support` and the localized Munchkin Classic guide at `/munchkin/rules`.
 
 5. `components/*`
 Reusable UI building blocks and app shell boundary components.
 
 Runtime config is validated at startup in `config/runtime.ts`; invalid production config fails fast.
+
+The Munchkin rules route contains a concise, original overview of play. It does not bundle or display the copyrighted rulebook; it identifies and opens the official Munchkin Classic PDF as the authoritative external source.
 
 ## Prerequisites
 
@@ -83,7 +85,7 @@ CI (`.github/workflows/frontend-infra-cd.yml`) enforces the same checks before w
 ## Testing Strategy
 
 - `npm run test:unit` runs the main frontend unit and hook suites.
-- `npm run test:room-route` runs the dedicated Expo Router route test for `__tests__/app/munchkin/[roomNumber].test.tsx`.
+- `npm run test:room-route` runs all Expo Router tests under `__tests__/app/`, including Rooms, Munchkin rules, and room gameplay routes.
 - `npm run test:watch` watches the unit suite only; rerun `npm run test:room-route` after route-level changes.
 - Unit tests cover transport/resilience behavior in `api/http.test.ts`.
 - Add hook tests next for:

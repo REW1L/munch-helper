@@ -35,7 +35,49 @@ const en = {
     classic: 'Classic',
     create: 'Create',
     join: 'Join',
+    rules: 'Rules',
     roomsHistory: 'Rooms history',
+  },
+  gameRules: {
+    screenTitle: 'Munchkin Classic Rules',
+    title: 'Munchkin Classic Rules',
+    description:
+      'Munchkin Classic is a competitive card game in which adventurers explore a playful dungeon, collect powerful gear, interfere with rivals, and race to Level 10.',
+    summaryNotice:
+      'This is an original summary, not a replacement for the official rulebook. Card text and the official rules are authoritative when details or disputes arise.',
+    goalTitle: 'Goal and victory',
+    goalBody:
+      'Everyone begins at Level 1, and victory goes to whoever reaches Level 10 before everyone else. The winning level normally comes from defeating a monster, unless a card explicitly provides another way to win.',
+    setupTitle: 'Setup',
+    setupBody:
+      'Separate the Door and Treasure decks, shuffle both, and give each player four cards from each deck. Players may put one Race, one Class, and any legal Items into play before the first turn.',
+    turnTitle: 'Turn sequence',
+    turnBody:
+      'Start by revealing a Door card and resolving its monster, curse, or other effect. If no combat occurred, either fight a monster from your hand or draw another Door card face down. End the turn with no more than five cards in hand, giving excess cards to the lowest-Level player or discarding them when required.',
+    charactersTitle: 'Characters and cards',
+    charactersBody:
+      'Your character is defined by Level, Race, Class, and the Items you carry. Cards on the table are public and active; cards in your hand are not. You normally have at most one Race and one Class, and your Level cannot fall below 1.',
+    combatTitle: 'Combat',
+    combatBody:
+      'Add your Level and legal bonuses to find your combat strength, then compare it with the monster and its bonuses. You must finish higher to win; a tie favors the monster. A defeated monster usually grants the Levels and Treasure printed on its card after the fight is settled.',
+    itemsTitle: 'Items and trading',
+    itemsBody:
+      'Carried Small Items have no quantity limit, but a character normally carries only one Big Item, and only correctly equipped Items add bonuses. Items already in play may be traded outside combat. During your own turn and outside combat, Items worth at least 1,000 Gold Pieces may be discarded for a Level, but not for the winning Level.',
+    helpTitle: 'Asking for help',
+    helpBody:
+      'If you cannot win alone, ask one other player to join the fight and negotiate what they receive. The helper adds combat strength and shares monster effects, while other players may still alter the fight with legal cards. The main player normally receives the Levels.',
+    escapeTitle: 'Running away and death',
+    escapeBody:
+      'If the players cannot win, each participant attempts to escape from each monster separately; a roll of 5 or more usually succeeds. Failure applies that monster’s Bad Stuff. Death removes your hand and most cards in play for others to loot, while your Level, Race, Class, and continuing Curses remain.',
+    cursesTitle: 'Curses',
+    cursesBody:
+      'A Curse revealed face up affects the player who drew it immediately. A Curse drawn face down goes into your hand and can be played later as its text allows. Some effects end at once, while others remain in play as reminders.',
+    priorityTitle: 'Cards and general rules',
+    priorityBody:
+      'Specific card instructions normally take precedence over this general summary. Some fundamental limits and exceptions are defined only in the official rulebook, so consult it whenever a card interaction is unclear.',
+    sourceIntro: 'Source and complete rules',
+    sourceLabel: 'Official Munchkin Classic rulebook (PDF)',
+    sourceA11y: 'Open the official Munchkin Classic rulebook PDF',
   },
   support: {
     screenTitle: 'Support',

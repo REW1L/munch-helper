@@ -1,0 +1,48 @@
+appId: click.helpamunch.mobileapp
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "http://.*:8081"
+    commands:
+      - tapOn:
+          text: "http://.*:8081"
+      - tapOn: Continue
+      - tapOn: Close
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-rooms
+    timeout: 30000
+- tapOn:
+    id: screenshot-open-rooms
+- extendedWaitUntil:
+    visible:
+      id: open-munchkin-rules
+    timeout: 10000
+- tapOn:
+    id: open-munchkin-rules
+- extendedWaitUntil:
+    visible:
+      id: munchkin-rules-scroll
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: official-rules-source
+    direction: DOWN
+    timeout: 30000
+    visibilityPercentage: 80
+- assertVisible:
+    id: official-rules-source
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: Games
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- assertVisible:
+    id: open-munchkin-rules
