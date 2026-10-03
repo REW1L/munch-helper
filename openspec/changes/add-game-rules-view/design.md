@@ -79,7 +79,7 @@ Follow red-green-refactor during apply:
 - Add a Games route test that verifies Rules navigation and that room modals/mutations are untouched.
 - Add a rules route test for required sections, scrolling container, heading/link semantics, exact external URL, and graceful `Linking.openURL` rejection.
 - Extend catalog parity coverage through the existing structural test.
-- Add a focused Maestro flow that opens Rooms, activates `open-munchkin-rules`, verifies the rules screen, scrolls to the official-source control, and returns.
+- Add a focused Maestro flow that opens Rooms, activates `open-munchkin-rules`, verifies the scrollable rules screen and prominent official-source control, and returns.
 
 The frontend package gates and repository-required `npm run test:e2e:mobile` remain the pre-PR checks. Documentation updates cover the new route, screen responsibility, and external-source boundary.
 

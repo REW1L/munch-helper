@@ -1,6 +1,5 @@
 import { AppTheme } from '@/constants/theme';
 import { Stack } from 'expo-router';
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Linking,
@@ -31,7 +30,6 @@ const RULE_SECTIONS = [
 
 export default function MunchkinRulesPage() {
   const { t } = useTranslation();
-  const scrollViewRef = useRef<ScrollView>(null);
 
   const openOfficialRules = async () => {
     try {
@@ -49,7 +47,6 @@ export default function MunchkinRulesPage() {
       <Stack.Screen options={{ title: t('gameRules.screenTitle') }} />
 
       <ScrollView
-        ref={scrollViewRef}
         testID="munchkin-rules-scroll"
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator
@@ -61,23 +58,6 @@ export default function MunchkinRulesPage() {
         <View style={styles.notice}>
           <Text style={styles.noticeText}>{t('gameRules.summaryNotice')}</Text>
         </View>
-        <TouchableOpacity
-          accessibilityRole="link"
-          onPress={() => scrollViewRef.current?.scrollToEnd({ animated: false })}
-          style={styles.jumpLink}
-          testID="jump-to-official-rules-source"
-        >
-          <Text style={styles.jumpLinkText}>{t('gameRules.sourceIntro')}</Text>
-        </TouchableOpacity>
-
-        {RULE_SECTIONS.map(([titleKey, bodyKey]) => (
-          <View key={titleKey} style={styles.section}>
-            <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>
-              {t(`gameRules.${titleKey}`)}
-            </Text>
-            <Text style={styles.sectionBody}>{t(`gameRules.${bodyKey}`)}</Text>
-          </View>
-        ))}
 
         <View style={styles.sourceCard}>
           <Text accessibilityRole="header" aria-level={2} style={styles.sourceTitle}>
@@ -93,6 +73,16 @@ export default function MunchkinRulesPage() {
             <Text style={styles.sourceLinkText}>{t('gameRules.sourceLabel')}</Text>
           </TouchableOpacity>
         </View>
+
+        {RULE_SECTIONS.map(([titleKey, bodyKey]) => (
+          <View key={titleKey} style={styles.section}>
+            <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>
+              {t(`gameRules.${titleKey}`)}
+            </Text>
+            <Text style={styles.sectionBody}>{t(`gameRules.${bodyKey}`)}</Text>
+          </View>
+        ))}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -134,18 +124,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Roboto',
     lineHeight: 22,
-  },
-  jumpLink: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  jumpLinkText: {
-    color: AppTheme.colors.accent,
-    fontSize: 15,
-    fontFamily: 'Roboto',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
   },
   section: {
     gap: AppTheme.spacing.sm,
