@@ -33,9 +33,9 @@
       "root_path": "frontend/",
       "stack": {
         "runtime": "Node.js 24+ (dev)",
-        "language": "TypeScript 5.9 (strict: true)",
-        "framework": "Expo 55 + Expo Router 55",
-        "ui": "React 19.2 + React Native 0.83.2",
+        "language": "TypeScript 6.0.3 (strict: true)",
+        "framework": "Expo 57 + Expo Router 57",
+        "ui": "React 19.2.3 + React Native 0.86.3",
         "server_state": "@tanstack/react-query 5",
         "schema_validation": "zod 4",
         "tests": "Vitest 4 + Testing Library RN + jsdom",

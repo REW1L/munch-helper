@@ -41,6 +41,8 @@ npm run test    # both unit and room-route suites
 
 CI (`.github/workflows/frontend-infra-cd.yml`) runs the same plus `npm run test:coverage` and the web export.
 
+For every change under `frontend/`, run `npm run test:e2e:mobile` from the repository root before opening a PR, independently of whether the pre-commit hook is installed. See [Development Guide - E2E](./development-guide-e2e.md) for prerequisites and flow details.
+
 ## Tests
 
 Two Vitest configs:

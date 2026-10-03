@@ -19,7 +19,7 @@ Multi-part TypeScript monorepo with three independently buildable parts. Top-lev
 | Surface | Language | Framework | Data | Real-time | Tests |
 |---|---|---|---|---|---|
 | Backend | Node.js 20 + TypeScript 5.9 | Express 5, Mongoose 8 | MongoDB 7 (per-service DB) | AWS SNS (cloud) / Redis Pub/Sub (local) | Vitest 3.2.4 + supertest |
-| Frontend | TypeScript 5.9 | Expo 55, Expo Router 55, React 19.2.0, React Native 0.83.2 | TanStack Query 5, AsyncStorage, Zod | Native WebSocket via API Gateway WebSocket (cloud) or `ws` server (local) | Vitest 4.0.18 + Testing Library + jsdom; Maestro for E2E |
+| Frontend | TypeScript 6.0.3 | Expo 57, Expo Router 57, React 19.2.3, React Native 0.86.3 | TanStack Query 5, AsyncStorage, Zod | Native WebSocket via API Gateway WebSocket (cloud) or `ws` server (local) | Vitest 4.0.18 + Testing Library + jsdom; Maestro for E2E |
 | Infrastructure | TypeScript 5.9 | Pulumi 3.203.0, Pulumi AWS 7.10.0 | S3 (artifact bucket) | n/a | n/a |
 
 Backend services share a single set of dependencies (Express, Mongoose, `morgan`, `cors`, `dotenv`, `tsx`, `aws4`, `@codegenie/serverless-express`); event-publishing services additionally pull in `@aws-sdk/client-sns` and `redis`; `room-notifications-service` pulls in `ws` and `@aws-sdk/client-apigatewaymanagementapi`. Battle and character services share the same publisher pattern.
@@ -63,7 +63,8 @@ All capabilities listed under "Implemented Capabilities" above are shipped end-t
 - `README.md` — top-level orientation, quick-start, and BMAD workflow notes
 - `docs/index.md` — primary entry point for documentation
 - `docs/source-tree-analysis.md` — annotated repository layout
-- `_bmad-output/project-context.md` — operational rules baked into AI-assist workflows
+- `AGENTS.md` — current implementation and verification instructions for coding agents
+- `_bmad-output/project-context.md` — historical agent context; verify against current source before reuse
 - `backend/sam/template.yaml` — production deployment topology in code
 - `infrastructure/index.ts` — single source of truth for the edge stack
 - `frontend/app/_layout.tsx` — global providers, runtime config validation, query client defaults

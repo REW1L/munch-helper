@@ -74,6 +74,8 @@ npm run typecheck
 npm run test
 ```
 
+For every change under `frontend/`, run `npm run test:e2e:mobile` from the repository root before opening a PR. The pre-commit hook may run it automatically, but the requirement does not depend on the hook being installed.
+
 CI (`.github/workflows/frontend-infra-cd.yml`) enforces the same checks before web artifact export.
 
 `npm run test` executes both the unit suite and the dedicated Expo Router room-route suite.

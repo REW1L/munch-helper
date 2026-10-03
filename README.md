@@ -105,6 +105,12 @@ npm run test
 npm run test:coverage
 ```
 
+For every change under `frontend/`, also run the mobile E2E gate from the repository root before opening a PR, whether or not the Git hook runs:
+
+```bash
+npm run test:e2e:mobile
+```
+
 ## AWS SAM (backend)
 
 From `backend/`:
@@ -149,13 +155,14 @@ This repository is BMAD-enabled. Use these folders as your working map:
 
 Primary artifact locations in this repo:
 
-- Project context: `_bmad-output/project-context.md`
+- Current agent instructions: `AGENTS.md`
+- Historical project context: `_bmad-output/project-context.md` (verify before reuse)
 - Planning artifacts: `_bmad-output/planning-artifacts/`
 - Implementation artifacts: `_bmad-output/implementation-artifacts/`
 - Current sprint plan/status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
 - Project knowledge (for grounding): `docs/`
 
-Recommended full BMAD flow (for new or major work):
+OpenSpec is required for every new feature; see `AGENTS.md`. BMAD can provide additional planning context. Recommended full BMAD flow (for new or major work):
 
 1. Generate/refresh context: `bmad-bmm-generate-project-context`
 2. Plan: `bmad-bmm-create-prd` -> `bmad-bmm-create-ux-design` (if UI changes) -> `bmad-bmm-create-architecture` -> `bmad-bmm-create-epics-and-stories`
@@ -170,7 +177,7 @@ Quick path (for small scoped changes):
 
 How to keep BMAD artifacts useful:
 
-1. Treat `_bmad-output/*` as the source of truth for planning and execution state.
+1. Treat active `_bmad-output/` artifacts as the record of their own planning and execution state, not as current repository-wide implementation rules.
 2. Update affected artifacts when scope or implementation changes.
 3. Keep `docs/` aligned with shipped architecture/runtime behavior so future BMAD runs stay grounded.
 

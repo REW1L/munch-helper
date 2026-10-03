@@ -10,7 +10,7 @@ Primary language: TypeScript
 Munch Helper is a digital companion for tabletop games (currently focused on Munchkin) that ships to iOS, Android, and the web (`https://helpamunch.click`). The repository contains:
 
 - **Backend** (`backend/`): six Node.js + Express microservices fronted by Nginx locally and by AWS API Gateway + Lambda + SNS in production. Schemas are owned per-service in MongoDB.
-- **Frontend** (`frontend/`): Expo Router app on React Native 0.83.2 + React 19.2 + TanStack Query, with a hand-rolled refcounted WebSocket client.
+- **Frontend** (`frontend/`): Expo Router app on React Native 0.86.3 + React 19.2.3 + TanStack Query, with a hand-rolled refcounted WebSocket client.
 - **Infrastructure** (`infrastructure/`): Pulumi stack that hosts the Expo web export on S3 + CloudFront and proxies `/api/*` and `/ws[*]` to the backend stack.
 
 ## Quick Reference by Part
@@ -34,8 +34,8 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 
 | Aspect | Value |
 |---|---|
-| Language | TypeScript 5.9 (strict) |
-| App | Expo 55 + Expo Router 55 + React 19.2 + React Native 0.83.2 |
+| Language | TypeScript 6.0.3 (strict) |
+| App | Expo 57 + Expo Router 57 + React 19.2.3 + React Native 0.86.3 |
 | State | TanStack Query 5 + AsyncStorage + Zod-validated runtime config |
 | Tests | Vitest 4.0.18 (two configs: unit + room-route) |
 | E2E | Maestro flows under `maestro/` |
@@ -84,7 +84,8 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 - [Release Support Reference](./release-support-reference.md)
 - [Channel Availability Playbook](./release-validation/channel-availability-playbook.md)
 - [Release Evidence Index](./release-evidence/README.md) and [TEMPLATE](./release-evidence/TEMPLATE-channel-availability.md)
-- [BMAD Project Context](./../_bmad-output/project-context.md) — operational rules for AI assistants
+- [Agent Instructions](./../AGENTS.md) — current repository-wide implementation and verification rules
+- [BMAD Project Context](./../_bmad-output/project-context.md) — historical context; verify any useful rule against current source
 
 ## Getting Started
 
@@ -96,7 +97,7 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 
 ## Working With AI Assistants
 
-The repo is BMAD-enabled. Treat `_bmad-output/project-context.md` as the durable rule set for any AI assistant. Spec workflows (`_bmad-output/implementation-artifacts/`) are tracked by `.github/workflows/story-project-sync.yml`, and "Ready for Dev" issues can trigger an auto-implementation cascade via `.github/workflows/ready-for-dev-orchestrator.yml`.
+Follow `AGENTS.md` for current agent instructions. `_bmad-output/project-context.md` records historical rules and versions; verify them against current source before reuse. Spec workflows (`_bmad-output/implementation-artifacts/`) are tracked by `.github/workflows/story-project-sync.yml`, and "Ready for Dev" issues can trigger an auto-implementation cascade via `.github/workflows/ready-for-dev-orchestrator.yml`.
 
 For a brownfield PRD, point the PRD workflow at `docs/index.md`. For UI-only features, reference `docs/architecture-frontend.md` plus `docs/component-inventory-frontend.md`. For API-only features, reference `docs/architecture-backend.md` plus `docs/api-contracts-backend.md` and `docs/data-models-backend.md`. For full-stack features, also include `docs/integration-architecture.md`.
 
