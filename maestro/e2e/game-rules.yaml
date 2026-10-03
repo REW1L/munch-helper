@@ -26,12 +26,37 @@ appId: click.helpamunch.mobileapp
     visible:
       id: munchkin-rules-scroll
     timeout: 10000
-- scrollUntilVisible:
-    element:
-      id: official-rules-source
-    direction: DOWN
-    timeout: 30000
-    visibilityPercentage: 80
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: official-rules-source
+          direction: DOWN
+          timeout: 30000
+          visibilityPercentage: 80
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: official-rules-source
+          direction: DOWN
+          timeout: 30000
+          visibilityPercentage: 80
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - repeat:
+          times: 8
+          commands:
+            - swipe:
+                start: 50%, 80%
+                end: 50%, 20%
+                duration: 500
 - assertVisible:
     id: official-rules-source
 - runFlow:
@@ -44,5 +69,10 @@ appId: click.helpamunch.mobileapp
       platform: Android
     commands:
       - back
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn: Games
 - assertVisible:
     id: open-munchkin-rules
