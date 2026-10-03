@@ -35,7 +35,7 @@ Run before opening a PR:
 
 ```bash
 npm run lint    # expo lint (eslint flat config)
-npm run tsc     # tsc --noEmit
+npm run typecheck # tsc --noEmit
 npm run test    # both unit and room-route suites
 ```
 

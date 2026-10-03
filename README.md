@@ -100,7 +100,7 @@ Frontend:
 ```bash
 cd frontend
 npm run lint
-npm run tsc
+npm run typecheck
 npm run test
 npm run test:coverage
 ```

@@ -94,7 +94,7 @@ Trigger: push or PR touching `frontend/**`, `infrastructure/**`, `backend/sam/te
 1. **Build job** (`build_frontend`):
    - `npm ci` in `frontend/`.
    - `npm run lint` (`expo lint`).
-   - `npm run tsc`.
+   - `npm run typecheck`.
    - `npm run test:coverage`.
    - `EXPO_PUBLIC_API_URL=$API_BASE_URL npm run export:web --clear`.
    - Upload `frontend/dist` as the `frontend-dist` artifact.

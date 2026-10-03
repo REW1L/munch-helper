@@ -16,7 +16,6 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "usesCleartextTraffic": true,
       "package": "click.helpamunch.mobileapp"
     },
     "web": {
@@ -44,7 +43,9 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-localization",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,
