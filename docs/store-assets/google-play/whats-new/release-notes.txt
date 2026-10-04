@@ -1,0 +1,56 @@
+<en-US>
+Find the official Munchkin Classic rules right in the app with our new localized rules guide.
+We also fixed the battle discard confirmation layout and made general improvements for a smoother experience.
+</en-US>
+<be>
+Афіцыйныя правілы Munchkin Classic цяпер даступныя непасрэдна ў праграме ў новым лакалізаваным даведніку.
+Мы таксама выправілі адлюстраванне пацвярджэння адхілення бітвы і ўнеслі іншыя паляпшэнні для больш зручнай працы праграмы.
+</be>
+<de-DE>
+Die offiziellen Regeln von Munchkin Classic findest du jetzt direkt in der App in unserem neuen lokalisierten Regelguide.
+Außerdem haben wir die Anzeige der Bestätigung beim Verwerfen eines Kampfes korrigiert und weitere Verbesserungen für eine reibungslosere Nutzung vorgenommen.
+</de-DE>
+<es-419>
+Consulta las reglas oficiales de Munchkin Classic directamente en la app con nuestra nueva guía localizada.
+También corregimos la confirmación para descartar un combate e hicimos mejoras para que la experiencia sea más fluida.
+</es-419>
+<es-ES>
+Consulta las reglas oficiales de Munchkin Classic directamente en la aplicación con nuestra nueva guía traducida.
+También corregimos la confirmación para descartar un combate e hicimos otras mejoras para que la experiencia sea más fluida.
+</es-ES>
+<es-US>
+Consulta las reglas oficiales de Munchkin Classic directamente en la app con nuestra nueva guía localizada.
+También corregimos la confirmación para descartar un combate e hicimos mejoras para que la experiencia sea más fluida.
+</es-US>
+<et>
+Munchkin Classicu ametlikud reeglid leiad nüüd otse rakendusest uuest tõlgitud juhendist.
+Parandasime ka lahingu hülgamise kinnituse paigutust ja tegime muid täiustusi, et rakenduse kasutamine oleks sujuvam.
+</et>
+<fr-CA>
+Consultez les règles officielles de Munchkin Classic directement dans l’application grâce à notre nouveau guide localisé.
+Nous avons aussi corrigé l’affichage de la confirmation d’abandon d’un combat et apporté des améliorations pour une expérience plus fluide.
+</fr-CA>
+<fr-FR>
+Retrouvez les règles officielles de Munchkin Classic dans l’application grâce à notre nouveau guide localisé.
+Nous avons également corrigé l’affichage de la confirmation d’abandon d’un combat et apporté des améliorations pour une expérience plus fluide.
+</fr-FR>
+<lt>
+Oficialias Munchkin Classic taisykles dabar rasite programėlėje, naujame lokalizuotame vadove.
+Taip pat pataisėme kovos atmetimo patvirtinimo išdėstymą ir atlikome kitų patobulinimų, kad programėle naudotis būtų sklandžiau.
+</lt>
+<lv>
+Oficiālie Munchkin Classic noteikumi tagad pieejami lietotnē jaunā lokalizētā ceļvedī.
+Mēs arī labojām cīņas atmešanas apstiprinājuma izkārtojumu un veicām citus uzlabojumus, lai lietotne darbotos ērtāk.
+</lv>
+<pl-PL>
+Oficjalne zasady Munchkin Classic znajdziesz teraz bezpośrednio w aplikacji dzięki nowemu, przetłumaczonemu przewodnikowi.
+Poprawiliśmy też układ potwierdzenia odrzucenia walki i wprowadziliśmy inne ulepszenia, aby korzystanie z aplikacji było płynniejsze.
+</pl-PL>
+<ru-RU>
+Официальные правила Munchkin Classic теперь доступны прямо в приложении в новом локализованном руководстве.
+Мы также исправили отображение подтверждения отмены сражения и внесли другие улучшения для более удобной работы приложения.
+</ru-RU>
+<uk>
+Офіційні правила Munchkin Classic тепер доступні безпосередньо в застосунку в новому локалізованому посібнику.
+Ми також виправили відображення підтвердження скасування битви та внесли інші покращення для зручнішої роботи застосунку.
+</uk>

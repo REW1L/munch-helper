@@ -1,6 +1,6 @@
 appId: click.helpamunch.mobileapp
 ---
-- runFlow: create-character.yaml
+- runFlow: ../create-character.yaml
 - tapOn:
     id: screenshot-open-battle
 - extendedWaitUntil:
