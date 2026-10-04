@@ -8,7 +8,7 @@
       "project_type_id": "backend",
       "root_path": "backend/",
       "stack": {
-        "runtime": "Node.js 20",
+        "runtime": "Node.js 24",
         "language": "TypeScript 5.9 (strict: false)",
         "framework": "Express 5",
         "datastore": "MongoDB 7 (per-service database)",

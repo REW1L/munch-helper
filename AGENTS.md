@@ -18,7 +18,7 @@ This file applies to the whole repository. For feature and bug work, deliver cod
 - For real-time changes, coordinate event producers, `backend/room-notifications-service/src/app.ts`, log persistence, `frontend/api/webSocket.ts`, and subscribed hooks. The client receives only `event` and `event_body`; internal events contain more fields. Keep event names and payloads synchronized and test both Redis/local and SNS/Lambda seams as appropriate.
 - Keep frontend runtime URL validation. Do not hardcode credentials or environment endpoints. For mutations, inspect `frontend/api/http.ts` retry behavior: a non-idempotent operation may need `retryCount: 0` (battle discard is the precedent). Preserve TanStack Query invalidation and WebSocket reconnect behavior.
 - Keep translation keys and catalogs in `frontend/i18n/` aligned across supported languages. Test long localized strings, small screens, and accessible motion behavior for UI changes. Prefer stable `testID` selectors in Maestro flows over translated text.
-- Treat the Expo SDK, React, React Native, Expo modules, native build tooling, and the frontend lockfile as a compatibility set. Use Expo's dependency checks for intentional upgrades. Backend and frontend have different Node baselines (CI: 20 and 24 respectively), and backend TypeScript is non-strict while frontend is strict.
+- Treat the Expo SDK, React, React Native, Expo modules, native build tooling, and the frontend lockfile as a compatibility set. Use Expo's dependency checks for intentional upgrades. Backend and frontend both use Node.js 24, and backend TypeScript is non-strict while frontend is strict.
 
 ## TDD and local verification
 

@@ -10,7 +10,7 @@ Local and cloud topologies are intentionally close: the same Express apps run un
 
 | Category | Technology | Version | Notes |
 |---|---|---|---|
-| Runtime | Node.js | 20.x | Pinned in CI (`backend-ci-cd.yml`) and SAM (`Runtime: nodejs20.x`). |
+| Runtime | Node.js | 24.x | Pinned in CI (`backend-ci-cd.yml`), service containers, and SAM (`Runtime: nodejs24.x`). |
 | Language | TypeScript | 5.9.x | `strict: false` across services (per project-context); module: `NodeNext`. |
 | HTTP framework | Express | ^5.1.0 | Same major version in every service. |
 | ORM | Mongoose | ^8.19.1 | One Mongoose connection per service; deduped via shared `db.ts`. |

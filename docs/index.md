@@ -19,7 +19,7 @@ Munch Helper is a digital companion for tabletop games (currently focused on Mun
 
 | Aspect | Value |
 |---|---|
-| Language / runtime | TypeScript 5.9 on Node.js 20 |
+| Language / runtime | TypeScript 5.9 on Node.js 24 |
 | Framework | Express 5 + Mongoose 8 |
 | Datastore | MongoDB 7 (per service) |
 | Real-time | SNS topics in cloud, Redis Pub/Sub locally |
