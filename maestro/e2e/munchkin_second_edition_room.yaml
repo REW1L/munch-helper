@@ -27,6 +27,5 @@ appId: click.helpamunch.mobileapp
 - tapOn:
     id: "open-2e-room-rules"
 - extendedWaitUntil:
-    visible:
-      id: official-rules-source
+    visible: "Open the official Munchkin Second Edition rules PDF"
     timeout: 10000
