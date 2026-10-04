@@ -164,7 +164,7 @@ TanStack Query is used as a server-state cache, not a global store. Conventions:
 - `ActiveBattleBanner` - Tap-to-open banner when `useRoomBattle().battle !== null`.
 - `ReconnectingBanner` - Announces "Reconnecting…" both visually and via `AccessibilityInfo.announceForAccessibility`.
 - `BattleSidePanel` - Self-contained editor for one side (`players` or `monsters`). Includes a modal monster-add dialog; bonus values come from `BONUS_VALUES = [-10, -5, -2, -1, 1, 2, 5, 10]`.
-- `BattleConcludeAction` / `BattleDiscardAction` - Primary actions for the battle modal. Discard wraps `ConfirmDialog` (which delegates to `Alert.alert` on native and renders an inline modal on web).
+- `BattleConcludeAction` / `BattleDiscardAction` - Primary actions for the battle modal. Discard wraps `ConfirmDialog` (which delegates to `Alert.alert` on Android and renders a viewport-level modal on iOS and web).
 - `LogEntry` - Renders character/battle log entries with a 4-way switch on `eventType`. Battle-concluded and battle-discarded events that have a usable payload are tappable; they open `BattleHistoryModal`.
 - `QuickEditSheet` - Bottom sheet for level/power adjustments with haptic feedback, reduced-motion handling, and gesture-driven dismiss.
 - `NativePicker` (+ `.ios` variant) - Platform split: SwiftUI menu picker on iOS, cross-platform Picker elsewhere.

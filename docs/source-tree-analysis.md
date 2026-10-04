@@ -162,7 +162,7 @@ frontend/
 ├── components/
 │   ├── RootErrorBoundary.tsx   # Class boundary; logs and renders fallback.
 │   ├── VioletButton.tsx        # Shared CTA component.
-│   ├── ConfirmDialog.tsx       # Cross-platform confirm: native delegates to Alert.alert, web inline modal.
+│   ├── ConfirmDialog.tsx       # Cross-platform confirm: Android Alert.alert, iOS/web viewport-level modal.
 │   └── munchkin/               # Room view building blocks (cards, banners, side panel, log entry, etc.)
 ├── __tests__/
 │   └── app/                    # Tests for app routes (kept outside app/ per Expo Router rule).

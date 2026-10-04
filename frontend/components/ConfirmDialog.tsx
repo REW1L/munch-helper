@@ -17,7 +17,7 @@ interface ConfirmDialogProps {
 /**
  * Cross-platform confirmation dialog.
  * Native Android: delegates to Alert.alert (system sheet).
- * Web and iOS: render an inline overlay (Alert.alert is unavailable to the E2E driver).
+ * Web and iOS: render a viewport-level modal (Alert.alert is unavailable to the E2E driver).
  */
 export default function ConfirmDialog({
   visible,
@@ -81,10 +81,6 @@ export default function ConfirmDialog({
       </Pressable>
     </Pressable>
   ) : null;
-
-  if (Platform.OS === 'ios') {
-    return <View style={StyleSheet.absoluteFill} pointerEvents="box-none">{dialogContent}</View>;
-  }
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>

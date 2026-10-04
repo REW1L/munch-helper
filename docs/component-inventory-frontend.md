@@ -18,7 +18,7 @@ Props: `children: React.ReactNode`.
 
 ### `<ConfirmDialog>` (`components/ConfirmDialog.tsx`)
 
-Cross-platform confirmation dialog. On native, it delegates to `Alert.alert` with destructive styling for the confirm action. On web, it renders an inline overlay modal with a backdrop press-to-cancel.
+Cross-platform confirmation dialog. On Android, it delegates to `Alert.alert` with destructive styling for the confirm action. On iOS and web, it renders a viewport-level modal with a backdrop press-to-cancel.
 
 Props:
 - `visible: boolean`
