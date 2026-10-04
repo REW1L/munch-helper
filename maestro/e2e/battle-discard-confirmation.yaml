@@ -1,31 +1,12 @@
 appId: click.helpamunch.mobileapp
 ---
-- runFlow: create-character.yaml
-- tapOn:
-    id: screenshot-open-battle
-- extendedWaitUntil:
-    visible:
-      id: screenshot-battle-ready
-    timeout: 20000
-- scrollUntilVisible:
-    element:
-      id: battle-discard-button
-    direction: DOWN
-- tapOn:
-    id: battle-discard-button
-- extendedWaitUntil:
-    visible:
-      id: confirm-dialog-confirm
-    timeout: 5000
-- assertVisible:
-    id: confirm-dialog-title
-- assertVisible:
-    id: confirm-dialog-cancel
-- assertVisible:
-    id: confirm-dialog-confirm
-- tapOn:
-    id: confirm-dialog-cancel
-- assertNotVisible:
-    id: confirm-dialog-confirm
-- assertVisible:
-    id: screenshot-battle-ready
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow: flows/battle-discard-confirmation-native.yaml
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow: flows/battle-discard-confirmation-native.yaml
