@@ -20,6 +20,7 @@ for (const entry of await readdir(root)) {
   const destination = path.join(output, entry);
   if (entry.endsWith('.yaml')) {
     const contents = await readFile(source, 'utf8');
+    if (contents.startsWith('# native-only\n')) continue;
     await writeFile(destination, contents.replace(/^appId: .*$/m, `url: ${url}`));
   } else {
     await cp(source, destination, { recursive: true });

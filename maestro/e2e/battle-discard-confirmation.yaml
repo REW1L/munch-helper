@@ -1,0 +1,13 @@
+# native-only
+appId: click.helpamunch.mobileapp
+---
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runFlow: flows/battle-discard-confirmation-native.yaml
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow: flows/battle-discard-confirmation-native.yaml

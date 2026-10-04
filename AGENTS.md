@@ -29,6 +29,8 @@ For each behavior change, work in a red → green → refactor loop:
 3. Implement the smallest change that makes it pass. Refactor with the test still passing. Repeat for the next behavior. Test contracts and side effects, not implementation details; control time and external boundaries so tests remain deterministic.
 4. Run affected package checks locally, then cross-surface and end-to-end checks for integration changes. Run `npm run test:e2e:mobile` from the repository root for **every** change under `frontend/`, regardless of whether the Husky pre-commit hook is installed or runs. Never reduce coverage thresholds or skip or rewrite a failing test to hide a regression. If a required check cannot run because hardware, credentials, or tooling are unavailable, run every available check, document the precise gap and reason in the PR, and leave the PR open. Do not use `git commit --no-verify` or another hook bypass for frontend changes. A missing or bypassed hook is not evidence that mobile E2E passed. Do not describe a blocked check as passing.
 
+For substantial frontend changes that add or fix user-visible functionality, add or update a Maestro E2E flow for the affected user path, including a regression flow for reported bugs. An existing passing E2E suite without scenario-specific coverage does not satisfy this requirement.
+
 Use the commands from the appropriate directory:
 
 | Surface | Targeted work | Before PR / relevant full gate |
