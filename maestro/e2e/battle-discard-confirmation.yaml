@@ -1,3 +1,4 @@
+# native-only
 appId: click.helpamunch.mobileapp
 ---
 - runFlow:
