@@ -15,7 +15,7 @@ This backend is split into local microservices under `backend`:
 Implemented in this phase:
 
 - User management (`POST /users`, `GET /users/:userId`, `PATCH /users/:userId`)
-- Room management (`POST /rooms`, `POST /rooms/associations`)
+- Room management (`POST /rooms`, `POST /rooms/associations`, `GET /rooms/:roomId`); Classic is `munchkin`, Second Edition is `munchkin-2e`.
 - Character management (`GET /characters?roomId=...`, `POST /characters`, `PATCH /characters/:characterId`, `DELETE /characters/:characterId`)
 - Battle management (`GET /battles?roomId=...&status=active`, `POST /battles`, `PATCH /battles/:id`)
 - Room history log persistence and reader API (`GET /logs?roomId=...&limit=...&before=...`, `GET /logs/:logId?roomId=...`)

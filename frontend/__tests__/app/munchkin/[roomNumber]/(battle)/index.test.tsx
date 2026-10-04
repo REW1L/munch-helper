@@ -55,6 +55,8 @@ const mockRouter = vi.hoisted(() => ({
   back: vi.fn(),
 }));
 
+const mockRoomType = vi.hoisted(() => ({ current: 'munchkin' }));
+
 function hexToRgbStyleValue(hex: string): string {
   const normalized = hex.replace('#', '');
   const red = Number.parseInt(normalized.slice(0, 2), 16);
@@ -78,6 +80,7 @@ vi.mock('expo-router', () => ({
   },
   useLocalSearchParams: () => ({
     roomNumber: 'ROOM42',
+    roomTypeId: mockRoomType.current,
   }),
   useRouter: () => mockRouter,
 }));
@@ -125,6 +128,8 @@ vi.mock('expo-haptics', () => ({
 describe('Battle view', () => {
   beforeEach(() => {
     mockBattleState.current = mockBattleState.createState();
+    mockRoomType.current = 'munchkin';
+    mockRoomType.current = 'munchkin';
     mockCharactersState.current = {
       characters: [
         { id: 'character-1', roomId: 'ROOM42', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
@@ -166,6 +171,27 @@ describe('Battle view', () => {
     expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Even');
     expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(AppTheme.colors.surfaceSubtle));
     expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('shows second edition battle guidance without changing Classic presentation', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockRoomType.current = 'munchkin-2e';
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('Warrior');
+    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('player-managed');
+  });
+
+  it('shows second edition battle guidance without changing Classic presentation', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockRoomType.current = 'munchkin-2e';
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('second-edition-battle-guidance')).toBeTruthy();
+    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('Warrior');
+    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('not a rules check');
   });
 
   it('syncs the visible draft when the same battle refetches and there are no local edits', async () => {

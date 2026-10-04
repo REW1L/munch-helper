@@ -50,8 +50,8 @@ vi.mock('../../app/main/modal-change-user', async () => {
 vi.mock('../../app/main/modal-room-create', async () => {
   const ReactRuntime = await import('react');
   return {
-    default: ({ visible }: { visible: boolean }) =>
-      visible ? ReactRuntime.createElement('div', { 'data-testid': 'create-room-modal' }) : null,
+    default: ({ visible, onConfirm }: { visible: boolean; onConfirm: () => void }) =>
+      visible ? ReactRuntime.createElement('button', { 'data-testid': 'create-room-modal', onClick: onConfirm }) : null,
   };
 });
 
@@ -101,6 +101,22 @@ describe('Rooms route', () => {
     expect(screen.queryByTestId('join-room-modal')).toBeNull();
   });
 
+  it('selects Second Edition for room creation and opens its rules guide', async () => {
+    const { default: RoomsPage } = await import('../../app/rooms');
+    await act(async () => {
+      render(
+        <userProfileContext.Provider value={{ userProfile: { id: 'user-1', nickname: 'Player', avatar: 0 }, setUserProfile: vi.fn() }}>
+          <RoomsPage />
+        </userProfileContext.Provider>
+      );
+    });
+    await act(async () => { fireEvent.click(screen.getByTestId('create-2e-room-button')); });
+    await act(async () => { fireEvent.click(screen.getByTestId('create-room-modal')); });
+    expect(mockNavigate).toHaveBeenCalledWith({ pathname: '/munchkin', params: { roomTypeId: 'munchkin-2e' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('open-2e-rules')); });
+    expect(mockNavigate).toHaveBeenLastCalledWith('/munchkin/rules?edition=2e');
+  });
+
   it('keeps long localized actions accessible at the smallest viewport', async () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 320 });
     await i18n.changeLanguage('uk');
@@ -119,8 +135,8 @@ describe('Rooms route', () => {
       );
     });
 
-    expect(screen.getByText('Приєднатися')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'правила' })).toBeTruthy();
+    expect(screen.getAllByText('Приєднатися')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'правила' })).toHaveLength(2);
     expect(screen.getByTestId('create-room-button')).toBeTruthy();
   });
 });

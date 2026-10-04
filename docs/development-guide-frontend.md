@@ -110,6 +110,8 @@ The `npm run prebuild:clean` script (`scripts/prebuild-clean.mjs`) wraps `expo p
 ## Routing Conventions
 
 - File-system routes under `app/`. Folders prefixed `(...)` are route groups (Expo Router convention) and do not contribute path segments. The room layout uses `(battle)` to present the battle composer as a modal.
+- `/rooms` offers Classic (`munchkin`) and Second Edition (`munchkin-2e`). Room type returned by the API controls room presentation; the room route also looks up persisted metadata for restored links.
+- Second Edition character cards expose room-owned GP edits and omit gender from game attributes. Keep guide translations aligned across every locale and preserve Classic character fields.
 - Typed routes are enabled (`experiments.typedRoutes: true` in `app.json`). Use the typed `router.push({ pathname, params })` form so renames stay safe.
 - The root layout (`app/_layout.tsx`) is the only place that may register top-level providers.
 

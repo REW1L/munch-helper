@@ -26,7 +26,7 @@ File: `backend/room-service/src/models/Room.ts`.
 | Field | Type | Notes |
 |---|---|---|
 | `_id` | String | Auto-generated 4-letter (capitalized via `random-words`) + 4 random digits, e.g., `Frog4521`. Up to 5 retries on duplicate-key 11000 in `service.ts::createRoomModel`. |
-| `roomTypeId` | String enum `["munchkin"]`, required, default `"munchkin"` | Hard-gated at the service layer to `"munchkin"`. |
+| `roomTypeId` | String enum `["munchkin", "munchkin-2e"]`, required, default `"munchkin"` | Classic is the legacy/default type; Second Edition is `munchkin-2e`. |
 | `createdAt`, `updatedAt` | Date | |
 
 `versionKey: false`. No additional indexes.
@@ -60,6 +60,7 @@ File: `backend/character-service/src/models/Character.ts`.
 | `class` | String, default `''` | Stored as a JSON-encoded string (legacy shape). The frontend parses it back into an array. |
 | `race` | String, default `''` | Same JSON-encoded shape as `class`. |
 | `gender` | String, default `''` | Same shape. |
+| `goldPieces` | Optional nonnegative integer | Set to 500 for new Second Edition characters; absent on Classic characters. Updates are scoped to the character's room and recorded through `character_updated` history. |
 | `color` | String, default `''` | Hex `#RRGGBB`. Validated at the service layer; invalid colors fall back to a deterministic hash of `_id`. |
 | `createdAt`, `updatedAt` | Date | |
 

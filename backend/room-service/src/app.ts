@@ -5,7 +5,7 @@ import { extractErrorFields, logSupportFailure } from './supportSignal';
 
 export interface RoomLike {
   id: string;
-  roomTypeId: 'munchkin';
+  roomTypeId: 'munchkin' | 'munchkin-2e';
   createdAt: Date;
 }
 
@@ -17,7 +17,7 @@ export interface RoomAssociationLike {
 }
 
 export interface RoomModelLike {
-  create: (payload: { roomTypeId: string }) => Promise<RoomLike>;
+  create: (payload: { roomTypeId: 'munchkin' | 'munchkin-2e' }) => Promise<RoomLike>;
   findById: (id: string) => Promise<RoomLike | null>;
   deleteOne: (query: { _id: string }) => Promise<unknown>;
 }
@@ -33,9 +33,11 @@ export interface AppDependencies {
   roomAssociationModel: RoomAssociationModelLike;
   createDefaultCharacter: (payload: {
     roomId: string;
+    roomTypeId: 'munchkin' | 'munchkin-2e';
     userId: string;
     userName?: string;
     avatarId?: number;
+    goldPieces?: number;
   }) => Promise<{ id: string }>;
 }
 
@@ -86,8 +88,8 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
     try {
       const { roomTypeId = 'munchkin', userId, userName, avatarId } = req.body || {};
 
-      if (roomTypeId !== 'munchkin') {
-        return res.status(400).json({ message: 'Only roomTypeId "munchkin" is supported in local mode' });
+      if (roomTypeId !== 'munchkin' && roomTypeId !== 'munchkin-2e') {
+        return res.status(400).json({ message: 'Field roomTypeId must be "munchkin" or "munchkin-2e"' });
       }
 
       if (typeof userId !== 'string' || !userId.trim()) {
@@ -99,6 +101,7 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
       try {
         const character = await deps.createDefaultCharacter({
           roomId: room.id,
+          roomTypeId: room.roomTypeId,
           userId: userId.trim(),
           userName,
           avatarId
@@ -131,6 +134,18 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
     }
   });
 
+  app.get('/rooms/:roomId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const roomId = typeof req.params.roomId === 'string' ? req.params.roomId.trim() : '';
+      if (!roomId) return res.status(400).json({ message: 'Field roomId is required and must be a non-empty string' });
+      const room = await deps.roomModel.findById(roomId);
+      if (!room) return res.status(404).json({ message: 'Room not found' });
+      res.json({ roomId: room.id, roomTypeId: room.roomTypeId, createdAt: room.createdAt });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post('/rooms/associations', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { roomId, userId, userName, avatarId } = req.body || {};
@@ -155,6 +170,7 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
       if (existingAssociation) {
         return res.status(200).json({
           roomId: existingAssociation.roomId,
+          roomTypeId: room.roomTypeId,
           userId: existingAssociation.userId,
           characterId: existingAssociation.characterId,
           joinedAt: existingAssociation.createdAt,
@@ -166,6 +182,7 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
       try {
         const character = await deps.createDefaultCharacter({
           roomId: roomId.trim(),
+          roomTypeId: room.roomTypeId,
           userId: userId.trim(),
           userName,
           avatarId
@@ -185,6 +202,7 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
 
       res.status(201).json({
         roomId: association.roomId,
+        roomTypeId: room.roomTypeId,
         userId: association.userId,
         characterId: association.characterId,
         joinedAt: association.createdAt,
@@ -204,6 +222,7 @@ export function createApp(deps: AppDependencies, options: CreateRoomAppOptions =
         if (association) {
           return res.status(200).json({
             roomId: association.roomId,
+            roomTypeId: (await deps.roomModel.findById(association.roomId))?.roomTypeId ?? 'munchkin',
             userId: association.userId,
             characterId: association.characterId,
             joinedAt: association.createdAt,

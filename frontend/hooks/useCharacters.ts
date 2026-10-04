@@ -100,7 +100,7 @@ function consumeSuppressibleEcho(markers: Map<string, PendingLocalUpdateMarker>,
   });
 }
 
-export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
+export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface, roomTypeId: 'munchkin' | 'munchkin-2e' = 'munchkin'): UseRoomCharactersResult {
   const queryClient = useQueryClient();
   const charactersQueryKey = useMemo(() => getCharactersQueryKey(roomId), [roomId]);
   const webSocketOptions = useMemo(
@@ -145,7 +145,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         throw new Error('Room ID is required to create a character');
       }
 
-      return createCharacter({ ...payload, roomId });
+      return createCharacter({ ...payload, roomId, roomTypeId });
     },
     onMutate: async (payload) => {
       const queryKey = charactersQueryKey;
@@ -215,6 +215,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
               class: payload.class ?? character.class,
               race: payload.race ?? character.race,
               gender: payload.gender ?? character.gender,
+              goldPieces: payload.goldPieces ?? character.goldPieces,
             }
             : character
         )
@@ -375,8 +376,9 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   );
 
   const update = useCallback(async (characterId: string, payload: CharacterUpdatePayload) => {
-    return updateMutation.mutateAsync({ characterId, payload });
-  }, [updateMutation]);
+    const roomScopedPayload = payload.goldPieces !== undefined && roomId ? { ...payload, roomId } : payload;
+    return updateMutation.mutateAsync({ characterId, payload: roomScopedPayload });
+  }, [roomId, updateMutation]);
 
   const remove = useCallback(async (characterId: string) => {
     await deleteMutation.mutateAsync({ characterId });
@@ -418,6 +420,8 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         race: ['Human'],
         gender: ['male'],
         class: [],
+        roomTypeId,
+        ...(roomTypeId === 'munchkin-2e' ? { goldPieces: 500 } : {}),
       })
       .catch((error) => {
         if (isAbortError(error)) {
@@ -429,7 +433,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       .finally(() => {
         isEnsuringCurrentCharacterRef.current = false;
       });
-  }, [characters, createMutation, hasCompletedInitialFetch, roomId, userProfile.avatar, userProfile.id, userProfile.nickname]);
+  }, [characters, createMutation, hasCompletedInitialFetch, roomId, roomTypeId, userProfile.avatar, userProfile.id, userProfile.nickname]);
 
   const refresh = useCallback(async () => {
     await charactersQuery.refetch();

@@ -1,0 +1,32 @@
+appId: click.helpamunch.mobileapp
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-rooms
+    timeout: 20000
+- tapOn:
+    id: screenshot-open-rooms
+- extendedWaitUntil:
+    visible:
+      id: create-2e-room-button
+    timeout: 15000
+- tapOn:
+    id: "create-2e-room-button"
+- extendedWaitUntil:
+    visible:
+      id: confirm-create-room-button
+    timeout: 10000
+- tapOn:
+    id: "confirm-create-room-button"
+- extendedWaitUntil:
+    visible:
+      id: open-2e-room-rules
+    timeout: 20000
+- tapOn:
+    id: "open-2e-room-rules"
+- extendedWaitUntil:
+    visible:
+      id: official-rules-source
+    timeout: 10000

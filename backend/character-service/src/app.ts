@@ -21,6 +21,7 @@ export interface CharacterLike {
   class: string;
   race: string;
   gender: string;
+  goldPieces?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -137,6 +138,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
     class: character.class,
     race: character.race,
     gender: character.gender,
+    ...(character.goldPieces !== undefined ? { goldPieces: character.goldPieces } : {}),
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   });
@@ -147,7 +149,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       id: responseCharacter.id,
       name: responseCharacter.name,
       avatarId: responseCharacter.avatarId,
-      color: responseCharacter.color
+      color: responseCharacter.color,
+      ...(responseCharacter.goldPieces !== undefined ? { goldPieces: responseCharacter.goldPieces } : {})
     };
   };
 
@@ -248,7 +251,9 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         power = 0,
         class: klass = JSON.stringify([]),
         race = JSON.stringify(['Human']),
-        gender = JSON.stringify(['male'])
+        gender = JSON.stringify(['male']),
+        roomTypeId,
+        goldPieces
       } = req.body || {};
 
       console.info('[character-service] create character request', {
@@ -270,6 +275,15 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (typeof color !== 'string' || !hexColorPattern.test(normalizeHexColor(color))) {
         return res.status(400).json({ message: 'Field color is required and must be a valid hex color (#RRGGBB)' });
       }
+      if (goldPieces !== undefined && (typeof goldPieces !== 'number' || !Number.isInteger(goldPieces) || goldPieces < 0)) {
+        return res.status(400).json({ message: 'Field goldPieces must be a nonnegative integer when provided' });
+      }
+      if (roomTypeId !== undefined && roomTypeId !== 'munchkin' && roomTypeId !== 'munchkin-2e') {
+        return res.status(400).json({ message: 'Field roomTypeId must be "munchkin" or "munchkin-2e"' });
+      }
+      if (goldPieces !== undefined && roomTypeId !== 'munchkin-2e') {
+        return res.status(400).json({ message: 'Gold Pieces are only supported in Second Edition rooms' });
+      }
 
       const character = await characterModel.create({
         roomId: roomId.trim(),
@@ -281,7 +295,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         power,
         class: klass,
         race,
-        gender
+        gender,
+        ...(roomTypeId === 'munchkin-2e' ? { goldPieces: 500 } : {})
       });
 
       console.info('[character-service] create character success', {
@@ -325,7 +340,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   app.patch('/characters/:characterId', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const characterId = toParamString(req.params.characterId as string | string[] | undefined);
-      const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId'];
+      const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId', 'goldPieces'];
       const updates: Record<string, unknown> = {};
 
       console.info('[character-service] update character request', {
@@ -353,6 +368,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (Object.prototype.hasOwnProperty.call(updates, 'avatarId') && typeof updates.avatarId !== 'number') {
         return res.status(400).json({ message: 'Field avatarId must be a number when provided' });
       }
+      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces') && (typeof updates.goldPieces !== 'number' || !Number.isInteger(updates.goldPieces) || updates.goldPieces < 0)) {
+        return res.status(400).json({ message: 'Field goldPieces must be a nonnegative integer when provided' });
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces') && (typeof req.body.roomId !== 'string' || !req.body.roomId.trim())) {
+        return res.status(400).json({ message: 'Field roomId is required for a Gold Pieces update' });
+      }
       if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
         if (typeof updates.color !== 'string' || !hexColorPattern.test(normalizeHexColor(updates.color))) {
           return res.status(400).json({ message: 'Field color must be a valid hex color (#RRGGBB) when provided' });
@@ -369,6 +390,11 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
           characterId,
           error
         });
+      }
+      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces')) {
+        if (!previousCharacter || previousCharacter.roomId !== req.body.roomId.trim()) {
+          return res.status(404).json({ message: 'Character not found in room' });
+        }
       }
       const character = await characterModel.findByIdAndUpdate(characterId, updates, {
         new: true,

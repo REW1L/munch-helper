@@ -38,6 +38,7 @@ interface ChangeCharacterModalProps {
   onDelete: (characterId: string) => Promise<void>;
   deleteError?: string | null;
   onCancel: () => void;
+  hideGender?: boolean;
 }
 
 export default function ChangeCharacterModal({
@@ -46,6 +47,7 @@ export default function ChangeCharacterModal({
   onDelete,
   deleteError = null,
   onCancel,
+  hideGender = false,
 }: ChangeCharacterModalProps) {
   const { t } = useTranslation();
   const [character, setCharacter] = useState<Character>(
@@ -351,7 +353,7 @@ export default function ChangeCharacterModal({
             </View>
 
             {/* Gender Selection */}
-            <View style={styles.fieldRow}>
+            {!hideGender && <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
               <View style={styles.genderContainer}>
                 <TouchableOpacity
@@ -392,7 +394,7 @@ export default function ChangeCharacterModal({
                   <Text style={styles.genderLabel}>{t('character.female')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View>}
 
             {/* Color Selection */}
             <View style={styles.fieldRow}>

@@ -104,7 +104,7 @@ Create a Munchkin room. Provisions a default character for the owner via an inte
 }
 ```
 
-- `roomTypeId` (string, defaults to `"munchkin"`; only `"munchkin"` accepted).
+- `roomTypeId` (string; `"munchkin"` Classic or `"munchkin-2e"` Second Edition; defaults to `"munchkin"`).
 - `userId` (string, required, non-empty after trim).
 - `userName` (string, optional - used as the default character name; defaults to `"Adventurer"`).
 - `avatarId` (number, optional - used as the default character avatar; defaults to `1`).
@@ -122,7 +122,7 @@ Create a Munchkin room. Provisions a default character for the owner via an inte
   }
   ```
 - `400 Bad Request`:
-  - `Only roomTypeId "munchkin" is supported in local mode`
+  - `Field roomTypeId must be "munchkin" or "munchkin-2e"`
   - `Field userId is required and must be a non-empty string`
 - `502 Bad Gateway`:
   - `Failed to create default character for room owner` (with `details` from the upstream error). Room and association rows are rolled back before responding.
@@ -147,6 +147,12 @@ Join an existing room. Idempotent on `(roomId, userId)`.
 - `userName`, `avatarId` (used for default character provisioning if the user is new to the room).
 
 **Responses:**
+
+Every successful response includes the persisted `roomTypeId`, including already-joined and duplicate-key race responses. The client uses it to route to the correct edition.
+
+### `GET /rooms/{roomId}`
+
+Look up persisted room metadata for session restore and routing. Returns `{ roomId, roomTypeId, createdAt }`; `roomTypeId` is `munchkin` or `munchkin-2e`. Unknown or malformed room codes return 404 with `{ message: "Room not found" }`.
 
 - `200 OK` (already joined):
   ```json
@@ -231,11 +237,13 @@ Create a character.
   "power": 0,
   "class": "[\"Cleric\"]",
   "race": "[\"Human\"]",
-  "gender": "[\"female\"]"
+  "gender": "[\"female\"]",
+  "roomTypeId": "munchkin-2e"
 }
 ```
 
 Required: `roomId`, `name`, `avatarId`, `color` (hex `#RRGGBB`).
+`roomTypeId` is optional and defaults to legacy behavior; Second Edition requests initialize `goldPieces` to 500. The response includes `goldPieces` only when the character is in Second Edition.
 
 **Responses:**
 
@@ -248,7 +256,7 @@ Required: `roomId`, `name`, `avatarId`, `color` (hex `#RRGGBB`).
 
 ### `PATCH /characters/:characterId`
 
-Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, `userId`.
+Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, `userId`, and `goldPieces`. A Gold Pieces update must include the matching `roomId` and a nonnegative integer balance.
 
 **Request body** (any subset of the allowed keys). String fields are trimmed; color is normalized to upper-case.
 

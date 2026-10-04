@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '@/i18n';
 
 const mockOpenURL = vi.hoisted(() => vi.fn());
+const mockParams = vi.hoisted(() => ({ edition: undefined as string | undefined }));
 
 vi.mock('expo-router', () => ({
   Stack: {
     Screen: () => null,
   },
+  useLocalSearchParams: () => mockParams,
 }));
 
 vi.mock('react-native-safe-area-context', async () => {
@@ -52,6 +54,7 @@ const EXPECTED_HEADINGS = [
 describe('Munchkin rules route', () => {
   beforeEach(async () => {
     mockOpenURL.mockReset();
+    mockParams.edition = undefined;
     mockOpenURL.mockResolvedValue(undefined);
     await i18n.changeLanguage('en');
   });
@@ -80,6 +83,19 @@ describe('Munchkin rules route', () => {
     for (const heading of EXPECTED_HEADINGS) {
       expect(screen.getByRole('heading', { name: heading, level: 2 })).toBeTruthy();
     }
+  });
+
+  it('renders the Second Edition quick guide and links to its official PDF', async () => {
+    mockParams.edition = '2e';
+    const { default: MunchkinRulesPage } = await import('../../../app/munchkin/rules');
+    await act(async () => { render(<MunchkinRulesPage />); });
+    expect(screen.getByRole('heading', { name: 'Munchkin Second Edition', level: 1 })).toBeTruthy();
+    expect(screen.getByText(/three to six|3–6/i)).toBeTruthy();
+    expect(screen.getByText('Gold Pieces')).toBeTruthy();
+    expect(screen.getByText(/physical cards, decks, dice/i)).toBeTruthy();
+    const source = screen.getByRole('link', { name: 'Open the official Munchkin Second Edition rules PDF' });
+    await act(async () => { fireEvent.click(source); });
+    expect(mockOpenURL).toHaveBeenCalledWith('https://munchkin.game/site-munchkin/assets/files/3922/munchkin_2e_rules.pdf');
   });
 
   it('opens the official rulebook from an accessible source link', async () => {

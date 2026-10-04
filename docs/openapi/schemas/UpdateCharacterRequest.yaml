@@ -1,7 +1,8 @@
 type: object
 description: |
   Partial update. Allowed keys are `name`, `avatarId`, `color`, `level`, `power`,
-  `class`, `race`, `gender`, `userId`. At least one allowed key must be present.
+  `class`, `race`, `gender`, `userId`, and `goldPieces`. Gold Pieces updates also
+  require the matching `roomId` in the request.
 additionalProperties: false
 minProperties: 1
 properties:
@@ -31,3 +32,9 @@ properties:
     type:
       - string
       - "null"
+  goldPieces:
+    type: integer
+    minimum: 0
+  roomId:
+    type: string
+    minLength: 1

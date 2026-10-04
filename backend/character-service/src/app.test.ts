@@ -31,6 +31,7 @@ const buildBaseCharacter = () => {
     class: '',
     race: '',
     gender: '',
+    goldPieces: undefined,
     createdAt: now,
     updatedAt: now
   };
@@ -105,6 +106,17 @@ describe('character-service app', () => {
         character: { id: 'c2', name: 'Mage', avatarId: 4, color: '#00AAFF' }
       })
     );
+  });
+
+  it('starts Second Edition characters with 500 Gold Pieces', async () => {
+    const model = buildCharacterModel();
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-2e', roomId: 'r-2e', goldPieces: 500 }));
+    const response = await request(createApp(model)).post('/characters').send({
+      roomId: 'r-2e', userId: 'u-2e', name: 'Adventurer', avatarId: 1, color: '#AABBCC', roomTypeId: 'munchkin-2e'
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.goldPieces).toBe(500);
+    expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'r-2e', goldPieces: 500 }));
   });
 
   it('uses inbound correlation id on response and published event', async () => {
@@ -269,6 +281,24 @@ describe('character-service app', () => {
         }
       })
     );
+  });
+
+  it('validates room-scoped Gold Pieces updates and publishes their history', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findById).mockResolvedValue(buildCharacter({ id: 'c-gp', roomId: 'r-gp', goldPieces: 500 }));
+    vi.mocked(model.findByIdAndUpdate).mockResolvedValue(buildCharacter({ id: 'c-gp', roomId: 'r-gp', goldPieces: 600 }));
+    const app = createApp(model, { publisher });
+
+    const valid = await request(app).patch('/characters/c-gp').send({ roomId: 'r-gp', goldPieces: 600 });
+    const negative = await request(app).patch('/characters/c-gp').send({ roomId: 'r-gp', goldPieces: -1 });
+    const wrongRoom = await request(app).patch('/characters/c-gp').send({ roomId: 'other-room', goldPieces: 700 });
+
+    expect(valid.status).toBe(200);
+    expect(valid.body.goldPieces).toBe(600);
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ changes: { goldPieces: { prev: 500, next: 600 } } }));
+    expect(negative.status).toBe(400);
+    expect(wrongRoom.status).toBe(404);
   });
 
   it('keeps update and delete responses successful when publishing fails', async () => {

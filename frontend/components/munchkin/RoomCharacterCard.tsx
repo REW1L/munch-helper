@@ -13,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 
@@ -22,6 +23,8 @@ interface RoomCharacterCardProps {
   character: RoomCharacter;
   onChangePress: (character: RoomCharacter) => void;
   realtimeFlashSignal?: number;
+  isSecondEdition?: boolean;
+  onGoldPiecesChange?: (character: RoomCharacter, nextBalance: number) => void;
 }
 
 const REALTIME_FLASH_DURATION_MS = 700;
@@ -31,8 +34,11 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   character,
   onChangePress,
   realtimeFlashSignal = 0,
+  isSecondEdition = false,
+  onGoldPiecesChange,
 }: RoomCharacterCardProps) {
   const { t } = useTranslation();
+  const [coinAdjustment, setCoinAdjustment] = useState('100');
   const accessibilityLabel = t('room.characterCardA11y', {
     name: character.nickname,
     level: character.level,
@@ -120,7 +126,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     : { borderColor: animatedBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH };
 
   return (
-    <Animated.View style={[styles.characterCard, flashStyle]} testID="character-card">
+    <Animated.View style={[styles.characterCard, isSecondEdition && styles.secondEditionCard, flashStyle]} testID="character-card">
       <Pressable
         style={({ pressed }) => [styles.cardBodyPressable, pressed && styles.cardBodyPressablePressed]}
         onPress={() => onChangePress(character)}
@@ -150,9 +156,24 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
           showsVerticalScrollIndicator
           contentContainerStyle={styles.attributesScrollContent}
         >
-          <AttributeList character={character} />
+          <AttributeList character={character} showGender={!isSecondEdition} />
         </ScrollView>
       </View>
+
+      {isSecondEdition && <View style={styles.coinControls}>
+        <Text accessibilityLabel={t('room.coinBalanceA11y', { amount: character.goldPieces ?? 500 })} style={styles.coinBalance} testID={`gold-pieces-${character.id}`}>{character.goldPieces ?? 500} GP</Text>
+        <View style={styles.coinButtons}>
+          <VioletButton title="−" onPress={() => {
+            const adjustment = Number(coinAdjustment);
+            if (Number.isInteger(adjustment) && adjustment > 0) onGoldPiecesChange?.(character, Math.max(0, (character.goldPieces ?? 500) - adjustment));
+          }} testID={`gold-pieces-minus-${character.id}`} />
+          <TextInput accessibilityLabel={t('room.coinAdjustmentA11y')} keyboardType="number-pad" value={coinAdjustment} onChangeText={setCoinAdjustment} style={styles.coinInput} testID={`gold-pieces-adjustment-${character.id}`} />
+          <VioletButton title="+" onPress={() => {
+            const adjustment = Number(coinAdjustment);
+            if (Number.isInteger(adjustment) && adjustment > 0) onGoldPiecesChange?.(character, (character.goldPieces ?? 500) + adjustment);
+          }} testID={`gold-pieces-plus-${character.id}`} />
+        </View>
+      </View>}
 
       <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} testID="change-character-button" />
     </Animated.View>
@@ -171,6 +192,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
+  secondEditionCard: { height: 116 },
+  coinControls: { alignItems: 'center', gap: 3 },
+  coinBalance: { color: AppTheme.colors.textPrimary, fontSize: 13, fontWeight: '700' },
+  coinButtons: { flexDirection: 'row', gap: 3 },
+  coinInput: { width: 40, height: 34, paddingHorizontal: 2, textAlign: 'center', color: AppTheme.colors.textPrimary, backgroundColor: AppTheme.colors.elevated, borderRadius: 5 },
   characterContent: {
     flexDirection: 'row',
     alignItems: 'center',

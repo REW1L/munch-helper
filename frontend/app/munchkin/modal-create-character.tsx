@@ -28,12 +28,14 @@ interface CreateCharacterModalProps {
   visible: boolean;
   onConfirm: (character: Character) => void;
   onCancel: () => void;
+  hideGender?: boolean;
 }
 
 export default function CreateCharacterModal({
   visible,
   onConfirm,
   onCancel,
+  hideGender = false,
 }: CreateCharacterModalProps) {
   const { t } = useTranslation();
   const [character, setCharacter] = useState<Character>({
@@ -98,7 +100,7 @@ export default function CreateCharacterModal({
             </View>
 
             {/* Gender Selection */}
-            <View style={styles.fieldRow}>
+            {!hideGender && <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
               <View style={styles.optionContainer}>
                 <TouchableOpacity
@@ -139,7 +141,7 @@ export default function CreateCharacterModal({
                   <Text style={styles.optionLabel}>{t('character.female')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View>}
           </ScrollView>
 
           {/* Buttons */}

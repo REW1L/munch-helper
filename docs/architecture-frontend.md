@@ -77,12 +77,12 @@ app/
 │   └── modal-shop.tsx
 └── munchkin/
     ├── index.tsx               <- /munchkin (loader; redirects to room when ready)
-    ├── rules.tsx               <- /munchkin/rules (localized game overview + official source link)
+    ├── rules.tsx               <- /munchkin/rules (localized Classic/2e guide + official source link)
     ├── modal-create-character.tsx
     ├── modal-change-caracter.tsx     (sic)
     └── [roomNumber]/
         ├── _layout.tsx         <- Room nav header (copy room code) + nested Stack
-        ├── index.tsx           <- /munchkin/<roomId>
+        ├── index.tsx           <- /munchkin/<roomId> (edition resolved from room metadata)
         ├── log.tsx             <- /munchkin/<roomId>/log
         └── (battle)/
             ├── _layout.tsx     <- Modal presentation

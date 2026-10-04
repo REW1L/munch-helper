@@ -308,6 +308,12 @@ Resources:
             ApiId: !Ref CloudHttpApi
             Path: /rooms/associations
             Method: POST
+        RoomMetadataGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref CloudHttpApi
+            Path: /rooms/{roomId}
+            Method: GET
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

@@ -1,7 +1,7 @@
 import { apiRequest } from '@/api/http';
 
 export interface CreateRoomRequest {
-  roomTypeId: 'munchkin';
+  roomTypeId: RoomTypeId;
   userId: string;
   userName?: string;
   avatarId?: number;
@@ -9,7 +9,7 @@ export interface CreateRoomRequest {
 
 export interface CreateRoomResponse {
   roomId: string;
-  roomTypeId: 'munchkin';
+  roomTypeId: RoomTypeId;
   userId: string;
   characterId: string;
   createdAt: string;
@@ -24,11 +24,20 @@ export interface JoinRoomRequest {
 
 export interface JoinRoomResponse {
   roomId: string;
+  roomTypeId: RoomTypeId;
   userId: string;
   characterId: string;
   joinedAt: string;
   alreadyJoined: boolean;
 }
+
+export interface RoomMetadata {
+  roomId: string;
+  roomTypeId: RoomTypeId;
+  createdAt: string;
+}
+
+export type RoomTypeId = 'munchkin' | 'munchkin-2e';
 
 export async function createRoom(payload: CreateRoomRequest, signal?: AbortSignal): Promise<CreateRoomResponse> {
   return apiRequest<CreateRoomResponse>('/rooms', {
@@ -44,4 +53,8 @@ export async function joinRoom(payload: JoinRoomRequest, signal?: AbortSignal): 
     body: payload,
     signal,
   });
+}
+
+export async function getRoomMetadata(roomId: string, signal?: AbortSignal): Promise<RoomMetadata> {
+  return apiRequest<RoomMetadata>(`/rooms/${encodeURIComponent(roomId)}`, { signal });
 }

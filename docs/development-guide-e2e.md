@@ -78,6 +78,8 @@ The web driver requires a URL in each flow, while native flows require an app id
 
 Add YAML under `maestro/e2e/` and select controls by `id` whenever an app `testID` exists. Keep it platform-neutral, launch with `clearState`, and use `extendedWaitUntil` for asynchronous UI or WebSocket updates. If a needed control has no stable ID, add a prop-only `testID` and verify the web build exposes it as `data-testid`. For cross-user coverage, wait for `room-websocket-connected`, then use a `runScript` actor-B request and assert the UI update—never use a fixed sleep.
 
+`maestro/e2e/munchkin_second_edition_room.yaml` covers creating a 2e room (which also creates and joins its owner character) and opening the 2e rules guide.
+
 For substantial frontend changes that add or fix user-visible functionality, add or update a scenario-specific flow for the affected user path. For UI regressions, assert the reported behavior directly; a passing suite that never exercises the changed screen or control is not sufficient coverage.
 
 ## CI

@@ -10,7 +10,7 @@ const MunchkinIndexView: React.FC = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const { userProfile } = React.useContext(userProfileContext);
-  const roomIdParam = useLocalSearchParams().roomId;
+  const { roomId: roomIdParam, roomTypeId: roomTypeParam } = useLocalSearchParams<{ roomId?: string; roomTypeId?: string }>();
   const roomId = useMemo(() => {
     if (Array.isArray(roomIdParam)) {
       return roomIdParam[0];
@@ -31,27 +31,31 @@ const MunchkinIndexView: React.FC = () => {
       }
 
       try {
+        let joinedRoomType = 'munchkin';
         if (roomId) {
           const joinedRoom = await join(roomId, {
             userId: userProfile.id,
             nickname: userProfile.nickname,
             avatar: userProfile.avatar,
           });
+          joinedRoomType = joinedRoom.roomTypeId;
 
           if (!cancelled) {
-            router.dismissTo(`/munchkin/${joinedRoom.roomId}`);
+            router.dismissTo(`/munchkin/${joinedRoom.roomId}?roomTypeId=${encodeURIComponent(joinedRoomType)}`);
           }
           return;
         }
 
+        const requestedType = roomTypeParam === 'munchkin-2e' ? 'munchkin-2e' : 'munchkin';
         const createdRoom = await create({
           userId: userProfile.id,
           nickname: userProfile.nickname,
           avatar: userProfile.avatar,
+          roomTypeId: requestedType,
         });
 
         if (!cancelled) {
-          router.dismissTo(`/munchkin/${createdRoom.roomId}`);
+          router.dismissTo(`/munchkin/${createdRoom.roomId}?roomTypeId=${encodeURIComponent(createdRoom.roomTypeId)}`);
         }
       } catch (error) {
         console.error('Failed to bootstrap room session:', error);
@@ -63,7 +67,7 @@ const MunchkinIndexView: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [create, join, roomId, router, userProfile.avatar, userProfile.id, userProfile.nickname]);
+  }, [create, join, roomId, roomTypeParam, router, userProfile.avatar, userProfile.id, userProfile.nickname]);
 
   const errorMessage = roomId ? joinErrorMessage : createErrorMessage;
   const isLoading = roomId ? isJoining : isCreating;

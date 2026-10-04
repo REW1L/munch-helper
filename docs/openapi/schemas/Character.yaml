@@ -34,6 +34,10 @@ properties:
   gender:
     type: string
     description: JSON-encoded string array; same shape as `class`.
+  goldPieces:
+    type: integer
+    minimum: 0
+    description: Optional room-scoped balance used by Second Edition rooms.
   createdAt:
     type: string
     format: date-time

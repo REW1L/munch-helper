@@ -1,4 +1,5 @@
 import { Character as RoomCharacter } from '@/api/characters';
+import { getRoomMetadata } from '@/api/rooms';
 import { ApiError } from '@/api/http';
 import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
@@ -11,6 +12,7 @@ import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { formatDateTime } from '@/i18n/format';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -43,10 +45,12 @@ const readActiveBattleId = (details: unknown): string | null => {
 
 const MunchkinIndexView: React.FC = () => {
   const { t } = useTranslation();
-  const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const { roomNumber, roomTypeId: routeRoomTypeId } = useLocalSearchParams<{ roomNumber: string; roomTypeId?: string }>();
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
+  const roomMetadata = useQuery({ queryKey: ['roomMetadata', roomId], queryFn: ({ signal }) => getRoomMetadata(roomId!, signal), enabled: Boolean(roomId) });
+  const isSecondEdition = roomMetadata.data?.roomTypeId === 'munchkin-2e' || (!roomMetadata.data && routeRoomTypeId === 'munchkin-2e');
   const { userProfile } = useContext(userProfileContext);
   const {
     characters,
@@ -62,7 +66,7 @@ const MunchkinIndexView: React.FC = () => {
     isTimedOut,
     refresh,
     reconnect,
-  } = useRoomCharacters(roomId, userProfile);
+  } = useRoomCharacters(roomId, userProfile, isSecondEdition ? 'munchkin-2e' : 'munchkin');
   const {
     battle,
     isLoading: isBattleLoading,
@@ -261,9 +265,9 @@ const MunchkinIndexView: React.FC = () => {
 
     router.push({
       pathname: '/munchkin/[roomNumber]/(battle)',
-      params: { roomNumber: roomId },
+      params: { roomNumber: roomId, roomTypeId: isSecondEdition ? 'munchkin-2e' : 'munchkin' },
     });
-  }, [roomId, router]);
+  }, [isSecondEdition, roomId, router]);
 
   const navigateToLog = useCallback(() => {
     if (!roomId) {
@@ -272,9 +276,9 @@ const MunchkinIndexView: React.FC = () => {
 
     router.push({
       pathname: '/munchkin/[roomNumber]/log',
-      params: { roomNumber: roomId },
+      params: { roomNumber: roomId, roomTypeId: isSecondEdition ? 'munchkin-2e' : 'munchkin' },
     });
-  }, [roomId, router]);
+  }, [isSecondEdition, roomId, router]);
 
   const handleViewBattle = useCallback(() => {
     navigateToBattle();
@@ -342,6 +346,7 @@ const MunchkinIndexView: React.FC = () => {
                   buttonLabel={buttonLabel}
                   accessibilityLabel={accessibilityLabel}
                   onCopyPress={handleCopyRoomCodePress}
+                  editionLabel={isSecondEdition ? t('rooms.secondEdition') : t('rooms.classic')}
                 />
               ),
             }}
@@ -384,6 +389,10 @@ const MunchkinIndexView: React.FC = () => {
             isCreateBlocked={isCreateBlocked}
             onCreateCharacter={() => setCreateCharacterModalVisible(true)}
             onChangePress={handleChangePress}
+            isSecondEdition={isSecondEdition}
+            onGoldPiecesChange={(character, goldPieces) => {
+              void update(character.id, { goldPieces }).catch((error) => setActionError(error instanceof Error ? error.message : t('room.errorUpdateCharacter')));
+            }}
           />
 
           <View style={styles.actionButtons}>
@@ -414,21 +423,27 @@ const MunchkinIndexView: React.FC = () => {
             </TouchableOpacity>
           </View>
 
+          {isSecondEdition && <TouchableOpacity accessibilityRole="button" testID="open-2e-room-rules" style={styles.logButton} onPress={() => router.push({ pathname: '/munchkin/rules', params: { edition: '2e' } })}>
+            <ButtonLabel style={styles.logButtonText}>{t('rooms.rules')} · {t('rooms.secondEdition')}</ButtonLabel>
+          </TouchableOpacity>}
+
           {battleErrorMessage && (
             <Text style={styles.inlineError}>{battleErrorMessage}</Text>
           )}
 
           {currentCharacter && (
-            <CurrentCharacterFooter key={`own-char-${currentCharacter.id}`} character={currentCharacter} onChangePress={handleChangePress} />
+            <CurrentCharacterFooter key={`own-char-${currentCharacter.id}`} character={currentCharacter} onChangePress={handleChangePress} isSecondEdition={isSecondEdition} />
           )}
 
           <CreateCharacterModal
             visible={createCharacterModalVisible}
+            hideGender={isSecondEdition}
             onConfirm={async (character) => {
               try {
                 setActionError(null);
                 await create({
                   userId: userProfile.id,
+                  roomTypeId: isSecondEdition ? 'munchkin-2e' : 'munchkin',
                   nickname: character.name,
                   avatar: character.avatar ?? userProfile.avatar,
                   color: character.color,
@@ -436,6 +451,7 @@ const MunchkinIndexView: React.FC = () => {
                   power: 0,
                   race: character.race,
                   gender: character.gender,
+                  ...(isSecondEdition ? { goldPieces: 500 } : {}),
                   class: character.class,
                 });
                 setCreateCharacterModalVisible(false);
@@ -448,6 +464,7 @@ const MunchkinIndexView: React.FC = () => {
 
           {changeCharacterModalVisible && modalCharacter && (
             <ChangeCharacterModal
+              hideGender={isSecondEdition}
               character={modalCharacter}
               deleteError={deleteError}
               onConfirm={async (character) => {

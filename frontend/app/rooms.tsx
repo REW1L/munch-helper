@@ -13,6 +13,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ChangeUserModal from './main/modal-change-user';
 import RoomCreateModal from './main/modal-room-create';
 import RoomJoinModal from './main/modal-room-join';
+import type { RoomTypeId } from '@/api/rooms';
 
 export default function Home() {
   // TODO: Not implemented yet
@@ -20,6 +21,7 @@ export default function Home() {
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   const [joinRoomModalVisible, setJoinRoomModalVisible] = useState(false);
   const [changeUserModalVisible, setChangeUserModalVisible] = useState(false);
+  const [selectedRoomType, setSelectedRoomType] = useState<RoomTypeId>('munchkin');
   const { userProfile, setUserProfile } = useContext(userProfileContext);
   const { t } = useTranslation();
 
@@ -35,31 +37,29 @@ export default function Home() {
 
           {/* Main Content */}
           <View style={styles.mainContent}>
-            {/* Munchkin Game Card */}
-            <View style={styles.gameCard}>
-              <View style={styles.gameTitle}>
-                <Text style={styles.gameTitleText}>Munch ⚔️</Text>
-                <Text style={styles.gameTitleText}>{t('rooms.classic')}</Text>
-              </View>
-              <View style={styles.gameActions}>
-                <View style={styles.primaryGameActions}>
-                  <TouchableOpacity testID="create-room-button" style={styles.actionButton} onPress={() => setCreateRoomModalVisible(true)}>
-                    <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
-                  </TouchableOpacity>
-                  <TouchableOpacity testID="screenshot-open-room-join" style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
-                    <ButtonLabel accessible accessibilityLabel="screenshot-open-room-join" testID="screenshot-open-room-join" style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
+            {(['munchkin', 'munchkin-2e'] as const).map((roomTypeId) => {
+              const isSecondEdition = roomTypeId === 'munchkin-2e';
+              const editionLabel = isSecondEdition ? t('rooms.secondEdition') : t('rooms.classic');
+              return <View key={roomTypeId} style={styles.gameCard}>
+                <View style={styles.gameTitle}>
+                  <Text style={styles.gameTitleText}>Munch ⚔️</Text>
+                  <Text style={styles.gameTitleText}>{editionLabel}</Text>
+                </View>
+                <View style={styles.gameActions}>
+                  <View style={styles.primaryGameActions}>
+                    <TouchableOpacity testID={isSecondEdition ? 'create-2e-room-button' : 'create-room-button'} style={styles.actionButton} onPress={() => { setSelectedRoomType(roomTypeId); setCreateRoomModalVisible(true); }}>
+                      <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.create')}</ButtonLabel>
+                    </TouchableOpacity>
+                    <TouchableOpacity testID={isSecondEdition ? 'join-2e-room-button' : 'screenshot-open-room-join'} style={styles.actionButton} onPress={() => setJoinRoomModalVisible(true)}>
+                      <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.join')}</ButtonLabel>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity accessibilityRole="button" testID={isSecondEdition ? 'open-2e-rules' : 'open-munchkin-rules'} style={[styles.actionButton, styles.rulesButton]} onPress={() => router.navigate(isSecondEdition ? '/munchkin/rules?edition=2e' : '/munchkin/rules')}>
+                    <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.rules')}</ButtonLabel>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  testID="open-munchkin-rules"
-                  style={[styles.actionButton, styles.rulesButton]}
-                  onPress={() => router.navigate('/munchkin/rules')}
-                >
-                  <ButtonLabel style={styles.actionButtonLabel}>{t('rooms.rules')}</ButtonLabel>
-                </TouchableOpacity>
-              </View>
-            </View>
+              </View>;
+            })}
           </View>
 
           {/* Rooms History Button */}
@@ -107,10 +107,10 @@ export default function Home() {
             visible={createRoomModalVisible}
             onConfirm={() => {
               setCreateRoomModalVisible(false);
-              router.navigate({ pathname: '/munchkin' });
+              router.navigate({ pathname: '/munchkin', params: { roomTypeId: selectedRoomType } });
             }}
             onCancel={() => setCreateRoomModalVisible(false)}
-            game="Munchkin"
+            game={`Munchkin ${selectedRoomType === 'munchkin-2e' ? t('rooms.secondEdition') : t('rooms.classic')}`}
           />
           <RoomJoinModal
             visible={joinRoomModalVisible}

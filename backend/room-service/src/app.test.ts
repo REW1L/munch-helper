@@ -54,6 +54,20 @@ describe('room-service app', () => {
     expect(response.body).toMatchObject({ roomId: 'r1', userId: 'u1', characterId: 'c1' });
   });
 
+  it('creates a Second Edition room when requested', async () => {
+    const deps = buildDeps();
+    const now = new Date();
+    vi.mocked(deps.roomModel.create).mockResolvedValue({ id: 'r-2e', roomTypeId: 'munchkin-2e', createdAt: now });
+    vi.mocked(deps.createDefaultCharacter).mockResolvedValue({ id: 'c-2e' });
+    vi.mocked(deps.roomAssociationModel.create).mockResolvedValue({ roomId: 'r-2e', userId: 'u1', characterId: 'c-2e', createdAt: now });
+
+    const response = await request(createApp(deps)).post('/rooms').send({ roomTypeId: 'munchkin-2e', userId: 'u1' });
+
+    expect(response.status).toBe(201);
+    expect(response.body.roomTypeId).toBe('munchkin-2e');
+    expect(deps.roomModel.create).toHaveBeenCalledWith({ roomTypeId: 'munchkin-2e' });
+  });
+
   it('rejects unsupported room types and missing owners', async () => {
     const app = createApp(buildDeps());
 
@@ -93,13 +107,22 @@ describe('room-service app', () => {
     expect(response.status).toBe(404);
   });
 
+  it('looks up the persisted room edition by room code', async () => {
+    const deps = buildDeps();
+    const createdAt = new Date();
+    vi.mocked(deps.roomModel.findById).mockResolvedValue({ id: 'r-2e', roomTypeId: 'munchkin-2e', createdAt });
+    const response = await request(createApp(deps)).get('/rooms/r-2e');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ roomId: 'r-2e', roomTypeId: 'munchkin-2e', createdAt: createdAt.toISOString() });
+  });
+
   it('returns existing association when already joined', async () => {
     const deps = buildDeps();
     const now = new Date();
 
     vi.mocked(deps.roomModel.findById).mockResolvedValue({
       id: 'r2',
-      roomTypeId: 'munchkin',
+      roomTypeId: 'munchkin-2e',
       createdAt: now
     });
     vi.mocked(deps.roomAssociationModel.findOne).mockResolvedValue({
@@ -113,7 +136,7 @@ describe('room-service app', () => {
     const response = await request(app).post('/rooms/associations').send({ roomId: 'r2', userId: 'u2' });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ roomId: 'r2', alreadyJoined: true });
+    expect(response.body).toMatchObject({ roomId: 'r2', roomTypeId: 'munchkin-2e', alreadyJoined: true });
   });
 
   it('creates a new room association when joining for the first time', async () => {

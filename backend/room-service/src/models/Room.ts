@@ -3,7 +3,7 @@ import { mongoose } from '../db';
 
 interface RoomDocument {
   _id: string;
-  roomTypeId: 'munchkin';
+  roomTypeId: 'munchkin' | 'munchkin-2e';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,7 +40,7 @@ const roomSchema = new mongoose.Schema<RoomDocument>(
     roomTypeId: {
       type: String,
       required: true,
-      enum: ['munchkin'],
+      enum: ['munchkin', 'munchkin-2e'],
       default: 'munchkin'
     }
   },

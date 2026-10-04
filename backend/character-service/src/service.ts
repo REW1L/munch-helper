@@ -29,6 +29,7 @@ const mapCharacter = (character: CharacterDocumentLike): CharacterLike => {
     class: character.class,
     race: character.race,
     gender: character.gender,
+    ...(character.goldPieces !== undefined ? { goldPieces: character.goldPieces } : {}),
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   };

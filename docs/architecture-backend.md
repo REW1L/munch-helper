@@ -110,6 +110,7 @@ The five HTTP-exposed services together provide the public REST surface:
 | PATCH | `/users/:userId` | user-service | Update name and/or avatarId |
 | POST | `/rooms` | room-service | Create a room (provisions default character) |
 | POST | `/rooms/associations` | room-service | Join a room (idempotent on `(roomId, userId)`) |
+| GET | `/rooms/:roomId` | room-service | Resolve persisted edition for routing/session restore |
 | GET | `/characters?roomId=` | character-service | List characters in a room |
 | POST | `/characters` | character-service | Create a character |
 | PATCH | `/characters/:characterId` | character-service | Patch character fields (no-op-resistant; emits `character_updated`) |
@@ -198,12 +199,15 @@ Owns the `Room` and `RoomAssociation` schemas. Two endpoints, both call out to c
 
 - `POST /rooms`: creates the room (auto-id via `random-words` with up to 5 retries on duplicate slug), then calls character-service to provision a default character for the owner. If character creation fails, both the room and any association are rolled back and a 502 is returned.
 - `POST /rooms/associations`: idempotent. If the user is already in the room, returns 200 with `alreadyJoined: true`; otherwise provisions a default character and creates the association. Falls back gracefully on a unique-key 11000 race.
+- Rooms persist `munchkin` (Classic, default) or `munchkin-2e` (Second Edition). Association responses return the stored type, including idempotent joins; the lookup endpoint supports restored room links.
 
 The default character's color is computed deterministically from `userId` (or, if absent, `roomId:userName`) so the same user always gets the same color.
 
 ### character-service
 
 Largest service by route count. Owns the `Character` schema. Class/race/gender are stored as JSON-encoded strings (legacy shape) and the frontend parses them back into arrays. Color must match `^#[0-9a-fA-F]{6}$`; invalid colors fall back to a deterministic hash of the character id at response time. Every successful mutation publishes through the `FanoutCharacterEventPublisher`.
+
+Gold Pieces are an optional nonnegative integer on the room-owned character record. Second Edition character creation initializes 500 GP; updates require the matching room id and flow through the existing character update event and history fan-out.
 
 PATCH builds a `changes` diff between the pre-update document and the post-update document using `Object.is` semantics, then includes only fields that actually changed. The pre-update read is enrichment-only - if it fails, the update still proceeds and `changes` is omitted. This is by design: keeping the pre-read non-blocking is what makes the update path resilient to transient Mongo read failures.
 

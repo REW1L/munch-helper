@@ -19,6 +19,7 @@ export interface CharacterEventPayload {
     name: string;
     avatarId: number;
     color: string;
+    goldPieces?: number;
   };
   changes?: Record<string, { prev: unknown; next: unknown }>;
 }

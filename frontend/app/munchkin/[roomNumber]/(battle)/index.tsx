@@ -39,7 +39,8 @@ function areDraftsEqual(left: BattleDraft | null, right: BattleDraft | null): bo
 
 export default function BattleView() {
   const { t } = useTranslation();
-  const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const { roomNumber, roomTypeId } = useLocalSearchParams<{ roomNumber: string; roomTypeId?: string }>();
+  const isSecondEdition = roomTypeId === 'munchkin-2e';
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const { userProfile } = useUserProfile();
@@ -258,6 +259,10 @@ export default function BattleView() {
 
         {!isLoading && !charactersLoading && !errorMessage && !charactersErrorMessage && battle && draft && (
           <View accessible accessibilityLabel="screenshot-battle-ready" style={styles.body} testID="screenshot-battle-ready">
+            {isSecondEdition && <View style={styles.stateBlock} testID="second-edition-battle-guidance">
+              <Text style={styles.stateText}>{t('gameRules.secondEditionCombatBody')}</Text>
+              <Text style={styles.stateText}>{t('gameRules.secondEditionNotice')}</Text>
+            </View>}
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <TextInput

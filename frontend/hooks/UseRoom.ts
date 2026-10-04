@@ -1,4 +1,4 @@
-import { createRoom, CreateRoomResponse, joinRoom, JoinRoomResponse } from '@/api/rooms';
+import { createRoom, CreateRoomResponse, joinRoom, JoinRoomResponse, RoomTypeId } from '@/api/rooms';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
@@ -9,10 +9,10 @@ type UserRoomContext = {
 };
 
 export function useRoomCreate() {
-  const mutation = useMutation<CreateRoomResponse, Error, UserRoomContext>({
-    mutationFn: async ({ userId, nickname, avatar }: UserRoomContext): Promise<CreateRoomResponse> => {
+  const mutation = useMutation<CreateRoomResponse, Error, UserRoomContext & { roomTypeId?: RoomTypeId }>({
+    mutationFn: async ({ userId, nickname, avatar, roomTypeId = 'munchkin' }): Promise<CreateRoomResponse> => {
       return createRoom({
-        roomTypeId: 'munchkin',
+        roomTypeId,
         userId,
         userName: nickname,
         avatarId: avatar,

@@ -1,0 +1,35 @@
+get:
+  tags:
+    - Room Management
+  summary: Look up room metadata
+  description: Returns the persisted room edition for routing and session restoration.
+  operationId: getRoomMetadata
+  parameters:
+    - name: roomId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    "200":
+      description: Room metadata
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [roomId, roomTypeId, createdAt]
+            properties:
+              roomId:
+                type: string
+              roomTypeId:
+                type: string
+                enum: [munchkin, munchkin-2e]
+              createdAt:
+                type: string
+                format: date-time
+    "404":
+      description: Room not found
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
