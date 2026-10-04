@@ -8,6 +8,7 @@ On iOS, the battle discard confirmation can appear below the visible screen beca
 
 - Render custom confirmation dialogs in a screen-level modal on iOS so their backdrop and dialog are centered in the device window.
 - Preserve the native Android alert and web modal behavior.
+- Add an end-to-end regression flow for battle discard confirmation visibility and require scenario-specific E2E coverage for substantial frontend behavior changes and fixes.
 
 ## Capabilities
 
@@ -22,5 +23,5 @@ None.
 ## Impact
 
 - Affected code: `frontend/components/ConfirmDialog.tsx` and its tests.
-- Affected docs: frontend architecture, component inventory, and source tree analysis.
+- Affected docs and guidance: frontend architecture, component inventory, source tree analysis, E2E development guide, and `AGENTS.md`.
 - No API, dependency, or backend changes.

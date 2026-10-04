@@ -8,6 +8,8 @@
 
 Keep Android's `Alert.alert` behavior. Render both custom iOS and web presentations through React Native `Modal`, which anchors presentation to the app window rather than the triggering component. Preserve the existing backdrop, actions, and web behavior.
 
+Add a Maestro flow that reaches the battle discard action through the room UI and checks that the confirmation title and both actions are visible before canceling. This covers the previously untested path on native platforms and web. Require scenario-specific E2E coverage for substantial frontend behavior changes and bug fixes in repository guidance.
+
 ## Risks
 
 - Native modal presentation behavior differs by platform; targeted component tests should verify the iOS custom path uses `Modal` and that the existing dialog actions continue to work.

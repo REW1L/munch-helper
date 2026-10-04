@@ -45,6 +45,7 @@ describe('BattleDiscardAction', () => {
     );
 
     expect(screen.getByText('Discard battle?')).toBeTruthy();
+    expect(screen.getByTestId('confirm-dialog-cancel')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Keep battle' }));
     expect(onCancelConfirm).toHaveBeenCalledTimes(1);
     expect(onConfirmDiscard).not.toHaveBeenCalled();

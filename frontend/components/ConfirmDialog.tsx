@@ -53,9 +53,9 @@ export default function ConfirmDialog({
   }
 
   const dialogContent = visible ? (
-    <Pressable style={styles.overlay} onPress={onCancel}>
-      <Pressable style={styles.dialog} onPress={() => { }}>
-        <Text style={styles.title}>{title}</Text>
+    <Pressable accessible={false} style={styles.overlay} onPress={onCancel}>
+      <Pressable accessible={false} style={styles.dialog} onPress={() => { }}>
+        <Text accessible testID="confirm-dialog-title" style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>
         <View style={styles.buttons}>
           <TouchableOpacity
@@ -63,6 +63,7 @@ export default function ConfirmDialog({
             accessibilityLabel={resolvedCancelLabel}
             accessibilityRole="button"
             style={[styles.button, styles.cancelButton]}
+            testID="confirm-dialog-cancel"
             onPress={onCancel}
           >
             <ButtonLabel style={styles.cancelText}>{resolvedCancelLabel}</ButtonLabel>

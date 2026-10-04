@@ -7,7 +7,7 @@ Custom confirmation dialogs SHALL be rendered in a viewport-level presentation c
 #### Scenario: Battle discard confirmation is centered on iOS
 
 - **WHEN** a user opens the battle discard confirmation from the battle screen on iOS
-- **THEN** the dialog appears within the visible device window with its backdrop covering the screen
+- **THEN** the dialog appears within the visible device window with its backdrop covering the screen, and both the cancel and confirm actions are visible and tappable
 
 #### Scenario: Confirmation dialog remains usable on web
 

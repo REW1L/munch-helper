@@ -32,6 +32,6 @@ describe('ConfirmDialog', () => {
     );
 
     expect(screen.getByTestId('viewport-modal')).toBeTruthy();
-    expect(screen.getByText('Discard battle?')).toBeTruthy();
+    expect(screen.getByTestId('confirm-dialog-title').textContent).toBe('Discard battle?');
   });
 });
