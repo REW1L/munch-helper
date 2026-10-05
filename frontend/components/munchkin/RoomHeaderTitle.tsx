@@ -8,6 +8,7 @@ type RoomHeaderTitleProps = {
   buttonLabel: string;
   accessibilityLabel: string;
   onCopyPress: () => void;
+  editionLabel?: string;
 };
 
 export function RoomHeaderTitle({
@@ -15,10 +16,14 @@ export function RoomHeaderTitle({
   buttonLabel,
   accessibilityLabel,
   onCopyPress,
+  editionLabel,
 }: RoomHeaderTitleProps) {
   return (
     <View style={styles.headerTitleRow}>
-      <Text style={styles.headerRoomLabel}>Room</Text>
+      <View style={styles.headerLabels}>
+        <Text style={styles.headerRoomLabel}>Room</Text>
+        {editionLabel ? <Text style={styles.headerEdition} numberOfLines={1}>{editionLabel}</Text> : null}
+      </View>
       <Text style={styles.headerRoomCode} numberOfLines={1} ellipsizeMode="middle">
         {roomCode}
       </Text>
@@ -55,6 +60,8 @@ const styles = StyleSheet.create({
     color: AppTheme.colors.textMuted,
     ...AppTheme.typography.labelMd,
   },
+  headerLabels: { maxWidth: 96 },
+  headerEdition: { color: AppTheme.colors.textPrimary, fontSize: 10, fontWeight: '700' },
   headerCopyButton: {
     backgroundColor: AppTheme.colors.elevated,
     borderColor: AppTheme.colors.accent,

@@ -9,6 +9,8 @@ import { ApiError } from '@/api/http';
 
 const mockSetStringAsync = vi.hoisted(() => vi.fn());
 const mockRoomNumber = vi.hoisted(() => ({ current: 'ROOM42' as string | string[] | undefined }));
+const mockRoomMetadata = vi.hoisted(() => ({ current: { roomId: 'ROOM42', roomTypeId: 'munchkin' } as { roomId: string; roomTypeId: string } | undefined }));
+const mockRoomCharactersArgs = vi.hoisted(() => ({ current: [] as unknown[] }));
 const mockCreateCharacter = vi.hoisted(() => vi.fn());
 const mockUpdateCharacter = vi.hoisted(() => vi.fn());
 const mockRemoveCharacter = vi.hoisted(() => vi.fn());
@@ -84,8 +86,14 @@ vi.mock('expo-router', () => ({
   }),
 }));
 
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: mockRoomMetadata.current }),
+}));
+
 vi.mock('@/hooks/useCharacters', () => ({
-  useRoomCharacters: () => ({
+  useRoomCharacters: (...args: unknown[]) => {
+    mockRoomCharactersArgs.current = args;
+    return ({
     characters: mockCharactersState.current,
     create: mockCreateCharacter,
     update: mockUpdateCharacter,
@@ -98,6 +106,14 @@ vi.mock('@/hooks/useCharacters', () => ({
     isCreateBlocked: mockIsCreateBlocked.current,
     isLoading: false,
     errorMessage: null,
+    });
+  },
+}));
+
+vi.mock('@/hooks/useRoomEdition', () => ({
+  useRoomEdition: (_roomId: string | undefined, routeHint?: string) => ({
+    roomTypeId: mockRoomMetadata.current?.roomTypeId ?? routeHint,
+    confirmedRoomTypeId: mockRoomMetadata.current?.roomTypeId,
   }),
 }));
 
@@ -253,6 +269,7 @@ describe('Munchkin room header', () => {
     mockStartBattle.mockReset();
     mockRefreshBattle.mockReset();
     mockRouterPush.mockReset();
+    mockRoomCharactersArgs.current = [];
     mockReconnect.mockReset();
     mockUseReconnectOnForeground.mockReset();
     mockIsCreateBlocked.current = false;
@@ -275,6 +292,7 @@ describe('Munchkin room header', () => {
       errorMessage: null,
     };
     mockRoomNumber.current = 'ROOM42';
+    mockRoomMetadata.current = { roomId: 'ROOM42', roomTypeId: 'munchkin' };
     latestHeaderOptions.current = undefined;
   });
 
@@ -367,6 +385,22 @@ describe('Munchkin room header', () => {
 
     expect(mockSetStringAsync).not.toHaveBeenCalled();
     expect(screen.getByText('Copy')).toBeTruthy();
+  });
+
+  it('uses persisted Second Edition metadata for the room header and rules entry', async () => {
+    mockRoomMetadata.current = { roomId: 'ROOM42', roomTypeId: 'munchkin-2e' };
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+    await act(async () => {
+      render(
+        <userProfileContext.Provider value={{ userProfile: { id: 'user-1', nickname: 'Player One', avatar: 0 }, setUserProfile: vi.fn() }}>
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+    render(latestHeaderOptions.current!.headerTitle!());
+    expect(screen.getByText('Second Edition')).toBeTruthy();
+    await act(async () => { fireEvent.click(screen.getByTestId('open-2e-room-rules')); });
+    expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/munchkin/rules', params: { edition: '2e' } });
   });
 
   it('keeps room stats unchanged until quick edit save is pressed', async () => {
@@ -1035,7 +1069,7 @@ describe('Munchkin room header', () => {
     }));
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/(battle)',
-      params: { roomNumber: 'ROOM42' },
+      params: { roomNumber: 'ROOM42', roomTypeId: 'munchkin' },
     });
   });
 
@@ -1094,7 +1128,7 @@ describe('Munchkin room header', () => {
     expect(mockStartBattle).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/(battle)',
-      params: { roomNumber: 'ROOM42' },
+      params: { roomNumber: 'ROOM42', roomTypeId: 'munchkin' },
     });
   });
 
@@ -1148,7 +1182,7 @@ describe('Munchkin room header', () => {
 
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/log',
-      params: { roomNumber: 'ROOM42' },
+      params: { roomNumber: 'ROOM42', roomTypeId: 'munchkin' },
     });
   });
 
@@ -1180,7 +1214,7 @@ describe('Munchkin room header', () => {
     expect(mockStartBattle).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/(battle)',
-      params: { roomNumber: 'ROOM42' },
+      params: { roomNumber: 'ROOM42', roomTypeId: 'munchkin' },
     });
   });
 
@@ -1214,7 +1248,7 @@ describe('Munchkin room header', () => {
     expect(mockRefreshBattle).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledWith({
       pathname: '/munchkin/[roomNumber]/(battle)',
-      params: { roomNumber: 'ROOM42' },
+      params: { roomNumber: 'ROOM42', roomTypeId: 'munchkin' },
     });
     expect(screen.queryByText('Could not start the battle. Please try again.')).toBeNull();
   });
@@ -1252,5 +1286,19 @@ describe('Munchkin room header', () => {
     expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
     expect(mockRouterPush).not.toHaveBeenCalled();
     expect(screen.getByText('Could not start the battle. Please try again.')).toBeTruthy();
+  });
+
+  it('does not pass a guessed Classic edition to character provisioning while metadata is pending', async () => {
+    mockRoomMetadata.current = undefined;
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+    render(
+      <userProfileContext.Provider value={{
+        userProfile: { id: 'user-1', nickname: 'Player One', avatar: 1 },
+        setUserProfile: vi.fn(),
+      }}>
+        <MunchkinIndexView />
+      </userProfileContext.Provider>
+    );
+    expect(mockRoomCharactersArgs.current[2]).toBeUndefined();
   });
 });

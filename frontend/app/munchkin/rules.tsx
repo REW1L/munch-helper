@@ -1,5 +1,5 @@
 import { AppTheme } from '@/constants/theme';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   Linking,
@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const OFFICIAL_MUNCHKIN_RULES_URL =
   'https://munchkin.game/site-munchkin/assets/files/1138/munchkin_rules-1.pdf';
+export const OFFICIAL_MUNCHKIN_2E_RULES_URL =
+  'https://munchkin.game/site-munchkin/assets/files/3922/munchkin_2e_rules.pdf';
 
 const RULE_SECTIONS = [
   ['goalTitle', 'goalBody'],
@@ -28,23 +30,38 @@ const RULE_SECTIONS = [
   ['priorityTitle', 'priorityBody'],
 ] as const;
 
+const SECOND_EDITION_SECTIONS = [
+  ['secondEditionSetupTitle', 'secondEditionSetupBody'],
+  ['secondEditionTurnsTitle', 'secondEditionTurnsBody'],
+  ['secondEditionCoinsTitle', 'secondEditionCoinsBody'],
+  ['secondEditionRolesTitle', 'secondEditionRolesBody'],
+  ['secondEditionCombatTitle', 'secondEditionCombatBody'],
+  ['secondEditionEscapeTitle', 'secondEditionEscapeBody'],
+  ['secondEditionSixPlayerTitle', 'secondEditionSixPlayerBody'],
+] as const;
+
 export default function MunchkinRulesPage() {
   const { t } = useTranslation();
+  const { edition } = useLocalSearchParams<{ edition?: string }>();
+  const isSecondEdition = edition === '2e';
+  const rulesUrl = isSecondEdition ? OFFICIAL_MUNCHKIN_2E_RULES_URL : OFFICIAL_MUNCHKIN_RULES_URL;
 
   const openOfficialRules = async () => {
     try {
-      await Linking.openURL(OFFICIAL_MUNCHKIN_RULES_URL);
+      await Linking.openURL(rulesUrl);
     } catch (error) {
       console.warn('Failed to open official Munchkin rules', error);
     }
   };
+
+  const sections = isSecondEdition ? SECOND_EDITION_SECTIONS : RULE_SECTIONS;
 
   return (
     <SafeAreaView
       style={styles.safeArea}
       edges={Platform.OS === 'ios' ? [] : ['top', 'bottom', 'left', 'right']}
     >
-      <Stack.Screen options={{ title: t('gameRules.screenTitle') }} />
+      <Stack.Screen options={{ title: t(isSecondEdition ? 'gameRules.secondEditionScreenTitle' : 'gameRules.screenTitle') }} />
 
       <ScrollView
         testID="munchkin-rules-scroll"
@@ -52,28 +69,28 @@ export default function MunchkinRulesPage() {
         showsVerticalScrollIndicator
       >
         <Text accessibilityRole="header" aria-level={1} style={styles.title}>
-          {t('gameRules.title')}
+          {t(isSecondEdition ? 'gameRules.secondEditionTitle' : 'gameRules.title')}
         </Text>
         <View style={styles.sourceCard}>
           <Text accessibilityRole="header" aria-level={2} style={styles.sourceTitle}>
             {t('gameRules.sourceIntro')}
           </Text>
           <TouchableOpacity
-            accessibilityLabel={t('gameRules.sourceA11y')}
+            accessibilityLabel={t(isSecondEdition ? 'gameRules.secondEditionSourceA11y' : 'gameRules.sourceA11y')}
             accessibilityRole="link"
             onPress={openOfficialRules}
             style={styles.sourceLink}
             testID="official-rules-source"
           >
-            <Text style={styles.sourceLinkText}>{t('gameRules.sourceLabel')}</Text>
+            <Text style={styles.sourceLinkText}>{t(isSecondEdition ? 'gameRules.secondEditionSourceLabel' : 'gameRules.sourceLabel')}</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.description}>{t('gameRules.description')}</Text>
+        <Text style={styles.description}>{t(isSecondEdition ? 'gameRules.secondEditionDescription' : 'gameRules.description')}</Text>
         <View style={styles.notice}>
-          <Text style={styles.noticeText}>{t('gameRules.summaryNotice')}</Text>
+          <Text style={styles.noticeText}>{t(isSecondEdition ? 'gameRules.secondEditionNotice' : 'gameRules.summaryNotice')}</Text>
         </View>
 
-        {RULE_SECTIONS.map(([titleKey, bodyKey]) => (
+        {sections.map(([titleKey, bodyKey]) => (
           <View key={titleKey} style={styles.section}>
             <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>
               {t(`gameRules.${titleKey}`)}

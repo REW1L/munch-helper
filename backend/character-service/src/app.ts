@@ -21,6 +21,7 @@ export interface CharacterLike {
   class: string;
   race: string;
   gender: string;
+  goldPieces?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +35,7 @@ export interface CharacterModelLike {
     updates: Record<string, unknown>,
     options: { new: boolean; runValidators: boolean }
   ) => Promise<CharacterLike | null>;
+  adjustGoldPieces: (id: string, roomId: string, delta: number) => Promise<CharacterLike | null>;
   findByIdAndDelete: (id: string) => Promise<CharacterLike | null>;
 }
 
@@ -137,6 +139,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
     class: character.class,
     race: character.race,
     gender: character.gender,
+    ...(character.goldPieces !== undefined ? { goldPieces: character.goldPieces } : {}),
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   });
@@ -147,7 +150,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       id: responseCharacter.id,
       name: responseCharacter.name,
       avatarId: responseCharacter.avatarId,
-      color: responseCharacter.color
+      color: responseCharacter.color,
+      ...(responseCharacter.goldPieces !== undefined ? { goldPieces: responseCharacter.goldPieces } : {})
     };
   };
 
@@ -248,7 +252,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         power = 0,
         class: klass = JSON.stringify([]),
         race = JSON.stringify(['Human']),
-        gender = JSON.stringify(['male'])
+        gender = JSON.stringify(['male']),
+        roomTypeId
       } = req.body || {};
 
       console.info('[character-service] create character request', {
@@ -270,7 +275,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (typeof color !== 'string' || !hexColorPattern.test(normalizeHexColor(color))) {
         return res.status(400).json({ message: 'Field color is required and must be a valid hex color (#RRGGBB)' });
       }
-
+      if (Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPieces')) {
+        return res.status(400).json({ message: 'Field goldPieces is not supported when creating a character' });
+      }
+      if (roomTypeId !== undefined && roomTypeId !== 'munchkin' && roomTypeId !== 'munchkin-2e') {
+        return res.status(400).json({ message: 'Field roomTypeId must be "munchkin" or "munchkin-2e"' });
+      }
       const character = await characterModel.create({
         roomId: roomId.trim(),
         userId,
@@ -281,7 +291,8 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         power,
         class: klass,
         race,
-        gender
+        gender,
+        ...(roomTypeId === 'munchkin-2e' ? { goldPieces: 500 } : {})
       });
 
       console.info('[character-service] create character success', {
@@ -339,7 +350,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         }
       }
 
-      if (Object.keys(updates).length === 0) {
+      if (Object.keys(updates).length === 0 && !Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPiecesDelta')) {
         return res.status(400).json({ message: 'No valid fields provided for update' });
       }
 
@@ -353,6 +364,17 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (Object.prototype.hasOwnProperty.call(updates, 'avatarId') && typeof updates.avatarId !== 'number') {
         return res.status(400).json({ message: 'Field avatarId must be a number when provided' });
       }
+      const goldPiecesDelta = req.body?.goldPiecesDelta;
+      const isGoldPiecesAdjustment = Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPiecesDelta');
+      if (isGoldPiecesAdjustment && Object.keys(updates).length > 0) {
+        return res.status(400).json({ message: 'Gold Pieces adjustments cannot be combined with other character updates' });
+      }
+      if (isGoldPiecesAdjustment && (typeof goldPiecesDelta !== 'number' || !Number.isInteger(goldPiecesDelta) || goldPiecesDelta === 0)) {
+        return res.status(400).json({ message: 'Field goldPiecesDelta must be a nonzero integer' });
+      }
+      if (isGoldPiecesAdjustment && (typeof req.body.roomId !== 'string' || !req.body.roomId.trim())) {
+        return res.status(400).json({ message: 'Field roomId is required for a Gold Pieces update' });
+      }
       if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
         if (typeof updates.color !== 'string' || !hexColorPattern.test(normalizeHexColor(updates.color))) {
           return res.status(400).json({ message: 'Field color must be a valid hex color (#RRGGBB) when provided' });
@@ -361,19 +383,32 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       }
 
       let previousCharacter: CharacterLike | null = null;
-      try {
+      let character: CharacterLike | null;
+      if (isGoldPiecesAdjustment) {
         previousCharacter = await characterModel.findById(characterId);
-      } catch (error) {
-        // Pre-update read is enrichment-only (for changes diff); a failure must not abort the update.
-        console.error('[character-service] failed to read previous character for changes diff', {
-          characterId,
-          error
-        });
+        if (!previousCharacter || previousCharacter.roomId !== req.body.roomId.trim()) {
+          return res.status(404).json({ message: 'Character not found in room' });
+        }
+        if (previousCharacter.goldPieces === undefined) {
+          return res.status(400).json({ message: 'Gold Pieces are only supported in Second Edition rooms' });
+        }
+        character = await characterModel.adjustGoldPieces(characterId, req.body.roomId.trim(), goldPiecesDelta);
+        if (!character) {
+          return res.status(409).json({ message: 'Gold Pieces balance cannot be negative' });
+        }
+        // The returned balance is the atomic post-adjustment value. Derive the real
+        // prior value from it so concurrent updates each publish their own delta.
+        previousCharacter = { ...character, goldPieces: character.goldPieces! - goldPiecesDelta };
+        updates.goldPieces = character.goldPieces;
+      } else {
+        try {
+          previousCharacter = await characterModel.findById(characterId);
+        } catch (error) {
+          // Pre-update read is enrichment-only for ordinary character edits.
+          console.error('[character-service] failed to read previous character for changes diff', { characterId, error });
+        }
+        character = await characterModel.findByIdAndUpdate(characterId, updates, { new: true, runValidators: true });
       }
-      const character = await characterModel.findByIdAndUpdate(characterId, updates, {
-        new: true,
-        runValidators: true
-      });
 
       if (!character) {
         return res.status(404).json({ message: 'Character not found' });

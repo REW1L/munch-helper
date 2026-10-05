@@ -11,11 +11,13 @@ import AttributeList from './AttributeList';
 interface CurrentCharacterFooterProps {
   character: RoomCharacter;
   onChangePress: (character: RoomCharacter) => void;
+  isSecondEdition?: boolean;
 }
 
 const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
   character,
   onChangePress,
+  isSecondEdition = false,
 }: CurrentCharacterFooterProps) {
   const { t } = useTranslation();
   return (
@@ -29,6 +31,7 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
         <View style={styles.footerStats}>
           <Text style={styles.footerStatText}>{character.level} lvl</Text>
           <Text style={styles.footerStatText}>{character.power} str</Text>
+          {isSecondEdition && <Text style={styles.footerStatText}>{character.goldPieces ?? 500} GP</Text>}
         </View>
       </View>
 
@@ -38,7 +41,7 @@ const CurrentCharacterFooter = memo(function CurrentCharacterFooter({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.attributesScrollContent}
         >
-          <AttributeList character={character} variant="footer" />
+          <AttributeList character={character} variant="footer" showGender={!isSecondEdition} />
         </ScrollView>
       </View>
 

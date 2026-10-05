@@ -49,6 +49,8 @@ paths:
   # Room Management
   /rooms:
     $ref: paths/rooms.yaml
+  /rooms/{roomId}:
+    $ref: paths/rooms_{roomId}.yaml
   /rooms/associations:
     $ref: paths/rooms_associations.yaml
   # Character Management

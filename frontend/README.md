@@ -16,14 +16,14 @@ Feature-oriented orchestration (`useUser`, `useRoomCharacters`, `useRoomCreate`,
 Global user profile context shared across route groups.
 
 4. `app/*`
-Expo Router route files and screen composition, including the App Store support page at `/support` and the localized Munchkin Classic guide at `/munchkin/rules`.
+Expo Router route files and screen composition, including the App Store support page at `/support` and localized Munchkin Classic and Second Edition guides at `/munchkin/rules`.
 
 5. `components/*`
 Reusable UI building blocks and app shell boundary components.
 
 Runtime config is validated at startup in `config/runtime.ts`; invalid production config fails fast.
 
-The Munchkin rules route contains a concise, original overview of play. It does not bundle or display the copyrighted rulebook; it identifies and opens the official Munchkin Classic PDF as the authoritative external source.
+The Munchkin rules route contains concise, original overviews of Classic and Second Edition play. It does not bundle or display copyrighted rulebooks; it links to the official edition-specific PDFs as authoritative external sources. Second Edition rooms also track each character's Gold Pieces balance, starting at 500 GP, while physical card effects remain player-managed.
 
 ## Prerequisites
 

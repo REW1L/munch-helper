@@ -6,7 +6,7 @@ properties:
     description: Auto-generated word + 4-digit code (for example `Frog4521`).
   roomTypeId:
     type: string
-    enum: [munchkin]
+    enum: [munchkin, munchkin-2e]
   userId:
     type: string
   characterId:

@@ -30,12 +30,13 @@ function deterministicHexColor(seed: string): string {
 }
 
 function createDefaultCharacterFactory(options: RoomServiceOptions): AppDependencies['createDefaultCharacter'] {
-  return async ({ roomId, userId, userName, avatarId }) => {
+  return async ({ roomId, roomTypeId, userId, userName, avatarId }) => {
     const colorSeed = typeof userId === 'string' && userId.trim() ? userId : `${roomId}:${userName}`;
     const response = await axios.post(
       `${options.characterServiceUrl}/characters`,
       {
         roomId,
+        roomTypeId,
         userId,
         name: typeof userName === 'string' && userName.trim() ? userName.trim() : 'Adventurer',
         avatarId: typeof avatarId === 'number' ? avatarId : 1,

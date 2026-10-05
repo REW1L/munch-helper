@@ -29,6 +29,7 @@ const mapCharacter = (character: CharacterDocumentLike): CharacterLike => {
     class: character.class,
     race: character.race,
     gender: character.gender,
+    ...(character.goldPieces !== undefined ? { goldPieces: character.goldPieces } : {}),
     createdAt: character.createdAt,
     updatedAt: character.updatedAt
   };
@@ -86,6 +87,14 @@ export function createCharacterModel(): CharacterModelLike {
         roomId: character.roomId
       });
       return mapCharacter(character);
+    },
+    adjustGoldPieces: async (id, roomId, delta) => {
+      const character = await Character.findOneAndUpdate(
+        { _id: id, roomId, goldPieces: { $gte: -delta } },
+        { $inc: { goldPieces: delta } },
+        { new: true, runValidators: true }
+      );
+      return character ? mapCharacter(character) : null;
     },
     findByIdAndDelete: async (id) => {
       console.info('[character-service] db delete character', { characterId: id });

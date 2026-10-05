@@ -21,7 +21,8 @@ munch-helper/
 ## What Is Implemented
 
 - User management: create, read, and update users
-- Room management: create room and join room
+- Room management: create Classic (`munchkin`) or Second Edition (`munchkin-2e`) rooms and join or resume by code
+- Second Edition companion support: localized guide, character Gold Pieces tracking, and edition-aware battle reminders
 - Character management: list, create, update, and delete characters
 - Battle management: start, patch, conclude, and discard the active battle (one active battle per room)
 - Room history: cursor-paginated log of character and battle lifecycle events (`/logs`, `/logs/:logId`)

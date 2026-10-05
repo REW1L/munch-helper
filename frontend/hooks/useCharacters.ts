@@ -7,6 +7,7 @@ import {
   getCharactersByRoom,
   updateCharacter,
 } from '@/api/characters';
+import type { RoomTypeId } from '@/api/rooms';
 import { useRoomWebSocket } from '@/hooks/useRoomWebSocket';
 import { UserProfileInterface } from '@/hooks/useUser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -100,7 +101,7 @@ function consumeSuppressibleEcho(markers: Map<string, PendingLocalUpdateMarker>,
   });
 }
 
-export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface): UseRoomCharactersResult {
+export function useRoomCharacters(roomId: string | undefined, userProfile: UserProfileInterface, roomTypeId?: RoomTypeId): UseRoomCharactersResult {
   const queryClient = useQueryClient();
   const charactersQueryKey = useMemo(() => getCharactersQueryKey(roomId), [roomId]);
   const webSocketOptions = useMemo(
@@ -145,7 +146,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         throw new Error('Room ID is required to create a character');
       }
 
-      return createCharacter({ ...payload, roomId });
+      return createCharacter({ ...payload, roomId, roomTypeId: roomTypeId ?? payload.roomTypeId });
     },
     onMutate: async (payload) => {
       const queryKey = charactersQueryKey;
@@ -215,6 +216,9 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
               class: payload.class ?? character.class,
               race: payload.race ?? character.race,
               gender: payload.gender ?? character.gender,
+              goldPieces: payload.goldPiecesDelta !== undefined && character.goldPieces !== undefined
+                ? character.goldPieces + payload.goldPiecesDelta
+                : character.goldPieces,
             }
             : character
         )
@@ -375,8 +379,9 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   );
 
   const update = useCallback(async (characterId: string, payload: CharacterUpdatePayload) => {
-    return updateMutation.mutateAsync({ characterId, payload });
-  }, [updateMutation]);
+    const roomScopedPayload = payload.goldPiecesDelta !== undefined && roomId ? { ...payload, roomId } : payload;
+    return updateMutation.mutateAsync({ characterId, payload: roomScopedPayload });
+  }, [roomId, updateMutation]);
 
   const remove = useCallback(async (characterId: string) => {
     await deleteMutation.mutateAsync({ characterId });
@@ -386,7 +391,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
   const hasCompletedInitialFetch = charactersQuery.isFetchedAfterMount && !charactersQuery.isFetching;
 
   useEffect(() => {
-    if (!roomId || !userProfile.id || !hasCompletedInitialFetch) {
+    if (!roomId || !userProfile.id || !roomTypeId || !hasCompletedInitialFetch) {
       return;
     }
 
@@ -418,6 +423,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
         race: ['Human'],
         gender: ['male'],
         class: [],
+        roomTypeId,
       })
       .catch((error) => {
         if (isAbortError(error)) {
@@ -429,7 +435,7 @@ export function useRoomCharacters(roomId: string | undefined, userProfile: UserP
       .finally(() => {
         isEnsuringCurrentCharacterRef.current = false;
       });
-  }, [characters, createMutation, hasCompletedInitialFetch, roomId, userProfile.avatar, userProfile.id, userProfile.nickname]);
+  }, [characters, createMutation, hasCompletedInitialFetch, roomId, roomTypeId, userProfile.avatar, userProfile.id, userProfile.nickname]);
 
   const refresh = useCallback(async () => {
     await charactersQuery.refetch();

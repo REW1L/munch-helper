@@ -4,11 +4,11 @@ additionalProperties: false
 properties:
   roomTypeId:
     type: string
-    enum: [munchkin]
+    enum: [munchkin, munchkin-2e]
     default: munchkin
     description: |
-      Only `munchkin` is supported today. Defaults to `munchkin` when omitted by
-      the room-service handler.
+      `munchkin` is Classic and `munchkin-2e` is Second Edition. Defaults to
+      `munchkin` when omitted by the room-service handler.
   userId:
     type: string
     minLength: 1

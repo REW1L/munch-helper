@@ -43,6 +43,8 @@ Endpoints (host):
 | `mongodb://localhost:27021..27025` | one Mongo per service |
 | `redis://localhost:6379` | Redis Pub/Sub |
 
+Room API smoke checks can create either `munchkin` (Classic/default) or `munchkin-2e` (Second Edition), join by code, and read `GET /rooms/{roomId}` to resolve the persisted edition. Coin updates are room-scoped character updates and flow through the existing notification and log publishers.
+
 Smoke checks:
 
 ```bash

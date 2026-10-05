@@ -1,7 +1,9 @@
 type: object
 description: |
   Partial update. Allowed keys are `name`, `avatarId`, `color`, `level`, `power`,
-  `class`, `race`, `gender`, `userId`. At least one allowed key must be present.
+  `class`, `race`, `gender`, and `userId`. Gold Pieces adjustments require the
+  matching `roomId` and a nonzero signed `goldPiecesDelta`; the server applies
+  adjustments atomically and returns 409 if the balance would become negative.
 additionalProperties: false
 minProperties: 1
 properties:
@@ -31,3 +33,11 @@ properties:
     type:
       - string
       - "null"
+  goldPiecesDelta:
+    type: integer
+    not:
+      const: 0
+    description: Signed balance adjustment; only supported for Second Edition characters.
+  roomId:
+    type: string
+    minLength: 1

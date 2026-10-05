@@ -8,6 +8,7 @@ function buildCharacterModel(): CharacterModelLike {
     create: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    adjustGoldPieces: vi.fn(),
     findByIdAndDelete: vi.fn()
   };
 }
@@ -31,6 +32,7 @@ const buildBaseCharacter = () => {
     class: '',
     race: '',
     gender: '',
+    goldPieces: undefined,
     createdAt: now,
     updatedAt: now
   };
@@ -105,6 +107,26 @@ describe('character-service app', () => {
         character: { id: 'c2', name: 'Mage', avatarId: 4, color: '#00AAFF' }
       })
     );
+  });
+
+  it('starts Second Edition characters with 500 Gold Pieces', async () => {
+    const model = buildCharacterModel();
+    vi.mocked(model.create).mockResolvedValue(buildCharacter({ id: 'c-2e', roomId: 'r-2e', goldPieces: 500 }));
+    const response = await request(createApp(model)).post('/characters').send({
+      roomId: 'r-2e', userId: 'u-2e', name: 'Adventurer', avatarId: 1, color: '#AABBCC', roomTypeId: 'munchkin-2e'
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.goldPieces).toBe(500);
+    expect(model.create).toHaveBeenCalledWith(expect.objectContaining({ roomId: 'r-2e', goldPieces: 500 }));
+  });
+
+  it('rejects an explicit Gold Pieces balance on character creation', async () => {
+    const model = buildCharacterModel();
+    const response = await request(createApp(model)).post('/characters').send({
+      roomId: 'r-2e', name: 'Adventurer', avatarId: 1, color: '#AABBCC', roomTypeId: 'munchkin-2e', goldPieces: 1000
+    });
+    expect(response.status).toBe(400);
+    expect(model.create).not.toHaveBeenCalled();
   });
 
   it('uses inbound correlation id on response and published event', async () => {
@@ -269,6 +291,43 @@ describe('character-service app', () => {
         }
       })
     );
+  });
+
+  it('applies Gold Pieces deltas atomically and publishes their actual history', async () => {
+    const model = buildCharacterModel();
+    const publisher = { publish: vi.fn().mockResolvedValue(undefined) };
+    vi.mocked(model.findById).mockResolvedValue(buildCharacter({ id: 'c-gp', roomId: 'r-gp', goldPieces: 500 }));
+    vi.mocked(model.adjustGoldPieces).mockResolvedValue(buildCharacter({ id: 'c-gp', roomId: 'r-gp', goldPieces: 600 }));
+    const app = createApp(model, { publisher });
+
+    const valid = await request(app).patch('/characters/c-gp').send({ roomId: 'r-gp', goldPiecesDelta: 100 });
+    const invalidDelta = await request(app).patch('/characters/c-gp').send({ roomId: 'r-gp', goldPiecesDelta: 0 });
+    const wrongRoom = await request(app).patch('/characters/c-gp').send({ roomId: 'other-room', goldPiecesDelta: 100 });
+
+    expect(valid.status).toBe(200);
+    expect(valid.body.goldPieces).toBe(600);
+    expect(publisher.publish).toHaveBeenCalledWith(expect.objectContaining({ changes: { goldPieces: { prev: 500, next: 600 } } }));
+    expect(model.adjustGoldPieces).toHaveBeenCalledWith('c-gp', 'r-gp', 100);
+    expect(invalidDelta.status).toBe(400);
+    expect(wrongRoom.status).toBe(404);
+  });
+
+  it('rejects coin changes on Classic characters and does not write', async () => {
+    const model = buildCharacterModel();
+    vi.mocked(model.findById).mockResolvedValue(buildCharacter({ id: 'classic', roomId: 'r1' }));
+    const response = await request(createApp(model)).patch('/characters/classic').send({ roomId: 'r1', goldPiecesDelta: 10 });
+    expect(response.status).toBe(400);
+    expect(model.adjustGoldPieces).not.toHaveBeenCalled();
+    expect(model.findByIdAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns conflict when an atomic coin adjustment would overdraw', async () => {
+    const model = buildCharacterModel();
+    vi.mocked(model.findById).mockResolvedValue(buildCharacter({ id: 'c-gp', roomId: 'r1', goldPieces: 20 }));
+    vi.mocked(model.adjustGoldPieces).mockResolvedValue(null);
+    const response = await request(createApp(model)).patch('/characters/c-gp').send({ roomId: 'r1', goldPiecesDelta: -30 });
+    expect(response.status).toBe(409);
+    expect(model.adjustGoldPieces).toHaveBeenCalledWith('c-gp', 'r1', -30);
   });
 
   it('keeps update and delete responses successful when publishing fails', async () => {

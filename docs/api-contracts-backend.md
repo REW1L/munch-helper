@@ -104,7 +104,7 @@ Create a Munchkin room. Provisions a default character for the owner via an inte
 }
 ```
 
-- `roomTypeId` (string, defaults to `"munchkin"`; only `"munchkin"` accepted).
+- `roomTypeId` (string; `"munchkin"` Classic or `"munchkin-2e"` Second Edition; defaults to `"munchkin"`).
 - `userId` (string, required, non-empty after trim).
 - `userName` (string, optional - used as the default character name; defaults to `"Adventurer"`).
 - `avatarId` (number, optional - used as the default character avatar; defaults to `1`).
@@ -122,7 +122,7 @@ Create a Munchkin room. Provisions a default character for the owner via an inte
   }
   ```
 - `400 Bad Request`:
-  - `Only roomTypeId "munchkin" is supported in local mode`
+  - `Field roomTypeId must be "munchkin" or "munchkin-2e"`
   - `Field userId is required and must be a non-empty string`
 - `502 Bad Gateway`:
   - `Failed to create default character for room owner` (with `details` from the upstream error). Room and association rows are rolled back before responding.
@@ -147,6 +147,12 @@ Join an existing room. Idempotent on `(roomId, userId)`.
 - `userName`, `avatarId` (used for default character provisioning if the user is new to the room).
 
 **Responses:**
+
+Every successful response includes the persisted `roomTypeId`, including already-joined and duplicate-key race responses. The client uses it to route to the correct edition.
+
+### `GET /rooms/{roomId}`
+
+Look up persisted room metadata for session restore and routing. Returns `{ roomId, roomTypeId, createdAt }`; `roomTypeId` is `munchkin` or `munchkin-2e`. Unknown or malformed room codes return 404 with `{ message: "Room not found" }`.
 
 - `200 OK` (already joined):
   ```json
@@ -231,11 +237,13 @@ Create a character.
   "power": 0,
   "class": "[\"Cleric\"]",
   "race": "[\"Human\"]",
-  "gender": "[\"female\"]"
+  "gender": "[\"female\"]",
+  "roomTypeId": "munchkin-2e"
 }
 ```
 
 Required: `roomId`, `name`, `avatarId`, `color` (hex `#RRGGBB`).
+`roomTypeId` is optional and defaults to legacy behavior; Second Edition requests initialize `goldPieces` to 500. Clients cannot provide an initial balance. The response includes `goldPieces` only when the character is in Second Edition.
 
 **Responses:**
 
@@ -248,21 +256,24 @@ Required: `roomId`, `name`, `avatarId`, `color` (hex `#RRGGBB`).
 
 ### `PATCH /characters/:characterId`
 
-Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, `userId`.
+Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, and `userId`. To adjust Second Edition currency, include the matching `roomId` and a nonzero integer `goldPiecesDelta`; the server applies it atomically, rejects balances below zero with 409, and rejects Classic characters with 400. Currency mutations disable automatic retries because applying a delta twice is not safe.
 
-**Request body** (any subset of the allowed keys). String fields are trimmed; color is normalized to upper-case.
+**Request body** (any subset of the allowed keys, or `{ "roomId": "Frog4521", "goldPiecesDelta": -100 }`). String fields are trimmed; color is normalized to upper-case.
 
 **Responses:**
 
 - `200 OK` with the updated character.
 - `400 Bad Request`:
   - `No valid fields provided for update`
+  - `Field goldPiecesDelta must be a nonzero integer`
+  - `Gold Pieces are only supported in Second Edition rooms`
   - `Field name must be a non-empty string when provided`
   - `Field avatarId must be a number when provided`
   - `Field color must be a valid hex color (#RRGGBB) when provided`
+- `409 Conflict` when an adjustment would make the balance negative.
 - `404 Not Found` if the character does not exist.
 
-A successful update emits `character_updated` with a `changes` map containing only the fields whose value actually changed (`Object.is` comparison). The pre-update read is enrichment-only - if it fails, the update still goes through and `changes` is omitted.
+A successful update emits `character_updated` with a `changes` map containing only the fields whose value actually changed (`Object.is` comparison). Ordinary character edits keep the pre-update read enrichment-only. Coin adjustments require that read to verify Second Edition support and room ownership, so a database read failure fails the request instead of being misreported as 404.
 
 ### `DELETE /characters/:characterId`
 

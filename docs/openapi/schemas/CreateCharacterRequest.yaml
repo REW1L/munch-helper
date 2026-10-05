@@ -5,6 +5,10 @@ properties:
   roomId:
     type: string
     minLength: 1
+  roomTypeId:
+    type: string
+    enum: [munchkin, munchkin-2e]
+    description: Internal provisioning hint for initializing Second Edition character data.
   userId:
     type:
       - string

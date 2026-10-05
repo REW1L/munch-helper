@@ -84,6 +84,25 @@ describe('RoomCharacterCard', () => {
     expect(cardButton.props.accessibilityHint).toBe('Tap to edit stats');
   });
 
+  it('shows and adjusts Second Edition Gold Pieces without displaying gender', () => {
+    const onGoldPiecesChange = vi.fn();
+    let renderer: any;
+    act(() => {
+      renderer = TestRenderer.create(<RoomCharacterCard character={{ ...baseCharacter, goldPieces: 500 }} onChangePress={vi.fn()} isSecondEdition onGoldPiecesChange={onGoldPiecesChange} />);
+    });
+    const amountInput = renderer.root.findByProps({ testID: 'gold-pieces-adjustment-char-1' });
+    const nickname = renderer.root.findByProps({ testID: 'character-nickname' });
+    const cardStyle = StyleSheet.flatten(renderer.root.findByProps({ testID: 'character-card' }).props.style);
+    expect(nickname.props.numberOfLines).toBe(1);
+    expect(cardStyle.flexDirection).toBe('column');
+    act(() => amountInput.props.onChangeText('1000'));
+    const addButton = renderer.root.findByProps({ testID: 'gold-pieces-plus-char-1' });
+    act(() => addButton.props.onPress());
+    expect(onGoldPiecesChange).toHaveBeenCalledWith(expect.objectContaining({ id: 'char-1' }), 1000);
+    expect(renderer.root.findAll((node: any) => node.children?.includes('Male'))).toHaveLength(0);
+    act(() => renderer.unmount());
+  });
+
   it('shows visual press feedback on the tappable card body', () => {
     const onChangePress = vi.fn();
     let renderer: any;

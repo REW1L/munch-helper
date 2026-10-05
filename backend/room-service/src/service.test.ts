@@ -106,13 +106,14 @@ describe('room-service service', () => {
     expect(appOptions).toEqual({ routePrefix: '/prod' });
 
     await expect(
-      dependencies.createDefaultCharacter({ roomId: 'room-1', userId: 'user-1', userName: ' Alice ', avatarId: 4 })
+      dependencies.createDefaultCharacter({ roomId: 'room-1', roomTypeId: 'munchkin-2e', userId: 'user-1', userName: ' Alice ', avatarId: 4 })
     ).resolves.toEqual({ id: 'char-1' });
 
     expect(mockAxiosPost).toHaveBeenCalledWith(
       'http://character-service/characters',
       expect.objectContaining({
         roomId: 'room-1',
+        roomTypeId: 'munchkin-2e',
         userId: 'user-1',
         name: 'Alice',
         avatarId: 4,

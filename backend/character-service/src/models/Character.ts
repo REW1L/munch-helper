@@ -10,6 +10,7 @@ interface CharacterDocument {
   class: string;
   race: string;
   gender: string;
+  goldPieces?: number;
   color: string;
   createdAt: Date;
   updatedAt: Date;
@@ -56,6 +57,7 @@ const characterSchema = new mongoose.Schema<CharacterDocument>(
       type: String,
       default: ''
     },
+    goldPieces: { type: Number, min: 0, validate: Number.isInteger },
     color: {
       type: String,
       default: ''

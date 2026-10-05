@@ -1,8 +1,11 @@
 type: object
-required: [roomId, userId, characterId, joinedAt, alreadyJoined]
+required: [roomId, roomTypeId, userId, characterId, joinedAt, alreadyJoined]
 properties:
   roomId:
     type: string
+  roomTypeId:
+    type: string
+    enum: [munchkin, munchkin-2e]
   userId:
     type: string
   characterId:

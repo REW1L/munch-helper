@@ -8,17 +8,20 @@ const ATTRIBUTES: ('race' | 'gender' | 'class')[] = ['race', 'gender', 'class'];
 interface AttributeListProps {
   character: RoomCharacter;
   variant?: 'card' | 'footer';
+  showGender?: boolean;
 }
 
 const AttributeList = memo(function AttributeList({
   character,
   variant = 'card',
+  showGender = true,
 }: AttributeListProps) {
   const textStyle = variant === 'footer' ? styles.footerAttributeText : styles.attributeText;
+  const attributes = showGender ? ATTRIBUTES : ATTRIBUTES.filter((attribute) => attribute !== 'gender');
 
   return (
     <View>
-      {ATTRIBUTES.map((attribute) =>
+      {attributes.map((attribute) =>
         character[attribute].map((value) => (
           <Text key={`attribute-${character.id}-${attribute}-${value}`} style={textStyle}>
             {value}

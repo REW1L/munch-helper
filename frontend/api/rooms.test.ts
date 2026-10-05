@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { apiRequest } from '@/api/http';
-import { createRoom, joinRoom } from '@/api/rooms';
+import { createRoom, getRoomMetadata, joinRoom } from '@/api/rooms';
 
 vi.mock('@/api/http', () => ({
   apiRequest: vi.fn(),
@@ -42,6 +42,7 @@ describe('rooms api', () => {
   it('joins a room', async () => {
     mockApiRequest.mockResolvedValueOnce({
       roomId: 'ROOM01',
+      roomTypeId: 'munchkin-2e',
       userId: 'user-2',
       characterId: 'char-2',
       joinedAt: '2026-03-13T00:00:00.000Z',
@@ -66,5 +67,12 @@ describe('rooms api', () => {
       signal: undefined,
     });
     expect(response.alreadyJoined).toBe(false);
+    expect(response.roomTypeId).toBe('munchkin-2e');
+  });
+
+  it('looks up persisted room metadata', async () => {
+    mockApiRequest.mockResolvedValueOnce({ roomId: 'ROOM01', roomTypeId: 'munchkin-2e', createdAt: '2026-03-13T00:00:00.000Z' });
+    await expect(getRoomMetadata('ROOM01')).resolves.toMatchObject({ roomTypeId: 'munchkin-2e' });
+    expect(mockApiRequest).toHaveBeenCalledWith('/rooms/ROOM01', { signal: undefined });
   });
 });
