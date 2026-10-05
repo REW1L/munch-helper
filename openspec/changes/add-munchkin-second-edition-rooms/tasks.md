@@ -13,3 +13,8 @@
 
 ## Contracts and verification
 - [x] Update API/data/OpenAPI/architecture/development docs and relevant README files; verify with OpenSpec and package/mobile gates, recording unavailable checks accurately.
+
+## PR review corrections
+- [x] Wait for confirmed room metadata before auto-creating characters; resolve edition consistently on room, battle, and history routes and cover pending-metadata regression.
+- [x] Replace absolute Gold Pieces writes with atomic signed deltas, reject overdraws and Classic-character updates, disable retries, and update API/OpenAPI/docs/tests.
+- [x] Remove client-supplied initial Gold Pieces from create contracts and fix the rules source-intro expression.

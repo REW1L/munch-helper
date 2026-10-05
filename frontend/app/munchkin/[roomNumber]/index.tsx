@@ -1,18 +1,17 @@
 import { Character as RoomCharacter } from '@/api/characters';
-import { getRoomMetadata } from '@/api/rooms';
 import { ApiError } from '@/api/http';
 import ButtonLabel from '@/components/ButtonLabel';
 import { AppTheme } from '@/constants/theme';
 import { userProfileContext } from '@/context/UserContext';
 import { useBattleActions } from '@/hooks/useBattleActions';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import { useRoomEdition } from '@/hooks/useRoomEdition';
 import { useReconnectOnForeground } from '@/hooks/useReconnectOnForeground';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { formatDateTime } from '@/i18n/format';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Animated, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -49,8 +48,8 @@ const MunchkinIndexView: React.FC = () => {
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
-  const roomMetadata = useQuery({ queryKey: ['roomMetadata', roomId], queryFn: ({ signal }) => getRoomMetadata(roomId!, signal), enabled: Boolean(roomId) });
-  const isSecondEdition = roomMetadata.data?.roomTypeId === 'munchkin-2e' || (!roomMetadata.data && routeRoomTypeId === 'munchkin-2e');
+  const roomEdition = useRoomEdition(roomId, routeRoomTypeId);
+  const isSecondEdition = roomEdition.roomTypeId === 'munchkin-2e';
   const { userProfile } = useContext(userProfileContext);
   const {
     characters,
@@ -66,7 +65,7 @@ const MunchkinIndexView: React.FC = () => {
     isTimedOut,
     refresh,
     reconnect,
-  } = useRoomCharacters(roomId, userProfile, isSecondEdition ? 'munchkin-2e' : 'munchkin');
+  } = useRoomCharacters(roomId, userProfile, roomEdition.confirmedRoomTypeId);
   const {
     battle,
     isLoading: isBattleLoading,
@@ -390,8 +389,8 @@ const MunchkinIndexView: React.FC = () => {
             onCreateCharacter={() => setCreateCharacterModalVisible(true)}
             onChangePress={handleChangePress}
             isSecondEdition={isSecondEdition}
-            onGoldPiecesChange={(character, goldPieces) => {
-              void update(character.id, { goldPieces }).catch((error) => setActionError(error instanceof Error ? error.message : t('room.errorUpdateCharacter')));
+            onGoldPiecesChange={(character, goldPiecesDelta) => {
+              void update(character.id, { goldPiecesDelta }).catch((error) => setActionError(error instanceof Error ? error.message : t('room.errorUpdateCharacter')));
             }}
           />
 
@@ -451,7 +450,6 @@ const MunchkinIndexView: React.FC = () => {
                   power: 0,
                   race: character.race,
                   gender: character.gender,
-                  ...(isSecondEdition ? { goldPieces: 500 } : {}),
                   class: character.class,
                 });
                 setCreateCharacterModalVisible(false);

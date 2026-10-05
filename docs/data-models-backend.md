@@ -60,7 +60,7 @@ File: `backend/character-service/src/models/Character.ts`.
 | `class` | String, default `''` | Stored as a JSON-encoded string (legacy shape). The frontend parses it back into an array. |
 | `race` | String, default `''` | Same JSON-encoded shape as `class`. |
 | `gender` | String, default `''` | Same shape. |
-| `goldPieces` | Optional nonnegative integer | Set to 500 for new Second Edition characters; absent on Classic characters. Updates are scoped to the character's room and recorded through `character_updated` history. |
+| `goldPieces` | Optional nonnegative integer | Set to 500 by the server for new Second Edition characters; absent on Classic characters. Signed room-scoped adjustments use an atomic increment and are recorded through `character_updated` history. |
 | `color` | String, default `''` | Hex `#RRGGBB`. Validated at the service layer; invalid colors fall back to a deterministic hash of `_id`. |
 | `createdAt`, `updatedAt` | Date | |
 

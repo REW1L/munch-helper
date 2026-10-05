@@ -41,7 +41,3 @@ properties:
   gender:
     type: string
     description: JSON-encoded string array. Defaults to `'["male"]'`.
-  goldPieces:
-    type: integer
-    minimum: 0
-    description: Optional initial balance for a Second Edition character.

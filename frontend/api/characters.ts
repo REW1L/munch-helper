@@ -48,7 +48,6 @@ export interface CharacterWritePayload {
   class?: string[];
   race?: string[];
   gender?: string[];
-  goldPieces?: number;
 }
 
 export interface CharacterUpdatePayload {
@@ -62,7 +61,7 @@ export interface CharacterUpdatePayload {
   class?: string[];
   race?: string[];
   gender?: string[];
-  goldPieces?: number;
+  goldPiecesDelta?: number;
 }
 
 function deterministicHexColor(seed: string): string {
@@ -168,7 +167,6 @@ export async function createCharacter(payload: CharacterWritePayload): Promise<C
       class: serializeArrayField(payload.class),
       race: serializeArrayField(payload.race),
       gender: serializeArrayField(payload.gender),
-      ...(payload.goldPieces !== undefined ? { goldPieces: payload.goldPieces } : {})
     }
   });
 
@@ -205,14 +203,15 @@ export async function updateCharacter(characterId: string, payload: CharacterUpd
   if (Object.prototype.hasOwnProperty.call(payload, 'gender')) {
     body.gender = serializeArrayField(payload.gender);
   }
-  if (Object.prototype.hasOwnProperty.call(payload, 'goldPieces')) {
-    body.goldPieces = payload.goldPieces;
+  if (Object.prototype.hasOwnProperty.call(payload, 'goldPiecesDelta')) {
+    body.goldPiecesDelta = payload.goldPiecesDelta;
     if (payload.roomId) body.roomId = payload.roomId;
   }
 
   const updated = await apiRequest<ApiCharacter>(`/characters/${encodeURIComponent(characterId)}`, {
     method: 'PATCH',
     body,
+    ...(Object.prototype.hasOwnProperty.call(payload, 'goldPiecesDelta') ? { retryCount: 0 } : {}),
   });
 
   return toFrontendCharacter(updated);

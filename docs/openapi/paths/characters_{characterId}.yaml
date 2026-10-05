@@ -4,7 +4,9 @@ patch:
   summary: Update character
   description: |
     Partial update. Allowed keys are `name`, `avatarId`, `color`, `level`,
-    `power`, `class`, `race`, `gender`, `userId`. A successful update emits a
+    `power`, `class`, `race`, `gender`, `userId`, and `goldPiecesDelta`. Gold Pieces
+    adjustments also require the matching `roomId` and reject Classic characters
+    or resulting negative balances. A successful update emits a
     `character_updated` event with a `changes` map containing only the fields
     whose value actually changed.
   operationId: updateCharacter
@@ -31,6 +33,12 @@ patch:
             $ref: ../schemas/Error.yaml
     "404":
       description: Character not found (also returned for malformed `characterId`).
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Error.yaml
+    "409":
+      description: Gold Pieces adjustment would result in a negative balance.
       content:
         application/json:
           schema:

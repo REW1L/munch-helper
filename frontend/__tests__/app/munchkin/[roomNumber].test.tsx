@@ -10,6 +10,7 @@ import { ApiError } from '@/api/http';
 const mockSetStringAsync = vi.hoisted(() => vi.fn());
 const mockRoomNumber = vi.hoisted(() => ({ current: 'ROOM42' as string | string[] | undefined }));
 const mockRoomMetadata = vi.hoisted(() => ({ current: { roomId: 'ROOM42', roomTypeId: 'munchkin' } as { roomId: string; roomTypeId: string } | undefined }));
+const mockRoomCharactersArgs = vi.hoisted(() => ({ current: [] as unknown[] }));
 const mockCreateCharacter = vi.hoisted(() => vi.fn());
 const mockUpdateCharacter = vi.hoisted(() => vi.fn());
 const mockRemoveCharacter = vi.hoisted(() => vi.fn());
@@ -90,7 +91,9 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@/hooks/useCharacters', () => ({
-  useRoomCharacters: () => ({
+  useRoomCharacters: (...args: unknown[]) => {
+    mockRoomCharactersArgs.current = args;
+    return ({
     characters: mockCharactersState.current,
     create: mockCreateCharacter,
     update: mockUpdateCharacter,
@@ -103,6 +106,14 @@ vi.mock('@/hooks/useCharacters', () => ({
     isCreateBlocked: mockIsCreateBlocked.current,
     isLoading: false,
     errorMessage: null,
+    });
+  },
+}));
+
+vi.mock('@/hooks/useRoomEdition', () => ({
+  useRoomEdition: (_roomId: string | undefined, routeHint?: string) => ({
+    roomTypeId: mockRoomMetadata.current?.roomTypeId ?? routeHint,
+    confirmedRoomTypeId: mockRoomMetadata.current?.roomTypeId,
   }),
 }));
 
@@ -258,6 +269,7 @@ describe('Munchkin room header', () => {
     mockStartBattle.mockReset();
     mockRefreshBattle.mockReset();
     mockRouterPush.mockReset();
+    mockRoomCharactersArgs.current = [];
     mockReconnect.mockReset();
     mockUseReconnectOnForeground.mockReset();
     mockIsCreateBlocked.current = false;
@@ -1274,5 +1286,19 @@ describe('Munchkin room header', () => {
     expect(mockRefreshBattle).toHaveBeenCalledTimes(1);
     expect(mockRouterPush).not.toHaveBeenCalled();
     expect(screen.getByText('Could not start the battle. Please try again.')).toBeTruthy();
+  });
+
+  it('does not pass a guessed Classic edition to character provisioning while metadata is pending', async () => {
+    mockRoomMetadata.current = undefined;
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+    render(
+      <userProfileContext.Provider value={{
+        userProfile: { id: 'user-1', nickname: 'Player One', avatar: 1 },
+        setUserProfile: vi.fn(),
+      }}>
+        <MunchkinIndexView />
+      </userProfileContext.Provider>
+    );
+    expect(mockRoomCharactersArgs.current[2]).toBeUndefined();
   });
 });

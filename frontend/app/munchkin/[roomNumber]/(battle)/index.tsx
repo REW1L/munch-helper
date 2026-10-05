@@ -7,6 +7,7 @@ import BattleSidePanel from '@/components/munchkin/BattleSidePanel';
 import { AppTheme } from '@/constants/theme';
 import { useBattleActions } from '@/hooks/useBattleActions';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import { useRoomEdition } from '@/hooks/useRoomEdition';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
 import { useUserProfile } from '@/hooks/useUser';
 import { computePlayerTotal, reconcilePlayerParticipants } from '@/utils/battlePlayerSide';
@@ -40,12 +41,13 @@ function areDraftsEqual(left: BattleDraft | null, right: BattleDraft | null): bo
 export default function BattleView() {
   const { t } = useTranslation();
   const { roomNumber, roomTypeId } = useLocalSearchParams<{ roomNumber: string; roomTypeId?: string }>();
-  const isSecondEdition = roomTypeId === 'munchkin-2e';
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
+  const roomEdition = useRoomEdition(roomId, roomTypeId);
+  const isSecondEdition = roomEdition.roomTypeId === 'munchkin-2e';
   const { userProfile } = useUserProfile();
   const { battle, isLoading, errorMessage } = useRoomBattle(roomId, userProfile);
-  const { characters, isLoading: charactersLoading, errorMessage: charactersErrorMessage } = useRoomCharacters(roomId, userProfile);
+  const { characters, isLoading: charactersLoading, errorMessage: charactersErrorMessage } = useRoomCharacters(roomId, userProfile, roomEdition.confirmedRoomTypeId);
   const battleActions = useBattleActions(roomId);
   const [draft, setDraft] = useState<BattleDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<BattleDraft | null>(null);

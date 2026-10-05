@@ -37,7 +37,6 @@ export interface AppDependencies {
     userId: string;
     userName?: string;
     avatarId?: number;
-    goldPieces?: number;
   }) => Promise<{ id: string }>;
 }
 

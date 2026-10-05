@@ -139,6 +139,19 @@ describe('characters api', () => {
     expect(response.class).toEqual(['Warrior']);
   });
 
+  it('sends signed Gold Pieces deltas without retrying a non-idempotent mutation', async () => {
+    mockApiRequest.mockResolvedValueOnce({
+      id: 'char-gp', roomId: 'room-3', userId: 'user-3', name: 'Warrior', avatarId: 9,
+      color: '#AABBCC', level: 5, power: 10, class: '[]', race: '[]', gender: '[]', goldPieces: 600,
+    });
+    await updateCharacter('char-gp', { roomId: 'room-3', goldPiecesDelta: 100 });
+    expect(mockApiRequest).toHaveBeenCalledWith('/characters/char-gp', {
+      method: 'PATCH',
+      body: { roomId: 'room-3', goldPiecesDelta: 100 },
+      retryCount: 0,
+    });
+  });
+
   it('deletes character successfully', async () => {
     mockApiRequest.mockResolvedValueOnce(undefined);
 

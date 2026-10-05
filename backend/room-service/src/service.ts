@@ -37,7 +37,6 @@ function createDefaultCharacterFactory(options: RoomServiceOptions): AppDependen
       {
         roomId,
         roomTypeId,
-        ...(roomTypeId === 'munchkin-2e' ? { goldPieces: 500 } : {}),
         userId,
         name: typeof userName === 'string' && userName.trim() ? userName.trim() : 'Adventurer',
         avatarId: typeof avatarId === 'number' ? avatarId : 1,

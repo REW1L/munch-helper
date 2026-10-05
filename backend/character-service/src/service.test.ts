@@ -7,6 +7,7 @@ const { mockCreateApp, mockCharacter } = vi.hoisted(() => ({
     create: vi.fn(),
     findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
+    findOneAndUpdate: vi.fn(),
     findByIdAndDelete: vi.fn(),
   },
 }));
@@ -28,6 +29,7 @@ describe('character-service service', () => {
     mockCharacter.create.mockReset();
     mockCharacter.findById.mockReset();
     mockCharacter.findByIdAndUpdate.mockReset();
+    mockCharacter.findOneAndUpdate.mockReset();
     mockCharacter.findByIdAndDelete.mockReset();
   });
 
@@ -91,6 +93,13 @@ describe('character-service service', () => {
     await expect(model.findById('char-2')).resolves.toBeNull();
     await expect(model.findByIdAndUpdate('char-1', { name: 'Mage+' }, { new: true, runValidators: true } as never)).resolves.toEqual(mappedCharacter);
     await expect(model.findByIdAndUpdate('char-2', {}, { new: true, runValidators: true } as never)).resolves.toBeNull();
+    mockCharacter.findOneAndUpdate.mockResolvedValueOnce(mappedCharacter);
+    await expect(model.adjustGoldPieces('char-1', 'room-1', 50)).resolves.toEqual(mappedCharacter);
+    expect(mockCharacter.findOneAndUpdate).toHaveBeenCalledWith(
+      { _id: 'char-1', roomId: 'room-1', goldPieces: { $gte: -50 } },
+      { $inc: { goldPieces: 50 } },
+      { new: true, runValidators: true }
+    );
     await expect(model.findByIdAndDelete('char-1')).resolves.toEqual(mappedCharacter);
     await expect(model.findByIdAndDelete('char-2')).resolves.toBeNull();
   });
@@ -106,6 +115,7 @@ describe('character-service service', () => {
         create: expect.any(Function),
         findById: expect.any(Function),
         findByIdAndUpdate: expect.any(Function),
+        adjustGoldPieces: expect.any(Function),
         findByIdAndDelete: expect.any(Function),
       }),
       { routePrefix: '/prod', publisher }

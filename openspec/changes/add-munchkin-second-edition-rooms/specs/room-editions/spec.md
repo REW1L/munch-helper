@@ -31,3 +31,7 @@ The system SHALL return the persisted room type from every successful room assoc
 #### Scenario: Restore a Classic session
 - **WHEN** a saved session is restored for a legacy `munchkin` room
 - **THEN** the client opens Classic with its existing character data and behavior
+
+#### Scenario: Wait for metadata before automatic character creation
+- **WHEN** a room screen loads without an edition route hint and room metadata is still pending
+- **THEN** the client does not auto-create a Classic character until the server confirms the room edition

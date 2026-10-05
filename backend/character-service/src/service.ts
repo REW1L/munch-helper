@@ -88,6 +88,14 @@ export function createCharacterModel(): CharacterModelLike {
       });
       return mapCharacter(character);
     },
+    adjustGoldPieces: async (id, roomId, delta) => {
+      const character = await Character.findOneAndUpdate(
+        { _id: id, roomId, goldPieces: { $gte: -delta } },
+        { $inc: { goldPieces: delta } },
+        { new: true, runValidators: true }
+      );
+      return character ? mapCharacter(character) : null;
+    },
     findByIdAndDelete: async (id) => {
       console.info('[character-service] db delete character', { characterId: id });
       const character = await Character.findByIdAndDelete(id);

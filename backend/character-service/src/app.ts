@@ -35,6 +35,7 @@ export interface CharacterModelLike {
     updates: Record<string, unknown>,
     options: { new: boolean; runValidators: boolean }
   ) => Promise<CharacterLike | null>;
+  adjustGoldPieces: (id: string, roomId: string, delta: number) => Promise<CharacterLike | null>;
   findByIdAndDelete: (id: string) => Promise<CharacterLike | null>;
 }
 
@@ -252,8 +253,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         class: klass = JSON.stringify([]),
         race = JSON.stringify(['Human']),
         gender = JSON.stringify(['male']),
-        roomTypeId,
-        goldPieces
+        roomTypeId
       } = req.body || {};
 
       console.info('[character-service] create character request', {
@@ -275,16 +275,12 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (typeof color !== 'string' || !hexColorPattern.test(normalizeHexColor(color))) {
         return res.status(400).json({ message: 'Field color is required and must be a valid hex color (#RRGGBB)' });
       }
-      if (goldPieces !== undefined && (typeof goldPieces !== 'number' || !Number.isInteger(goldPieces) || goldPieces < 0)) {
-        return res.status(400).json({ message: 'Field goldPieces must be a nonnegative integer when provided' });
+      if (Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPieces')) {
+        return res.status(400).json({ message: 'Field goldPieces is not supported when creating a character' });
       }
       if (roomTypeId !== undefined && roomTypeId !== 'munchkin' && roomTypeId !== 'munchkin-2e') {
         return res.status(400).json({ message: 'Field roomTypeId must be "munchkin" or "munchkin-2e"' });
       }
-      if (goldPieces !== undefined && roomTypeId !== 'munchkin-2e') {
-        return res.status(400).json({ message: 'Gold Pieces are only supported in Second Edition rooms' });
-      }
-
       const character = await characterModel.create({
         roomId: roomId.trim(),
         userId,
@@ -340,7 +336,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
   app.patch('/characters/:characterId', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const characterId = toParamString(req.params.characterId as string | string[] | undefined);
-      const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId', 'goldPieces'];
+      const allowed = ['name', 'avatarId', 'color', 'level', 'power', 'class', 'race', 'gender', 'userId'];
       const updates: Record<string, unknown> = {};
 
       console.info('[character-service] update character request', {
@@ -354,7 +350,7 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
         }
       }
 
-      if (Object.keys(updates).length === 0) {
+      if (Object.keys(updates).length === 0 && !Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPiecesDelta')) {
         return res.status(400).json({ message: 'No valid fields provided for update' });
       }
 
@@ -368,10 +364,15 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       if (Object.prototype.hasOwnProperty.call(updates, 'avatarId') && typeof updates.avatarId !== 'number') {
         return res.status(400).json({ message: 'Field avatarId must be a number when provided' });
       }
-      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces') && (typeof updates.goldPieces !== 'number' || !Number.isInteger(updates.goldPieces) || updates.goldPieces < 0)) {
-        return res.status(400).json({ message: 'Field goldPieces must be a nonnegative integer when provided' });
+      const goldPiecesDelta = req.body?.goldPiecesDelta;
+      const isGoldPiecesAdjustment = Object.prototype.hasOwnProperty.call(req.body || {}, 'goldPiecesDelta');
+      if (isGoldPiecesAdjustment && Object.keys(updates).length > 0) {
+        return res.status(400).json({ message: 'Gold Pieces adjustments cannot be combined with other character updates' });
       }
-      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces') && (typeof req.body.roomId !== 'string' || !req.body.roomId.trim())) {
+      if (isGoldPiecesAdjustment && (typeof goldPiecesDelta !== 'number' || !Number.isInteger(goldPiecesDelta) || goldPiecesDelta === 0)) {
+        return res.status(400).json({ message: 'Field goldPiecesDelta must be a nonzero integer' });
+      }
+      if (isGoldPiecesAdjustment && (typeof req.body.roomId !== 'string' || !req.body.roomId.trim())) {
         return res.status(400).json({ message: 'Field roomId is required for a Gold Pieces update' });
       }
       if (Object.prototype.hasOwnProperty.call(updates, 'color')) {
@@ -382,24 +383,32 @@ export function createApp(characterModel: CharacterModelLike, options: CreateCha
       }
 
       let previousCharacter: CharacterLike | null = null;
-      try {
+      let character: CharacterLike | null;
+      if (isGoldPiecesAdjustment) {
         previousCharacter = await characterModel.findById(characterId);
-      } catch (error) {
-        // Pre-update read is enrichment-only (for changes diff); a failure must not abort the update.
-        console.error('[character-service] failed to read previous character for changes diff', {
-          characterId,
-          error
-        });
-      }
-      if (Object.prototype.hasOwnProperty.call(updates, 'goldPieces')) {
         if (!previousCharacter || previousCharacter.roomId !== req.body.roomId.trim()) {
           return res.status(404).json({ message: 'Character not found in room' });
         }
+        if (previousCharacter.goldPieces === undefined) {
+          return res.status(400).json({ message: 'Gold Pieces are only supported in Second Edition rooms' });
+        }
+        character = await characterModel.adjustGoldPieces(characterId, req.body.roomId.trim(), goldPiecesDelta);
+        if (!character) {
+          return res.status(409).json({ message: 'Gold Pieces balance cannot be negative' });
+        }
+        // The returned balance is the atomic post-adjustment value. Derive the real
+        // prior value from it so concurrent updates each publish their own delta.
+        previousCharacter = { ...character, goldPieces: character.goldPieces! - goldPiecesDelta };
+        updates.goldPieces = character.goldPieces;
+      } else {
+        try {
+          previousCharacter = await characterModel.findById(characterId);
+        } catch (error) {
+          // Pre-update read is enrichment-only for ordinary character edits.
+          console.error('[character-service] failed to read previous character for changes diff', { characterId, error });
+        }
+        character = await characterModel.findByIdAndUpdate(characterId, updates, { new: true, runValidators: true });
       }
-      const character = await characterModel.findByIdAndUpdate(characterId, updates, {
-        new: true,
-        runValidators: true
-      });
 
       if (!character) {
         return res.status(404).json({ message: 'Character not found' });

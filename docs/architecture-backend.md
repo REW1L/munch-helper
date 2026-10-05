@@ -207,7 +207,7 @@ The default character's color is computed deterministically from `userId` (or, i
 
 Largest service by route count. Owns the `Character` schema. Class/race/gender are stored as JSON-encoded strings (legacy shape) and the frontend parses them back into arrays. Color must match `^#[0-9a-fA-F]{6}$`; invalid colors fall back to a deterministic hash of the character id at response time. Every successful mutation publishes through the `FanoutCharacterEventPublisher`.
 
-Gold Pieces are an optional nonnegative integer on the room-owned character record. Second Edition character creation initializes 500 GP; updates require the matching room id and flow through the existing character update event and history fan-out.
+Gold Pieces are an optional nonnegative integer on the room-owned character record. The server initializes Second Edition characters at 500 GP; clients adjust balances with room-scoped atomic deltas. The character service rejects Classic-character adjustments and prevents overdraws in the atomic database filter. Successful changes flow through the existing character update event and history fan-out.
 
 PATCH builds a `changes` diff between the pre-update document and the post-update document using `Object.is` semantics, then includes only fields that actually changed. The pre-update read is enrichment-only - if it fails, the update still proceeds and `changes` is omitted. This is by design: keeping the pre-read non-blocking is what makes the update path resilient to transient Mongo read failures.
 

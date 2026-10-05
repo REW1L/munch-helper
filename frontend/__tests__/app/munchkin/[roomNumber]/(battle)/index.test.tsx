@@ -89,6 +89,13 @@ vi.mock('@/hooks/useRoomBattle', () => ({
   useRoomBattle: () => mockBattleState.current,
 }));
 
+vi.mock('@/hooks/useRoomEdition', () => ({
+  useRoomEdition: (_roomId: string | undefined, routeHint?: string) => ({
+    roomTypeId: routeHint ?? mockRoomType.current,
+    confirmedRoomTypeId: mockRoomType.current,
+  }),
+}));
+
 vi.mock('@/hooks/useCharacters', () => ({
   useRoomCharacters: () => mockCharactersState.current,
 }));

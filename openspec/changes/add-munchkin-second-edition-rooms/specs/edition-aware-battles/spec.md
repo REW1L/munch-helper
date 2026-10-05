@@ -16,3 +16,7 @@ Second Edition battle presentation SHALL explain that player combat strength is 
 #### Scenario: Preserve Classic battle behavior
 - **WHEN** a player views an existing Classic battle or history entry
 - **THEN** existing Classic rendering and outcome semantics remain unchanged
+
+#### Scenario: Resolve edition on a direct battle link
+- **WHEN** a player opens or refreshes a battle route without an edition route parameter
+- **THEN** the screen resolves edition from persisted room metadata and shares that metadata with character provisioning

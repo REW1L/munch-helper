@@ -73,7 +73,7 @@ export default function MunchkinRulesPage() {
         </Text>
         <View style={styles.sourceCard}>
           <Text accessibilityRole="header" aria-level={2} style={styles.sourceTitle}>
-            {t(isSecondEdition ? 'gameRules.sourceIntro' : 'gameRules.sourceIntro')}
+            {t('gameRules.sourceIntro')}
           </Text>
           <TouchableOpacity
             accessibilityLabel={t(isSecondEdition ? 'gameRules.secondEditionSourceA11y' : 'gameRules.sourceA11y')}

@@ -114,7 +114,6 @@ describe('room-service service', () => {
       expect.objectContaining({
         roomId: 'room-1',
         roomTypeId: 'munchkin-2e',
-        goldPieces: 500,
         userId: 'user-1',
         name: 'Alice',
         avatarId: 4,

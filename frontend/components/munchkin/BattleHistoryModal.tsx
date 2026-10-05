@@ -1,6 +1,7 @@
 import type { LogEvent } from '@/api/logs';
 import { AppTheme } from '@/constants/theme';
 import { useRoomCharacters } from '@/hooks/useCharacters';
+import { useRoomEdition } from '@/hooks/useRoomEdition';
 import type { UserProfileInterface } from '@/hooks/useUser';
 import React, { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -48,7 +49,8 @@ function resultColor(result: unknown): string {
 function BattleHistoryModal({ entry, roomId, userProfile, onClose }: BattleHistoryModalProps) {
   const { t } = useTranslation();
   const isVisible = entry !== null;
-  const { characters } = useRoomCharacters(roomId, userProfile);
+  const roomEdition = useRoomEdition(roomId);
+  const { characters } = useRoomCharacters(roomId, userProfile, roomEdition.confirmedRoomTypeId);
   const characterById = useMemo(
     () => new Map(characters.map((character) => [character.id, character])),
     [characters],

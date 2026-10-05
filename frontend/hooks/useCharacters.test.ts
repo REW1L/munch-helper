@@ -152,7 +152,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -183,6 +183,22 @@ describe('useRoomCharacters', () => {
         })
       );
     });
+  });
+
+  it('waits for confirmed room metadata before auto-creating a current-user character', async () => {
+    mockGetCharactersByRoom.mockResolvedValue([]);
+    mockCreateCharacter.mockResolvedValue({
+      id: 'char-current', roomId, userId: userProfile.id, nickname: userProfile.nickname,
+      avatar: userProfile.avatar, color: '#9966FF', level: 1, power: 0, class: [], race: ['Human'], gender: ['male'],
+      goldPieces: 500,
+    });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children);
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, undefined), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockCreateCharacter).not.toHaveBeenCalled();
+
   });
 
   it('creates and updates room characters while keeping query state in sync', async () => {
@@ -231,7 +247,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -326,7 +342,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -373,7 +389,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -414,7 +430,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result, rerender } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result, rerender } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -472,7 +488,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -552,7 +568,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -658,7 +674,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -741,7 +757,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -827,7 +843,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -900,7 +916,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -961,7 +977,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 
@@ -1040,7 +1056,7 @@ describe('useRoomCharacters', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile), {
+    const { result } = renderHook(() => useRoomCharacters(roomId, userProfile, 'munchkin'), {
       wrapper,
     });
 

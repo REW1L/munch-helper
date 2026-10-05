@@ -48,6 +48,7 @@ Install from each package lockfile with `npm ci` in `backend/`, `frontend/`, or 
 2. Run the relevant local gates, commit on the focused branch, push it, and open a GitHub PR against the repository's default branch. Include the requirement or issue link, concise change summary, red/green test evidence, exact verification commands, and any unrun checks or risks. Do not mark an unfinished change complete.
 3. Inspect the PR checks with GitHub CLI or the available GitHub tools. Workflow path filters mean a docs-only PR may show no backend/frontend checks; run the appropriate local validation anyway. Classify each failing check as code, test, configuration, or external service failure from its logs.
 4. Fix failures caused by the change, rerun the smallest relevant local test and its package gate, push the correction, and watch the new CI run. Repeat until all applicable checks are green. If a failure is external or cannot be reproduced, give the PR a precise diagnosis and evidence; do not silently ignore it. Keep the PR open for review; merging is a separate action.
+5. For PRs that add or change user-visible screens, capture and include current screenshots of every affected or added screen in the PR description. Verify the screenshots show the final UI and render in the description.
 
 ## Further references
 

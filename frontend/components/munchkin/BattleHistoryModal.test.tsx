@@ -19,6 +19,10 @@ vi.mock('@/hooks/useCharacters', () => ({
   useRoomCharacters: vi.fn(),
 }));
 
+vi.mock('@/hooks/useRoomEdition', () => ({
+  useRoomEdition: () => ({ roomTypeId: undefined, confirmedRoomTypeId: undefined }),
+}));
+
 vi.mock('react-native', async () => {
   const actual = await vi.importActual<typeof import('react-native')>('react-native');
   return {
