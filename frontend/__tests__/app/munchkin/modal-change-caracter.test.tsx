@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Modal, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Modal, Platform, Text, TextInput, TouchableOpacity } from 'react-native';
 import { describe, expect, it, vi } from 'vitest';
 
 import ChangeCharacterModal from '../../../app/munchkin/modal-change-caracter';
@@ -27,6 +27,7 @@ vi.mock('react-native', async () => {
   const actual = await vi.importActual<typeof import('react-native')>('react-native');
   return {
     ...actual,
+    Platform: { ...actual.Platform, OS: 'web' },
     Modal: ({ children }: { children?: React.ReactNode }) => children,
   };
 });

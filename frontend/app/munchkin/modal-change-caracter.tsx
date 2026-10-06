@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -155,6 +156,19 @@ export default function ChangeCharacterModal({
       [field]: Math.max(minimum, character[field] - 1),
     });
   };
+
+  const deleteConfirmDialog = (
+    <ConfirmDialog
+      visible={deleteConfirmVisible}
+      title={t('character.deleteConfirmTitle')}
+      message={t('character.deleteConfirmMessage')}
+      confirmLabel={t('common.delete')}
+      cancelLabel={t('common.cancel')}
+      insideModal={Platform.OS === 'web'}
+      onConfirm={handleDeleteConfirmAccept}
+      onCancel={handleDeleteConfirmCancel}
+    />
+  );
 
   return (
     <>
@@ -465,18 +479,10 @@ export default function ChangeCharacterModal({
               </TouchableOpacity>
             </View>
           </View>
-          <ConfirmDialog
-            visible={deleteConfirmVisible}
-            title={t('character.deleteConfirmTitle')}
-            message={t('character.deleteConfirmMessage')}
-            confirmLabel={t('common.delete')}
-            cancelLabel={t('common.cancel')}
-            insideModal
-            onConfirm={handleDeleteConfirmAccept}
-            onCancel={handleDeleteConfirmCancel}
-          />
+          {Platform.OS === 'web' ? deleteConfirmDialog : null}
         </View>
       </Modal>
+      {Platform.OS === 'web' ? null : deleteConfirmDialog}
     </>
   );
 }
