@@ -20,12 +20,36 @@ appId: click.helpamunch.mobileapp
     timeout: 10000
 - tapOn:
     id: "confirm-create-room-button"
-- extendedWaitUntil:
-    visible:
-      id: open-room-rules
-    timeout: 20000
-- tapOn:
-    id: "open-room-rules"
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: Open rules
+          timeout: 20000
+      - tapOn:
+          id: Open rules
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: open-room-rules
+          timeout: 20000
+      - tapOn:
+          id: open-room-rules
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: open-room-rules
+          timeout: 20000
+      - tapOn:
+          id: open-room-rules
 - extendedWaitUntil:
     visible: "Munchkin Second Edition"
     timeout: 10000
@@ -45,5 +69,21 @@ appId: click.helpamunch.mobileapp
       platform: Web
     commands:
       - back
-- assertVisible:
-    id: open-room-rules
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - assertVisible:
+          id: Open rules
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: open-room-rules
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: open-room-rules
