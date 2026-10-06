@@ -1,0 +1,28 @@
+appId: click.helpamunch.mobileapp
+---
+# Regression for issue #166: the room loading screen must not claim Classic for a room of unknown edition.
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-rooms
+    timeout: 30000
+- tapOn:
+    id: screenshot-open-rooms
+- extendedWaitUntil:
+    visible:
+      id: screenshot-open-room-join
+    timeout: 15000
+- tapOn:
+    id: screenshot-open-room-join
+- tapOn:
+    id: screenshot-room-id-input
+- inputText: "missing-room-166"
+- tapOn:
+    id: screenshot-confirm-room-join
+- extendedWaitUntil:
+    visible:
+      id: room-loading-error
+    timeout: 30000
+- assertVisible: "Munch ⚔️"
+- assertNotVisible: "Munch ⚔️ Classic"

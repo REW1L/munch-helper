@@ -71,12 +71,19 @@ const MunchkinIndexView: React.FC = () => {
 
   const errorMessage = roomId ? joinErrorMessage : createErrorMessage;
   const isLoading = roomId ? isJoining : isCreating;
+  // A join learns the persisted edition only from the server, so stay neutral unless the route hints it.
+  const titleRoomType = roomTypeParam === 'munchkin-2e' || roomTypeParam === 'munchkin'
+    ? roomTypeParam
+    : roomId ? undefined : 'munchkin';
+  const title = titleRoomType
+    ? `Munch ⚔️ ${t(titleRoomType === 'munchkin-2e' ? 'rooms.secondEdition' : 'rooms.classic')}`
+    : 'Munch ⚔️';
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4C4545' }}>
-      <Stack.Screen options={{ headerShown: true, title: `Munch ⚔️ ${t('rooms.classic')}`, }} />
+      <Stack.Screen options={{ headerShown: true, title }} />
       <ActivityIndicator size="large" color={AppTheme.colors.actionSecondary} />
-      <Text style={{ marginTop: 10, color: '#FFFFFF', fontSize: 16 }}>
+      <Text testID={isLoading ? 'room-loading-status' : 'room-loading-error'} style={{ marginTop: 10, color: '#FFFFFF', fontSize: 16 }}>
         {isLoading ? t('room.loadingRoom') : errorMessage || t('room.unableToConnect')}
       </Text>
     </View>

@@ -35,3 +35,18 @@ The system SHALL return the persisted room type from every successful room assoc
 #### Scenario: Wait for metadata before automatic character creation
 - **WHEN** a room screen loads without an edition route hint and room metadata is still pending
 - **THEN** the client does not auto-create a Classic character until the server confirms the room edition
+
+### Requirement: Room loading screen names only a known edition
+While a room is being created or joined, the loading screen header SHALL name the edition the client knows: the requested type when creating (Classic when none is requested) and the route's room type hint when joining. A join without a hint SHALL show a neutral title rather than assuming Classic.
+
+#### Scenario: Creating a Second Edition room
+- **WHEN** the loading screen opens to create a room with `roomTypeId` `munchkin-2e`
+- **THEN** its header reads `Munch ⚔️` followed by the localized Second Edition label
+
+#### Scenario: Creating a Classic room
+- **WHEN** the loading screen opens to create a room with `roomTypeId` `munchkin` or no type
+- **THEN** its header reads `Munch ⚔️` followed by the localized Classic label
+
+#### Scenario: Joining a room of unknown edition
+- **WHEN** the loading screen opens to join a room code without a room type hint
+- **THEN** its header reads `Munch ⚔️` without an edition label, including when the join fails
