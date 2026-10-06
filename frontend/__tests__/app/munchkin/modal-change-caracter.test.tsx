@@ -49,6 +49,28 @@ function findConfirmButton(renderer: ReturnType<typeof TestRenderer.create>) {
 }
 
 describe('ChangeCharacterModal', () => {
+  it('includes an editable Second Edition balance in the full character edit', async () => {
+    const character = {
+      id: 'char-coins', nickname: 'Rogue', color: '#0088CC', gender: ['female'], race: ['Elf'], class: ['Thief'],
+      level: 4, power: 1, avatar: 2, goldPieces: 500,
+    };
+    const onConfirm = vi.fn();
+    let renderer: ReturnType<typeof TestRenderer.create>;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <ChangeCharacterModal character={character} hideGender onConfirm={onConfirm} onDelete={vi.fn(async () => undefined)} onCancel={vi.fn()} />
+      );
+    });
+    const goldInput = renderer!.root.findByProps({ testID: 'edit-character-gold-pieces-input' });
+    const saveButton = renderer!.root.findAllByType(TouchableOpacity).find((button: any) => button.props.testID === 'save-character-button');
+    await act(async () => goldInput.props.onChangeText('750.5'));
+    await act(async () => saveButton!.props.onPress());
+    expect(onConfirm).not.toHaveBeenCalled();
+    await act(async () => goldInput.props.onChangeText('750'));
+    await act(async () => saveButton!.props.onPress());
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ goldPieces: 750 }));
+  });
+
   it('keeps delete in the form and limits the footer to save and cancel', async () => {
     const character = {
       id: 'char-first',

@@ -16,7 +16,6 @@ interface RoomCharactersListProps {
   onCreateCharacter: () => void;
   onChangePress: (character: RoomCharacter) => void;
   isSecondEdition?: boolean;
-  onGoldPiecesChange?: (character: RoomCharacter, nextBalance: number) => void;
 }
 
 const RoomCharactersList = memo(function RoomCharactersList({
@@ -29,7 +28,6 @@ const RoomCharactersList = memo(function RoomCharactersList({
   onCreateCharacter,
   onChangePress,
   isSecondEdition = false,
-  onGoldPiecesChange,
 }: RoomCharactersListProps) {
   const { t } = useTranslation();
   const listHeader = useMemo(() => {
@@ -74,7 +72,6 @@ const RoomCharactersList = memo(function RoomCharactersList({
           onChangePress={onChangePress}
           realtimeFlashSignal={realtimeUpdateSignals[item.id] ?? 0}
           isSecondEdition={isSecondEdition}
-          onGoldPiecesChange={onGoldPiecesChange}
         />
       )}
       keyExtractor={(item) => item.id}

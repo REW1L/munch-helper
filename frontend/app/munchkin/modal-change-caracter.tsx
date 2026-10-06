@@ -30,6 +30,7 @@ interface Character {
   level: number;
   power: number;
   avatar: number;
+  goldPieces?: number;
 }
 
 interface ChangeCharacterModalProps {
@@ -68,6 +69,7 @@ export default function ChangeCharacterModal({
   const [colorModalVisible, setColorModalVisible] = useState(false);
   const [isDeletePending, setIsDeletePending] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [draftGoldPieces, setDraftGoldPieces] = useState(String(initialCharacter?.goldPieces ?? 500));
   const pendingDeleteCharacterIdRef = useRef<string | null>(null);
   const deleteRequestIdRef = useRef(0);
   const activeDeleteRef = useRef<{ requestId: number; characterId: string } | null>(
@@ -80,6 +82,7 @@ export default function ChangeCharacterModal({
     }
 
     setCharacter(initialCharacter);
+    setDraftGoldPieces(String(initialCharacter.goldPieces ?? 500));
     setNewRace('<Select>');
     setNewClass('<Select>');
     setColorModalVisible(false);
@@ -87,10 +90,16 @@ export default function ChangeCharacterModal({
     setIsDeletePending(false);
     activeDeleteRef.current = null;
     pendingDeleteCharacterIdRef.current = null;
-  }, [initialCharacter?.id]);
+  }, [initialCharacter]);
 
   const handleSave = () => {
     if (isDeletePending) {
+      return;
+    }
+    if (hideGender) {
+      const goldPieces = Number(draftGoldPieces);
+      if (!Number.isInteger(goldPieces) || goldPieces < 0) return;
+      onConfirm({ ...character, goldPieces });
       return;
     }
     onConfirm(character);
@@ -248,6 +257,18 @@ export default function ChangeCharacterModal({
                   </TouchableOpacity>
                 </View>
               </View>
+
+              {hideGender && <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('gameRules.secondEditionCoinsTitle')}</Text>
+                <TextInput
+                  accessibilityLabel={t('room.coinAdjustmentA11y')}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                  value={draftGoldPieces}
+                  onChangeText={setDraftGoldPieces}
+                  testID="edit-character-gold-pieces-input"
+                />
+              </View>}
 
               {/* Class Selection */}
               <View style={styles.fieldRow}>
