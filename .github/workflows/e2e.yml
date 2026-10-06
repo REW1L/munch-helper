@@ -53,6 +53,14 @@ jobs:
             E2E_KEEP_WEB_SERVER=true node scripts/e2e/cleanup.mjs
             "$HOME/.maestro/bin/maestro" test -p web --headless -e API_URL=http://localhost:8080 -e ROOM_ID="$ROOM_ID" -e USER_ID="$USER_ID" -e ACTOR_B_USER_ID="$ACTOR_B_USER_ID" "$flow"
           done
+      - name: Upload Maestro web diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-web-diagnostics
+          path: /home/runner/.maestro/tests/
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Stop web server and browser
         if: always()
         run: node scripts/e2e/cleanup.mjs

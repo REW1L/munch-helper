@@ -222,6 +222,8 @@ const et = {
     unknownMonster: 'Tundmatu koletis',
   },
   roomLayout: {
+    roomLabel: 'Tuba',
+    openRulesA11y: 'Ava reeglid',
     battle: 'Lahing',
     history: 'Ajalugu',
     backToRoomA11y: 'Tagasi tuppa',

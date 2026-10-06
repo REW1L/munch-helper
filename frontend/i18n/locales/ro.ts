@@ -222,6 +222,8 @@ const ro = {
     unknownMonster: 'Monstru necunoscut',
   },
   roomLayout: {
+    roomLabel: 'Cameră',
+    openRulesA11y: 'Deschide regulile',
     battle: 'Luptă',
     history: 'Istoric',
     backToRoomA11y: 'Înapoi la cameră',

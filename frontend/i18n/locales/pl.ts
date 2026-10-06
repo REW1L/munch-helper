@@ -222,6 +222,8 @@ const pl = {
     unknownMonster: 'Nieznany potwór',
   },
   roomLayout: {
+    roomLabel: 'Pokój',
+    openRulesA11y: 'Otwórz zasady',
     battle: 'Walka',
     history: 'Historia',
     backToRoomA11y: 'Powrót do pokoju',

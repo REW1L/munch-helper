@@ -8,18 +8,10 @@ appId: click.helpamunch.mobileapp
     timeout: 20000
 - tapOn:
     id: screenshot-open-rooms
-- extendedWaitUntil:
-    visible:
-      id: create-2e-room-button
-    timeout: 15000
 - tapOn:
-    id: "create-2e-room-button"
-- extendedWaitUntil:
-    visible:
-      id: confirm-create-room-button
-    timeout: 10000
+    id: create-room-button
 - tapOn:
-    id: "confirm-create-room-button"
+    id: confirm-create-room-button
 - runFlow:
     when:
       platform: Web
@@ -51,7 +43,8 @@ appId: click.helpamunch.mobileapp
       - tapOn:
           id: open-room-rules
 - extendedWaitUntil:
-    visible: "Munchkin Second Edition"
+    visible:
+      id: munchkin-rules-scroll
     timeout: 10000
 - runFlow:
     when:

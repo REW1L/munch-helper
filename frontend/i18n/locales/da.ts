@@ -222,6 +222,8 @@ const da = {
     unknownMonster: 'Ukendt monster',
   },
   roomLayout: {
+    roomLabel: 'Rum',
+    openRulesA11y: 'Åbn regler',
     battle: 'Kamp',
     history: 'Historik',
     backToRoomA11y: 'Tilbage til rummet',

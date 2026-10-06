@@ -81,7 +81,7 @@ app/
     ├── modal-create-character.tsx
     ├── modal-change-caracter.tsx     (sic)
     └── [roomNumber]/
-        ├── _layout.tsx         <- Room nav header (copy room code) + nested Stack
+        ├── _layout.tsx         <- Room nav header (copy room code, edition rules icon) + nested Stack
         ├── index.tsx           <- /munchkin/<roomId> (edition resolved from room metadata)
         ├── log.tsx             <- /munchkin/<roomId>/log
         └── (battle)/
@@ -89,7 +89,7 @@ app/
             └── index.tsx       <- /munchkin/<roomId>/(battle)
 ```
 
-`(battle)` is a **route group** (Expo Router parens convention) so the battle screen presents as a modal without changing the URL hierarchy. The room layout detects whether the current segment list contains `(battle)` or `log` to swap the header between the room-code copy chip and the minimal back button.
+`(battle)` is a **route group** (Expo Router parens convention) so the battle screen presents as a modal without changing the URL hierarchy. The room layout shows the room-code Copy control and an accessible rules icon on the room screen. The icon opens `/munchkin/rules` for Classic or `/munchkin/rules?edition=2e` for Second Edition, using resolved room metadata. Battle and log detail routes hide the rules icon and use the minimal back button.
 
 ## Provider Tree
 

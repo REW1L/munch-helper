@@ -222,6 +222,8 @@ const lt = {
     unknownMonster: 'Nežinomas monstras',
   },
   roomLayout: {
+    roomLabel: 'Kambarys',
+    openRulesA11y: 'Atidaryti taisykles',
     battle: 'Kova',
     history: 'Istorija',
     backToRoomA11y: 'Grįžti į kambarį',

@@ -222,6 +222,8 @@ const bg = {
     unknownMonster: 'Непознато чудовище',
   },
   roomLayout: {
+    roomLabel: 'Стая',
+    openRulesA11y: 'Отвори правилата',
     battle: 'Битка',
     history: 'История',
     backToRoomA11y: 'Обратно към стаята',

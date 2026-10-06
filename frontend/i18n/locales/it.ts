@@ -222,6 +222,8 @@ const it = {
     unknownMonster: 'Mostro sconosciuto',
   },
   roomLayout: {
+    roomLabel: 'Stanza',
+    openRulesA11y: 'Apri le regole',
     battle: 'Battaglia',
     history: 'Cronologia',
     backToRoomA11y: 'Torna alla stanza',

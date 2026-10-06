@@ -25,6 +25,8 @@ Runtime config is validated at startup in `config/runtime.ts`; invalid productio
 
 The Munchkin rules route contains concise, original overviews of Classic and Second Edition play. It does not bundle or display copyrighted rulebooks; it links to the official edition-specific PDFs as authoritative external sources. Second Edition rooms also track each character's Gold Pieces balance, starting at 500 GP, while physical card effects remain player-managed.
 
+Inside a room, the header's rules icon opens the guide matching the persisted room edition. The icon appears beside the room-code Copy control in Classic and Second Edition rooms and is hidden on battle and history detail screens.
+
 ## Prerequisites
 
 - Node.js 24+

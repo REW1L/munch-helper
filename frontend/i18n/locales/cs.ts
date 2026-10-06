@@ -222,6 +222,8 @@ const cs = {
     unknownMonster: 'Neznámá příšera',
   },
   roomLayout: {
+    roomLabel: 'Místnost',
+    openRulesA11y: 'Otevřít pravidla',
     battle: 'Souboj',
     history: 'Historie',
     backToRoomA11y: 'Zpět do místnosti',

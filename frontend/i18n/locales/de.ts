@@ -222,6 +222,8 @@ const de = {
     unknownMonster: 'Unbekanntes Monster',
   },
   roomLayout: {
+    roomLabel: 'Raum',
+    openRulesA11y: 'Regeln öffnen',
     battle: 'Kampf',
     history: 'Verlauf',
     backToRoomA11y: 'Zurück zum Raum',

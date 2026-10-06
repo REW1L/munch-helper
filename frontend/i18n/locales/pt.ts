@@ -222,6 +222,8 @@ const pt = {
     unknownMonster: 'Monstro desconhecido',
   },
   roomLayout: {
+    roomLabel: 'Sala',
+    openRulesA11y: 'Abrir regras',
     battle: 'Batalha',
     history: 'Histórico',
     backToRoomA11y: 'Voltar à sala',

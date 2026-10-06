@@ -222,6 +222,8 @@ const ga = {
     unknownMonster: 'Arracht anaithnid',
   },
   roomLayout: {
+    roomLabel: 'Seomra',
+    openRulesA11y: 'Oscail na rialacha',
     battle: 'Cath',
     history: 'Stair',
     backToRoomA11y: 'Ar ais go dtí an seomra',

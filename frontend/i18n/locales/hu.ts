@@ -222,6 +222,8 @@ const hu = {
     unknownMonster: 'Ismeretlen szörny',
   },
   roomLayout: {
+    roomLabel: 'Szoba',
+    openRulesA11y: 'Szabályok megnyitása',
     battle: 'Csata',
     history: 'Előzmények',
     backToRoomA11y: 'Vissza a szobába',

@@ -222,6 +222,8 @@ const el = {
     unknownMonster: 'Άγνωστο τέρας',
   },
   roomLayout: {
+    roomLabel: 'Δωμάτιο',
+    openRulesA11y: 'Άνοιγμα κανόνων',
     battle: 'Μάχη',
     history: 'Ιστορικό',
     backToRoomA11y: 'Επιστροφή στο δωμάτιο',

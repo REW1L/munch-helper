@@ -399,8 +399,7 @@ describe('Munchkin room header', () => {
     });
     render(latestHeaderOptions.current!.headerTitle!());
     expect(screen.getByText('Second Edition')).toBeTruthy();
-    await act(async () => { fireEvent.click(screen.getByTestId('open-2e-room-rules')); });
-    expect(mockRouterPush).toHaveBeenCalledWith({ pathname: '/munchkin/rules', params: { edition: '2e' } });
+    expect(screen.queryByTestId('open-2e-room-rules')).toBeNull();
   });
 
   it('keeps room stats unchanged until quick edit save is pressed', async () => {
