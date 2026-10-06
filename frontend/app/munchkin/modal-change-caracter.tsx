@@ -157,324 +157,326 @@ export default function ChangeCharacterModal({
   };
 
   return (
-    <Modal
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleCancel}
-    >
-      <View style={styles.overlay} testID="change-character-modal">
-        <View style={styles.container}>
-          <ConfirmDialog
-            visible={deleteConfirmVisible}
-            title={t('character.deleteConfirmTitle')}
-            message={t('character.deleteConfirmMessage')}
-            confirmLabel={t('common.delete')}
-            cancelLabel={t('common.cancel')}
-            onConfirm={handleDeleteConfirmAccept}
-            onCancel={handleDeleteConfirmCancel}
-          />
-          <ScrollView
-            style={styles.content}
-            contentContainerStyle={styles.contentContainer}
-          >
-            <View style={styles.avatarContainer}>
-              <Image source={avatars[character.avatar]} style={styles.avatar} />
-            </View>
-
-            {/* Name Input */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.name')}</Text>
-              <TextInput
-                style={styles.input}
-                value={character.nickname}
-                onChangeText={(text) =>
-                  setCharacter({ ...character, nickname: text })
-                }
-                placeholderTextColor="#888686"
-                testID="edit-character-name-input"
-              />
-            </View>
-
-            {/* Level Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.level')}</Text>
-              <View style={styles.inputGroup}>
-                <View style={styles.valueDisplay}>
-                  <Text style={styles.valueText}>{character.level}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.buttonSmall}
-                  onPress={() => incrementValue('level')}
-                  testID="edit-character-level-increase"
-                >
-                  <Text style={styles.buttonSmallText}>+</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.buttonSmall}
-                  onPress={() => decrementValue('level')}
-                  testID="edit-character-level-decrease"
-                >
-                  <Text style={styles.buttonSmallText}>-</Text>
-                </TouchableOpacity>
+    <>
+      <Modal
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancel}
+      >
+        <View style={styles.overlay} testID="change-character-modal">
+          <View style={styles.container}>
+            <ScrollView
+              style={styles.content}
+              contentContainerStyle={styles.contentContainer}
+            >
+              <View style={styles.avatarContainer}>
+                <Image source={avatars[character.avatar]} style={styles.avatar} />
               </View>
-            </View>
 
-            {/* Power Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.power')}</Text>
-              <View style={styles.inputGroup}>
-                <View style={styles.valueDisplay}>
-                  <Text style={styles.valueText}>{character.power}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.buttonSmall}
-                  onPress={() => incrementValue('power')}
-                  testID="edit-character-power-increase"
-                >
-                  <Text style={styles.buttonSmallText}>+</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.buttonSmall}
-                  onPress={() => decrementValue('power')}
-                  testID="edit-character-power-decrease"
-                >
-                  <Text style={styles.buttonSmallText}>-</Text>
-                </TouchableOpacity>
+              {/* Name Input */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.name')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={character.nickname}
+                  onChangeText={(text) =>
+                    setCharacter({ ...character, nickname: text })
+                  }
+                  placeholderTextColor="#888686"
+                  testID="edit-character-name-input"
+                />
               </View>
-            </View>
 
-            {/* Class Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.classLabel')}</Text>
-              <View style={styles.inputGroupVertical}>
-                {character.class.map((cls, index) => (
-                  <View style={styles.classRow} key={`class-${index}`}>
-                    <View style={styles.classDropdown}>
-                      <NativePicker
-                        selectedValue={character.class[index]}
-                        onValueChange={(value: string) => {
+              {/* Level Selection */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.level')}</Text>
+                <View style={styles.inputGroup}>
+                  <View style={styles.valueDisplay}>
+                    <Text style={styles.valueText}>{character.level}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.buttonSmall}
+                    onPress={() => incrementValue('level')}
+                    testID="edit-character-level-increase"
+                  >
+                    <Text style={styles.buttonSmallText}>+</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.buttonSmall}
+                    onPress={() => decrementValue('level')}
+                    testID="edit-character-level-decrease"
+                  >
+                    <Text style={styles.buttonSmallText}>-</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Power Selection */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.power')}</Text>
+                <View style={styles.inputGroup}>
+                  <View style={styles.valueDisplay}>
+                    <Text style={styles.valueText}>{character.power}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.buttonSmall}
+                    onPress={() => incrementValue('power')}
+                    testID="edit-character-power-increase"
+                  >
+                    <Text style={styles.buttonSmallText}>+</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.buttonSmall}
+                    onPress={() => decrementValue('power')}
+                    testID="edit-character-power-decrease"
+                  >
+                    <Text style={styles.buttonSmallText}>-</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Class Selection */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.classLabel')}</Text>
+                <View style={styles.inputGroupVertical}>
+                  {character.class.map((cls, index) => (
+                    <View style={styles.classRow} key={`class-${index}`}>
+                      <View style={styles.classDropdown}>
+                        <NativePicker
+                          selectedValue={character.class[index]}
+                          onValueChange={(value: string) => {
+                            const newClasses = [...character.class];
+                            newClasses[index] = value;
+                            setCharacter({ ...character, class: newClasses });
+                          }}
+                          options={classes}
+                          pickerKey={`class-${index}`}
+                        />
+                      </View>
+                      <TouchableOpacity style={styles.classButton}
+                        onPress={() => {
                           const newClasses = [...character.class];
-                          newClasses[index] = value;
+                          newClasses.splice(index, 1);
                           setCharacter({ ...character, class: newClasses });
                         }}
+                      >
+                        <Text style={styles.classButtonText}>-</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <View style={styles.classRow}>
+                    <View style={styles.classDropdown}>
+                      <NativePicker
+                        selectedValue={newClass}
+                        onValueChange={(value: string) => setNewClass(value)}
                         options={classes}
-                        pickerKey={`class-${index}`}
+                        pickerKey="newclass"
                       />
                     </View>
                     <TouchableOpacity style={styles.classButton}
                       onPress={() => {
-                        const newClasses = [...character.class];
-                        newClasses.splice(index, 1);
-                        setCharacter({ ...character, class: newClasses });
+                        if (newClass === "<Select>" || character.class.includes(newClass)) return;
+                        setCharacter({ ...character, class: [...character.class, newClass] });
+                        setNewClass("<Select>");
                       }}
                     >
-                      <Text style={styles.classButtonText}>-</Text>
+                      <Text style={styles.classButtonText}>+</Text>
                     </TouchableOpacity>
                   </View>
-                ))}
-                <View style={styles.classRow}>
-                  <View style={styles.classDropdown}>
-                    <NativePicker
-                      selectedValue={newClass}
-                      onValueChange={(value: string) => setNewClass(value)}
-                      options={classes}
-                      pickerKey="newclass"
-                    />
-                  </View>
-                  <TouchableOpacity style={styles.classButton}
-                    onPress={() => {
-                      if (newClass === "<Select>" || character.class.includes(newClass)) return;
-                      setCharacter({ ...character, class: [...character.class, newClass] });
-                      setNewClass("<Select>");
-                    }}
-                  >
-                    <Text style={styles.classButtonText}>+</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
 
-            {/* Race Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.race')}</Text>
-              <View style={styles.inputGroupVertical}>
-                {character.race.map((race, index) => (
-                  <View style={styles.classRow} key={`race-${index}`}>
-                    <View style={styles.classDropdown}>
-                      <NativePicker
-                        selectedValue={character.race[index]}
-                        onValueChange={(value: string) => {
-                          const newRaces = [...character.race];
-                          newRaces[index] = value;
+              {/* Race Selection */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.race')}</Text>
+                <View style={styles.inputGroupVertical}>
+                  {character.race.map((race, index) => (
+                    <View style={styles.classRow} key={`race-${index}`}>
+                      <View style={styles.classDropdown}>
+                        <NativePicker
+                          selectedValue={character.race[index]}
+                          onValueChange={(value: string) => {
+                            const newRaces = [...character.race];
+                            newRaces[index] = value;
+                            setCharacter({ ...character, race: newRaces });
+                          }}
+                          options={races}
+                          pickerKey={`race-${index}`}
+                        />
+                      </View>
+                      <TouchableOpacity
+                        style={styles.classButton}
+                        onPress={() => {
+                          let newRaces = [...character.race];
+                          if (newRaces.length <= 1) {
+                            newRaces = ['Human'];
+                          } else {
+                            newRaces.splice(index, 1);
+                          }
                           setCharacter({ ...character, race: newRaces });
                         }}
+                      >
+                        <Text style={styles.classButtonText}>-</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <View style={styles.classRow}>
+                    <View style={styles.classDropdown}>
+                      <NativePicker
+                        selectedValue={newRace}
+                        onValueChange={(value: string) => setNewRace(value)}
                         options={races}
-                        pickerKey={`race-${index}`}
+                        pickerKey="newrace"
                       />
                     </View>
                     <TouchableOpacity
                       style={styles.classButton}
                       onPress={() => {
-                        let newRaces = [...character.race];
-                        if (newRaces.length <= 1) {
-                          newRaces = ['Human'];
-                        } else {
-                          newRaces.splice(index, 1);
-                        }
-                        setCharacter({ ...character, race: newRaces });
+                        if (newRace === "<Select>" || character.race.includes(newRace)) return;
+                        setCharacter({ ...character, race: [...character.race, newRace] });
+                        setNewRace("<Select>");
                       }}
                     >
-                      <Text style={styles.classButtonText}>-</Text>
+                      <Text style={styles.classButtonText}>+</Text>
                     </TouchableOpacity>
                   </View>
-                ))}
-                <View style={styles.classRow}>
-                  <View style={styles.classDropdown}>
-                    <NativePicker
-                      selectedValue={newRace}
-                      onValueChange={(value: string) => setNewRace(value)}
-                      options={races}
-                      pickerKey="newrace"
-                    />
-                  </View>
-                  <TouchableOpacity
-                    style={styles.classButton}
-                    onPress={() => {
-                      if (newRace === "<Select>" || character.race.includes(newRace)) return;
-                      setCharacter({ ...character, race: [...character.race, newRace] });
-                      setNewRace("<Select>");
-                    }}
-                  >
-                    <Text style={styles.classButtonText}>+</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
-            </View>
 
-            {/* Gender Selection */}
-            {!hideGender && <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
-              <View style={styles.genderContainer}>
-                <TouchableOpacity
-                  style={styles.genderRow}
-                  onPress={() =>
-                    setCharacter({ ...character, gender: ['male'] })
-                  }
-                >
-                  <View
-                    style={[
-                      styles.radio,
-                      character.gender.includes('male') && styles.radioSelected,
-                    ]}
+              {/* Gender Selection */}
+              {!hideGender && <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.gender')}</Text>
+                <View style={styles.genderContainer}>
+                  <TouchableOpacity
+                    style={styles.genderRow}
+                    onPress={() =>
+                      setCharacter({ ...character, gender: ['male'] })
+                    }
                   >
-                    {character.gender.includes('male') && (
-                      <View style={styles.radioDot} />
-                    )}
-                  </View>
-                  <Text style={styles.genderLabel}>{t('character.male')}</Text>
-                </TouchableOpacity>
+                    <View
+                      style={[
+                        styles.radio,
+                        character.gender.includes('male') && styles.radioSelected,
+                      ]}
+                    >
+                      {character.gender.includes('male') && (
+                        <View style={styles.radioDot} />
+                      )}
+                    </View>
+                    <Text style={styles.genderLabel}>{t('character.male')}</Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.genderRow}
-                  onPress={() =>
-                    setCharacter({ ...character, gender: ['female'] })
-                  }
-                >
-                  <View
-                    style={[
-                      styles.radio,
-                      character.gender.includes('female') && styles.radioSelected,
-                    ]}
+                  <TouchableOpacity
+                    style={styles.genderRow}
+                    onPress={() =>
+                      setCharacter({ ...character, gender: ['female'] })
+                    }
                   >
-                    {character.gender.includes('female') && (
-                      <View style={styles.radioDot} />
-                    )}
-                  </View>
-                  <Text style={styles.genderLabel}>{t('character.female')}</Text>
-                </TouchableOpacity>
+                    <View
+                      style={[
+                        styles.radio,
+                        character.gender.includes('female') && styles.radioSelected,
+                      ]}
+                    >
+                      {character.gender.includes('female') && (
+                        <View style={styles.radioDot} />
+                      )}
+                    </View>
+                    <Text style={styles.genderLabel}>{t('character.female')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>}
+
+              {/* Color Selection */}
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldLabel}>{t('character.color')}</Text>
+                <Pressable
+                  style={[
+                    styles.colorPicker,
+                    { backgroundColor: character.color },
+                  ]}
+                  onPress={() => setColorModalVisible(true)}
+                />
+                <Modal
+                  transparent={true}
+                  animationType="fade"
+                  visible={colorModalVisible}
+                >
+                  <Pressable style={styles.overlay} onPress={() => setColorModalVisible(false)}>
+                    <ColorPicker
+                      value={character.color}
+                      thumbSize={24}
+                      style={styles.colorPickerModal}
+                      thumbShape='circle'
+                      onCompleteJS={(color) => {
+                        setCharacter({ ...character, color: `${color.hex}` });
+                        setColorModalVisible(false);
+                      }}
+                    >
+                      <Text style={[styles.contentContainer, styles.headerText]}>{t('character.selectColor')}</Text>
+                      <Panel5 />
+                    </ColorPicker>
+                  </Pressable>
+                </Modal>
               </View>
-            </View>}
 
-            {/* Color Selection */}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>{t('character.color')}</Text>
-              <Pressable
-                style={[
-                  styles.colorPicker,
-                  { backgroundColor: character.color },
-                ]}
-                onPress={() => setColorModalVisible(true)}
-              />
-              <Modal
-                transparent={true}
-                animationType="fade"
-                visible={colorModalVisible}
+              {deleteError ? (
+                <Text style={styles.deleteErrorText}>{deleteError}</Text>
+              ) : null}
+
+              <TouchableOpacity
+                style={[styles.deleteButton, isDeletePending && styles.deleteButtonDisabled]}
+                onPress={handleDeletePress}
+                activeOpacity={0.8}
+                disabled={isDeletePending}
+                accessible
+                accessibilityRole="button"
+                testID="delete-character-button"
               >
-                <Pressable style={styles.overlay} onPress={() => setColorModalVisible(false)}>
-                  <ColorPicker
-                    value={character.color}
-                    thumbSize={24}
-                    style={styles.colorPickerModal}
-                    thumbShape='circle'
-                    onCompleteJS={(color) => {
-                      setCharacter({ ...character, color: `${color.hex}` });
-                      setColorModalVisible(false);
-                    }}
-                  >
-                    <Text style={[styles.contentContainer, styles.headerText]}>{t('character.selectColor')}</Text>
-                    <Panel5 />
-                  </ColorPicker>
-                </Pressable>
-              </Modal>
+                <ButtonLabel
+                  style={styles.deleteButtonText}
+                  testID="delete-character-button-label"
+                >
+                  {isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}
+                </ButtonLabel>
+              </TouchableOpacity>
+            </ScrollView>
+
+            {/* Buttons */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, isDeletePending && styles.buttonDisabled]}
+                onPress={handleSave}
+                activeOpacity={0.7}
+                disabled={isDeletePending}
+                testID="save-character-button"
+              >
+                <ButtonLabel style={styles.buttonText}>{t('common.save')}</ButtonLabel>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, isDeletePending && styles.buttonDisabled]}
+                onPress={handleCancel}
+                activeOpacity={0.7}
+                disabled={isDeletePending}
+                testID="cancel-character-button"
+              >
+                <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
+              </TouchableOpacity>
             </View>
-
-            {deleteError ? (
-              <Text style={styles.deleteErrorText}>{deleteError}</Text>
-            ) : null}
-
-            <TouchableOpacity
-              style={[styles.deleteButton, isDeletePending && styles.deleteButtonDisabled]}
-              onPress={handleDeletePress}
-              activeOpacity={0.8}
-              disabled={isDeletePending}
-              accessible
-              accessibilityRole="button"
-              testID="delete-character-button"
-            >
-              <ButtonLabel
-                style={styles.deleteButtonText}
-                testID="delete-character-button-label"
-              >
-                {isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}
-              </ButtonLabel>
-            </TouchableOpacity>
-          </ScrollView>
-
-          {/* Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, isDeletePending && styles.buttonDisabled]}
-              onPress={handleSave}
-              activeOpacity={0.7}
-              disabled={isDeletePending}
-              testID="save-character-button"
-            >
-              <ButtonLabel style={styles.buttonText}>{t('common.save')}</ButtonLabel>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, isDeletePending && styles.buttonDisabled]}
-              onPress={handleCancel}
-              activeOpacity={0.7}
-              disabled={isDeletePending}
-              testID="cancel-character-button"
-            >
-              <ButtonLabel style={styles.buttonText}>{t('common.cancel')}</ButtonLabel>
-            </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+      <ConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('character.deleteConfirmTitle')}
+        message={t('character.deleteConfirmMessage')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={handleDeleteConfirmAccept}
+        onCancel={handleDeleteConfirmCancel}
+      />
+    </>
   );
 }
 

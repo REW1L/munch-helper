@@ -84,6 +84,53 @@ describe('ChangeCharacterModal', () => {
     expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'cancel-character-button')).toHaveLength(1);
   });
 
+  it('presents delete confirmation outside the edit modal', async () => {
+    const character = {
+      id: 'char-first',
+      nickname: 'Rogue',
+      color: '#0088CC',
+      gender: ['female'],
+      race: ['Elf'],
+      class: ['Thief'],
+      level: 4,
+      power: 1,
+      avatar: 2,
+    };
+
+    let renderer: ReturnType<typeof TestRenderer.create>;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <ChangeCharacterModal
+          character={character}
+          deleteError={null}
+          onConfirm={vi.fn()}
+          onDelete={vi.fn(async () => undefined)}
+          onCancel={vi.fn()}
+        />
+      );
+    });
+
+    await act(async () => {
+      renderer!.root
+        .findAllByType(TouchableOpacity)
+        .find((button: any) => button.props.testID === 'delete-character-button')!
+        .props.onPress();
+    });
+
+    const confirmButton = findConfirmButton(renderer!);
+    expect(confirmButton).toBeTruthy();
+    let parent = confirmButton!.parent;
+    let nestedInEditModal = false;
+    while (parent) {
+      if (parent.props.testID === 'change-character-modal') {
+        nestedInEditModal = true;
+        break;
+      }
+      parent = parent.parent;
+    }
+    expect(nestedInEditModal).toBe(false);
+  });
+
   it('resets its local draft when the selected character changes mid-session', async () => {
     const firstCharacter = {
       id: 'char-first',
