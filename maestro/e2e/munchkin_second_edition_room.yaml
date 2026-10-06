@@ -110,10 +110,30 @@ appId: click.helpamunch.mobileapp
           timeout: 10000
 - tapOn:
     id: change-character-button
-- extendedWaitUntil:
-    visible:
-      id: quick-edit-gold-pieces-input
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: Gold Pieces adjustment amount
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: quick-edit-gold-pieces-input
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: quick-edit-gold-pieces-input
+          timeout: 10000
 - takeScreenshot: second-edition-quick-edit
 - repeat:
     times: 4
@@ -153,10 +173,30 @@ appId: click.helpamunch.mobileapp
     id: change-character-button
 - tapOn:
     id: quick-edit-open-full-edit
-- extendedWaitUntil:
-    visible:
-      id: edit-character-gold-pieces-input
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: Gold Pieces adjustment amount
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: edit-character-gold-pieces-input
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: edit-character-gold-pieces-input
+          timeout: 10000
 - waitForAnimationToEnd
 - takeScreenshot: second-edition-character-edit
 - tapOn:
