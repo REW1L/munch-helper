@@ -12,7 +12,6 @@ appId: click.helpamunch.mobileapp
     id: delete-character-button
 - tapOn:
     id: delete-character-button
-    retryIfNoChange: true
 - waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
