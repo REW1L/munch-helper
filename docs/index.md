@@ -97,7 +97,7 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 
 ## Working With AI Assistants
 
-Follow `AGENTS.md` for current agent instructions. `_bmad-output/project-context.md` records historical rules and versions; verify them against current source before reuse. Spec workflows (`_bmad-output/implementation-artifacts/`) are tracked by `.github/workflows/story-project-sync.yml`.
+Follow `AGENTS.md` for current agent instructions. `_bmad-output/project-context.md` records historical rules and versions; verify them against current source before reuse. Planning and implementation artifacts are maintained under `_bmad-output/`.
 
 For a brownfield PRD, point the PRD workflow at `docs/index.md`. For UI-only features, reference `docs/architecture-frontend.md` plus `docs/component-inventory-frontend.md`. For API-only features, reference `docs/architecture-backend.md` plus `docs/api-contracts-backend.md` and `docs/data-models-backend.md`. For full-stack features, also include `docs/integration-architecture.md`.
 

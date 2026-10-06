@@ -232,16 +232,6 @@ export GOOGLE_GHA_CREDS_PATH=/path/to/key.json   # service account credentials
 bundle exec fastlane android beta
 ```
 
-## Story Project Sync
-
-This is not a deployment pipeline per se, but it ships release-relevant automation.
-
-### Story Project Sync (`story-project-sync.yml`)
-
-Mirrors BMAD planning and implementation artifacts into the GitHub Project at `https://github.com/users/REW1L/projects/1`. Triggered by changes under `_bmad-output/**` and PRs against `_bmad-output/implementation-artifacts/**`. Sets the project status to `Ready for Dev`, `Review`, or `Done` based on PR state and artifact metadata.
-
-Required secret: `GH_PROJECT_TOKEN` (PAT with `repo` and `project` scopes - cannot be the default `GITHUB_TOKEN` because the project is user-owned).
-
 ## Release-readiness Sign-off
 
 Before tagging a release, run through `docs/release-readiness-checklist.md` and capture evidence under `docs/release-evidence/<version>-<date>-channel-availability.md` (template at `docs/release-evidence/TEMPLATE-channel-availability.md`). The validation script under `scripts/validate-web-channel.mjs` is the recommended way to populate the web availability portion of the evidence file.
