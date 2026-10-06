@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel: string;
   cancelLabel?: string;
+  insideModal?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -25,6 +26,7 @@ export default function ConfirmDialog({
   message,
   confirmLabel,
   cancelLabel,
+  insideModal = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -60,7 +62,6 @@ export default function ConfirmDialog({
         <View style={styles.buttons}>
           <TouchableOpacity
             accessible
-            accessibilityLabel={resolvedCancelLabel}
             accessibilityRole="button"
             style={[styles.button, styles.cancelButton]}
             testID="confirm-dialog-cancel"
@@ -70,7 +71,6 @@ export default function ConfirmDialog({
           </TouchableOpacity>
           <TouchableOpacity
             accessible
-            accessibilityLabel={confirmLabel}
             accessibilityRole="button"
             style={[styles.button, styles.confirmButton]}
             onPress={onConfirm}
@@ -82,6 +82,10 @@ export default function ConfirmDialog({
       </Pressable>
     </Pressable>
   ) : null;
+
+  if (insideModal) {
+    return dialogContent;
+  }
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>

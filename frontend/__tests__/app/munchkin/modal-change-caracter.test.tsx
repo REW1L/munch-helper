@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Text, TextInput, TouchableOpacity } from 'react-native';
+import { Modal, Text, TextInput, TouchableOpacity } from 'react-native';
 import { describe, expect, it, vi } from 'vitest';
 
 import ChangeCharacterModal from '../../../app/munchkin/modal-change-caracter';
@@ -84,7 +84,7 @@ describe('ChangeCharacterModal', () => {
     expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'cancel-character-button')).toHaveLength(1);
   });
 
-  it('presents delete confirmation outside the edit modal', async () => {
+  it('presents delete confirmation in the edit modal without opening a nested modal', async () => {
     const character = {
       id: 'char-first',
       nickname: 'Rogue',
@@ -119,6 +119,10 @@ describe('ChangeCharacterModal', () => {
 
     const confirmButton = findConfirmButton(renderer!);
     expect(confirmButton).toBeTruthy();
+    expect(confirmButton!.props.accessibilityLabel).toBeUndefined();
+    expect(
+      renderer!.root.findAllByType(Modal).filter((modal: any) => modal.props.visible === true)
+    ).toHaveLength(0);
     let parent = confirmButton!.parent;
     let nestedInEditModal = false;
     while (parent) {
@@ -128,7 +132,7 @@ describe('ChangeCharacterModal', () => {
       }
       parent = parent.parent;
     }
-    expect(nestedInEditModal).toBe(false);
+    expect(nestedInEditModal).toBe(true);
   });
 
   it('resets its local draft when the selected character changes mid-session', async () => {

@@ -465,17 +465,18 @@ export default function ChangeCharacterModal({
               </TouchableOpacity>
             </View>
           </View>
+          <ConfirmDialog
+            visible={deleteConfirmVisible}
+            title={t('character.deleteConfirmTitle')}
+            message={t('character.deleteConfirmMessage')}
+            confirmLabel={t('common.delete')}
+            cancelLabel={t('common.cancel')}
+            insideModal
+            onConfirm={handleDeleteConfirmAccept}
+            onCancel={handleDeleteConfirmCancel}
+          />
         </View>
       </Modal>
-      <ConfirmDialog
-        visible={deleteConfirmVisible}
-        title={t('character.deleteConfirmTitle')}
-        message={t('character.deleteConfirmMessage')}
-        confirmLabel={t('common.delete')}
-        cancelLabel={t('common.cancel')}
-        onConfirm={handleDeleteConfirmAccept}
-        onCancel={handleDeleteConfirmCancel}
-      />
     </>
   );
 }

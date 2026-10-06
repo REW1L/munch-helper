@@ -7,7 +7,12 @@ appId: click.helpamunch.mobileapp
     visible:
       id: change-character-modal
     timeout: 10000
-- scroll
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          start: 50%, 70%
+          end: 50%, 35%
 - assertVisible:
     id: delete-character-button
 - tapOn:
