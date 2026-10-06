@@ -45,7 +45,7 @@ A more detailed architectural breakdown lives in:
 - Battles: start (one active per room enforced by Mongo partial unique index), patch, conclude with `players_win`/`monster_wins`, and discard. Player and monster sides each carry a list of bonuses; monster side carries a list of monsters with name and level.
 - Room history: every character lifecycle event and every battle lifecycle event is published to the log channel and persisted as `LogEvent` documents; the frontend pages through them with cursor-based `before=<logId>`.
 - Real-time: WebSocket fanout of `character_*` and `battle_*` events to all participants of a room, with foreground reconnect, exponential-backoff retry, heartbeat ping, and a "Reconnecting…" UI banner with timeout fallback.
-- Release operations: per-platform CD workflows for backend SAM deploy, frontend web build + Pulumi deploy, iOS Fastlane TestFlight upload, Android Fastlane Play Store internal track upload, BMAD story sync to GitHub Projects, and a "Ready for Dev" auto-implementation orchestrator.
+- Release operations: per-platform CD workflows for backend SAM deploy, frontend web build + Pulumi deploy, iOS Fastlane TestFlight upload, Android Fastlane Play Store internal track upload.
 
 ## Known Gaps and Deferred Work
 

@@ -15,13 +15,13 @@ munch-helper/
 │   ├── release/             # Release run logs and validation matrix
 │   ├── release-evidence/    # Per-release evidence templates and snapshots
 │   └── release-validation/  # Channel availability playbooks
-├── scripts/                 # Workspace-level helpers: screenshots, story sync, web channel validation
+├── scripts/                 # Workspace-level helpers: screenshots and web channel validation
 ├── maestro/                 # Maestro E2E flows used by capture and regression scripts
 ├── screenshots/             # App-store screenshot output directory
 ├── videos/                  # App-store preview video output directory
 ├── _bmad/                   # BMAD framework module config (do not edit by hand)
 ├── _bmad-output/            # BMAD planning + implementation artifacts (PRD, UX, epics, stories)
-├── .github/workflows/       # Six CI/CD workflows (backend, frontend+infra, iOS, Android, story sync, orchestrator)
+├── .github/workflows/       # Five workflows (backend, frontend+infra, iOS, Android, E2E)
 ├── package.json             # Workspace shell (no runtime dependencies; only scripts)
 ├── README.md                # Repository entry point
 ├── CHANGELOG.md             # Notable changes (currently records v2.0.0 gateway removal)
@@ -213,8 +213,6 @@ infrastructure/
 | `frontend-infra-cd.yml` | push/PR on `frontend/**`, `infrastructure/**`, or `backend/sam/template.yaml` | Lint + typecheck + test + `expo export --platform web`; on `main`, Pulumi-deploy the infrastructure stack with the produced artifact. |
 | `ios-app-store-cd.yml` | push to `main` on `frontend/**` | Fastlane `beta` lane: Match certs, build .ipa, upload to TestFlight. |
 | `android-play-store-cd.yml` | push to `main` on `frontend/**` | Fastlane `build` + `deploy` lanes; uploads .aab to Play internal track via GCP workload identity. |
-| `story-project-sync.yml` | push/PR on `_bmad-output/**` or sync script | Syncs BMAD planning/implementation artifacts to the GitHub Project (REW1L/projects/1). |
-| `ready-for-dev-orchestrator.yml` | manual dispatch or `Ready for Dev` issue comment marker | Cascades through claude → codex → copilot → kiro-cli to auto-implement an issue's spec. |
 
 ## Workspace Scripts (`scripts/`)
 
@@ -224,8 +222,6 @@ infrastructure/
 | `capture-app-store-screenshots.mjs` / `capture-google-play-screenshots.mjs` | Use Maestro to capture per-platform screenshots into `screenshots/`. |
 | `capture-preview-video.mjs` | Maestro-driven preview video capture; output goes to `videos/`. |
 | `coverage-combined.mjs` | Combines frontend + backend Vitest coverage summaries (run from `npm run coverage`). |
-| `story-project-sync.mjs` (+ test) | The actual implementation behind `story-project-sync.yml`. |
-| `ready-for-dev-orchestrator.mjs` (+ test) | The cascade implementation called by `ready-for-dev-orchestrator.yml`. |
 | `validate-web-channel.mjs` (+ test) + `web-channel-http.mjs` | HTTP probes to validate the web release channel (used by release-validation playbooks under `docs/release-validation/`). |
 | `generate-app-store-preview-redesign.py` / `generate-android-preview-redesign.py` | Python helpers to redesign App Store / Play Store preview images. |
 | `create-google-play-feature-graphic.swift` | Swift utility to generate the Play Store feature graphic. |
