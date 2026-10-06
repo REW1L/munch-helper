@@ -4,8 +4,7 @@ Munch Helper is a digital companion for tabletop games, currently focused on Mun
 
 Live app: https://helpamunch.click
 
-[![Download on the App Store](frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg)](https://apps.apple.com/us/app/munch-helper/id6760627502)
-[![Get it on Google Play](frontend/assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg)](https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp)
+<a href="https://apps.apple.com/us/app/munch-helper/id6760627502"><img src="frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="40" alt="Download on the App Store"></a> <a href="https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp"><img src="frontend/assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg" height="40" alt="Get it on Google Play"></a>
 
 ## Repository Structure
 
