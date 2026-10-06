@@ -8,8 +8,12 @@ appId: click.helpamunch.mobileapp
       id: change-character-modal
     timeout: 10000
 - scroll
+- assertVisible:
+    id: delete-character-button
 - tapOn:
     id: delete-character-button
+    retryIfNoChange: true
+- waitForAnimationToEnd
 - extendedWaitUntil:
     visible:
       id: confirm-dialog-confirm

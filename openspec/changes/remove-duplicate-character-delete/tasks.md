@@ -7,5 +7,5 @@
 
 ## 2. Keep deletion covered across platforms
 
-- [x] 2.1 Update `maestro/e2e/delete-character.yaml` so web and iOS scroll to and tap `delete-character-button`, then use the confirmation dialog test ID; inspect the flow to confirm every platform follows the in-form path.
+- [x] 2.1 Update `maestro/e2e/delete-character.yaml` so every platform scrolls to and verifies `delete-character-button`, retries the tap if there is no UI change, then uses the confirmation dialog test ID; inspect the flow to confirm every platform follows the in-form path.
 - [x] 2.2 Run frontend lint, typecheck, coverage, and the required root mobile E2E gate; record any check blocked by unavailable environment tooling (Docker daemon unavailable).
