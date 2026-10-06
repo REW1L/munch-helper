@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 
 import {
   buildIssueBodyWithSources,
-  buildMarkerCommentBody,
   buildPullRequestOperations,
   buildPushOperations,
   deriveSpecFileSlug,
@@ -14,7 +13,6 @@ import {
   parseTrackedImplementationArtifact,
   parseNameStatus,
   parseStoryTitle,
-  shouldSkipMarkerPost,
   updateIssueBodyWithSpecContent,
 } from "./story-project-sync.mjs";
 
@@ -389,134 +387,6 @@ test("deriveSpecFileSlug converts story number and title to a spec file slug", (
   );
 });
 
-test("buildMarkerCommentBody produces the expected HTML comment and JSON payload", () => {
-  const body = buildMarkerCommentBody(
-    42,
-    "_bmad-output/implementation-artifacts/spec-foo.md"
-  );
-
-  assert.ok(body.includes("<!-- auto-dev:trigger v1 -->"));
-  assert.ok(body.includes("🚀 **Status moved to Ready for Dev**"));
-
-  const jsonMatch = body.match(/```json\r?\n(\{[\s\S]*?\})\r?\n```/);
-  assert.ok(jsonMatch, "JSON fenced block should be present");
-
-  const payload = JSON.parse(jsonMatch[1]);
-  assert.deepEqual(payload, {
-    version: 1,
-    issue_number: 42,
-    spec_file: "_bmad-output/implementation-artifacts/spec-foo.md",
-  });
-});
-
-test("shouldSkipMarkerPost returns false when there are no recent comments", () => {
-  assert.equal(shouldSkipMarkerPost([], "spec.md"), false);
-});
-
-test("shouldSkipMarkerPost returns true when the most recent comment is an identical v1 marker", () => {
-  const body = buildMarkerCommentBody(42, "_bmad-output/implementation-artifacts/spec-foo.md");
-  assert.equal(
-    shouldSkipMarkerPost([{ body }], "_bmad-output/implementation-artifacts/spec-foo.md"),
-    true
-  );
-});
-
-test("shouldSkipMarkerPost returns false when the most recent marker points at a different spec_file", () => {
-  const body = buildMarkerCommentBody(42, "_bmad-output/implementation-artifacts/spec-foo.md");
-  assert.equal(
-    shouldSkipMarkerPost([{ body }], "_bmad-output/implementation-artifacts/spec-bar.md"),
-    false
-  );
-});
-
-test("shouldSkipMarkerPost returns false when the most recent comment is not a v1 marker", () => {
-  assert.equal(
-    shouldSkipMarkerPost([{ body: "Just a regular comment" }], "spec.md"),
-    false
-  );
-});
-
-test("shouldSkipMarkerPost returns false when the marker JSON is malformed", () => {
-  const malformedBody = [
-    "<!-- auto-dev:trigger v1 -->",
-    "```json",
-    "{not valid json}",
-    "```",
-  ].join("\n");
-  assert.equal(shouldSkipMarkerPost([{ body: malformedBody }], "spec.md"), false);
-});
-
-test("postReadyForDevMarker is posted on a fresh ready-for-dev transition", async () => {
-  const { postReadyForDevMarker: postMarker } = await import("./story-project-sync.mjs");
-
-  const calls = [];
-  const mockGhExec = (args, options) => {
-    calls.push({ args: [...args], options });
-    if (args.includes("view")) {
-      return JSON.stringify({ comments: [] });
-    }
-    return "";
-  };
-
-  postMarker(
-    { repo: "owner/repo" },
-    { number: 42 },
-    "_bmad-output/implementation-artifacts/spec-foo.md",
-    false,
-    [],
-    { ghExec: mockGhExec }
-  );
-
-  const commentCall = calls.find((c) => c.args.includes("comment"));
-  assert.ok(commentCall, "gh issue comment should have been called");
-  assert.ok(
-    commentCall.options?.stdin?.includes("<!-- auto-dev:trigger v1 -->"),
-    "Posted body should contain the trigger marker"
-  );
-});
-
-test("postReadyForDevMarker is skipped when an identical recent marker already exists", async () => {
-  const { postReadyForDevMarker: postMarker } = await import("./story-project-sync.mjs");
-
-  const specFile = "_bmad-output/implementation-artifacts/spec-foo.md";
-  const existingBody = buildMarkerCommentBody(42, specFile);
-  const calls = [];
-  const mockGhExec = (args) => {
-    calls.push([...args]);
-    if (args.includes("view")) {
-      return JSON.stringify({ comments: [{ body: existingBody }] });
-    }
-    return "";
-  };
-
-  postMarker({ repo: "owner/repo" }, { number: 42 }, specFile, false, [], { ghExec: mockGhExec });
-
-  assert.ok(
-    !calls.some((c) => c.includes("comment")),
-    "gh issue comment should NOT have been called when duplicate marker exists"
-  );
-});
-
-test("postReadyForDevMarker logs failure and does not throw when gh errors", async () => {
-  const { postReadyForDevMarker: postMarker } = await import("./story-project-sync.mjs");
-
-  const throwingGhExec = () => {
-    throw new Error("network error");
-  };
-
-  // Should not throw
-  assert.doesNotThrow(() => {
-    postMarker(
-      { repo: "owner/repo" },
-      { number: 42 },
-      "spec.md",
-      false,
-      [],
-      { ghExec: throwingGhExec }
-    );
-  });
-});
-
 test("buildIssueBodyWithSources appends source artifacts section to spec content", () => {
   const specContent = "# Story 1.1: My Story\n\nFull spec details.";
   const body = buildIssueBodyWithSources(specContent, "path/to/spec.md");
@@ -601,7 +471,7 @@ test("updateIssueBodyWithSpecContent records dry-run command without executing",
   assert.ok(!calls.length, "Should not execute gh command in dry-run mode");
 });
 
-test("push operations always include sourcePaths when targeting ready-for-dev, enabling marker post", () => {
+test("push operations include sourcePaths to update the issue body when targeting ready-for-dev", () => {
   const changedFiles = [
     {
       status: "A",
@@ -626,7 +496,7 @@ test("push operations always include sourcePaths when targeting ready-for-dev, e
   assert.ok(readyOps.length > 0, "Should have ready-for-dev operations");
   assert.ok(
     readyOps.every((op) => op.sourcePaths.length > 0),
-    "All ready-for-dev operations should include sourcePaths for marker posting"
+    "All ready-for-dev operations should include sourcePaths for issue body updates"
   );
 });
 

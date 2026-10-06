@@ -232,30 +232,15 @@ export GOOGLE_GHA_CREDS_PATH=/path/to/key.json   # service account credentials
 bundle exec fastlane android beta
 ```
 
-## Story Project Sync + Ready-for-Dev Orchestrator
+## Story Project Sync
 
-These are not deployment pipelines per se but they ship release-relevant automation.
+This is not a deployment pipeline per se, but it ships release-relevant automation.
 
 ### Story Project Sync (`story-project-sync.yml`)
 
 Mirrors BMAD planning and implementation artifacts into the GitHub Project at `https://github.com/users/REW1L/projects/1`. Triggered by changes under `_bmad-output/**` and PRs against `_bmad-output/implementation-artifacts/**`. Sets the project status to `Ready for Dev`, `Review`, or `Done` based on PR state and artifact metadata.
 
 Required secret: `GH_PROJECT_TOKEN` (PAT with `repo` and `project` scopes - cannot be the default `GITHUB_TOKEN` because the project is user-owned).
-
-### Ready for Dev Orchestrator (`ready-for-dev-orchestrator.yml`)
-
-When `story-project-sync` posts the marker comment `<!-- auto-dev:trigger v1 -->` on an issue, this workflow auto-attempts implementation by cascading through `claude → codex → copilot → kiro-cli`. Operator override via `gh workflow run ready-for-dev-orchestrator.yml -f issue_number=42 [-f agent_order=...]`.
-
-Required secrets (any subset that exists is used; missing CLIs are skipped):
-
-| Secret | CLI |
-|---|---|
-| `ANTHROPIC_API_KEY` | `claude` |
-| `OPENAI_API_KEY` or `CODEX_API_KEY` | `codex` |
-| `COPILOT_GITHUB_TOKEN` (PAT with Copilot Requests scope) | `copilot` |
-| `KIRO_API_KEY` | `kiro-cli` |
-
-The orchestrator commits to `auto-dev/issue-<n>`, pushes, and opens a PR closing the issue. `story-project-sync` then transitions the project board to `Review`.
 
 ## Release-readiness Sign-off
 

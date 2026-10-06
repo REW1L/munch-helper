@@ -106,40 +106,6 @@ export function deriveSpecFileSlug(storyNumber, title) {
   return `${numSlug}-${titleSlug}`;
 }
 
-export function buildMarkerCommentBody(issueNumber, specFile) {
-  return [
-    "🚀 **Status moved to Ready for Dev** — auto-implementation orchestrator queued.",
-    "",
-    "<!-- auto-dev:trigger v1 -->",
-    "```json",
-    JSON.stringify({ version: 1, issue_number: issueNumber, spec_file: specFile }),
-    "```",
-  ].join("\n");
-}
-
-export function shouldSkipMarkerPost(recentComments, specFile) {
-  if (!recentComments.length) {
-    return false;
-  }
-
-  const mostRecent = recentComments[recentComments.length - 1];
-  if (!mostRecent?.body?.includes("<!-- auto-dev:trigger v1 -->")) {
-    return false;
-  }
-
-  const jsonMatch = mostRecent.body.match(/```json\r?\n(\{[\s\S]*?\})\r?\n```/);
-  if (!jsonMatch) {
-    return false;
-  }
-
-  try {
-    const payload = JSON.parse(jsonMatch[1]);
-    return payload.version === 1 && payload.spec_file === specFile;
-  } catch {
-    return false;
-  }
-}
-
 export function parseStoryTitle(title) {
   const match = title.match(STORY_TITLE_REGEX);
   if (!match) {
@@ -938,51 +904,6 @@ function updateProjectStatus(config, metadata, projectItem, normalizedStatus, dr
   ghCommand(editArgs, { dryRun });
 }
 
-export function postReadyForDevMarker(config, issue, specFile, dryRun, commandPlan, { ghExec = ghCommand } = {}) {
-  const issueNumber = issue.number;
-
-  if (dryRun) {
-    const numStr = Number.isFinite(issueNumber) ? String(issueNumber) : "<n>";
-    const postArgs = ["issue", "comment", numStr, "--repo", config.repo, "--body-file", "-"];
-    recordCommand(commandPlan, ["gh", ...postArgs]);
-    return;
-  }
-
-  if (!Number.isFinite(issueNumber)) {
-    logInfo("Warning: skipping marker post — issue number is not a valid finite number.");
-    return;
-  }
-
-  try {
-    const commentsOutput = ghExec([
-      "issue",
-      "view",
-      String(issueNumber),
-      "--repo",
-      config.repo,
-      "--json",
-      "comments",
-    ]);
-    const { comments: allComments } = parseJsonOutput(commentsOutput, { comments: [] });
-    const recentComments = (Array.isArray(allComments) ? allComments : []).slice(-5);
-
-    if (shouldSkipMarkerPost(recentComments, specFile)) {
-      logInfo(`Skipping marker comment on issue #${issueNumber}: identical v1 marker already present.`);
-      return;
-    }
-
-    const postArgs = ["issue", "comment", String(issueNumber), "--repo", config.repo, "--body-file", "-"];
-    const body = buildMarkerCommentBody(issueNumber, specFile);
-    recordCommand(commandPlan, ["gh", ...postArgs]);
-    ghExec(postArgs, { stdin: body });
-    logInfo(`Posted ready-for-dev marker comment on issue #${issueNumber}.`);
-  } catch (error) {
-    logInfo(
-      `Warning: failed to post ready-for-dev marker on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
 export function buildIssueBodyWithSources(specContent, specFile) {
   return [
     specContent.trimEnd(),
@@ -1150,7 +1071,6 @@ function main() {
 
       if (operation.targetStatus === "ready-for-dev" && operation.sourcePaths.length > 0) {
         updateIssueBodyWithSpecContent(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
-        postReadyForDevMarker(config, issue, operation.sourcePaths[0], args.dryRun, commandPlan);
       }
     }
   }
