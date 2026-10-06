@@ -87,9 +87,27 @@ appId: click.helpamunch.mobileapp
     commands:
       - assertVisible:
           id: open-room-rules
-- extendedWaitUntil:
-    visible: "Gold Pieces: 500"
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "500 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 500"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 500"
+          timeout: 10000
 - tapOn:
     id: change-character-button
 - extendedWaitUntil:
@@ -109,9 +127,27 @@ appId: click.helpamunch.mobileapp
           id: quick-edit-gold-pieces-increase
 - tapOn:
     id: quick-edit-save
-- extendedWaitUntil:
-    visible: "Gold Pieces: 700"
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "700 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
 - takeScreenshot: second-edition-character-card
 - tapOn:
     id: change-character-button
@@ -125,6 +161,24 @@ appId: click.helpamunch.mobileapp
 - takeScreenshot: second-edition-character-edit
 - tapOn:
     id: save-character-button
-- extendedWaitUntil:
-    visible: "Gold Pieces: 700"
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "700 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
