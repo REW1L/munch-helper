@@ -4,7 +4,7 @@ Munch Helper is a digital companion for tabletop games, currently focused on Mun
 
 Live app: https://helpamunch.click
 
-[![Download on the App Store](frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg)](https://apps.apple.com/us/app/munch-helper/id6760627502)
+<a href="https://apps.apple.com/us/app/munch-helper/id6760627502"><img src="frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg" height="40" alt="Download on the App Store"></a> <a href="https://play.google.com/store/apps/details?id=click.helpamunch.mobileapp"><img src="frontend/assets/images/GetItOnGooglePlay_Badge_Web_color_English.svg" height="40" alt="Get it on Google Play"></a>
 
 ## Repository Structure
 
@@ -183,94 +183,6 @@ How to keep BMAD artifacts useful:
 1. Treat active `_bmad-output/` artifacts as the record of their own planning and execution state, not as current repository-wide implementation rules.
 2. Update affected artifacts when scope or implementation changes.
 3. Keep `docs/` aligned with shipped architecture/runtime behavior so future BMAD runs stay grounded.
-
-## Story Project Automation
-
-This repository includes `.github/workflows/story-project-sync.yml` to keep BMAD stories and implementation specs aligned with repository issues and the GitHub Project at `https://github.com/users/REW1L/projects/1`.
-
-Required repository secret:
-
-- `GH_PROJECT_TOKEN`: classic PAT with `repo` and `project` scope. The workflow uses this token for `gh issue` and `gh project` commands because the target project is user-owned.
-
-Current project assumptions:
-
-- Project owner: `REW1L`
-- Project number: `1`
-- Project title: `Munch Helper project`
-- Status field name: `Status`
-- Required status options: `Ready for Dev`, `Review`, `Done`
-
-Supported lifecycle sync:
-
-- A story mentioned in `_bmad-output/planning-artifacts/**` on `main` creates or reuses a matching repository issue and adds it to the project.
-- A story or approved `spec-*.md` file added under `_bmad-output/implementation-artifacts/` creates the issue and project item if missing, then sets project status to `Ready for Dev`.
-- A pull request that touches exactly one tracked implementation artifact and whose artifact status is no longer `ready-for-dev` sets the project status to `Review`.
-- A merged `main` change that moves a tracked implementation artifact status to `done` sets the project status to `Done`.
-- A pull request for a tracked implementation artifact that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
-
-## Auto-implementation Orchestrator
-
-When `story-project-sync` transitions a project item to **Ready for Dev**, it posts a deterministic marker comment on the associated issue. The `.github/workflows/ready-for-dev-orchestrator.yml` workflow fires on that comment and automatically attempts implementation using available coding-assistant CLIs.
-
-### Required secrets
-
-| Secret | Purpose |
-|--------|---------|
-| `ANTHROPIC_API_KEY` | Claude CLI (`claude`) |
-| `OPENAI_API_KEY` or `CODEX_API_KEY` | Codex CLI (`codex`) |
-| `COPILOT_GITHUB_TOKEN` | GitHub Copilot CLI — must be a PAT with **Copilot Requests** scope; do **not** reuse `GITHUB_TOKEN` |
-| `KIRO_API_KEY` | Kiro CLI (`kiro-cli`) |
-
-Any CLI whose secret is absent is silently skipped during pre-flight; the cascade continues with the remaining CLIs.
-
-### Cascade behaviour
-
-Agents are invoked in a configurable order (default: `claude → codex → copilot → kiro-cli`) with a per-agent timeout (default: 30 min). After each invocation the orchestrator reads the spec file's `status:` frontmatter field. When it sees `review`, `in-review`, or `done`, it:
-
-1. Commits all workspace changes to `auto-dev/issue-<n>`
-2. Pushes the branch
-3. Opens a PR with body `Closes #<n>`
-
-`story-project-sync` then advances the project board from **Ready for Dev** to **Review** when the PR is opened.
-
-If all CLIs are exhausted without reaching `review`, `in-review`, or `done`, the workflow pushes partial work (if any) and exits non-zero. The operator can re-run the workflow to resume from the existing branch.
-
-### Trigger methods
-
-**Automatic** — `story-project-sync` posts the marker comment on every `Ready for Dev` transition. The orchestrator fires automatically.
-
-**Manual** — run the workflow from the CLI:
-
-```bash
-gh workflow run ready-for-dev-orchestrator.yml -f issue_number=42
-```
-
-You can also override the agent order:
-
-```bash
-gh workflow run ready-for-dev-orchestrator.yml \
-  -f issue_number=42 \
-  -f agent_order=claude,codex
-```
-
-### Marker-comment contract
-
-Any process with write access can trigger the orchestrator by posting a comment with this exact shape:
-
-```
-🚀 **Status moved to Ready for Dev** — auto-implementation orchestrator queued.
-
-<!-- auto-dev:trigger v1 -->
-```json
-{"version": 1, "issue_number": 42, "spec_file": "_bmad-output/implementation-artifacts/3-1-apptheme-token-migration.md"}
-```
-```
-
-The orchestrator's job-level `if` accepts only comments authored by `REW1L` or `github-actions[bot]`, so external commenters cannot trigger CLI runs.
-
-### Run-log artifact
-
-Each run uploads a `agent-logs-issue-<n>` artifact containing one log file per CLI invocation (`agent-<name>.log`). Download it from the **Actions** tab to inspect the raw output from each coding assistant.
 
 ## Documentation
 
