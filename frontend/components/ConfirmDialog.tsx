@@ -55,7 +55,11 @@ export default function ConfirmDialog({
   }
 
   const dialogContent = visible ? (
-    <Pressable accessible={false} style={styles.overlay} onPress={onCancel}>
+    <Pressable
+      accessible={false}
+      style={insideModal ? [styles.overlay, StyleSheet.absoluteFill] : styles.overlay}
+      onPress={onCancel}
+    >
       <Pressable accessible={false} style={styles.dialog} onPress={() => { }}>
         <Text accessible testID="confirm-dialog-title" style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>

@@ -15,15 +15,23 @@ appId: click.helpamunch.mobileapp
           end: 50%, 35%
 - assertVisible:
     id: delete-character-button
-- tapOn:
-    id: delete-character-button
-- waitForAnimationToEnd
-- extendedWaitUntil:
-    visible:
-      id: confirm-dialog-confirm
-    timeout: 5000
-- tapOn:
-    id: confirm-dialog-confirm
-- extendedWaitUntil:
-    notVisible: E2E Created
-    timeout: 20000
+- assertVisible:
+    id: save-character-button
+- assertVisible:
+    id: cancel-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: delete-character-button
+      - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            id: confirm-dialog-confirm
+          timeout: 5000
+      - tapOn:
+          id: confirm-dialog-confirm
+      - extendedWaitUntil:
+          notVisible: E2E Created
+          timeout: 20000

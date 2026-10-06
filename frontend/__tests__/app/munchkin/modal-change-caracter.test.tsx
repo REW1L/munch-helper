@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Modal, Platform, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Modal, Platform, Pressable, Text, TextInput, TouchableOpacity } from 'react-native';
 import { describe, expect, it, vi } from 'vitest';
 
 import ChangeCharacterModal from '../../../app/munchkin/modal-change-caracter';
@@ -121,6 +121,12 @@ describe('ChangeCharacterModal', () => {
     const confirmButton = findConfirmButton(renderer!);
     expect(confirmButton).toBeTruthy();
     expect(confirmButton!.props.accessibilityLabel).toBeUndefined();
+    expect(
+      renderer!.root.findAllByType(Pressable).some((pressable: any) =>
+        Array.isArray(pressable.props.style) &&
+        pressable.props.style.some((style: any) => style?.position === 'absolute')
+      )
+    ).toBe(true);
     expect(
       renderer!.root.findAllByType(Modal).filter((modal: any) => modal.props.visible === true)
     ).toHaveLength(0);
