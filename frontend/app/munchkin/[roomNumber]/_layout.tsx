@@ -3,6 +3,7 @@ import { RoomHeaderTitle } from '@/components/munchkin/RoomHeaderTitle';
 import { AppTheme } from '@/constants/theme';
 import { useRoomCodeClipboard } from '@/hooks/useRoomCodeClipboard';
 import { useRoomBattle } from '@/hooks/useRoomBattle';
+import { useRoomEdition } from '@/hooks/useRoomEdition';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -10,13 +11,14 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function RoomLayout() {
   const { t } = useTranslation();
-  const { roomNumber } = useLocalSearchParams<{ roomNumber: string }>();
+  const { roomNumber, roomTypeId } = useLocalSearchParams<{ roomNumber: string; roomTypeId?: string }>();
   const router = useRouter();
   const segments = useSegments();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomCode = roomId ?? '';
   const { buttonLabel, accessibilityLabel, copyRoomCode } = useRoomCodeClipboard(roomCode);
   const { battle } = useRoomBattle(roomId);
+  const { confirmedRoomTypeId } = useRoomEdition(roomId, roomTypeId);
   const isBattleRoute = segments.some((segment) => String(segment) === '(battle)');
   const isLogRoute = segments.some((segment) => String(segment) === 'log');
   const usesDetailHeader = isBattleRoute || isLogRoute;
@@ -55,12 +57,27 @@ export default function RoomLayout() {
             : () => (
                 <RoomHeaderTitle
                   roomCode={roomCode}
+                  roomLabel={t('roomLayout.roomLabel')}
                   buttonLabel={buttonLabel}
                   accessibilityLabel={accessibilityLabel}
                   onCopyPress={() => {
                     void copyRoomCode();
                   }}
                 />
+              ),
+          headerRight: usesDetailHeader
+            ? undefined
+            : () => (
+                <TouchableOpacity
+                  accessibilityLabel={t('roomLayout.openRulesA11y')}
+                  accessibilityRole="button"
+                  disabled={!confirmedRoomTypeId}
+                  onPress={() => router.push(confirmedRoomTypeId === 'munchkin-2e' ? '/munchkin/rules?edition=2e' : '/munchkin/rules')}
+                  style={styles.rulesButton}
+                  testID="open-room-rules"
+                >
+                  <Ionicons name="document-text-outline" size={24} color={AppTheme.colors.textPrimary} />
+                </TouchableOpacity>
               ),
           title: isBattleRoute ? battle?.name ?? t('roomLayout.battle') : isLogRoute ? t('roomLayout.history') : undefined,
         }}
@@ -85,5 +102,11 @@ const styles = StyleSheet.create({
     minHeight: 44,
     minWidth: 44,
     marginLeft: -12,
+  },
+  rulesButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
   },
 });

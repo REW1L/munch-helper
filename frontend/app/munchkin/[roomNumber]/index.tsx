@@ -342,6 +342,7 @@ const MunchkinIndexView: React.FC = () => {
               headerTitle: () => (
                 <RoomHeaderTitle
                   roomCode={roomCode}
+                  roomLabel={t('roomLayout.roomLabel')}
                   buttonLabel={buttonLabel}
                   accessibilityLabel={accessibilityLabel}
                   onCopyPress={handleCopyRoomCodePress}
@@ -421,10 +422,6 @@ const MunchkinIndexView: React.FC = () => {
               <ButtonLabel accessible accessibilityLabel={t('room.openRoomHistoryA11y')} style={styles.logButtonText}>{t('room.log')}</ButtonLabel>
             </TouchableOpacity>
           </View>
-
-          {isSecondEdition && <TouchableOpacity accessibilityRole="button" testID="open-2e-room-rules" style={styles.logButton} onPress={() => router.push({ pathname: '/munchkin/rules', params: { edition: '2e' } })}>
-            <ButtonLabel style={styles.logButtonText}>{t('rooms.rules')} · {t('rooms.secondEdition')}</ButtonLabel>
-          </TouchableOpacity>}
 
           {battleErrorMessage && (
             <Text style={styles.inlineError}>{battleErrorMessage}</Text>

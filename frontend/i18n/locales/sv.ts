@@ -222,6 +222,8 @@ const sv = {
     unknownMonster: 'Okänt monster',
   },
   roomLayout: {
+    roomLabel: 'Rum',
+    openRulesA11y: 'Öppna regler',
     battle: 'Strid',
     history: 'Historik',
     backToRoomA11y: 'Tillbaka till rummet',

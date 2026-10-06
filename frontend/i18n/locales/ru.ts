@@ -222,6 +222,8 @@ const ru = {
     unknownMonster: 'Неизвестный монстр',
   },
   roomLayout: {
+    roomLabel: 'Комната',
+    openRulesA11y: 'Открыть правила',
     battle: 'Бой',
     history: 'История',
     backToRoomA11y: 'Назад в комнату',

@@ -222,6 +222,8 @@ const hr = {
     unknownMonster: 'Nepoznato čudovište',
   },
   roomLayout: {
+    roomLabel: 'Soba',
+    openRulesA11y: 'Otvori pravila',
     battle: 'Borba',
     history: 'Povijest',
     backToRoomA11y: 'Natrag u sobu',

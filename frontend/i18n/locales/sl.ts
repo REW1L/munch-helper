@@ -222,6 +222,8 @@ const sl = {
     unknownMonster: 'Neznana pošast',
   },
   roomLayout: {
+    roomLabel: 'Soba',
+    openRulesA11y: 'Odpri pravila',
     battle: 'Boj',
     history: 'Zgodovina',
     backToRoomA11y: 'Nazaj v sobo',

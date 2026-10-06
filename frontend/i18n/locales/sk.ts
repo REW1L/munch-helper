@@ -222,6 +222,8 @@ const sk = {
     unknownMonster: 'Neznáma príšera',
   },
   roomLayout: {
+    roomLabel: 'Miestnosť',
+    openRulesA11y: 'Otvoriť pravidlá',
     battle: 'Súboj',
     history: 'História',
     backToRoomA11y: 'Späť do miestnosti',

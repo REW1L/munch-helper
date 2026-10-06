@@ -41,9 +41,9 @@ Props: `title`, `onPress`, `disabled?`, `testID?`.
 
 ### `<RoomHeaderTitle>` (`components/munchkin/RoomHeaderTitle.tsx`)
 
-Renders the room code and a copy button in the navigation header. Used by `[roomNumber]/_layout.tsx` and `[roomNumber]/index.tsx`.
+Renders a localized room label, room code, and Copy button in the navigation header. The label shrinks first when header width is constrained so code and Copy stay usable. Used by `[roomNumber]/_layout.tsx` and `[roomNumber]/index.tsx`; the layout supplies the adjacent edition-aware rules icon.
 
-Props: `roomCode`, `buttonLabel`, `accessibilityLabel`, `onCopyPress`.
+Props: `roomCode`, `roomLabel`, `buttonLabel`, `accessibilityLabel`, `onCopyPress`, optional `editionLabel`.
 
 ### `<ReconnectingBanner>` (`components/munchkin/ReconnectingBanner.tsx`)
 

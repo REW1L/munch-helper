@@ -222,6 +222,8 @@ const be = {
     unknownMonster: 'Невядомая пачвара',
   },
   roomLayout: {
+    roomLabel: 'Пакой',
+    openRulesA11y: 'Адкрыць правілы',
     battle: 'Бітва',
     history: 'Гісторыя',
     backToRoomA11y: 'Назад у пакой',

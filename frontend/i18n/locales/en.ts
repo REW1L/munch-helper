@@ -235,6 +235,8 @@ const en = {
     unknownMonster: 'Unknown monster',
   },
   roomLayout: {
+    roomLabel: 'Room',
+    openRulesA11y: 'Open rules',
     battle: 'Battle',
     history: 'History',
     backToRoomA11y: 'Back to room',

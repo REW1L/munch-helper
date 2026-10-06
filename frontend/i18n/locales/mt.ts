@@ -222,6 +222,8 @@ const mt = {
     unknownMonster: 'Mostru mhux magħruf',
   },
   roomLayout: {
+    roomLabel: 'Kamra',
+    openRulesA11y: 'Iftaħ ir-regoli',
     battle: 'Battalja',
     history: 'Storja',
     backToRoomA11y: 'Lura għall-kamra',

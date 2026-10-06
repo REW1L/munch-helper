@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type RoomHeaderTitleProps = {
   roomCode: string;
+  roomLabel: string;
   buttonLabel: string;
   accessibilityLabel: string;
   onCopyPress: () => void;
@@ -13,6 +14,7 @@ type RoomHeaderTitleProps = {
 
 export function RoomHeaderTitle({
   roomCode,
+  roomLabel,
   buttonLabel,
   accessibilityLabel,
   onCopyPress,
@@ -21,7 +23,7 @@ export function RoomHeaderTitle({
   return (
     <View style={styles.headerTitleRow}>
       <View style={styles.headerLabels}>
-        <Text style={styles.headerRoomLabel}>Room</Text>
+        <Text style={styles.headerRoomLabel} numberOfLines={1} ellipsizeMode="tail">{roomLabel}</Text>
         {editionLabel ? <Text style={styles.headerEdition} numberOfLines={1}>{editionLabel}</Text> : null}
       </View>
       <Text style={styles.headerRoomCode} numberOfLines={1} ellipsizeMode="middle">
@@ -51,28 +53,27 @@ const styles = StyleSheet.create({
   },
   headerRoomCode: {
     color: AppTheme.colors.accent,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    flexShrink: 1,
-    minWidth: 0,
+    flexShrink: 0,
   },
   headerRoomLabel: {
     color: AppTheme.colors.textMuted,
     ...AppTheme.typography.labelMd,
   },
-  headerLabels: { maxWidth: 96 },
+  headerLabels: { flexShrink: 1, minWidth: 0, maxWidth: 96 },
   headerEdition: { color: AppTheme.colors.textPrimary, fontSize: 10, fontWeight: '700' },
   headerCopyButton: {
     backgroundColor: AppTheme.colors.elevated,
     borderColor: AppTheme.colors.accent,
     borderRadius: AppTheme.radius.pill,
     borderWidth: 1,
-    paddingHorizontal: AppTheme.spacing.md,
+    paddingHorizontal: AppTheme.spacing.sm,
     paddingVertical: AppTheme.spacing.xs,
   },
   headerCopyButtonLabel: {
     color: AppTheme.colors.textPrimary,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
 });

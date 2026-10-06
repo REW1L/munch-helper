@@ -222,6 +222,8 @@ const lv = {
     unknownMonster: 'Nezināms monstrs',
   },
   roomLayout: {
+    roomLabel: 'Istaba',
+    openRulesA11y: 'Atvērt noteikumus',
     battle: 'Kauja',
     history: 'Vēsture',
     backToRoomA11y: 'Atpakaļ uz istabu',

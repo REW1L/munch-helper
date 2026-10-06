@@ -222,6 +222,8 @@ const nl = {
     unknownMonster: 'Onbekend monster',
   },
   roomLayout: {
+    roomLabel: 'Kamer',
+    openRulesA11y: 'Regels openen',
     battle: 'Gevecht',
     history: 'Geschiedenis',
     backToRoomA11y: 'Terug naar kamer',

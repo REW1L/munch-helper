@@ -222,6 +222,8 @@ const fi = {
     unknownMonster: 'Tuntematon hirviö',
   },
   roomLayout: {
+    roomLabel: 'Huone',
+    openRulesA11y: 'Avaa säännöt',
     battle: 'Taistelu',
     history: 'Historia',
     backToRoomA11y: 'Takaisin huoneeseen',

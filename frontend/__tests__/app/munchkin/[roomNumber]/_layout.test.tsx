@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const stackScreens = vi.hoisted(() => ({
@@ -17,7 +17,13 @@ const mockBattleState = vi.hoisted(() => ({
 }));
 const mockRouterBack = vi.hoisted(() => vi.fn());
 const mockRouterReplace = vi.hoisted(() => vi.fn());
+const mockRouterPush = vi.hoisted(() => vi.fn());
 const mockRouterCanGoBack = vi.hoisted(() => vi.fn());
+const mockRoomType = vi.hoisted(() => ({ current: 'munchkin' as string | undefined }));
+
+vi.mock('@/hooks/useRoomEdition', () => ({
+  useRoomEdition: () => ({ roomTypeId: mockRoomType.current, confirmedRoomTypeId: mockRoomType.current }),
+}));
 
 vi.mock('expo-clipboard', () => ({
   setStringAsync: vi.fn(),
@@ -50,6 +56,7 @@ vi.mock('expo-router', async () => {
     useRouter: () => ({
       back: mockRouterBack,
       replace: mockRouterReplace,
+      push: mockRouterPush,
       canGoBack: mockRouterCanGoBack,
     }),
     useSegments: () => mockSegments.current,
@@ -67,6 +74,8 @@ describe('Room route layout', () => {
     };
     mockRouterBack.mockClear();
     mockRouterReplace.mockClear();
+    mockRouterPush.mockClear();
+    mockRoomType.current = 'munchkin';
     mockRouterCanGoBack.mockReset();
     mockRouterCanGoBack.mockReturnValue(true);
   });
@@ -83,6 +92,7 @@ describe('Room route layout', () => {
         headerBackVisible: undefined,
         headerLeft: undefined,
         headerTitle: expect.any(Function),
+        headerRight: expect.any(Function),
         title: undefined,
       }),
     );
@@ -104,6 +114,40 @@ describe('Room route layout', () => {
     );
   });
 
+  it.each([
+    ['munchkin', '/munchkin/rules'],
+    ['munchkin-2e', '/munchkin/rules?edition=2e'],
+  ])('opens the persisted %s guide from the header', async (roomType, destination) => {
+    mockRoomType.current = roomType;
+    const { default: RoomLayout } = await import('../../../../app/munchkin/[roomNumber]/_layout');
+    render(<RoomLayout />);
+
+    const headerRight = stackScreens.current[0]?.options?.headerRight as (() => React.ReactNode) | undefined;
+    render(<>{headerRight?.()}</>);
+    fireEvent.click(screen.getByTestId('open-room-rules'));
+
+    expect(screen.getByRole('button', { name: 'Open rules' })).toBeTruthy();
+    expect(mockRouterPush).toHaveBeenCalledWith(destination);
+  });
+
+  it('updates the destination when persisted metadata resolves after mount', async () => {
+    const { default: RoomLayout } = await import('../../../../app/munchkin/[roomNumber]/_layout');
+    mockRoomType.current = undefined;
+    const layout = render(<RoomLayout />);
+    const pendingHeaderRight = stackScreens.current[0]?.options?.headerRight as (() => React.ReactNode) | undefined;
+    const pendingHeader = render(<>{pendingHeaderRight?.()}</>);
+    expect(screen.getByTestId('open-room-rules').getAttribute('aria-disabled')).toBe('true');
+    pendingHeader.unmount();
+    mockRoomType.current = 'munchkin-2e';
+    layout.rerender(<RoomLayout />);
+
+    const headerRight = stackScreens.current.filter((entry) => entry.name === undefined).at(-1)?.options?.headerRight as (() => React.ReactNode) | undefined;
+    render(<>{headerRight?.()}</>);
+    fireEvent.click(screen.getByTestId('open-room-rules'));
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/munchkin/rules?edition=2e');
+  });
+
   it('uses the stable parent header as the battle header on the battle route', async () => {
     mockSegments.current = ['munchkin', '[roomNumber]', '(battle)'];
     const { default: RoomLayout } = await import('../../../../app/munchkin/[roomNumber]/_layout');
@@ -117,6 +161,7 @@ describe('Room route layout', () => {
         headerBackVisible: false,
         headerLeft: expect.any(Function),
         headerTitle: undefined,
+        headerRight: undefined,
         title: 'Dungeon Door',
       }),
     );
@@ -135,6 +180,7 @@ describe('Room route layout', () => {
         headerBackVisible: false,
         headerLeft: expect.any(Function),
         headerTitle: undefined,
+        headerRight: undefined,
         title: 'History',
       }),
     );
