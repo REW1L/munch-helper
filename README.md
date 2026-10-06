@@ -1,44 +1,37 @@
 # Munch Helper
 
-Munch Helper is a digital companion for tabletop games, currently focused on Munchkin. It provides shared room state, character tracking, and real-time updates across web and mobile clients.
+Munch Helper is a shared companion for Munchkin games. Players can create or join a room, manage characters, track battles, and see room activity update in real time. It supports Munchkin Classic and Second Edition across iOS, Android, and web.
 
-Live app: https://helpamunch.click
+- Web app: [helpamunch.click](https://helpamunch.click)
+- iOS app: [App Store](https://apps.apple.com/us/app/munch-helper/id6760627502)
 
-[![Download on the App Store](frontend/assets/images/Download_on_the_App_Store_Badge_US-UK_RGB_blk_092917.svg)](https://apps.apple.com/us/app/munch-helper/id6760627502)
-
-## Repository Structure
+## Repository layout
 
 ```text
-munch-helper/
-├── backend/         # Node.js microservices + Docker local stack + AWS SAM
-├── frontend/        # Expo Router app (iOS, Android, Web)
-├── infrastructure/  # Pulumi stack for frontend hosting (S3 + CloudFront)
-├── docs/            # Architecture, API contracts, OpenAPI spec
-├── scripts/         # Workspace-level utility scripts
-└── README.md
+backend/         Express services, local Docker stack, and AWS SAM deployment
+frontend/        Expo Router app for iOS, Android, and web
+infrastructure/  Pulumi stack for the web app and edge routing
+docs/            Architecture, contracts, development, and deployment guides
+maestro/         Mobile and web end-to-end flows
+openspec/        Product requirements and change proposals
 ```
 
-## What Is Implemented
+The root npm package provides workspace-level helpers. Backend, frontend, and infrastructure each have their own dependencies and lockfile. The supported runtime is Node.js 24.
 
-- User management: create, read, and update users
-- Room management: create Classic (`munchkin`) or Second Edition (`munchkin-2e`) rooms and join or resume by code
-- Second Edition companion support: localized guide, character Gold Pieces tracking, and edition-aware battle reminders
-- Character management: list, create, update, and delete characters
-- Battle management: start, patch, conclude, and discard the active battle (one active battle per room)
-- Room history: cursor-paginated log of character and battle lifecycle events (`/logs`, `/logs/:logId`)
-- Real-time room notifications over WebSocket: `character_created`, `character_updated`, `character_deleted`, `battle_started`, `battle_updated`, `battle_concluded`, `battle_discarded`
-- Frontend app routes for onboarding, room flow, Munchkin gameplay, battle composer, and room history
-- Frontend web export and infrastructure deployment
+## Product capabilities
 
-## Tech Stack
+- Create and join Classic or Second Edition rooms with room codes.
+- Manage a room's characters, including Second Edition Gold Pieces.
+- Start, edit, conclude, or discard the active battle in a room.
+- Receive character and battle updates in real time.
+- Browse a room's cursor-paginated activity history.
+- Read localized in-app guides for both supported editions.
 
-- Backend: Node.js, TypeScript, Express, MongoDB, Redis, Docker, AWS Lambda/SAM
-- Frontend: Expo Router, React Native, TypeScript, Vitest
-- Infrastructure: Pulumi (TypeScript), AWS S3, CloudFront
+## Local development
 
-## Quick Start
+### Start the backend
 
-### 1. Backend (local microservices)
+Docker Compose starts the local services, per-service MongoDB databases, Redis, and Nginx edge. The frontend uses the edge at `http://localhost:8080`.
 
 ```bash
 cd backend
@@ -46,241 +39,90 @@ cp .env.example .env
 ./scripts/dev-up.sh
 ```
 
-Local endpoints:
-
-- Edge (Nginx): `http://localhost:8080`
-- User service: `http://localhost:8082`
-- Room service: `http://localhost:8083`
-- Character service: `http://localhost:8084`
-- Room notifications service: `ws://localhost:8085`
-- Battle service: `http://localhost:8086`
-- Log service: `http://localhost:8087`
-- Proxied room notifications: `ws://localhost:8080/ws?roomId=<RoomId>&userId=<UserId>`
-
-Stop services:
+Stop the stack with:
 
 ```bash
 cd backend
 ./scripts/dev-down.sh
 ```
 
-### 2. Frontend
+### Start the app
+
+In another terminal:
 
 ```bash
 cd frontend
 npm ci
-echo "EXPO_PUBLIC_API_URL=http://localhost:8080" > .env
+echo 'EXPO_PUBLIC_API_URL=http://localhost:8080' > .env
 npm run start
 ```
 
-Run native targets:
+Then use the Expo terminal to open a platform, or run `npm run ios`, `npm run android`, or `npm run web` from `frontend/`. iOS and Android require their respective simulator/emulator toolchains.
+
+## Checks
+
+Run checks from the package you changed. The commands below match the current package scripts:
 
 ```bash
-npm run ios
-npm run android
+# Backend
+cd backend
+npm run typecheck
+npm test
+npm run test:coverage
 ```
 
-## Testing
+```bash
+# Frontend
+cd frontend
+npm run lint
+npm run typecheck
+npm test
+npm run test:coverage
+```
 
-Workspace coverage:
+```bash
+# Infrastructure
+cd infrastructure
+npm run lint
+npm run build
+```
+
+The root coverage helper runs frontend and backend coverage and combines their reports:
 
 ```bash
 npm run coverage
 ```
 
-Backend:
-
-```bash
-cd backend
-npm test
-npm run test:coverage
-```
-
-Frontend:
-
-```bash
-cd frontend
-npm run lint
-npm run typecheck
-npm run test
-npm run test:coverage
-```
-
-For every change under `frontend/`, also run the mobile E2E gate from the repository root before opening a PR, whether or not the Git hook runs:
+For every change under `frontend/`, run the mobile E2E quality gate from the repository root:
 
 ```bash
 npm run test:e2e:mobile
 ```
 
-## AWS SAM (backend)
+See the [E2E development guide](docs/development-guide-e2e.md) for prerequisites and platform details. The backend and frontend coverage gates require at least 70% line coverage.
 
-From `backend/`:
+## Architecture and contracts
 
-```bash
-npm run sam:build
-npm run sam:local:api
-npm run sam:deploy
-```
+The backend has six Express services: `user-service`, `room-service`, `character-service`, `battle-service`, `room-notifications-service`, and `log-service`. Locally, Nginx routes HTTP and WebSocket traffic; Redis carries service events. In AWS, SAM deploys Lambda functions behind API Gateway, with SNS for event fanout and MongoDB Atlas for persistence.
 
-See `backend/README.md` for details.
+The frontend is an Expo Router app. Routes live in `frontend/app/`, server-state orchestration in `frontend/hooks/`, transport and wire types in `frontend/api/`, and runtime configuration validation in `frontend/config/runtime.ts`.
 
-## Web Export and Infrastructure Deploy
+The Pulumi project publishes the web export to S3 and CloudFront and routes API and WebSocket traffic to the backend. CI workflows for backend, web and infrastructure, iOS, and Android are described in the [deployment guide](docs/deployment-guide.md).
 
-Build frontend web artifacts:
+Read [API contracts](docs/api-contracts-backend.md) and [data models](docs/data-models-backend.md) for backend behavior. The OpenAPI description is maintained under [`docs/openapi/`](docs/openapi/); check its coverage notes before relying on it as a complete contract.
 
-```bash
-cd frontend
-EXPO_PUBLIC_API_URL=https://your-api-domain npm run export:web
-```
+## Documentation map
 
-Deploy infrastructure:
+Start at [the documentation index](docs/index.md), then use the guide for the part you are changing:
 
-```bash
-cd infrastructure
-npm install
-pulumi stack init dev
-pulumi config set aws:region eu-central-1
-pulumi config set munch-helper-frontend:artifactDir ../frontend/dist
-pulumi up
-```
+- [Backend development](docs/development-guide-backend.md) and [backend architecture](docs/architecture-backend.md)
+- [Frontend development](docs/development-guide-frontend.md) and [frontend architecture](docs/architecture-frontend.md)
+- [Infrastructure development](docs/development-guide-infrastructure.md) and [infrastructure architecture](docs/architecture-infrastructure.md)
+- [Integration architecture](docs/integration-architecture.md) for cross-service behavior
+- [Deployment guide](docs/deployment-guide.md) for release pipelines
 
-See `infrastructure/README.md` for details.
-
-## BMAD Docs and Workflow
-
-This repository is BMAD-enabled. Use these folders as your working map:
-
-- `_bmad/`: BMAD framework config, manifests, agent/workflow definitions
-- `_bmad-output/`: generated BMAD outputs (project context, planning, implementation)
-- Official BMAD docs (setup and workflow reference): `https://docs.bmad-method.org/`
-
-Primary artifact locations in this repo:
-
-- Current agent instructions: `AGENTS.md`
-- Historical project context: `_bmad-output/project-context.md` (verify before reuse)
-- Planning artifacts: `_bmad-output/planning-artifacts/`
-- Implementation artifacts: `_bmad-output/implementation-artifacts/`
-- Current sprint plan/status: `_bmad-output/implementation-artifacts/sprint-status.yaml`
-- Project knowledge (for grounding): `docs/`
-
-OpenSpec is required for every new feature; see `AGENTS.md`. BMAD can provide additional planning context. Recommended full BMAD flow (for new or major work):
-
-OpenSpec workflow instructions for the supported assistants are generated in `.agents/`, `.claude/`, `.cursor/`, `.github/`, and `.kiro/`. To refresh them after upgrading the OpenSpec CLI, run `openspec update` from the repository root and commit the generated changes. Codex reads the shared `.agents/skills/` instructions.
-
-1. Generate/refresh context: `bmad-bmm-generate-project-context`
-2. Plan: `bmad-bmm-create-prd` -> `bmad-bmm-create-ux-design` (if UI changes) -> `bmad-bmm-create-architecture` -> `bmad-bmm-create-epics-and-stories`
-3. Readiness check: `bmad-bmm-check-implementation-readiness`
-4. Build cycle: `bmad-bmm-sprint-planning` -> `bmad-bmm-create-story` -> `bmad-bmm-dev-story` -> `bmad-bmm-code-review`
-5. Optional quality/support: `bmad-bmm-qa-automate`, `bmad-bmm-sprint-status`, `bmad-bmm-retrospective`
-
-Quick path (for small scoped changes):
-
-1. `bmad-bmm-quick-spec`
-2. `bmad-bmm-quick-dev` or `bmad-bmm-quick-dev-new-preview`
-
-How to keep BMAD artifacts useful:
-
-1. Treat active `_bmad-output/` artifacts as the record of their own planning and execution state, not as current repository-wide implementation rules.
-2. Update affected artifacts when scope or implementation changes.
-3. Keep `docs/` aligned with shipped architecture/runtime behavior so future BMAD runs stay grounded.
-
-## Story Project Automation
-
-This repository includes `.github/workflows/story-project-sync.yml` to keep BMAD stories and implementation specs aligned with repository issues and the GitHub Project at `https://github.com/users/REW1L/projects/1`.
-
-Required repository secret:
-
-- `GH_PROJECT_TOKEN`: classic PAT with `repo` and `project` scope. The workflow uses this token for `gh issue` and `gh project` commands because the target project is user-owned.
-
-Current project assumptions:
-
-- Project owner: `REW1L`
-- Project number: `1`
-- Project title: `Munch Helper project`
-- Status field name: `Status`
-- Required status options: `Ready for Dev`, `Review`, `Done`
-
-Supported lifecycle sync:
-
-- A story mentioned in `_bmad-output/planning-artifacts/**` on `main` creates or reuses a matching repository issue and adds it to the project.
-- A story or approved `spec-*.md` file added under `_bmad-output/implementation-artifacts/` creates the issue and project item if missing, then sets project status to `Ready for Dev`.
-- A pull request that touches exactly one tracked implementation artifact and whose artifact status is no longer `ready-for-dev` sets the project status to `Review`.
-- A merged `main` change that moves a tracked implementation artifact status to `done` sets the project status to `Done`.
-- A pull request for a tracked implementation artifact that is closed without merge moves the project status from `Review` back to `Ready for Dev`.
-
-## Auto-implementation Orchestrator
-
-When `story-project-sync` transitions a project item to **Ready for Dev**, it posts a deterministic marker comment on the associated issue. The `.github/workflows/ready-for-dev-orchestrator.yml` workflow fires on that comment and automatically attempts implementation using available coding-assistant CLIs.
-
-### Required secrets
-
-| Secret | Purpose |
-|--------|---------|
-| `ANTHROPIC_API_KEY` | Claude CLI (`claude`) |
-| `OPENAI_API_KEY` or `CODEX_API_KEY` | Codex CLI (`codex`) |
-| `COPILOT_GITHUB_TOKEN` | GitHub Copilot CLI — must be a PAT with **Copilot Requests** scope; do **not** reuse `GITHUB_TOKEN` |
-| `KIRO_API_KEY` | Kiro CLI (`kiro-cli`) |
-
-Any CLI whose secret is absent is silently skipped during pre-flight; the cascade continues with the remaining CLIs.
-
-### Cascade behaviour
-
-Agents are invoked in a configurable order (default: `claude → codex → copilot → kiro-cli`) with a per-agent timeout (default: 30 min). After each invocation the orchestrator reads the spec file's `status:` frontmatter field. When it sees `review`, `in-review`, or `done`, it:
-
-1. Commits all workspace changes to `auto-dev/issue-<n>`
-2. Pushes the branch
-3. Opens a PR with body `Closes #<n>`
-
-`story-project-sync` then advances the project board from **Ready for Dev** to **Review** when the PR is opened.
-
-If all CLIs are exhausted without reaching `review`, `in-review`, or `done`, the workflow pushes partial work (if any) and exits non-zero. The operator can re-run the workflow to resume from the existing branch.
-
-### Trigger methods
-
-**Automatic** — `story-project-sync` posts the marker comment on every `Ready for Dev` transition. The orchestrator fires automatically.
-
-**Manual** — run the workflow from the CLI:
-
-```bash
-gh workflow run ready-for-dev-orchestrator.yml -f issue_number=42
-```
-
-You can also override the agent order:
-
-```bash
-gh workflow run ready-for-dev-orchestrator.yml \
-  -f issue_number=42 \
-  -f agent_order=claude,codex
-```
-
-### Marker-comment contract
-
-Any process with write access can trigger the orchestrator by posting a comment with this exact shape:
-
-```
-🚀 **Status moved to Ready for Dev** — auto-implementation orchestrator queued.
-
-<!-- auto-dev:trigger v1 -->
-```json
-{"version": 1, "issue_number": 42, "spec_file": "_bmad-output/implementation-artifacts/3-1-apptheme-token-migration.md"}
-```
-```
-
-The orchestrator's job-level `if` accepts only comments authored by `REW1L` or `github-actions[bot]`, so external commenters cannot trigger CLI runs.
-
-### Run-log artifact
-
-Each run uploads a `agent-logs-issue-<n>` artifact containing one log file per CLI invocation (`agent-<name>.log`). Download it from the **Actions** tab to inspect the raw output from each coding assistant.
-
-## Documentation
-
-- Project docs index: `docs/index.md`
-- Backend docs: `backend/README.md`
-- Frontend docs: `frontend/README.md`
-- Infrastructure docs: `infrastructure/README.md`
-- BMAD framework/config: `_bmad/`
-- BMAD generated outputs: `_bmad-output/`
+For coding-agent requirements, see [`AGENTS.md`](AGENTS.md). New features require an OpenSpec change before implementation; see its proposal and implementation workflows in `.agents/skills/`.
 
 ## License
 
-GNU General Public License v3.0. See `LICENSE`.
+GNU General Public License v3.0. See [LICENSE](LICENSE).
