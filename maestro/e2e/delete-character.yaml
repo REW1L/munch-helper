@@ -3,67 +3,19 @@ appId: click.helpamunch.mobileapp
 - runFlow: create-character.yaml
 - tapOn:
     id: change-character-button
-- runFlow:
-    when:
-      platform: Web
-    commands:
-      - extendedWaitUntil:
-          visible:
-            id: change-character-modal
-          timeout: 10000
-      - scrollUntilVisible:
-          element:
-            id: delete-character-button
-          direction: DOWN
-      - tapOn:
-          id: delete-character-button
-      - extendedWaitUntil:
-          visible:
-            id: confirm-dialog-confirm
-          timeout: 5000
-      - tapOn:
-          id: confirm-dialog-confirm
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - extendedWaitUntil:
-          visible:
-            id: change-character-modal
-          timeout: 10000
-      - scrollUntilVisible:
-          element:
-            id: delete-character-button
-          direction: DOWN
-      - tapOn:
-          id: delete-character-button
-      - extendedWaitUntil:
-          visible:
-            id: confirm-dialog-confirm
-          timeout: 5000
-      - tapOn:
-          id: confirm-dialog-confirm
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - extendedWaitUntil:
-          visible:
-            id: change-character-modal
-          timeout: 10000
-      - scrollUntilVisible:
-          element:
-            id: delete-character-button
-          direction: DOWN
-      - tapOn:
-          id: delete-character-button
-      - waitForAnimationToEnd
-      - extendedWaitUntil:
-          visible:
-            id: confirm-dialog-confirm
-          timeout: 5000
-      - tapOn:
-          id: confirm-dialog-confirm
+- extendedWaitUntil:
+    visible:
+      id: change-character-modal
+    timeout: 10000
+- scroll
+- tapOn:
+    id: delete-character-button
+- extendedWaitUntil:
+    visible:
+      id: confirm-dialog-confirm
+    timeout: 5000
+- tapOn:
+    id: confirm-dialog-confirm
 - extendedWaitUntil:
     notVisible: E2E Created
     timeout: 20000
