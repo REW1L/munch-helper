@@ -18,3 +18,7 @@
 - [x] Wait for confirmed room metadata before auto-creating characters; resolve edition consistently on room, battle, and history routes and cover pending-metadata regression.
 - [x] Replace absolute Gold Pieces writes with atomic signed deltas, reject overdraws and Classic-character updates, disable retries, and update API/OpenAPI/docs/tests.
 - [x] Remove client-supplied initial Gold Pieces from create contracts and fix the rules source-intro expression.
+
+## Loading screen header (issue #166)
+- [x] Add route regressions for Classic, Second Edition, default, hinted-join, unhinted-join, and localized loading titles; confirm they fail against the hardcoded Classic title.
+- [x] Derive the loading header from the requested or hinted room type, falling back to a neutral title for unhinted joins; add a Maestro regression for the failed-join header.

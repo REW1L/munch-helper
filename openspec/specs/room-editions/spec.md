@@ -31,3 +31,18 @@ The system SHALL return the persisted room type from every successful room assoc
 #### Scenario: Restore a Classic session
 - **WHEN** a saved session is restored for a legacy `munchkin` room
 - **THEN** the client opens Classic with its existing character data and behavior
+
+### Requirement: Room loading screen names only a known edition
+While a room is being created or joined, the loading screen header SHALL name the edition the client knows: the requested type when creating (Classic when none is requested) and the route's room type hint when joining. A join without a hint SHALL show a neutral title rather than assuming Classic.
+
+#### Scenario: Creating a Second Edition room
+- **WHEN** the loading screen opens to create a room with `roomTypeId` `munchkin-2e`
+- **THEN** its header reads `Munch ⚔️` followed by the localized Second Edition label
+
+#### Scenario: Creating a Classic room
+- **WHEN** the loading screen opens to create a room with `roomTypeId` `munchkin` or no type
+- **THEN** its header reads `Munch ⚔️` followed by the localized Classic label
+
+#### Scenario: Joining a room of unknown edition
+- **WHEN** the loading screen opens to join a room code without a room type hint
+- **THEN** its header reads `Munch ⚔️` without an edition label, including when the join fails
