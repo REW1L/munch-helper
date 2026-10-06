@@ -87,3 +87,138 @@ appId: click.helpamunch.mobileapp
     commands:
       - assertVisible:
           id: open-room-rules
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "500 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 500"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 500"
+          timeout: 10000
+- tapOn:
+    id: change-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: Gold Pieces adjustment amount
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: quick-edit-gold-pieces-input
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: quick-edit-gold-pieces-input
+          timeout: 10000
+- takeScreenshot: second-edition-quick-edit
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          id: quick-edit-gold-pieces-decrease
+- repeat:
+    times: 6
+    commands:
+      - tapOn:
+          id: quick-edit-gold-pieces-increase
+- tapOn:
+    id: quick-edit-save
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "700 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
+- takeScreenshot: second-edition-character-card
+- tapOn:
+    id: change-character-button
+- tapOn:
+    id: quick-edit-open-full-edit
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: Gold Pieces adjustment amount
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: edit-character-gold-pieces-input
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: edit-character-gold-pieces-input
+          timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: second-edition-character-edit
+- tapOn:
+    id: save-character-button
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - extendedWaitUntil:
+          visible: "700 GP"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: "Gold Pieces: 700"
+          timeout: 10000

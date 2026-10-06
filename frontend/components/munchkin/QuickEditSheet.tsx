@@ -13,6 +13,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -20,6 +21,7 @@ import {
 type QuickEditStats = {
   level: number;
   power: number;
+  goldPieces?: number;
 };
 
 interface QuickEditSheetProps {
@@ -29,6 +31,7 @@ interface QuickEditSheetProps {
   onSave: (stats: QuickEditStats) => Promise<void>;
   onOpenFullEdit: () => void;
   hasErrorFlash: boolean;
+  isSecondEdition?: boolean;
 }
 
 function clampToFloorZero(value: number): number {
@@ -42,12 +45,14 @@ export default function QuickEditSheet({
   onSave,
   onOpenFullEdit,
   hasErrorFlash,
+  isSecondEdition = false,
 }: QuickEditSheetProps) {
   const { t } = useTranslation();
   const [isRendered, setIsRendered] = useState(visible);
   const [isSaving, setIsSaving] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [draftStats, setDraftStats] = useState<QuickEditStats>({ level: 0, power: 0 });
+  const [draftGoldPieces, setDraftGoldPieces] = useState('500');
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
   const hasHandledVisibilityRef = useRef(false);
   const lastVisibleRef = useRef(visible);
@@ -91,7 +96,8 @@ export default function QuickEditSheet({
 
     setIsClosing(false);
     setDraftStats(nextStats);
-  }, [character?.level, character?.power, visible]);
+    setDraftGoldPieces(String(character?.goldPieces ?? 500));
+  }, [character?.goldPieces, character?.level, character?.power, visible]);
 
   const animateSheetTo = useCallback(
     (toValue: number, onFinished?: () => void) => {
@@ -166,7 +172,7 @@ export default function QuickEditSheet({
   }, [animateSheetTo, dismissOffset, onOpenFullEdit]);
 
   const applyStep = useCallback(
-    (field: keyof QuickEditStats, delta: number) => {
+    (field: 'level' | 'power', delta: number) => {
       if (!character) {
         return;
       }
@@ -186,8 +192,28 @@ export default function QuickEditSheet({
     }
 
     setIsSaving(true);
-    await onSave(draftStats);
-  }, [character, draftStats, isSaving, onSave]);
+    try {
+      if (isSecondEdition) {
+        const goldPieces = Number(draftGoldPieces);
+        if (!Number.isInteger(goldPieces) || goldPieces < 0) {
+          return;
+        }
+        await onSave({ ...draftStats, goldPieces });
+        return;
+      }
+      await onSave(draftStats);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [character, draftGoldPieces, draftStats, isSaving, isSecondEdition, onSave]);
+
+  const applyGoldPiecesStep = useCallback((delta: number) => {
+    setDraftGoldPieces((current) => {
+      const value = Number(current);
+      if (!Number.isInteger(value) || value < 0) return current;
+      return String(Math.max(0, value + delta));
+    });
+  }, []);
 
   const panResponder = useMemo(
     () =>
@@ -260,6 +286,19 @@ export default function QuickEditSheet({
               </TouchableOpacity>
             </View>
           </View>
+
+          {isSecondEdition && <View style={styles.stepperRow}>
+            <Text style={styles.label}>{t('gameRules.secondEditionCoinsTitle')}</Text>
+            <View style={styles.stepper}>
+              <TouchableOpacity testID="quick-edit-gold-pieces-decrease" style={styles.stepperButton} onPress={() => applyGoldPiecesStep(-100)}>
+                <Text style={styles.stepperButtonText}>−</Text>
+              </TouchableOpacity>
+              <TextInput accessibilityLabel={t('room.coinAdjustmentA11y')} keyboardType="number-pad" value={draftGoldPieces} onChangeText={setDraftGoldPieces} style={[styles.value, styles.coinInput]} testID="quick-edit-gold-pieces-input" />
+              <TouchableOpacity testID="quick-edit-gold-pieces-increase" style={styles.stepperButton} onPress={() => applyGoldPiecesStep(100)}>
+                <Text style={styles.stepperButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>}
 
           <View style={styles.actions}>
             <TouchableOpacity testID="quick-edit-open-full-edit" onPress={handleOpenFullEdit} style={styles.secondaryAction}>
@@ -362,6 +401,11 @@ const styles = StyleSheet.create({
     color: AppTheme.colors.accent,
     fontSize: 26,
     fontWeight: '700',
+  },
+  coinInput: {
+    minWidth: 74,
+    paddingHorizontal: 2,
+    textAlign: 'center',
   },
   actions: {
     marginTop: AppTheme.spacing.md,

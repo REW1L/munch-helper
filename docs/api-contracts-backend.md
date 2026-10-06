@@ -256,15 +256,16 @@ Required: `roomId`, `name`, `avatarId`, `color` (hex `#RRGGBB`).
 
 ### `PATCH /characters/:characterId`
 
-Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, and `userId`. To adjust Second Edition currency, include the matching `roomId` and a nonzero integer `goldPiecesDelta`; the server applies it atomically, rejects balances below zero with 409, and rejects Classic characters with 400. Currency mutations disable automatic retries because applying a delta twice is not safe.
+Partial update. The allowed update keys are `name`, `avatarId`, `color`, `level`, `power`, `class`, `race`, `gender`, and `userId`. To adjust Second Edition currency, send the matching `roomId` and a nonzero integer `goldPiecesDelta` as the only update operation; the backend rejects a request that combines a coin delta with other character fields. The server applies the delta atomically, rejects balances below zero with 409, and rejects Classic characters with 400. Currency mutations disable automatic retries because applying a delta twice is not safe.
 
-**Request body** (any subset of the allowed keys, or `{ "roomId": "Frog4521", "goldPiecesDelta": -100 }`). String fields are trimmed; color is normalized to upper-case.
+**Request body** (any subset of the allowed keys, or `{ "roomId": "Frog4521", "goldPiecesDelta": -100 }`; do not combine `goldPiecesDelta` with other update keys). String fields are trimmed; color is normalized to upper-case.
 
 **Responses:**
 
 - `200 OK` with the updated character.
 - `400 Bad Request`:
   - `No valid fields provided for update`
+  - `Gold Pieces adjustments cannot be combined with other character updates`
   - `Field goldPiecesDelta must be a nonzero integer`
   - `Gold Pieces are only supported in Second Edition rooms`
   - `Field name must be a non-empty string when provided`

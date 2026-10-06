@@ -192,11 +192,13 @@ vi.mock('../../../app/munchkin/modal-change-caracter', () => ({
     deleteError,
     onDelete,
     onCancel,
+    onConfirm,
   }: {
     character?: Character;
     deleteError?: string | null;
     onDelete: (characterId: string) => Promise<void>;
     onCancel: () => void;
+    onConfirm: (character: Character) => void | Promise<void>;
   }) => {
     const [confirmVisible, setConfirmVisible] = React.useState(false);
     if (!character) {
@@ -220,6 +222,9 @@ vi.mock('../../../app/munchkin/modal-change-caracter', () => ({
           </div>
         ) : null}
         {deleteError ? <div>{deleteError}</div> : null}
+        <button type="button" onClick={() => void onConfirm({ ...character, goldPieces: 800 })}>
+          Save full edit with coins
+        </button>
         <button type="button" onClick={onCancel}>
           Close edit
         </button>
@@ -238,16 +243,18 @@ vi.mock('../../../components/munchkin/QuickEditSheet', () => ({
     character,
     onSave,
     onOpenFullEdit,
+    isSecondEdition,
   }: {
     visible: boolean;
     character: Character | null;
-    onSave: (stats: { level: number; power: number }) => Promise<void>;
+    onSave: (stats: { level: number; power: number; goldPieces?: number }) => Promise<void>;
     onOpenFullEdit: () => void;
+    isSecondEdition?: boolean;
   }) =>
     visible && character ? (
       <div>
         <div>{`Quick edit for ${character.nickname}`}</div>
-        <button type="button" onClick={() => void onSave({ level: character.level + 2, power: character.power + 1 })}>
+        <button type="button" onClick={() => void onSave({ level: character.level + 2, power: character.power + 1, ...(isSecondEdition ? { goldPieces: (character.goldPieces ?? 500) + 200 } : {}) })}>
           Save quick edit
         </button>
         <button type="button" onClick={onOpenFullEdit}>
@@ -457,6 +464,90 @@ describe('Munchkin room header', () => {
     });
 
     expect(mockUpdateCharacter).toHaveBeenCalledWith('char-1', { level: 3, power: 1 });
+  });
+
+  it('sends Second Edition coin edits as a separate update from character stats', async () => {
+    mockRoomMetadata.current = { roomId: 'ROOM42', roomTypeId: 'munchkin-2e' };
+    mockCharactersState.current = [
+      {
+        id: 'char-2e', roomId: 'ROOM42', userId: 'user-1', nickname: 'Player One', avatar: 1,
+        color: '#9966FF', level: 1, power: 0, class: [], race: ['Human'], gender: [], goldPieces: 500,
+      },
+    ];
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider value={{ userProfile: { id: 'user-1', nickname: 'Player One', avatar: 1 }, setUserProfile: vi.fn() }}>
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Open quick edit' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save quick edit' })));
+
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(1, 'char-2e', { level: 3, power: 1 });
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(2, 'char-2e', { goldPiecesDelta: 200 });
+  });
+
+  it('undoes Second Edition Quick Edit with a separate coin delta request', async () => {
+    mockRoomMetadata.current = { roomId: 'ROOM42', roomTypeId: 'munchkin-2e' };
+    mockCharactersState.current = [
+      {
+        id: 'char-2e-undo', roomId: 'ROOM42', userId: 'user-1', nickname: 'Player One', avatar: 1,
+        color: '#9966FF', level: 1, power: 0, class: [], race: ['Human'], gender: [], goldPieces: 500,
+      },
+    ];
+    mockUpdateCharacter.mockImplementation(async (characterId: string, payload: Partial<Character> & { goldPiecesDelta?: number }) => {
+      mockCharactersState.current = mockCharactersState.current.map((character) => {
+        if (character.id !== characterId) return character;
+        const { goldPiecesDelta, ...updates } = payload;
+        return {
+          ...character,
+          ...updates,
+          ...(goldPiecesDelta !== undefined ? { goldPieces: (character.goldPieces ?? 500) + goldPiecesDelta } : {}),
+        };
+      });
+    });
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider value={{ userProfile: { id: 'user-1', nickname: 'Player One', avatar: 1 }, setUserProfile: vi.fn() }}>
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Open quick edit' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save quick edit' })));
+    await act(async () => fireEvent.click(screen.getByText('Undo')));
+
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(3, 'char-2e-undo', { level: 1, power: 0 });
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(4, 'char-2e-undo', { goldPiecesDelta: -200 });
+  });
+
+  it('sends full edit coin changes separately from other Second Edition fields', async () => {
+    mockRoomMetadata.current = { roomId: 'ROOM42', roomTypeId: 'munchkin-2e' };
+    mockCharactersState.current = [
+      {
+        id: 'char-2e-other', roomId: 'ROOM42', userId: 'user-2', nickname: 'Rogue', avatar: 2,
+        color: '#0088CC', level: 4, power: 1, class: ['Thief'], race: ['Elf'], gender: [], goldPieces: 500,
+      },
+    ];
+    const { default: MunchkinIndexView } = await import('../../../app/munchkin/[roomNumber]/index');
+
+    await act(async () => {
+      render(
+        <userProfileContext.Provider value={{ userProfile: { id: 'user-1', nickname: 'Player One', avatar: 1 }, setUserProfile: vi.fn() }}>
+          <MunchkinIndexView />
+        </userProfileContext.Provider>
+      );
+    });
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Change Rogue' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Save full edit with coins' })));
+
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(1, 'char-2e-other', expect.objectContaining({ nickname: 'Rogue', level: 4 }));
+    expect(mockUpdateCharacter).toHaveBeenNthCalledWith(2, 'char-2e-other', { goldPiecesDelta: 300 });
   });
 
   it('renders existing room characters immediately for a late joiner', async () => {

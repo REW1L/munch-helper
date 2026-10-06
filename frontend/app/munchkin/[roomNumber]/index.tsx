@@ -24,7 +24,7 @@ import { RoomHeaderTitle } from '../../../components/munchkin/RoomHeaderTitle';
 import ChangeCharacterModal from '../modal-change-caracter';
 import CreateCharacterModal from '../modal-create-character';
 
-type CharacterStatsOverride = { level: number; power: number };
+type CharacterStatsOverride = { level: number; power: number; goldPieces?: number };
 
 type UndoState = {
   characterId: string;
@@ -209,10 +209,20 @@ const MunchkinIndexView: React.FC = () => {
         level: stats.level,
         power: stats.power,
       });
+      const goldPiecesDelta = isSecondEdition && stats.goldPieces !== undefined
+        ? stats.goldPieces - (selectedCharacter.goldPieces ?? 500)
+        : 0;
+      if (goldPiecesDelta !== 0) {
+        await update(selectedCharacter.id, { goldPiecesDelta });
+      }
       setQuickEditVisible(false);
       setUndoState({
         characterId: selectedCharacter.id,
-        previous: { level: selectedCharacter.level, power: selectedCharacter.power },
+        previous: {
+          level: selectedCharacter.level,
+          power: selectedCharacter.power,
+          ...(isSecondEdition ? { goldPieces: selectedCharacter.goldPieces ?? 500 } : {}),
+        },
       });
       setShowUndoToast(true);
     } catch (error) {
@@ -221,7 +231,7 @@ const MunchkinIndexView: React.FC = () => {
       setShowUndoToast(false);
       setUndoState(null);
     }
-  }, [selectedCharacter, selectedCharacterId, t, update]);
+  }, [isSecondEdition, selectedCharacter, selectedCharacterId, t, update]);
 
   const handleQuickEditUndo = useCallback(() => {
     if (!undoState) {
@@ -230,13 +240,24 @@ const MunchkinIndexView: React.FC = () => {
     setShowUndoToast(false);
     setUndoState(null);
 
-    void update(undoState.characterId, {
-      level: undoState.previous.level,
-      power: undoState.previous.power,
-    }).catch((error) => {
-      setActionError(error instanceof Error ? error.message : t('room.errorUndoStats'));
-    });
-  }, [t, undoState, update]);
+    const currentCharacter = characters.find((character) => character.id === undoState.characterId);
+    void (async () => {
+      try {
+        await update(undoState.characterId, {
+          level: undoState.previous.level,
+          power: undoState.previous.power,
+        });
+        const goldPiecesDelta = undoState.previous.goldPieces !== undefined && currentCharacter
+          ? undoState.previous.goldPieces - (currentCharacter.goldPieces ?? 500)
+          : 0;
+        if (goldPiecesDelta !== 0) {
+          await update(undoState.characterId, { goldPiecesDelta });
+        }
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : t('room.errorUndoStats'));
+      }
+    })();
+  }, [characters, t, undoState, update]);
 
   const handleOpenFullEdit = useCallback(() => {
     setDeleteError(null);
@@ -390,9 +411,6 @@ const MunchkinIndexView: React.FC = () => {
             onCreateCharacter={() => setCreateCharacterModalVisible(true)}
             onChangePress={handleChangePress}
             isSecondEdition={isSecondEdition}
-            onGoldPiecesChange={(character, goldPiecesDelta) => {
-              void update(character.id, { goldPiecesDelta }).catch((error) => setActionError(error instanceof Error ? error.message : t('room.errorUpdateCharacter')));
-            }}
           />
 
           <View style={styles.actionButtons}>
@@ -476,6 +494,12 @@ const MunchkinIndexView: React.FC = () => {
                     gender: character.gender,
                     class: character.class,
                   });
+                  const goldPiecesDelta = isSecondEdition
+                    ? (character.goldPieces ?? 500) - (modalCharacter.goldPieces ?? 500)
+                    : 0;
+                  if (goldPiecesDelta !== 0) {
+                    await update(character.id, { goldPiecesDelta });
+                  }
                   setChangeCharacterModalVisible(false);
                 } catch (error) {
                   setActionError(error instanceof Error ? error.message : t('room.errorUpdateCharacter'));
@@ -519,6 +543,7 @@ const MunchkinIndexView: React.FC = () => {
             onClose={closeQuickEditSheet}
             onOpenFullEdit={handleOpenFullEdit}
             hasErrorFlash={dangerFlash}
+            isSecondEdition={isSecondEdition}
           />
 
           {showUndoToast && undoState && (

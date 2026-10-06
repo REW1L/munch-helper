@@ -106,6 +106,37 @@ describe('QuickEditSheet', () => {
     vi.mocked(AccessibilityInfo.addEventListener).mockReturnValue(mockReduceMotionSubscription);
   });
 
+  it('edits Second Edition Gold Pieces and submits a delta from the opening balance', async () => {
+    const onSave = vi.fn(async () => undefined);
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet visible character={{ ...baseCharacter, goldPieces: 500 }} isSecondEdition onClose={vi.fn()} onSave={onSave} onOpenFullEdit={vi.fn()} hasErrorFlash={false} />
+      );
+    });
+    const input = renderer.root.findByProps({ testID: 'quick-edit-gold-pieces-input' });
+    await act(async () => input.props.onChangeText('700'));
+    const saveButton = renderer.root.findByProps({ testID: 'quick-edit-save' });
+    await act(async () => saveButton.props.onPress());
+    expect(onSave).toHaveBeenCalledWith({ level: 5, power: 3, goldPieces: 700 });
+  });
+
+  it('clamps coin decrements at zero and rejects fractional balances', async () => {
+    const onSave = vi.fn(async () => undefined);
+    let renderer: any;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <QuickEditSheet visible character={{ ...baseCharacter, goldPieces: 50 }} isSecondEdition onClose={vi.fn()} onSave={onSave} onOpenFullEdit={vi.fn()} hasErrorFlash={false} />
+      );
+    });
+    const input = renderer.root.findByProps({ testID: 'quick-edit-gold-pieces-input' });
+    await act(async () => renderer.root.findByProps({ testID: 'quick-edit-gold-pieces-decrease' }).props.onPress());
+    expect(renderer.root.findByProps({ testID: 'quick-edit-gold-pieces-input' }).props.value).toBe('0');
+    await act(async () => input.props.onChangeText('1.5'));
+    await act(async () => renderer.root.findByProps({ testID: 'quick-edit-save' }).props.onPress());
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it('exposes the top drag affordance as the movable gesture target', async () => {
     let renderer: any;
     await act(async () => {

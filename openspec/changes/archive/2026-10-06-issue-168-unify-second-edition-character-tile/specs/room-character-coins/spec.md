@@ -1,10 +1,6 @@
 # Room Character Coins
 
-## Purpose
-
-Track how character Gold Pieces are initialized, edited, and synchronized for Second Edition rooms while preserving Classic character behavior.
-
-## Requirements
+## Modified Requirements
 
 ### Requirement: Second Edition characters have room-scoped Gold Pieces
 The system SHALL initialize a newly created character in a `munchkin-2e` room with 500 GP and SHALL expose a validated way to adjust the balance. Balances SHALL be nonnegative integers. Coin state SHALL remain separate from Classic character data and a character's balance in another room. The room card SHALL display the balance inline with level and strength in the same stat style, and Second Edition coin adjustments SHALL be available through Quick Edit and the full Change Character modal. Classic rooms SHALL not present coin editing.

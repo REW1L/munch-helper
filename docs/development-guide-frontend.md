@@ -45,6 +45,8 @@ For every change under `frontend/`, run `npm run test:e2e:mobile` from the repos
 
 ## Tests
 
+Second Edition room cards show Gold Pieces inline with level and strength. Coin balances are edited from Quick Edit or the full Change Character modal; both flows submit a delta through the existing room character update API.
+
 Two Vitest configs:
 
 ```bash

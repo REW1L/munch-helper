@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -24,7 +23,6 @@ interface RoomCharacterCardProps {
   onChangePress: (character: RoomCharacter) => void;
   realtimeFlashSignal?: number;
   isSecondEdition?: boolean;
-  onGoldPiecesChange?: (character: RoomCharacter, delta: number) => void;
 }
 
 const REALTIME_FLASH_DURATION_MS = 700;
@@ -35,15 +33,16 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
   onChangePress,
   realtimeFlashSignal = 0,
   isSecondEdition = false,
-  onGoldPiecesChange,
 }: RoomCharacterCardProps) {
-  const { t } = useTranslation();
-  const [coinAdjustment, setCoinAdjustment] = useState('100');
-  const accessibilityLabel = t('room.characterCardA11y', {
+  const { t, i18n } = useTranslation();
+  const characterAccessibilityLabel = t('room.characterCardA11y', {
     name: character.nickname,
     level: character.level,
     power: character.power,
   });
+  const accessibilityLabel = isSecondEdition
+    ? `${characterAccessibilityLabel}, ${t('room.coinBalanceA11y', { amount: character.goldPieces ?? 500 })}`
+    : characterAccessibilityLabel;
   const animatedBorderProgress = useRef(new Animated.Value(0)).current;
   const reducedMotionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReducedMotionEnabled, setIsReducedMotionEnabled] = useState<boolean | null>(null);
@@ -126,65 +125,36 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
     : { borderColor: animatedBorderColor, borderWidth: REALTIME_FLASH_BORDER_WIDTH };
 
   return (
-    <Animated.View style={[styles.characterCard, isSecondEdition && styles.secondEditionCard, flashStyle]} testID="character-card">
-      <View style={isSecondEdition ? styles.secondEditionHeaderRow : styles.classicHeaderRow}>
-        <Pressable
-          style={({ pressed }) => [styles.cardBodyPressable, pressed && styles.cardBodyPressablePressed]}
-          onPress={() => onChangePress(character)}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={accessibilityLabel}
-          accessibilityHint={t('room.tapToEditStats')}
-        >
-          <View style={styles.characterContent}>
-            <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
-              <Image source={avatars[character.avatar]} style={styles.characterAvatar} />
-            </View>
-
-            <View style={styles.characterInfo}>
-              <Text style={styles.characterNickname} numberOfLines={1} ellipsizeMode="tail" testID="character-nickname">{character.nickname}</Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.characterStats}>{character.level} lvl</Text>
-                <Text style={styles.characterStats}>{character.power} str</Text>
-              </View>
-            </View>
+    <Animated.View style={[styles.characterCard, flashStyle]} testID="character-card">
+      <Pressable
+        style={({ pressed }) => [styles.cardBodyPressable, pressed && styles.cardBodyPressablePressed]}
+        onPress={() => onChangePress(character)}
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={t('room.tapToEditStats')}
+      >
+        <View style={styles.characterContent}>
+          <View style={[styles.avatarWrapper, { backgroundColor: character.color }]}>
+            <Image source={avatars[character.avatar]} style={styles.characterAvatar} />
           </View>
-        </Pressable>
-        {isSecondEdition && <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} testID="change-character-button" />}
-      </View>
 
-      {isSecondEdition ? (
-        <View style={styles.secondEditionDetailsRow}>
-          <View style={[styles.attributesBox, styles.secondEditionAttributesBox]}>
-            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.attributesScrollContent}>
-              <AttributeList character={character} showGender={false} />
-            </ScrollView>
-          </View>
-          <View style={styles.coinControls}>
-            <Text accessibilityLabel={t('room.coinBalanceA11y', { amount: character.goldPieces ?? 500 })} style={styles.coinBalance} testID={`gold-pieces-${character.id}`}>{character.goldPieces ?? 500} GP</Text>
-            <View style={styles.coinButtons}>
-              <VioletButton title="−" onPress={() => {
-                const adjustment = Number(coinAdjustment);
-                if (Number.isInteger(adjustment) && adjustment > 0) onGoldPiecesChange?.(character, -adjustment);
-              }} testID={`gold-pieces-minus-${character.id}`} />
-              <TextInput accessibilityLabel={t('room.coinAdjustmentA11y')} keyboardType="number-pad" value={coinAdjustment} onChangeText={setCoinAdjustment} style={styles.coinInput} testID={`gold-pieces-adjustment-${character.id}`} />
-              <VioletButton title="+" onPress={() => {
-                const adjustment = Number(coinAdjustment);
-                if (Number.isInteger(adjustment) && adjustment > 0) onGoldPiecesChange?.(character, adjustment);
-              }} testID={`gold-pieces-plus-${character.id}`} />
+          <View style={styles.characterInfo}>
+            <Text style={styles.characterNickname} numberOfLines={1} ellipsizeMode="tail" testID="character-nickname">{character.nickname}</Text>
+            <View style={styles.statsRow}>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.characterStats}>{character.level} lvl</Text>
+              <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.characterStats}>{character.power} str</Text>
+              {isSecondEdition && <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} accessibilityLabel={t('room.coinBalanceA11y', { amount: character.goldPieces ?? 500 })} style={styles.characterStats} testID={`gold-pieces-${character.id}`}>{new Intl.NumberFormat(i18n.language).format(character.goldPieces ?? 500)} GP</Text>}
             </View>
           </View>
         </View>
-      ) : (
-        <>
-          <View style={styles.attributesBox}>
-            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.attributesScrollContent}>
-              <AttributeList character={character} showGender />
-            </ScrollView>
-          </View>
-          <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} testID="change-character-button" />
-        </>
-      )}
+      </Pressable>
+      <View style={styles.attributesBox}>
+        <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.attributesScrollContent}>
+          <AttributeList character={character} showGender={!isSecondEdition} />
+        </ScrollView>
+      </View>
+      <VioletButton title={t('common.change')} onPress={() => onChangePress(character)} testID="change-character-button" />
     </Animated.View>
   );
 });
@@ -201,15 +171,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  secondEditionCard: { height: 142, flexDirection: 'column', justifyContent: 'space-between', gap: 4 },
-  classicHeaderRow: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 8 },
-  secondEditionHeaderRow: { flexDirection: 'row', alignItems: 'center', height: 75, width: '100%', gap: 8 },
-  secondEditionDetailsRow: { flexDirection: 'row', alignItems: 'center', flex: 1, width: '100%', gap: 8 },
-  secondEditionAttributesBox: { width: 88, height: 44, paddingVertical: 2, paddingHorizontal: 6 },
-  coinControls: { alignItems: 'center', gap: 3, flex: 1 },
-  coinBalance: { color: AppTheme.colors.textPrimary, fontSize: 13, fontWeight: '700' },
-  coinButtons: { flexDirection: 'row', gap: 3 },
-  coinInput: { width: 40, height: 34, paddingHorizontal: 2, textAlign: 'center', color: AppTheme.colors.textPrimary, backgroundColor: AppTheme.colors.elevated, borderRadius: 5 },
   characterContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -234,6 +195,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 5,
+    flexShrink: 1,
   },
   characterNickname: {
     fontSize: 16,
@@ -247,14 +209,18 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 10,
+    flexShrink: 1,
   },
   characterStats: {
     fontSize: 16,
     fontWeight: '700',
     color: AppTheme.colors.accent,
     letterSpacing: 0.15,
+    flexShrink: 1,
   },
   attributesBox: {
+    width: 88,
+    flexShrink: 0,
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: 'rgba(0, 0, 0, 0.30)',
