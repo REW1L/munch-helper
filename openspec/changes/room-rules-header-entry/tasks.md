@@ -14,4 +14,4 @@
 
 ## 3. Integration gate
 
-- [ ] 3.1 Run frontend lint, typecheck, coverage, required root mobile E2E gate, and OpenSpec validation/verification; review the diff, then open a PR and inspect its checks.
+- [x] 3.1 Run frontend lint, typecheck, coverage, required root mobile E2E gate, and OpenSpec validation/verification; review the diff, then open a PR and inspect its checks.
