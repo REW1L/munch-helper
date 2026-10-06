@@ -48,6 +48,42 @@ function findConfirmButton(renderer: ReturnType<typeof TestRenderer.create>) {
 }
 
 describe('ChangeCharacterModal', () => {
+  it('keeps delete in the form and limits the footer to save and cancel', async () => {
+    const character = {
+      id: 'char-first',
+      nickname: 'Rogue',
+      color: '#0088CC',
+      gender: ['female'],
+      race: ['Elf'],
+      class: ['Thief'],
+      level: 4,
+      power: 1,
+      avatar: 2,
+    };
+
+    let renderer: ReturnType<typeof TestRenderer.create>;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <ChangeCharacterModal
+          character={character}
+          deleteError={null}
+          onConfirm={vi.fn()}
+          onDelete={vi.fn(async () => undefined)}
+          onCancel={vi.fn()}
+        />
+      );
+    });
+
+    const buttonTestIDs = renderer!.root
+      .findAllByType(TouchableOpacity)
+      .map((button: any) => button.props.testID as string | undefined);
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'delete-character-button')).toHaveLength(1);
+    expect(buttonTestIDs).not.toContain('web-delete-character-button');
+    expect(buttonTestIDs).not.toContain('ios-delete-character-button');
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'save-character-button')).toHaveLength(1);
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'cancel-character-button')).toHaveLength(1);
+  });
+
   it('resets its local draft when the selected character changes mid-session', async () => {
     const firstCharacter = {
       id: 'char-first',

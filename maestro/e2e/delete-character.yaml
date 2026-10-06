@@ -7,12 +7,22 @@ appId: click.helpamunch.mobileapp
     when:
       platform: Web
     commands:
-      - tapOn:
-          id: web-delete-character-button
       - extendedWaitUntil:
-          visible: Delete
+          visible:
+            id: change-character-modal
+          timeout: 10000
+      - scrollUntilVisible:
+          element:
+            id: delete-character-button
+          direction: DOWN
+      - tapOn:
+          id: delete-character-button
+      - extendedWaitUntil:
+          visible:
+            id: confirm-dialog-confirm
           timeout: 5000
-      - tapOn: Delete
+      - tapOn:
+          id: confirm-dialog-confirm
 - runFlow:
     when:
       platform: Android
@@ -37,11 +47,23 @@ appId: click.helpamunch.mobileapp
     when:
       platform: iOS
     commands:
+      - extendedWaitUntil:
+          visible:
+            id: change-character-modal
+          timeout: 10000
+      - scrollUntilVisible:
+          element:
+            id: delete-character-button
+          direction: DOWN
       - tapOn:
-          id: ios-delete-character-button
+          id: delete-character-button
       - waitForAnimationToEnd
+      - extendedWaitUntil:
+          visible:
+            id: confirm-dialog-confirm
+          timeout: 5000
       - tapOn:
-          point: "66%, 54%"
+          id: confirm-dialog-confirm
 - extendedWaitUntil:
     notVisible: E2E Created
     timeout: 20000

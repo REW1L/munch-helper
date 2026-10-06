@@ -6,7 +6,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -453,21 +452,6 @@ export default function ChangeCharacterModal({
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
-            {Platform.OS === 'web' || Platform.OS === 'ios' ? (
-              <TouchableOpacity
-                style={[styles.deleteButton, styles.webDeleteButton, isDeletePending && styles.deleteButtonDisabled]}
-                onPress={handleDeletePress}
-                activeOpacity={0.8}
-                disabled={isDeletePending}
-                accessible
-                accessibilityRole="button"
-                testID={Platform.OS === 'ios' ? 'ios-delete-character-button' : 'web-delete-character-button'}
-              >
-                <ButtonLabel style={styles.deleteButtonText}>
-                  {isDeletePending ? t('character.deletingCharacter') : t('character.deleteCharacter')}
-                </ButtonLabel>
-              </TouchableOpacity>
-            ) : null}
             <TouchableOpacity
               style={[styles.button, isDeletePending && styles.buttonDisabled]}
               onPress={handleSave}
@@ -809,9 +793,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: AppTheme.colors.danger,
-  },
-  webDeleteButton: {
-    flex: 1,
   },
   deleteButtonDisabled: {
     opacity: 0.7,
