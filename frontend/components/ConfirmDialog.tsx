@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel: string;
   cancelLabel?: string;
+  insideModal?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -25,6 +26,7 @@ export default function ConfirmDialog({
   message,
   confirmLabel,
   cancelLabel,
+  insideModal = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -53,14 +55,17 @@ export default function ConfirmDialog({
   }
 
   const dialogContent = visible ? (
-    <Pressable accessible={false} style={styles.overlay} onPress={onCancel}>
+    <Pressable
+      accessible={false}
+      style={insideModal ? [styles.overlay, StyleSheet.absoluteFill] : styles.overlay}
+      onPress={onCancel}
+    >
       <Pressable accessible={false} style={styles.dialog} onPress={() => { }}>
         <Text accessible testID="confirm-dialog-title" style={styles.title}>{title}</Text>
         <Text style={styles.message}>{message}</Text>
         <View style={styles.buttons}>
           <TouchableOpacity
             accessible
-            accessibilityLabel={resolvedCancelLabel}
             accessibilityRole="button"
             style={[styles.button, styles.cancelButton]}
             testID="confirm-dialog-cancel"
@@ -70,7 +75,6 @@ export default function ConfirmDialog({
           </TouchableOpacity>
           <TouchableOpacity
             accessible
-            accessibilityLabel={confirmLabel}
             accessibilityRole="button"
             style={[styles.button, styles.confirmButton]}
             onPress={onConfirm}
@@ -82,6 +86,10 @@ export default function ConfirmDialog({
       </Pressable>
     </Pressable>
   ) : null;
+
+  if (insideModal) {
+    return dialogContent;
+  }
 
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>

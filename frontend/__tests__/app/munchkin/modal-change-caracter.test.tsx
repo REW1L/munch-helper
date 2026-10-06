@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import { Text, TextInput, TouchableOpacity } from 'react-native';
+import { Modal, Platform, Pressable, Text, TextInput, TouchableOpacity } from 'react-native';
 import { describe, expect, it, vi } from 'vitest';
 
 import ChangeCharacterModal from '../../../app/munchkin/modal-change-caracter';
@@ -27,6 +27,7 @@ vi.mock('react-native', async () => {
   const actual = await vi.importActual<typeof import('react-native')>('react-native');
   return {
     ...actual,
+    Platform: { ...actual.Platform, OS: 'web' },
     Modal: ({ children }: { children?: React.ReactNode }) => children,
   };
 });
@@ -48,6 +49,99 @@ function findConfirmButton(renderer: ReturnType<typeof TestRenderer.create>) {
 }
 
 describe('ChangeCharacterModal', () => {
+  it('keeps delete in the form and limits the footer to save and cancel', async () => {
+    const character = {
+      id: 'char-first',
+      nickname: 'Rogue',
+      color: '#0088CC',
+      gender: ['female'],
+      race: ['Elf'],
+      class: ['Thief'],
+      level: 4,
+      power: 1,
+      avatar: 2,
+    };
+
+    let renderer: ReturnType<typeof TestRenderer.create>;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <ChangeCharacterModal
+          character={character}
+          deleteError={null}
+          onConfirm={vi.fn()}
+          onDelete={vi.fn(async () => undefined)}
+          onCancel={vi.fn()}
+        />
+      );
+    });
+
+    const buttonTestIDs = renderer!.root
+      .findAllByType(TouchableOpacity)
+      .map((button: any) => button.props.testID as string | undefined);
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'delete-character-button')).toHaveLength(1);
+    expect(buttonTestIDs).not.toContain('web-delete-character-button');
+    expect(buttonTestIDs).not.toContain('ios-delete-character-button');
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'save-character-button')).toHaveLength(1);
+    expect(buttonTestIDs.filter((testID: string | undefined) => testID === 'cancel-character-button')).toHaveLength(1);
+  });
+
+  it('presents delete confirmation in the edit modal without opening a nested modal', async () => {
+    const character = {
+      id: 'char-first',
+      nickname: 'Rogue',
+      color: '#0088CC',
+      gender: ['female'],
+      race: ['Elf'],
+      class: ['Thief'],
+      level: 4,
+      power: 1,
+      avatar: 2,
+    };
+
+    let renderer: ReturnType<typeof TestRenderer.create>;
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <ChangeCharacterModal
+          character={character}
+          deleteError={null}
+          onConfirm={vi.fn()}
+          onDelete={vi.fn(async () => undefined)}
+          onCancel={vi.fn()}
+        />
+      );
+    });
+
+    await act(async () => {
+      renderer!.root
+        .findAllByType(TouchableOpacity)
+        .find((button: any) => button.props.testID === 'delete-character-button')!
+        .props.onPress();
+    });
+
+    const confirmButton = findConfirmButton(renderer!);
+    expect(confirmButton).toBeTruthy();
+    expect(confirmButton!.props.accessibilityLabel).toBeUndefined();
+    expect(
+      renderer!.root.findAllByType(Pressable).some((pressable: any) =>
+        Array.isArray(pressable.props.style) &&
+        pressable.props.style.some((style: any) => style?.position === 'absolute')
+      )
+    ).toBe(true);
+    expect(
+      renderer!.root.findAllByType(Modal).filter((modal: any) => modal.props.visible === true)
+    ).toHaveLength(0);
+    let parent = confirmButton!.parent;
+    let nestedInEditModal = false;
+    while (parent) {
+      if (parent.props.testID === 'change-character-modal') {
+        nestedInEditModal = true;
+        break;
+      }
+      parent = parent.parent;
+    }
+    expect(nestedInEditModal).toBe(true);
+  });
+
   it('resets its local draft when the selected character changes mid-session', async () => {
     const firstCharacter = {
       id: 'char-first',
