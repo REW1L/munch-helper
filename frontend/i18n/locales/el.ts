@@ -181,6 +181,7 @@ const el = {
     even: 'Ισοπαλία',
     playersAhead: 'Οι παίκτες προηγούνται',
     monstersAhead: 'Τα τέρατα προηγούνται',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Αποθήκευση',
     saving: 'Αποθήκευση',
     playersWin: 'Νικούν οι παίκτες',

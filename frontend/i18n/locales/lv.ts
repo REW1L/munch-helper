@@ -181,6 +181,7 @@ const lv = {
     even: 'Neizšķirts',
     playersAhead: 'Spēlētāji vada',
     monstersAhead: 'Monstri vada',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Saglabāt',
     saving: 'Notiek saglabāšana',
     playersWin: 'Spēlētāji uzvar',

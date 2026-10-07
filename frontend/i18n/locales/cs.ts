@@ -181,6 +181,7 @@ const cs = {
     even: 'Nerozhodně',
     playersAhead: 'Hráči vedou',
     monstersAhead: 'Příšery vedou',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Uložit',
     saving: 'Ukládání',
     playersWin: 'Hráči vyhrávají',

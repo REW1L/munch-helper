@@ -181,6 +181,7 @@ const et = {
     even: 'Viik',
     playersAhead: 'Mängijad ees',
     monstersAhead: 'Koletised ees',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Salvesta',
     saving: 'Salvestamine',
     playersWin: 'Mängijad võidavad',

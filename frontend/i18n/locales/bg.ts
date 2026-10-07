@@ -181,6 +181,7 @@ const bg = {
     even: 'Равенство',
     playersAhead: 'Играчите водят',
     monstersAhead: 'Чудовищата водят',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Запази',
     saving: 'Запазване',
     playersWin: 'Играчите печелят',

@@ -181,6 +181,7 @@ const pl = {
     even: 'Remis',
     playersAhead: 'Gracze prowadzą',
     monstersAhead: 'Potwory prowadzą',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Zapisz',
     saving: 'Zapisywanie',
     playersWin: 'Gracze wygrywają',

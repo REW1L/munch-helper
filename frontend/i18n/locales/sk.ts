@@ -181,6 +181,7 @@ const sk = {
     even: 'Nerozhodne',
     playersAhead: 'Hráči vedú',
     monstersAhead: 'Príšery vedú',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Uložiť',
     saving: 'Ukladanie',
     playersWin: 'Hráči vyhrávajú',

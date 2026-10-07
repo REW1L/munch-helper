@@ -181,6 +181,7 @@ const mt = {
     even: 'Indaqs',
     playersAhead: 'Il-plejers minn quddiem',
     monstersAhead: 'Il-mostri minn quddiem',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Issejvja',
     saving: 'Qed jiġi ssejvjat',
     playersWin: 'Il-plejers jirbħu',

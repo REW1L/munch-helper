@@ -181,6 +181,7 @@ const ru = {
     even: 'Ничья',
     playersAhead: 'Игроки впереди',
     monstersAhead: 'Монстры впереди',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Сохранить',
     saving: 'Сохранение',
     playersWin: 'Игроки побеждают',

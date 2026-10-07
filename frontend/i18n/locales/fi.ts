@@ -181,6 +181,7 @@ const fi = {
     even: 'Tasan',
     playersAhead: 'Pelaajat johdossa',
     monstersAhead: 'Hirviöt johdossa',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Tallenna',
     saving: 'Tallennetaan',
     playersWin: 'Pelaajat voittavat',

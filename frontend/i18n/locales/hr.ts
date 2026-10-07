@@ -181,6 +181,7 @@ const hr = {
     even: 'Neriješeno',
     playersAhead: 'Igrači vode',
     monstersAhead: 'Čudovišta vode',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Spremi',
     saving: 'Spremanje',
     playersWin: 'Igrači pobjeđuju',

@@ -181,6 +181,7 @@ const ga = {
     even: 'Cothrom',
     playersAhead: 'Imreoirí chun tosaigh',
     monstersAhead: 'Arrachtaí chun tosaigh',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Sábháil',
     saving: 'Á shábháil',
     playersWin: 'Buann na himreoirí',

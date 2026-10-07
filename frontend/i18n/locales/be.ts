@@ -181,6 +181,7 @@ const be = {
     even: 'Нічыя',
     playersAhead: 'Гульцы наперадзе',
     monstersAhead: 'Пачвары наперадзе',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Захаваць',
     saving: 'Захаванне',
     playersWin: 'Гульцы перамагаюць',

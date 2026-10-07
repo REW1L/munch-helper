@@ -181,6 +181,7 @@ const nl = {
     even: 'Gelijk',
     playersAhead: 'Spelers voor',
     monstersAhead: 'Monsters voor',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Opslaan',
     saving: 'Opslaan',
     playersWin: 'Spelers winnen',

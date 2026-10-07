@@ -181,6 +181,7 @@ const pt = {
     even: 'Empate',
     playersAhead: 'Jogadores em vantagem',
     monstersAhead: 'Monstros em vantagem',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Guardar',
     saving: 'A guardar',
     playersWin: 'Os jogadores ganham',

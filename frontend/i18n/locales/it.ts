@@ -181,6 +181,7 @@ const it = {
     even: 'Pari',
     playersAhead: 'Giocatori in vantaggio',
     monstersAhead: 'Mostri in vantaggio',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Salva',
     saving: 'Salvataggio',
     playersWin: 'Vincono i giocatori',
