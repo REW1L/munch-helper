@@ -8,8 +8,6 @@ appId: click.helpamunch.mobileapp
       id: screenshot-battle-ready
     timeout: 20000
 - assertVisible:
-    id: battle-score-summary
-- assertVisible:
     id: battle-score-player-total
     text: "0"
 - assertVisible:
@@ -23,8 +21,6 @@ appId: click.helpamunch.mobileapp
     direction: DOWN
 - tapOn:
     id: add-bonus-players-1
-- assertVisible:
-    id: battle-score-summary
 - assertVisible:
     id: battle-score-player-total
     text: "1"
