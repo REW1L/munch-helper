@@ -181,6 +181,7 @@ const fr = {
     even: 'Égalité',
     playersAhead: 'Joueurs en tête',
     monstersAhead: 'Monstres en tête',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Enregistrer',
     saving: 'Enregistrement',
     playersWin: 'Les joueurs gagnent',

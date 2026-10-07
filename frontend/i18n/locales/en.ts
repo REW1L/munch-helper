@@ -194,6 +194,7 @@ const en = {
     even: 'Even',
     playersAhead: 'Players ahead',
     monstersAhead: 'Monsters ahead',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Save',
     saving: 'Saving',
     playersWin: 'Players Win',

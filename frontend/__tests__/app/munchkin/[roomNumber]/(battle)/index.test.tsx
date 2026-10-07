@@ -31,8 +31,8 @@ const mockBattleState = vi.hoisted(() => {
 const mockCharactersState = vi.hoisted(() => ({
   current: {
     characters: [
-      { id: 'character-1', roomId: 'ROOM42', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
-      { id: 'character-2', roomId: 'ROOM42', userId: 'user-2', nickname: 'Bob', avatar: 1, level: 2, power: 0, class: [], race: [], gender: [], color: '#FFFFFF' },
+      { id: 'character-1', roomId: 'ROOM42', userId: 'user-1', nickname: 'Alice', avatar: 0, level: 4, power: 0, class: [] as string[], race: [], gender: [], color: '#FFFFFF' },
+      { id: 'character-2', roomId: 'ROOM42', userId: 'user-2', nickname: 'Bob', avatar: 1, level: 2, power: 0, class: [] as string[], race: [], gender: [], color: '#FFFFFF' },
     ],
     isLoading: false,
     errorMessage: null,
@@ -71,6 +71,7 @@ vi.mock('react-native-safe-area-context', async () => {
   return {
     SafeAreaView: ({ children, ...props }: { children?: React.ReactNode } & Record<string, unknown>) =>
       ReactRuntime.createElement('div', props, children),
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   };
 });
 
@@ -134,6 +135,7 @@ vi.mock('expo-haptics', () => ({
 
 describe('Battle view', () => {
   beforeEach(() => {
+    mockCharactersState.current.characters[0].class = [];
     mockBattleState.current = mockBattleState.createState();
     mockRoomType.current = 'munchkin';
     mockRoomType.current = 'munchkin';
@@ -173,11 +175,60 @@ describe('Battle view', () => {
 
     expect(screen.getByDisplayValue('Dungeon Door')).toBeTruthy();
     expect(screen.getByText('active')).toBeTruthy();
-    expect(screen.getByText('Player Side')).toBeTruthy();
-    expect(screen.getByText('Monster Side')).toBeTruthy();
+    expect(screen.getByTestId('battle-players-panel')).toBeTruthy();
+    expect(screen.getByTestId('battle-monsters-panel')).toBeTruthy();
     expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Even');
     expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(AppTheme.colors.surfaceSubtle));
+    expect(screen.getByTestId('battle-score-outcome-monsters').textContent).toBe('Monsters Win');
     expect(screen.getByTestId('battle-conclude-button').getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('keeps a live score summary visible and updates it when a bonus flips the result', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 2 }], bonuses: [] },
+    };
+
+    render(<BattleView />);
+
+    const summary = screen.getByTestId('battle-score-summary');
+    expect(summary.getAttribute('accessibilityLabel') ?? summary.getAttribute('aria-label')).toContain('Player Side 0');
+    expect(screen.getByTestId('battle-score-monster-total').textContent).toBe('2');
+    fireEvent.click(screen.getByTestId('add-bonus-players-5'));
+    expect(screen.getByTestId('battle-score-player-total').textContent).toBe('5');
+    expect(screen.getByTestId('battle-score-monster-total').textContent).toBe('2');
+    expect(screen.getByTestId('battle-score-outcome-players').textContent).toBe('Players Win');
+    expect(summary.getAttribute('accessibilityLabel') ?? summary.getAttribute('aria-label')).toContain('Players Win');
+  });
+
+  it('uses the Second Edition Warrior tie rule in the score summary', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockRoomType.current = 'munchkin-2e';
+    mockCharactersState.current.characters[0].class = ['Warrior'];
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 4 }], bonuses: [] },
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('battle-score-outcome-players').textContent).toBe('Players Win');
+  });
+
+  it('keeps monsters ahead on a Second Edition tie without a participating Warrior', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
+    mockRoomType.current = 'munchkin-2e';
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1'], bonuses: [] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 4 }], bonuses: [] },
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('battle-score-outcome-monsters').textContent).toBe('Monsters Win');
   });
 
   it('shows second edition battle guidance without changing Classic presentation', async () => {
@@ -452,6 +503,7 @@ describe('Battle view', () => {
     const view = render(<BattleView />);
     expect(screen.getByText('Alice · Power 4')).toBeTruthy();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('5');
+    expect(screen.getByTestId('battle-score-player-total').textContent).toBe('5');
     expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
 
     mockCharactersState.current = {
@@ -465,6 +517,7 @@ describe('Battle view', () => {
 
     expect(screen.getByText('Alice Prime · Power 9')).toBeTruthy();
     expect(screen.getByTestId('battle-players-total').textContent).toBe('10');
+    expect(screen.getByTestId('battle-score-player-total').textContent).toBe('10');
     expect(screen.getByTestId('save-battle').getAttribute('aria-disabled')).toBe('true');
     expect(mockBattleActions.patch).not.toHaveBeenCalled();
   });

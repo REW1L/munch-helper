@@ -181,6 +181,7 @@ const ro = {
     even: 'Egalitate',
     playersAhead: 'Jucătorii conduc',
     monstersAhead: 'Monștrii conduc',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Salvează',
     saving: 'Se salvează',
     playersWin: 'Jucătorii câștigă',

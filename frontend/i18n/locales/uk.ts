@@ -181,6 +181,7 @@ const uk = {
     even: 'Нічия',
     playersAhead: 'Гравці попереду',
     monstersAhead: 'Монстри попереду',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Зберегти',
     saving: 'Збереження',
     playersWin: 'Гравці перемагають',

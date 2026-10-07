@@ -1,0 +1,57 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: create-character.yaml
+- tapOn:
+    id: screenshot-open-battle
+- extendedWaitUntil:
+    visible:
+      id: screenshot-battle-ready
+    timeout: 20000
+- assertVisible:
+    id: battle-score-player-total
+    text: "0"
+- assertVisible:
+    id: battle-score-monster-total
+    text: "0"
+- assertVisible:
+    id: battle-score-outcome-monsters
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - swipe:
+          start: 50%, 80%
+          end: 50%, 20%
+      - assertVisible:
+          id: battle-score-outcome-monsters
+      - swipe:
+          start: 50%, 20%
+          end: 50%, 80%
+      - tapOn:
+          text: "+1"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: add-bonus-players-1
+          direction: DOWN
+      - tapOn:
+          id: add-bonus-players-1
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: add-bonus-players-1
+          direction: DOWN
+      - tapOn:
+          id: add-bonus-players-1
+- assertVisible:
+    id: battle-score-player-total
+    text: "1"
+- assertVisible:
+    id: battle-score-outcome-players
+- takeScreenshot: battle-score-summary

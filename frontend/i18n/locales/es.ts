@@ -181,6 +181,7 @@ const es = {
     even: 'Empate',
     playersAhead: 'Jugadores en ventaja',
     monstersAhead: 'Monstruos en ventaja',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Guardar',
     saving: 'Guardando',
     playersWin: 'Ganan los jugadores',

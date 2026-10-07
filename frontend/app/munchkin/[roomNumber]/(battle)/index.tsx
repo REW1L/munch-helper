@@ -16,7 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type BattleDraft = Pick<Battle, 'name' | 'playerSide' | 'monsterSide'>;
 
@@ -40,6 +40,7 @@ function areDraftsEqual(left: BattleDraft | null, right: BattleDraft | null): bo
 
 export default function BattleView() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { roomNumber, roomTypeId } = useLocalSearchParams<{ roomNumber: string; roomTypeId?: string }>();
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
@@ -143,6 +144,13 @@ export default function BattleView() {
     : playerTotal > monsterTotal
       ? AppTheme.colors.accent
       : AppTheme.colors.danger;
+  const hasSecondEditionWarrior = isSecondEdition && playerParticipants.active.some(({ character }) => character.class.includes('Warrior'));
+  const playersWin = playerTotal > monsterTotal || (playerTotal === monsterTotal && hasSecondEditionWarrior);
+  const scoreOutcome = playersWin ? t('battle.playersWin') : t('battle.monstersWin');
+  const scoreSummaryLabel = t('battle.scoreSummary', {
+    playerTotal,
+    monsterTotal,
+  });
   const isDirty = !areDraftsEqual(draft, savedDraft);
   const isNameValid = !!draft && draft.name.trim().length > 0;
   const canSave = isDirty && isNameValid && !battleActions.isSaving;
@@ -245,7 +253,7 @@ export default function BattleView() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {(isLoading || charactersLoading) && (
           <View style={styles.stateBlock}>
             <ActivityIndicator color={AppTheme.colors.accent} />
@@ -385,6 +393,33 @@ export default function BattleView() {
           </View>
         )}
       </ScrollView>
+      {!isLoading && !charactersLoading && !errorMessage && !charactersErrorMessage && battle && draft && (
+        <View
+          accessible
+          accessibilityRole="summary"
+          accessibilityLabel={`${t('battle.playerSide')} ${scoreSummaryLabel} ${t('battle.monsterSide')} — ${scoreOutcome}`}
+          style={[styles.scoreSummary, {
+            borderColor: playersWin ? AppTheme.colors.accent : AppTheme.colors.danger,
+            paddingBottom: insets.bottom + AppTheme.spacing.sm,
+          }]}
+          testID="battle-score-summary"
+        >
+          <View style={styles.scoreSummaryRow}>
+            <View style={styles.scoreSummarySide}>
+              <Text style={styles.scoreSummarySideLabel}>{t('battle.playerSide')}</Text>
+              <Text style={styles.scoreSummaryText} testID="battle-score-player-total">{playerTotal}</Text>
+            </View>
+            <Text style={styles.scoreSummaryMultiplier}>×</Text>
+            <View style={styles.scoreSummarySide}>
+              <Text style={styles.scoreSummarySideLabel}>{t('battle.monsterSide')}</Text>
+              <Text style={styles.scoreSummaryText} testID="battle-score-monster-total">{monsterTotal}</Text>
+            </View>
+          </View>
+          <Text style={[styles.scoreSummaryOutcome, { color: playersWin ? AppTheme.colors.accent : AppTheme.colors.danger }]} testID={`battle-score-outcome-${playersWin ? 'players' : 'monsters'}`}>
+            {scoreOutcome}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -394,8 +429,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppTheme.colors.background,
   },
+  scroll: {
+    flex: 1,
+  },
   content: {
     flexGrow: 1,
+    paddingBottom: AppTheme.spacing.md,
     padding: AppTheme.spacing.lg,
     gap: AppTheme.spacing.lg,
   },
@@ -453,6 +492,44 @@ const styles = StyleSheet.create({
   comparisonText: {
     color: AppTheme.colors.textAccentSoft,
     ...AppTheme.typography.labelMd,
+  },
+  scoreSummary: {
+    alignItems: 'center',
+    backgroundColor: AppTheme.colors.elevated,
+    borderTopWidth: 2,
+    paddingHorizontal: AppTheme.spacing.md,
+    paddingVertical: AppTheme.spacing.sm,
+  },
+  scoreSummaryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: AppTheme.spacing.md,
+    width: '100%',
+  },
+  scoreSummarySide: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  scoreSummarySideLabel: {
+    color: AppTheme.colors.textMuted,
+    ...AppTheme.typography.labelSm,
+    textAlign: 'center',
+  },
+  scoreSummaryText: {
+    color: AppTheme.colors.textAccentSoft,
+    ...AppTheme.typography.labelMd,
+    fontSize: 20,
+    lineHeight: 26,
+    textAlign: 'center',
+  },
+  scoreSummaryMultiplier: {
+    color: AppTheme.colors.textMuted,
+    ...AppTheme.typography.labelMd,
+  },
+  scoreSummaryOutcome: {
+    ...AppTheme.typography.labelSm,
+    textAlign: 'center',
   },
   stateBlock: {
     flex: 1,

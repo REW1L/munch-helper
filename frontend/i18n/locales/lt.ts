@@ -181,6 +181,7 @@ const lt = {
     even: 'Lygiosios',
     playersAhead: 'Žaidėjai pirmauja',
     monstersAhead: 'Monstrai pirmauja',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Išsaugoti',
     saving: 'Išsaugoma',
     playersWin: 'Žaidėjai laimi',

@@ -181,6 +181,7 @@ const hu = {
     even: 'Döntetlen',
     playersAhead: 'A játékosok vezetnek',
     monstersAhead: 'A szörnyek vezetnek',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Mentés',
     saving: 'Mentés',
     playersWin: 'A játékosok nyernek',

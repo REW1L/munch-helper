@@ -181,6 +181,7 @@ const sl = {
     even: 'Izenačeno',
     playersAhead: 'Igralci vodijo',
     monstersAhead: 'Pošasti vodijo',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Shrani',
     saving: 'Shranjevanje',
     playersWin: 'Igralci zmagajo',

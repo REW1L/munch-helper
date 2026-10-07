@@ -181,6 +181,7 @@ const sv = {
     even: 'Oavgjort',
     playersAhead: 'Spelare leder',
     monstersAhead: 'Monster leder',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Spara',
     saving: 'Sparar',
     playersWin: 'Spelarna vinner',

@@ -181,6 +181,7 @@ const da = {
     even: 'Uafgjort',
     playersAhead: 'Spillere foran',
     monstersAhead: 'Monstre foran',
+    scoreSummary: '{{playerTotal}} × {{monsterTotal}}',
     save: 'Gem',
     saving: 'Gemmer',
     playersWin: 'Spillerne vinder',
