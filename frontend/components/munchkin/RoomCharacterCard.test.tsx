@@ -105,6 +105,34 @@ describe('RoomCharacterCard', () => {
     act(() => renderer.unmount());
   });
 
+  it.each([
+    { edition: 'Classic', isSecondEdition: false },
+    { edition: 'Second Edition', isSecondEdition: true },
+  ])('sizes the attributes box from its content in $edition tiles', ({ isSecondEdition }) => {
+    let renderer: any;
+    act(() => {
+      renderer = TestRenderer.create(
+        <RoomCharacterCard
+          character={{ ...baseCharacter, goldPieces: 12500 }}
+          onChangePress={vi.fn()}
+          isSecondEdition={isSecondEdition}
+        />
+      );
+    });
+
+    const attributesBoxStyle = StyleSheet.flatten(
+      renderer.root.findByProps({ testID: 'character-attributes-box' }).props.style
+    );
+
+    expect(attributesBoxStyle.width).toBeUndefined();
+    expect(attributesBoxStyle.flexShrink).toBeUndefined();
+    if (isSecondEdition) {
+      expect(renderer.root.findByProps({ testID: 'gold-pieces-char-1' })).toBeTruthy();
+    }
+
+    act(() => renderer.unmount());
+  });
+
   it('shows visual press feedback on the tappable card body', () => {
     const onChangePress = vi.fn();
     let renderer: any;

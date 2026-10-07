@@ -149,7 +149,7 @@ const RoomCharacterCard = memo(function RoomCharacterCard({
           </View>
         </View>
       </Pressable>
-      <View style={styles.attributesBox}>
+      <View style={styles.attributesBox} testID="character-attributes-box">
         <ScrollView nestedScrollEnabled showsVerticalScrollIndicator contentContainerStyle={styles.attributesScrollContent}>
           <AttributeList character={character} showGender={!isSecondEdition} />
         </ScrollView>
@@ -219,8 +219,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   attributesBox: {
-    width: 88,
-    flexShrink: 0,
     paddingHorizontal: 10,
     paddingVertical: 5,
     backgroundColor: 'rgba(0, 0, 0, 0.30)',
