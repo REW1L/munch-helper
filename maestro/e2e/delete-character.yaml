@@ -7,11 +7,34 @@ appId: click.helpamunch.mobileapp
     visible:
       id: change-character-modal
     timeout: 10000
-- scrollUntilVisible:
-    element:
-      id: delete-character-button
-    direction: DOWN
-    timeout: 20000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - repeat:
+          times: 3
+          commands:
+            - swipe:
+                start: 50%, 70%
+                end: 50%, 35%
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: delete-character-button
+          direction: DOWN
+          timeout: 20000
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: delete-character-button
+          direction: DOWN
+          timeout: 20000
 - assertVisible:
     id: delete-character-button
 - assertVisible:

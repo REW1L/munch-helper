@@ -7,5 +7,5 @@
 
 ## 2. Validate and prepare review evidence
 
-- [x] 2.1 Run the frontend targeted test, lint, typecheck, and mobile E2E gate; make the delete-character flow scroll to its target reliably on Android.
+- [x] 2.1 Run the frontend targeted test, lint, typecheck, and mobile E2E gate; make the delete-character flow scroll to its target reliably on Android while retaining the working swipe sequence for web.
 - [x] 2.2 Capture before/after screenshots for Classic and Second Edition tiles at iPhone SE and iPhone 16 Pro sizes for the PR description.
