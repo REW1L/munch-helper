@@ -19,16 +19,14 @@ appId: click.helpamunch.mobileapp
     when:
       platform: Web
     commands:
-      - scrollUntilVisible:
-          element:
-            id: Discard battle
-          direction: DOWN
+      - swipe:
+          start: 50%, 80%
+          end: 50%, 20%
       - assertVisible:
           id: battle-score-outcome-monsters
-      - scrollUntilVisible:
-          element:
-            text: "+1"
-          direction: UP
+      - swipe:
+          start: 50%, 20%
+          end: 50%, 80%
       - tapOn:
           text: "+1"
 - runFlow:
