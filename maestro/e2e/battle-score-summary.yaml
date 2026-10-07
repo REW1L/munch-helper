@@ -15,12 +15,42 @@ appId: click.helpamunch.mobileapp
     text: "0"
 - assertVisible:
     id: battle-score-outcome-monsters
-- scrollUntilVisible:
-    element:
-      id: add-bonus-players-1
-    direction: DOWN
-- tapOn:
-    id: add-bonus-players-1
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: Discard battle
+          direction: DOWN
+      - assertVisible:
+          id: battle-score-outcome-monsters
+      - scrollUntilVisible:
+          element:
+            text: "+1"
+          direction: UP
+      - tapOn:
+          text: "+1"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: add-bonus-players-1
+          direction: DOWN
+      - tapOn:
+          id: add-bonus-players-1
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: add-bonus-players-1
+          direction: DOWN
+      - tapOn:
+          id: add-bonus-players-1
 - assertVisible:
     id: battle-score-player-total
     text: "1"
