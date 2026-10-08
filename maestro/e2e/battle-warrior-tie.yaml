@@ -10,7 +10,7 @@ appId: click.helpamunch.mobileapp
     timeout: 20000
 - scrollUntilVisible:
     element:
-      id: add-character
+      id: select-character-${output.warriorCharacterId}
     direction: DOWN
 - tapOn:
     id: select-character-${output.warriorCharacterId}
