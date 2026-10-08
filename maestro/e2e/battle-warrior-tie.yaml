@@ -8,28 +8,88 @@ appId: click.helpamunch.mobileapp
     visible:
       id: screenshot-battle-ready
     timeout: 20000
-- scrollUntilVisible:
-    element:
-      id: select-character-${output.warriorCharacterId}
-    direction: DOWN
-- tapOn:
-    id: select-character-${output.warriorCharacterId}
-- tapOn:
-    id: add-character
-- scrollUntilVisible:
-    element:
-      id: open-add-monster
-    direction: DOWN
-- tapOn:
-    id: open-add-monster
-- tapOn:
-    id: monster-level-input
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "E2E Created.*"
+          direction: DOWN
+      - tapOn:
+          text: "E2E Created.*"
+      - tapOn:
+          id: "Add selected character"
+      - scrollUntilVisible:
+          element:
+            text: "Add monster"
+          direction: DOWN
+      - tapOn:
+          text: "Add monster"
+      - tapOn:
+          id: "Monster level"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: select-character-${output.warriorCharacterId}
+          direction: DOWN
+      - tapOn:
+          id: select-character-${output.warriorCharacterId}
+      - tapOn:
+          id: add-character
+      - scrollUntilVisible:
+          element:
+            id: open-add-monster
+          direction: DOWN
+      - tapOn:
+          id: open-add-monster
+      - tapOn:
+          id: monster-level-input
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: select-character-${output.warriorCharacterId}
+          direction: DOWN
+      - tapOn:
+          id: select-character-${output.warriorCharacterId}
+      - tapOn:
+          id: add-character
+      - scrollUntilVisible:
+          element:
+            id: open-add-monster
+          direction: DOWN
+      - tapOn:
+          id: open-add-monster
+      - tapOn:
+          id: monster-level-input
 - eraseText
 - inputText: "1"
 - tapOn:
     text: "Level:"
-- tapOn:
-    id: save-monster
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: "Save monster"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: save-monster
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: save-monster
 - assertNotVisible:
     id: add-monster-dialog
 - assertVisible:
