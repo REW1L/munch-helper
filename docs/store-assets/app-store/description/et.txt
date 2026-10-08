@@ -1,5 +1,7 @@
 Munch Helper on lauamängukaaslane, mis hoiab su Munchkini laua sünkroonis. Kõik näevad reaalajas samu tasemeid, varustust ja punkte, nii et mäng liigub edasi ja keegi ei kaota jälge.
 
+Tuba luues vali Munchkin Classic või teine väljaanne. Teise väljaande tubades saab jälgida kuldmünte ning sisseehitatud reeglite juhend tutvustab mõlemat väljaannet.
+
 Mänguõhtu peaks olema naer sõpradega ja võidujaht — mitte sodimine paberitükkidele. Munch Helper loeb sinu eest, et saaksid lauda nautida.
 
 Siin on, mida saad teha kohe, kui istud:

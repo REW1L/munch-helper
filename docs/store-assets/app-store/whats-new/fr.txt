@@ -1,3 +1,3 @@
-Retrouvez les règles officielles de Munchkin Classic dans l’application grâce à notre nouveau guide localisé.
+Choisissez Munchkin Classic ou la deuxième édition pour votre salle, suivez les pièces d’or en deuxième édition et consultez le guide des règles traduit depuis la table.
 
-Nous avons également corrigé l’affichage de la confirmation d’abandon d’un combat et apporté des améliorations pour une expérience plus fluide.
+Le résumé des scores reste désormais épinglé dans la vue de combat. Nous avons aussi actualisé les fiches de personnage et apporté d’autres améliorations.

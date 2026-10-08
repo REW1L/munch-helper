@@ -1,56 +1,70 @@
 <en-US>
-Find the official Munchkin Classic rules right in the app with our new localized rules guide.
-We also fixed the battle discard confirmation layout and made general improvements for a smoother experience.
+Choose Munchkin Classic or Second Edition for your room, track Gold Pieces in Second Edition, and open the localized rules guide right from the table.
+
+The battle view now keeps the score summary pinned while you play. We also refreshed character cards and made general improvements for a smoother game night.
 </en-US>
 <be>
-Афіцыйныя правілы Munchkin Classic цяпер даступныя непасрэдна ў праграме ў новым лакалізаваным даведніку.
-Мы таксама выправілі адлюстраванне пацвярджэння адхілення бітвы і ўнеслі іншыя паляпшэнні для больш зручнай працы праграмы.
+Выбірайце Munchkin Classic або Другое выданне для пакоя, сачыце за залатымі манетамі ў Другім выданні і адкрывайце лакалізаваны даведнік па правілах проста за гульнявым сталом.
+
+У бітве цяпер замацавана зводка рахунку. Мы таксама абнавілі карткі персанажаў і зрабілі іншыя паляпшэнні.
 </be>
 <de-DE>
-Die offiziellen Regeln von Munchkin Classic findest du jetzt direkt in der App in unserem neuen lokalisierten Regelguide.
-Außerdem haben wir die Anzeige der Bestätigung beim Verwerfen eines Kampfes korrigiert und weitere Verbesserungen für eine reibungslosere Nutzung vorgenommen.
+Wähle für deinen Raum Munchkin Classic oder die Zweite Edition, erfasse Goldstücke in der Zweiten Edition und öffne den lokalisierten Regelführer direkt am Tisch.
+
+In der Kampfansicht bleibt die Punkteübersicht jetzt angeheftet. Außerdem haben wir die Charakterkarten überarbeitet und weitere Verbesserungen vorgenommen.
 </de-DE>
 <es-419>
-Consulta las reglas oficiales de Munchkin Classic directamente en la app con nuestra nueva guía localizada.
-También corregimos la confirmación para descartar un combate e hicimos mejoras para que la experiencia sea más fluida.
+Elige Munchkin Classic o la segunda edición para tu sala, lleva la cuenta de las monedas de oro en la segunda edición y consulta la guía de reglas traducida desde la mesa.
+
+La vista de combate ahora mantiene fijado el resumen de puntuación. También renovamos las tarjetas de personaje e hicimos otras mejoras.
 </es-419>
 <es-ES>
-Consulta las reglas oficiales de Munchkin Classic directamente en la aplicación con nuestra nueva guía traducida.
-También corregimos la confirmación para descartar un combate e hicimos otras mejoras para que la experiencia sea más fluida.
+Elige Munchkin Classic o la segunda edición para tu sala, lleva la cuenta de las monedas de oro en la segunda edición y consulta la guía de reglas traducida desde la mesa.
+
+La vista de combate ahora mantiene fijado el resumen de puntuación. También renovamos las tarjetas de personaje e hicimos otras mejoras.
 </es-ES>
 <es-US>
-Consulta las reglas oficiales de Munchkin Classic directamente en la app con nuestra nueva guía localizada.
-También corregimos la confirmación para descartar un combate e hicimos mejoras para que la experiencia sea más fluida.
+Elige Munchkin Classic o la segunda edición para tu sala, lleva la cuenta de las monedas de oro en la segunda edición y consulta la guía de reglas traducida desde la mesa.
+
+La vista de combate ahora mantiene fijado el resumen de puntuación. También renovamos las tarjetas de personaje e hicimos otras mejoras.
 </es-US>
 <et>
-Munchkin Classicu ametlikud reeglid leiad nüüd otse rakendusest uuest tõlgitud juhendist.
-Parandasime ka lahingu hülgamise kinnituse paigutust ja tegime muid täiustusi, et rakenduse kasutamine oleks sujuvam.
+Vali oma tuppa Munchkin Classic või teine väljaanne, jälgi teises väljaandes kuldmünte ja ava tõlgitud reeglite juhend otse mängulaua juurest.
+
+Lahinguvaates püsib nüüd punktide kokkuvõte kinnitatuna. Värskendasime ka tegelaste kaarte ja tegime muid täiustusi.
 </et>
 <fr-CA>
-Consultez les règles officielles de Munchkin Classic directement dans l’application grâce à notre nouveau guide localisé.
-Nous avons aussi corrigé l’affichage de la confirmation d’abandon d’un combat et apporté des améliorations pour une expérience plus fluide.
+Choisissez Munchkin Classic ou la deuxième édition pour votre salle, suivez les pièces d’or en deuxième édition et consultez le guide des règles traduit depuis la table.
+
+Le résumé des scores reste désormais épinglé dans la vue de combat. Nous avons aussi actualisé les fiches de personnage et apporté d’autres améliorations.
 </fr-CA>
 <fr-FR>
-Retrouvez les règles officielles de Munchkin Classic dans l’application grâce à notre nouveau guide localisé.
-Nous avons également corrigé l’affichage de la confirmation d’abandon d’un combat et apporté des améliorations pour une expérience plus fluide.
+Choisissez Munchkin Classic ou la deuxième édition pour votre salle, suivez les pièces d’or en deuxième édition et consultez le guide des règles traduit depuis la table.
+
+Le résumé des scores reste désormais épinglé dans la vue de combat. Nous avons aussi actualisé les fiches de personnage et apporté d’autres améliorations.
 </fr-FR>
 <lt>
-Oficialias Munchkin Classic taisykles dabar rasite programėlėje, naujame lokalizuotame vadove.
-Taip pat pataisėme kovos atmetimo patvirtinimo išdėstymą ir atlikome kitų patobulinimų, kad programėle naudotis būtų sklandžiau.
+Kambaryje rinkitės „Munchkin Classic“ arba antrąjį leidimą, stebėkite aukso gabalėlius antrojo leidimo žaidime ir atverkite išverstą taisyklių vadovą tiesiai prie stalo.
+
+Kovos lange dabar prisegta taškų suvestinė. Taip pat atnaujinome veikėjų korteles ir atlikome kitų patobulinimų.
 </lt>
 <lv>
-Oficiālie Munchkin Classic noteikumi tagad pieejami lietotnē jaunā lokalizētā ceļvedī.
-Mēs arī labojām cīņas atmešanas apstiprinājuma izkārtojumu un veicām citus uzlabojumus, lai lietotne darbotos ērtāk.
+Istabai izvēlies Munchkin Classic vai otro izdevumu, seko zelta monētām otrajā izdevumā un atver tulkoto noteikumu ceļvedi tieši pie galda.
+
+Cīņas skatā tagad ir piesprausts punktu kopsavilkums. Mēs arī atjaunojām tēlu kartītes un veicām citus uzlabojumus.
 </lv>
 <pl-PL>
-Oficjalne zasady Munchkin Classic znajdziesz teraz bezpośrednio w aplikacji dzięki nowemu, przetłumaczonemu przewodnikowi.
-Poprawiliśmy też układ potwierdzenia odrzucenia walki i wprowadziliśmy inne ulepszenia, aby korzystanie z aplikacji było płynniejsze.
+Wybierz w pokoju Munchkin Classic lub Drugą Edycję, śledź sztuki złota w Drugiej Edycji i otwórz przetłumaczony przewodnik po zasadach prosto przy stole.
+
+W widoku walki podsumowanie wyniku jest teraz przypięte. Odświeżyliśmy też karty postaci i wprowadziliśmy inne ulepszenia.
 </pl-PL>
 <ru-RU>
-Официальные правила Munchkin Classic теперь доступны прямо в приложении в новом локализованном руководстве.
-Мы также исправили отображение подтверждения отмены сражения и внесли другие улучшения для более удобной работы приложения.
+Выбирайте для комнаты Munchkin Classic или Второе издание, отслеживайте золотые монеты во Втором издании и открывайте локализованный справочник правил прямо за игровым столом.
+
+В окне боя теперь закреплена сводка очков. Мы также обновили карточки персонажей и внесли другие улучшения.
 </ru-RU>
 <uk>
-Офіційні правила Munchkin Classic тепер доступні безпосередньо в застосунку в новому локалізованому посібнику.
-Ми також виправили відображення підтвердження скасування битви та внесли інші покращення для зручнішої роботи застосунку.
+Вибирайте для кімнати Munchkin Classic або Друге видання, відстежуйте золоті монети в Другому виданні та відкривайте локалізований довідник правил просто за ігровим столом.
+
+У вікні бою тепер закріплено підсумок очок. Ми також оновили картки персонажів і внесли інші покращення.
 </uk>

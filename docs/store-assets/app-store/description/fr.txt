@@ -1,5 +1,7 @@
 Munch Helper est le compagnon de table qui garde votre table de Munchkin synchronisée. Tout le monde voit les mêmes niveaux, l'équipement et le score en temps réel, pour que la partie avance sans que personne ne perde le fil.
 
+Choisissez Munchkin Classic ou la deuxième édition en créant une salle. Les salles de deuxième édition suivent les pièces d’or, et le guide des règles intégré accompagne votre groupe dans les deux éditions.
+
 Une soirée jeux, c'est rire entre amis et courir après la victoire — pas gribouiller sur des bouts de papier. Munch Helper compte à votre place pour que vous profitiez de la table.
 
 Voici ce que vous pouvez faire dès que vous vous asseyez :

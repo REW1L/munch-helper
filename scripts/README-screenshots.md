@@ -15,9 +15,9 @@ The automation uses:
 
 The published phone screenshot story is four slides, in this order:
 
-1. `rooms-home.png` - gather the whole table in one room
-2. `room-view.png` - everyone gains power and changes class in real time
-3. `battle.png` - team up to fight the monster
+1. `rooms-home.png` - choose Classic or Second Edition and gather the whole table in one room
+2. `room-view.png` - keep character stats and room activity together on the shared table
+3. `battle.png` - team up against a monster with the score summary pinned in view
 4. `log.png` - replay every twist in the game history
 
 iOS source screenshots are captured only for the 6.9 inch App Store size:
@@ -32,6 +32,11 @@ Captioned, store-ready slides are written by locale:
 
 - `screenshots/iphone69_store_preview/en`
 - `screenshots/android1080x2400_store_preview/en`
+
+For release review, the generated store-ready previews are also checked in at
+`docs/store-assets/screenshots/iphone69_store_preview/` and
+`docs/store-assets/screenshots/android1080x2400_store_preview/` so the final
+image set travels with its localized store copy.
 
 The canonical localized store set is defined in
 `scripts/store-screenshot-locales.json` and currently contains `en`, `pl`,

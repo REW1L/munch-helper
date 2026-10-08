@@ -10,5 +10,5 @@ appId: click.helpamunch.mobileapp
     text: "screenshot-open-rooms"
 - extendedWaitUntil:
     visible:
-      text: "screenshot-open-room-join"
+      id: "screenshot-open-room-join"
     timeout: 15000
