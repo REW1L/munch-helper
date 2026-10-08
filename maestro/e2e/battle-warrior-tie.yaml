@@ -92,8 +92,49 @@ appId: click.helpamunch.mobileapp
     commands:
       - tapOn:
           id: save-monster
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - repeat:
+          times: 3
+          commands:
+            - swipe:
+                start: 50%, 20%
+                end: 50%, 80%
+      - tapOn:
+          id: "Save battle"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: save-battle
+          direction: UP
+      - tapOn:
+          id: save-battle
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: save-battle
+          direction: UP
+      - tapOn:
+          id: save-battle
+- runScript: set-monster-level.js
 - assertNotVisible:
     id: add-monster-dialog
+- extendedWaitUntil:
+    visible:
+      id: battle-score-monster-total
+      text: "1"
+    timeout: 20000
+- assertVisible:
+    id: battle-score-player-total
+    text: "1"
 - assertVisible:
     id: battle-score-outcome-players
 - scrollUntilVisible:
