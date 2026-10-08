@@ -1,0 +1,146 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: create-character.yaml
+- runScript: set-warrior.js
+- tapOn:
+    id: screenshot-open-battle
+- extendedWaitUntil:
+    visible:
+      id: screenshot-battle-ready
+    timeout: 20000
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - scrollUntilVisible:
+          element:
+            text: "E2E Created.*"
+          direction: DOWN
+      - tapOn:
+          text: "E2E Created.*"
+      - tapOn:
+          id: "Add selected character"
+      - repeat:
+          times: 3
+          commands:
+            - swipe:
+                start: 50%, 80%
+                end: 50%, 20%
+      - tapOn:
+          text: "Add monster"
+      - tapOn:
+          id: "Monster level"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: select-character-${output.warriorCharacterId}
+          direction: DOWN
+      - tapOn:
+          id: select-character-${output.warriorCharacterId}
+      - tapOn:
+          id: add-character
+      - scrollUntilVisible:
+          element:
+            id: open-add-monster
+          direction: DOWN
+      - tapOn:
+          id: open-add-monster
+      - tapOn:
+          id: monster-level-input
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: select-character-${output.warriorCharacterId}
+          direction: DOWN
+      - tapOn:
+          id: select-character-${output.warriorCharacterId}
+      - tapOn:
+          id: add-character
+      - scrollUntilVisible:
+          element:
+            id: open-add-monster
+          direction: DOWN
+      - tapOn:
+          id: open-add-monster
+      - tapOn:
+          id: monster-level-input
+- eraseText
+- inputText: "1"
+- tapOn:
+    text: "Level:"
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - tapOn:
+          id: "Save monster"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: save-monster
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: save-monster
+- runFlow:
+    when:
+      platform: Web
+    commands:
+      - repeat:
+          times: 3
+          commands:
+            - swipe:
+                start: 50%, 20%
+                end: 50%, 80%
+      - tapOn:
+          id: "Save battle"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: save-battle
+          direction: UP
+      - tapOn:
+          id: save-battle
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: save-battle
+          direction: UP
+      - tapOn:
+          id: save-battle
+- runScript: set-monster-level.js
+- assertNotVisible:
+    id: add-monster-dialog
+- extendedWaitUntil:
+    visible:
+      id: battle-score-monster-total
+      text: "1"
+    timeout: 20000
+- assertVisible:
+    id: battle-score-player-total
+    text: "1"
+- assertVisible:
+    id: battle-score-outcome-players
+- scrollUntilVisible:
+    element:
+      id: battle-comparison-label
+    direction: UP
+- assertVisible:
+    id: battle-comparison-label
+- takeScreenshot: battle-warrior-tie

@@ -202,10 +202,9 @@ describe('Battle view', () => {
     expect(summary.getAttribute('accessibilityLabel') ?? summary.getAttribute('aria-label')).toContain('Players Win');
   });
 
-  it('uses the Second Edition Warrior tie rule in the score summary', async () => {
+  it('uses the Warrior tie rule in Classic and aligns the comparison label and tone', async () => {
     const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
-    mockRoomType.current = 'munchkin-2e';
-    mockCharactersState.current.characters[0].class = ['Warrior'];
+    mockCharactersState.current.characters[0].class = [' Warrior '];
     mockBattleState.current.battle = {
       ...mockBattleState.current.battle!,
       playerSide: { characterIds: ['character-1'], bonuses: [] },
@@ -215,19 +214,40 @@ describe('Battle view', () => {
     render(<BattleView />);
 
     expect(screen.getByTestId('battle-score-outcome-players').textContent).toBe('Players Win');
+    expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Players ahead');
+    expect(screen.getByTestId('battle-comparison-container').getAttribute('style')).toContain(hexToRgbStyleValue(AppTheme.colors.accent));
   });
 
-  it('keeps monsters ahead on a Second Edition tie without a participating Warrior', async () => {
+  it('uses a participating helper Warrior for a normalized Second Edition tie', async () => {
     const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
     mockRoomType.current = 'munchkin-2e';
+    mockCharactersState.current.characters[1].class = ['wArRiOr'];
+    mockBattleState.current.battle = {
+      ...mockBattleState.current.battle!,
+      playerSide: { characterIds: ['character-1', 'character-2'], bonuses: [] },
+      monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 6 }], bonuses: [] },
+    };
+
+    render(<BattleView />);
+
+    expect(screen.getByTestId('battle-score-outcome-players').textContent).toBe('Players Win');
+    expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Players ahead');
+  });
+
+  it('keeps monsters ahead on a tie without a participating Warrior in either edition', async () => {
+    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
     mockBattleState.current.battle = {
       ...mockBattleState.current.battle!,
       playerSide: { characterIds: ['character-1'], bonuses: [] },
       monsterSide: { monsters: [{ id: 'monster-1', name: 'Fungeater', level: 4 }], bonuses: [] },
     };
 
-    render(<BattleView />);
+    const view = render(<BattleView />);
 
+    expect(screen.getByTestId('battle-score-outcome-monsters').textContent).toBe('Monsters Win');
+    expect(screen.getByTestId('battle-comparison-label').textContent).toBe('Even');
+    mockRoomType.current = 'munchkin-2e';
+    view.rerender(<BattleView />);
     expect(screen.getByTestId('battle-score-outcome-monsters').textContent).toBe('Monsters Win');
   });
 

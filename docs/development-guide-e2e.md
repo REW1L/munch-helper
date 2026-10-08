@@ -24,7 +24,7 @@ Run the exact gate directly for every `frontend/` change before opening a PR. Do
 npm run test:e2e:mobile
 ```
 
-The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`; set `E2E_ANDROID_DEVICE` for a connected device Expo cannot resolve by default). If unavailable hardware or tooling blocks a platform, run all other applicable checks, document the exact gap in the PR, and leave it open. `git commit --no-verify` bypasses the hook; do not use that bypass or another hook bypass for frontend changes. A missing or bypassed Git hook does not count as a passing mobile E2E run.
+The gate requires an available iOS simulator, Docker, Expo native toolchains, and Maestro. It uses a connected Android device when available, otherwise starts the first installed Android Virtual Device (override it with `E2E_ANDROID_AVD`). Set `E2E_ANDROID_DEVICE` to choose a specific connected ADB serial when multiple devices are attached. If unavailable hardware or tooling blocks a platform, run all other applicable checks, document the exact gap in the PR, and leave it open. `git commit --no-verify` bypasses the hook; do not use that bypass or another hook bypass for frontend changes. A missing or bypassed Git hook does not count as a passing mobile E2E run.
 
 Each run needs a new room and two users. Generate a ready-to-source fixture after the stack is running:
 
@@ -78,7 +78,7 @@ The web driver requires a URL in each flow, while native flows require an app id
 
 Add YAML under `maestro/e2e/` and select controls by `id` whenever an app `testID` exists. Keep it platform-neutral, launch with `clearState`, and use `extendedWaitUntil` for asynchronous UI or WebSocket updates. If a needed control has no stable ID, add a prop-only `testID` and verify the web build exposes it as `data-testid`. For cross-user coverage, wait for `room-websocket-connected`, then use a `runScript` actor-B request and assert the UI update—never use a fixed sleep.
 
-`maestro/e2e/munchkin_second_edition_room.yaml` covers creating a 2e room (which also creates and joins its owner character) and opening the 2e rules guide. `maestro/e2e/room_loading_header.yaml` joins a nonexistent room code and asserts the loading screen keeps a neutral `Munch ⚔️` header instead of assuming Classic (issue #166).
+`maestro/e2e/munchkin_second_edition_room.yaml` covers creating a 2e room (which also creates and joins its owner character) and opening the 2e rules guide. `maestro/e2e/battle-warrior-tie.yaml` sets the room character to Warrior, joins it to a battle tied with a level-one monster, and asserts the player-win guidance. `maestro/e2e/room_loading_header.yaml` joins a nonexistent room code and asserts the loading screen keeps a neutral `Munch ⚔️` header instead of assuming Classic (issue #166).
 
 For substantial frontend changes that add or fix user-visible functionality, add or update a scenario-specific flow for the affected user path. For UI regressions, assert the reported behavior directly; a passing suite that never exercises the changed screen or control is not sufficient coverage.
 
