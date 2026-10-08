@@ -168,6 +168,7 @@ appId: click.helpamunch.mobileapp
       - extendedWaitUntil:
           visible: "Gold Pieces: 700"
           timeout: 10000
+
 - takeScreenshot: second-edition-character-card
 - tapOn:
     id: change-character-button
@@ -222,3 +223,12 @@ appId: click.helpamunch.mobileapp
       - extendedWaitUntil:
           visible: "Gold Pieces: 700"
           timeout: 10000
+- tapOn:
+    id: screenshot-open-battle
+- extendedWaitUntil:
+    visible:
+      id: screenshot-battle-ready
+    timeout: 20000
+- assertNotVisible:
+    id: second-edition-battle-guidance
+- takeScreenshot: second-edition-battle-without-repeated-rules

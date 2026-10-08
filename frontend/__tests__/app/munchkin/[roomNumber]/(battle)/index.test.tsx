@@ -231,25 +231,15 @@ describe('Battle view', () => {
     expect(screen.getByTestId('battle-score-outcome-monsters').textContent).toBe('Monsters Win');
   });
 
-  it('shows second edition battle guidance without changing Classic presentation', async () => {
+  it('omits second edition battle guidance while keeping the editor available', async () => {
     const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
     mockRoomType.current = 'munchkin-2e';
 
     render(<BattleView />);
 
-    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('Warrior');
-    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('player-managed');
-  });
-
-  it('shows second edition battle guidance without changing Classic presentation', async () => {
-    const { default: BattleView } = await import('../../../../../app/munchkin/[roomNumber]/(battle)');
-    mockRoomType.current = 'munchkin-2e';
-
-    render(<BattleView />);
-
-    expect(screen.getByTestId('second-edition-battle-guidance')).toBeTruthy();
-    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('Warrior');
-    expect(screen.getByTestId('second-edition-battle-guidance').textContent).toContain('not a rules check');
+    expect(screen.queryByTestId('second-edition-battle-guidance')).toBeNull();
+    expect(screen.getByTestId('battle-name-input')).toBeTruthy();
+    expect(screen.getByTestId('battle-players-panel')).toBeTruthy();
   });
 
   it('syncs the visible draft when the same battle refetches and there are no local edits', async () => {

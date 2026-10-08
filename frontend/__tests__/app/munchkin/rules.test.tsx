@@ -93,6 +93,8 @@ describe('Munchkin rules route', () => {
     expect(screen.getByText(/three to six|3–6/i)).toBeTruthy();
     expect(screen.getByText('Gold Pieces')).toBeTruthy();
     expect(screen.getByText(/physical cards, decks, dice/i)).toBeTruthy();
+    expect(screen.getByText(i18n.t('gameRules.secondEditionCombatBody'))).toBeTruthy();
+    expect(screen.getByText(i18n.t('gameRules.secondEditionNotice'))).toBeTruthy();
     const source = screen.getByRole('link', { name: 'Open the official Munchkin Second Edition rules PDF' });
     await act(async () => { fireEvent.click(source); });
     expect(mockOpenURL).toHaveBeenCalledWith('https://munchkin.game/site-munchkin/assets/files/3922/munchkin_2e_rules.pdf');
