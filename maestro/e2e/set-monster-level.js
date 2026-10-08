@@ -1,10 +1,6 @@
-let battle = null;
-for (let attempt = 0; attempt < 20; attempt += 1) {
-  const response = http.get(`${API_URL}/battles?roomId=${ROOM_ID}&status=active`);
-  if (response.status !== 200) throw new Error(`Could not load the active battle: ${response.status}`);
-  battle = json(response.body);
-  if (battle?.monsterSide?.monsters?.length) break;
-}
+const response = http.get(`${API_URL}/battles?roomId=${ROOM_ID}&status=active`);
+if (response.status !== 200) throw new Error(`Could not load the active battle: ${response.status}`);
+const battle = json(response.body);
 if (!battle?.monsterSide?.monsters?.length) throw new Error('The flow did not add a monster');
 
 const monsterSide = {
