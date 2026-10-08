@@ -269,10 +269,6 @@ export default function BattleView() {
 
         {!isLoading && !charactersLoading && !errorMessage && !charactersErrorMessage && battle && draft && (
           <View accessible accessibilityLabel="screenshot-battle-ready" style={styles.body} testID="screenshot-battle-ready">
-            {isSecondEdition && <View style={styles.stateBlock} testID="second-edition-battle-guidance">
-              <Text style={styles.stateText}>{t('gameRules.secondEditionCombatBody')}</Text>
-              <Text style={styles.stateText}>{t('gameRules.secondEditionNotice')}</Text>
-            </View>}
             <View style={styles.header}>
               <View style={styles.headerText}>
                 <TextInput
