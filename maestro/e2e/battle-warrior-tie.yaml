@@ -20,10 +20,12 @@ appId: click.helpamunch.mobileapp
           text: "E2E Created.*"
       - tapOn:
           id: "Add selected character"
-      - scrollUntilVisible:
-          element:
-            text: "Add monster"
-          direction: DOWN
+      - repeat:
+          times: 3
+          commands:
+            - swipe:
+                start: 50%, 80%
+                end: 50%, 20%
       - tapOn:
           text: "Add monster"
       - tapOn:
