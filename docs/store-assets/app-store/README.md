@@ -16,11 +16,9 @@ Store listing copy for the App Store submission.
 
 `en` is the source; every other file is a localization of it.
 
-Locales mirror the app's supported languages
-(`frontend/i18n/languages.ts`): `en`, `pl`, `de`, `fr`, `lt`, `lv`, `et`,
-`ru`, `be`, `uk`.
-
-Store-only locales (App Store listing, no matching app UI language): `es`.
+The listing currently has copy for `en`, `pl`, `de`, `fr`, `lt`, `lv`, `et`,
+`ru`, `be`, `uk`, and `es`. These are a subset of the app's supported
+languages in `frontend/i18n/languages.ts`.
 
 ## Screenshot localization
 

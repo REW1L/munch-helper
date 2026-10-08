@@ -1,5 +1,7 @@
 Munch Helper is the tabletop companion that keeps your Munchkin table in sync. Everyone sees the same levels, gear and score in real time, so the game keeps moving and no one loses their place.
 
+Choose Munchkin Classic or Second Edition when you create a room. Second Edition rooms track Gold Pieces, and the in-app rules guide helps your group get oriented in either edition.
+
 Game night should be about laughing with friends and chasing the win — not scraps of paper. Munch Helper does the counting so you can enjoy the table.
 
 Here is what you can do the moment you sit down:

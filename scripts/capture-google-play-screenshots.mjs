@@ -456,7 +456,6 @@ async function captureForDevice(device, locale) {
 
   process.stdout.write(`\n==> Capturing Android ${size.width}x${size.height} (${locale}) on ${device.serial}\n`);
   await applyReversePorts(device.serial);
-  await applyStatusBar(device.serial);
 
   try {
     await run('adb', ['-s', device.serial, 'uninstall', 'click.helpamunch.mobileapp'], { allowFailure: true });
@@ -465,6 +464,9 @@ async function captureForDevice(device, locale) {
     await buildAndInstallForLocale(device, locale);
     await setAppLocale(device.serial, locale);
     await applyReversePorts(device.serial);
+    // Expo's release build and install can reset demo mode. Apply it afterward
+    // so captured status bars retain the store's fixed 9:41 time and battery.
+    await applyStatusBar(device.serial);
 
     for (const flow of flows) {
       process.stdout.write(`   -> ${flow.file}\n`);

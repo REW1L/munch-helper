@@ -1,3 +1,3 @@
-Find the official Munchkin Classic rules right in the app with our new localized rules guide.
+Choose Munchkin Classic or Second Edition for your room, track Gold Pieces in Second Edition, and open the localized rules guide right from the table.
 
-We also fixed the battle discard confirmation layout and made general improvements for a smoother experience.
+The battle view now keeps the score summary pinned while you play. We also refreshed character cards and made general improvements for a smoother game night.

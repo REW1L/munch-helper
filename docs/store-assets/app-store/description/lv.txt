@@ -1,5 +1,7 @@
 Munch Helper ir galda spēļu palīgs, kas notur tavu Munchkin galdu sinhronizētu. Visi reāllaikā redz vienus un tos pašus līmeņus, ekipējumu un punktus, tāpēc spēle rit uz priekšu un neviens nepazaudē pavedienu.
 
+Veidojot istabu, izvēlies Munchkin Classic vai otro izdevumu. Otrā izdevuma istabās var sekot zelta monētām, un iebūvētais noteikumu ceļvedis palīdzēs iepazīt abus izdevumus.
+
 Spēļu vakaram jābūt smiekliem ar draugiem un cīņai par uzvaru — nevis skricelējumiem uz papīra. Munch Helper skaita tavā vietā, lai tu varētu baudīt spēli pie galda.
 
 Lūk, ko vari darīt, tiklīdz apsēdies:

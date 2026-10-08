@@ -1,5 +1,7 @@
 Munch Helper to towarzysz przy stole, który utrzymuje twój stół Munchkina w synchronizacji. Wszyscy widzą te same poziomy, ekwipunek i wynik w czasie rzeczywistym, więc gra toczy się dalej i nikt nie traci rachuby.
 
+Przy tworzeniu pokoju wybierz Munchkin Classic lub Drugą Edycję. Pokoje Drugiej Edycji śledzą sztuki złota, a wbudowany przewodnik po zasadach pomaga rozpocząć grę w obu edycjach.
+
 Wieczór z grami to śmiech ze znajomymi i pogoń za zwycięstwem — a nie bazgroły na kartkach. Munch Helper liczy za ciebie, żebyś mógł cieszyć się grą przy stole.
 
 Oto co możesz zrobić, gdy tylko usiądziesz:

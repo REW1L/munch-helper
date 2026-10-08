@@ -1,5 +1,7 @@
 Munch Helper — tai stalo žaidimų pagalbininkas, kuris išlaiko jūsų Munchkin stalą sinchronizuotą. Visi realiu laiku mato tuos pačius lygius, įrangą ir taškus, todėl žaidimas juda toliau ir niekas nepasimeta.
 
+Kurdami kambarį pasirinkite „Munchkin Classic“ arba antrąjį leidimą. Antrojo leidimo kambariuose stebimi aukso gabalėliai, o integruotas taisyklių vadovas padės susipažinti su abiem leidimais.
+
 Žaidimų vakaras — tai juokas su draugais ir kova dėl pergalės, o ne rašteliai ant popieriaus lapelių. Munch Helper skaičiuoja už jus, kad galėtumėte mėgautis žaidimu prie stalo.
 
 Štai ką galite daryti, vos atsisėdę:
