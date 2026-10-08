@@ -45,7 +45,6 @@ export default function BattleView() {
   const router = useRouter();
   const roomId = Array.isArray(roomNumber) ? roomNumber[0] : roomNumber;
   const roomEdition = useRoomEdition(roomId, roomTypeId);
-  const isSecondEdition = roomEdition.roomTypeId === 'munchkin-2e';
   const { userProfile } = useUserProfile();
   const { battle, isLoading, errorMessage } = useRoomBattle(roomId, userProfile);
   const { characters, isLoading: charactersLoading, errorMessage: charactersErrorMessage } = useRoomCharacters(roomId, userProfile, roomEdition.confirmedRoomTypeId);
@@ -138,14 +137,23 @@ export default function BattleView() {
     return monsterLevelTotal + bonusTotal;
   }, [draft]);
 
-  const comparisonLabel = playerTotal === monsterTotal ? t('battle.even') : playerTotal > monsterTotal ? t('battle.playersAhead') : t('battle.monstersAhead');
-  const comparisonBorderColor = playerTotal === monsterTotal
+  const isTie = playerTotal === monsterTotal;
+  const hasTieBreakingWarrior = playerParticipants.active.some(({ character }) =>
+    character.class.some((className) => className.trim().toLowerCase() === 'warrior'));
+  const warriorWinsTie = isTie && hasTieBreakingWarrior;
+  const comparisonLabel = warriorWinsTie
+    ? t('battle.playersAhead')
+    : isTie
+      ? t('battle.even')
+      : playerTotal > monsterTotal
+        ? t('battle.playersAhead')
+        : t('battle.monstersAhead');
+  const comparisonBorderColor = isTie && !warriorWinsTie
     ? AppTheme.colors.surfaceSubtle
-    : playerTotal > monsterTotal
+    : playerTotal > monsterTotal || warriorWinsTie
       ? AppTheme.colors.accent
       : AppTheme.colors.danger;
-  const hasSecondEditionWarrior = isSecondEdition && playerParticipants.active.some(({ character }) => character.class.includes('Warrior'));
-  const playersWin = playerTotal > monsterTotal || (playerTotal === monsterTotal && hasSecondEditionWarrior);
+  const playersWin = playerTotal > monsterTotal || warriorWinsTie;
   const scoreOutcome = playersWin ? t('battle.playersWin') : t('battle.monstersWin');
   const scoreSummaryLabel = t('battle.scoreSummary', {
     playerTotal,

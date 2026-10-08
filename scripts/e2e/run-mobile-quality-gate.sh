@@ -14,7 +14,6 @@ fi
 expo_pids=()
 android_emulator_pid=''
 android_serial=''
-android_expo_device=''
 
 terminate_process_tree() {
   local pid="$1"
@@ -41,13 +40,11 @@ cleanup() {
 trap cleanup EXIT
 
 ensure_android_device() {
-  android_serial="$(adb devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')"
+  android_serial="${E2E_ANDROID_DEVICE:-$(adb devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')}"
   if [[ -n "$android_serial" ]]; then
-    android_expo_device="${E2E_ANDROID_DEVICE:-$android_serial}"
-    local existing_avd_name
-    existing_avd_name="$(adb -s "$android_serial" emu avd name 2>/dev/null | awk 'NF && $0 != "OK" { print; exit }')"
-    if [[ -n "$existing_avd_name" ]]; then
-      android_expo_device="$existing_avd_name"
+    if ! adb -s "$android_serial" get-state > /dev/null 2>&1; then
+      echo "Configured Android device is not connected: $android_serial" >&2
+      return 1
     fi
     return 0
   fi
@@ -62,7 +59,6 @@ ensure_android_device() {
   echo "Launching Android emulator $avd_name"
   emulator -avd "$avd_name" -no-snapshot-load -no-audio -no-boot-anim > /tmp/munch-e2e-android-emulator.log 2>&1 &
   android_emulator_pid=$!
-  android_expo_device="$avd_name"
 
   for _ in {1..180}; do
     android_serial="$(adb devices | awk 'NR > 1 && $2 == "device" { print $1; exit }')"
@@ -118,8 +114,8 @@ start_release_app() {
     adb -s "$android_serial" uninstall click.helpamunch.mobileapp > /dev/null 2>&1 || true
     (
       cd frontend
-      EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true \
-        npx expo run:android --variant release --no-build-cache --no-bundler -d "$android_expo_device"
+      ANDROID_SERIAL="$android_serial" EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 EXPO_PUBLIC_E2E=true \
+        npx expo run:android --variant release --no-build-cache --no-bundler
     ) &
   fi
 

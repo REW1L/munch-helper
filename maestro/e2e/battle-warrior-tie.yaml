@@ -1,0 +1,43 @@
+appId: click.helpamunch.mobileapp
+---
+- runFlow: create-character.yaml
+- runScript: set-warrior.js
+- tapOn:
+    id: screenshot-open-battle
+- extendedWaitUntil:
+    visible:
+      id: screenshot-battle-ready
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: add-character
+    direction: DOWN
+- tapOn:
+    id: select-character-${output.warriorCharacterId}
+- tapOn:
+    id: add-character
+- scrollUntilVisible:
+    element:
+      id: open-add-monster
+    direction: DOWN
+- tapOn:
+    id: open-add-monster
+- tapOn:
+    id: monster-level-input
+- eraseText
+- inputText: "1"
+- tapOn:
+    text: "Level:"
+- tapOn:
+    id: save-monster
+- assertNotVisible:
+    id: add-monster-dialog
+- assertVisible:
+    id: battle-score-outcome-players
+- scrollUntilVisible:
+    element:
+      id: battle-comparison-label
+    direction: UP
+- assertVisible:
+    id: battle-comparison-label
+- takeScreenshot: battle-warrior-tie
