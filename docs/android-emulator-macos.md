@@ -20,7 +20,7 @@ warning alone as proof of the root cause or retain those CPU workarounds.
 Automatic graphics selected ANGLE/SwiftShader software rendering. A separate
 standard API 36.1 image also stalled during startup. The working development
 setup is **API 35 Google APIs x86_64, host graphics, Vulkan disabled**, named
-`Munch_Dev_API_35`. With host graphics, it progressed through package setup and
+`Munch_Dev_API_35`, with 4 GB RAM and a 720 × 1600 display at 30 Hz. With host graphics, it progressed through package setup and
 first-boot optimization and returned `sys.boot_completed=1`. Multiple settings
 changed during recovery, so this establishes a working combination rather than
 isolating a single upstream defect. The original AVDs and their data were kept.
@@ -87,10 +87,34 @@ With the new AVD stopped, back up
 hw.gpu.enabled=yes
 hw.gpu.mode=host
 hw.keyboard=yes
+hw.ramSize=4096
+hw.lcd.width=720
+hw.lcd.height=1600
+hw.lcd.density=320
+hw.lcd.vsync=30
+fastboot.forceColdBoot=yes
+fastboot.forceFastBoot=no
 ```
 
 In Device Manager, host graphics corresponds to the Hardware graphics setting.
 Edit `config.ini`, not the generated `hardware-qemu.ini`.
+The RAM and smaller display reduce contention during native compilation; the
+initial 2 GB, 1080 × 2400 configuration showed a System UI timeout under load.
+The emulator warns that host OpenGL on macOS is deprecated and may lack GLES
+3.1 features. This setup is for this app's local development; it does not prove
+compatibility with every graphics workload or replace device testing.
+
+Quick Boot shutdown also hung during recovery. Keep this AVD on cold boot:
+in the emulator's **Extended controls → Snapshots → Settings**, set **Auto-save
+current state to Quickboot** to **No**. The corresponding local AVD file is
+`quickbootChoice.ini` alongside `config.ini`, containing:
+
+```ini
+saveOnExit = false
+```
+
+These settings avoid loading/saving VM snapshots while keeping installed apps
+and their data. See the [official snapshot guide](https://developer.android.com/studio/run/emulator-snapshots).
 
 Back up `~/.android/advancedFeatures.ini` if it exists, preserve its other
 settings, and set this entry once:
@@ -115,7 +139,30 @@ restore the relevant config/shell backups, and remove only the added Vulkan
 setting. Keep or delete the newly created development AVD through Device Manager
 as needed; no original device needs to be wiped.
 
-## 4. Verify boot, then run the app
+## 4. Match the Android build JDK
+
+The machine initially had only Java 25. The first Expo build failed in
+`react-native-worklets:configureCMakeDebug[x86_64]` and
+`react-native-screens:configureCMakeDebug[x86_64]` with
+`WARNING: A restricted method in java.lang.System has been called`.
+The repository's Android workflow uses **JDK 17**. This is a separate build
+toolchain issue; changing Java cannot fix emulator guest booting.
+
+Install a macOS x64 JDK 17 from [Adoptium](https://adoptium.net/temurin/releases/?version=17),
+then select it in the terminal used for Expo:
+
+```sh
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export PATH="$JAVA_HOME/bin:$PATH"
+java -version
+```
+
+The recovery installed Temurin 17 under `~/Library/Java/JavaVirtualMachines/`
+and added these exports to `~/.zshrc`. Java 25 remains installed. To reverse the
+default selection, remove those exports or restore the shell backup. Select JDK
+17 as Android Studio's Gradle JDK when building the native project from Studio.
+
+## 5. Verify boot, then run the app
 
 Start `Munch_Dev_API_35` in Device Manager, or run:
 
@@ -146,6 +193,17 @@ Expo's `--device` argument takes the **AVD name**, not the ADB serial.
 Use `npm run android` when the desired device is the only available target;
 with a physical phone attached, select the AVD explicitly. Android's `10.0.2.2`
 reaches the host backend; the backend must be running separately.
+
+If reusing a separate Metro process, use
+`EXPO_PUBLIC_API_URL=http://10.0.2.2:8080 npx expo start --dev-client --lan --port 8081`,
+then use the same Android command with `--no-bundler`. During recovery, a server
+started with `--localhost` listened only on IPv6 loopback and could not accept
+the LAN address advertised by `expo run:android`. Match the server listener to
+the URL used by the client. If LAN networking is unavailable, an alternative
+is `adb -s emulator-5554 reverse tcp:8081 tcp:8081` with
+`REACT_NATIVE_PACKAGER_HOSTNAME=localhost` scoped to the Android command.
+A successful APK build alone does not verify the Metro connection; confirm the
+app's screen appears.
 
 For the repository's mobile E2E gate, select both the AVD and its current serial:
 
