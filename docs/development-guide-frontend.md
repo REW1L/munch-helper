@@ -29,6 +29,8 @@ npm run web        # expo start --web
 
 `expo run:ios` and `expo run:android` produce native dev builds the first time, then attach via the Expo dev client.
 
+For Android Studio startup timeouts or an emulator stuck `offline` on an Intel Mac, see the [Android emulator recovery guide](./android-emulator-macos.md). It covers the verified API 35 development AVD, persistent graphics settings, and selecting the emulator when a physical phone is also connected. Use `http://10.0.2.2:8080` as the local backend URL inside an Android emulator.
+
 ## Quality Gates
 
 Run before opening a PR:

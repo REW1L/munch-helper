@@ -60,6 +60,8 @@ npm run start
 
 Then use the Expo terminal to open a platform, or run `npm run ios`, `npm run android`, or `npm run web` from `frontend/`. iOS and Android require their respective simulator/emulator toolchains.
 
+If Android Studio or Expo times out starting an emulator on an Intel Mac, follow the [Android emulator recovery guide](docs/android-emulator-macos.md) for the verified local AVD setup, graphics settings, and boot checks.
+
 ## Checks
 
 Run checks from the package you changed. The commands below match the current package scripts:
