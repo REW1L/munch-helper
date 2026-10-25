@@ -64,6 +64,7 @@ Services: `user-service`, `room-service`, `character-service`, `battle-service`,
 - [Component Inventory - Frontend](./component-inventory-frontend.md)
 - [Development Guide - Backend](./development-guide-backend.md)
 - [Development Guide - Frontend](./development-guide-frontend.md)
+- [Android Emulator Recovery on an Intel Mac](./android-emulator-macos.md)
 - [Development Guide - Infrastructure](./development-guide-infrastructure.md)
 - [Development Guide - E2E](./development-guide-e2e.md)
 - [Deployment Guide](./deployment-guide.md)
